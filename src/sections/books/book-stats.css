@@ -1,0 +1,452 @@
+/* ════════════════════════════════════════════════════════════════════════════
+   book-stats.css — FACTORY P3 OUTPUT
+   Źródło: reference.html (P2A)
+   Zmiany: Brak (Google Fonts CDN ładowany przez layout, nie @import)
+   ════════════════════════════════════════════════════════════════════════════ */
+
+/* -----------------------------------------------------------
+   Sekcja i kontener
+   ----------------------------------------------------------- */
+#book-stats-section {
+  isolation: isolate;
+  padding: 5rem 1.25rem;
+  position: relative;
+  width: 100%;
+}
+@media screen and (max-width: 991px) {
+  #book-stats-section {
+  isolation: isolate; padding: 3.5rem 2rem; }
+}
+@media screen and (max-width: 767px) {
+  #book-stats-section {
+  isolation: isolate; padding: 2.5rem 1rem; }
+}
+
+#book-stats-section .container {
+  width: 100%;
+  max-width: 82rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* -----------------------------------------------------------
+   CUSTOM SECTIONS — Piętro layout
+   Proporcja: lewa ~45.3% | gap 0.5rem | prawa ~54.1%
+   flex: 453/541 → flexbox sam odlicza gap. ZERO overflow.
+   ----------------------------------------------------------- */
+#book-stats-section .cs-floor {
+  display: flex;
+  flex-direction: row;
+  gap: 0.5rem;
+}
+#book-stats-section .cs-floor__left {
+  flex: 453 1 0%;
+  min-width: 0;
+}
+#book-stats-section .cs-floor__right {
+  flex: 541 1 0%;
+  min-width: 0;
+}
+
+#book-stats-section .cs-floor--images .cs-floor__left .cs-video--banner {
+  width: 100%;
+  height: auto;
+  display: block;
+  vertical-align: middle;
+}
+
+/* --- Piętro 1: Obrazy --- */
+#book-stats-section .cs-floor--images {
+  margin-bottom: var(--48);
+  align-items: center;
+}
+
+#book-stats-section .cs-img-placeholder {
+  width: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: rgba(37,32,48,0.3);
+  font-size: 1rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  user-select: none;
+  /* Soft edge blend — 2% fade from each edge into page background.
+     Masks compression artifacts at image borders (WebP/AVIF color shift).
+     intersect = all 4 must agree → uniform corner treatment. */
+  -webkit-mask-image:
+    linear-gradient(to right,  transparent 0%, black 2%),
+    linear-gradient(to left,   transparent 0%, black 2%),
+    linear-gradient(to bottom, transparent 0%, black 2%),
+    linear-gradient(to top,    transparent 0%, black 2%);
+  -webkit-mask-composite: source-in;
+  mask-image:
+    linear-gradient(to right,  transparent 0%, black 2%),
+    linear-gradient(to left,   transparent 0%, black 2%),
+    linear-gradient(to bottom, transparent 0%, black 2%),
+    linear-gradient(to top,    transparent 0%, black 2%);
+  mask-composite: intersect;
+}
+
+#book-stats-section .cs-img--stats {
+  aspect-ratio: 606 / 456;
+  background: linear-gradient(135deg, #e8e4e0 0%, #ddd8d2 60%, #d5cfc8 100%);
+}
+
+#book-stats-section .cs-img--book {
+  aspect-ratio: 1000 / 720;
+  background: linear-gradient(135deg, #e2ddd8 0%, #d8d2cc 60%, #cec7bf 100%);
+  position: relative;
+}
+/* [FIX-5] aspect-ratio fallback — Safari <15, Chrome <88.
+   padding-bottom creates proportional height. overflow:hidden on parent
+   → min-height:auto=0 → height:0 respected. Canvas (absolute) fills padding box. */
+@supports not (aspect-ratio: 1 / 1) {
+  #book-stats-section .cs-img--stats { height: 0; padding-bottom: 75.25%; /* 456/606 */ }
+  #book-stats-section .cs-img--book  { height: 0; padding-bottom: 72%;    /* 720/1000 */ }
+}
+
+/* --- Canvas frame sequence: fills parent, hidden until ready --- */
+#book-stats-section #book-stats-canvas {
+  position: absolute;
+  top: 0; right: 0; bottom: 0; left: 0; /* [FIX-4] Safari <14.1 longhand fallback */
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  opacity: 0;
+  transition: opacity 0.4s ease;
+  will-change: transform; /* #12: Guarantee dedicated compositor layer for drawImage */
+}
+#book-stats-section #book-stats-canvas.is-ready {
+  opacity: 1;
+}
+#book-stats-section .cs-img-fallback {
+  position: relative;
+  z-index: 1;
+  transition: opacity 0.4s ease;
+}
+#book-stats-section #book-stats-canvas.is-ready ~ .cs-img-fallback {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* --- Piętro 2: Teksty --- */
+#book-stats-section .cs-floor--texts {
+  align-items: stretch;
+}
+/* [FIX-14] Safari 13-15.3: height:100% fails in flex-stretched items.
+   Dual mechanism: modern browsers use height:100%, old Safari uses flex-grow:1. */
+#book-stats-section .cs-floor--texts .cs-floor__right {
+  display: flex;
+  flex-direction: column;
+}
+#book-stats-section .cs-floor--texts .cs-stats-placeholder {
+  flex-grow: 1;
+}
+
+#book-stats-section .cs-text-block {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 1.5rem;
+}
+#book-stats-section .cs-text-block h2 {
+  font-size: 4.1rem;
+  font-weight: 400;
+  line-height: 1.125;
+  letter-spacing: -0.04em;
+  color: #252030;
+  padding-bottom: 0.15em;   /* [FIX-15] Descender safety for ą/ę with background-clip:text */
+  margin-bottom: -0.15em;   /* [FIX-15] Neutralizes padding — net displacement = 0 */
+  background-image: linear-gradient(
+    135deg,
+    #252030 2%,
+    #2a2130 44%,
+    #382630 56.7%,
+    #512b2b 67.5%,
+    #7d3527 80.2%,
+    #7d3527 100%
+  );
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+#book-stats-section .cs-text-block h2 strong {
+  font-weight: 800;
+  -webkit-text-fill-color: transparent;
+}
+#book-stats-section .cs-text-block p {
+  font-size: 2.25rem;
+  color: #252525;
+  font-weight: 300;
+  line-height: 1.6;
+}
+
+/* --- Stats placeholder: container query host (COUNTER LIVES HERE) ---
+   Override: display block, container-type dla cqi units wewnątrz.
+   Background jako fallback przed załadowaniem. */
+#book-stats-section .cs-stats-placeholder {
+  container-type: inline-size;
+  contain-intrinsic-size: auto 30rem; /* #14: Firefox mobile — hint for engines with contain + height:auto bugs */
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 12rem;
+  background: transparent;
+  overflow: hidden;
+  padding: 0;
+}
+
+#book-stats-section .cs-divider {
+  width: 100%;
+  height: 1px;
+  background: rgba(37,32,48,0.08);
+  margin-bottom: var(--48);
+}
+
+/* --- Tablet (768–991px) --- */
+@media screen and (max-width: 991px) {
+  #book-stats-section .cs-text-block h2 { font-size: 2.5rem; }
+  #book-stats-section .cs-text-block p { font-size: 1.25rem; }
+}
+
+/* --- Mobile (<767px) --- */
+@media screen and (max-width: 767px) {
+  #book-stats-section .cs-floor { flex-direction: column; gap: var(--gap-md); }
+  #book-stats-section .cs-floor__left,
+  #book-stats-section .cs-floor__right { flex: none; width: 100%; }
+
+  #book-stats-section .cs-floor--images .cs-floor__right { order: 1; }
+  #book-stats-section .cs-floor--images .cs-floor__left  { order: 2; }
+
+  #book-stats-section .cs-floor--texts .cs-floor__left  { order: 1; }
+  #book-stats-section .cs-floor--texts .cs-floor__right { order: 2; }
+
+  #book-stats-section .cs-text-block h2 { font-size: 1.75rem; line-height: 1.1; }
+  #book-stats-section .cs-text-block p { font-size: 1rem; }
+  #book-stats-section .cs-stats-placeholder { height: auto; min-height: 10rem; }
+}
+
+/* --- FIX: zakres 480–767px --- */
+@media screen and (min-width: 480px) and (max-width: 767px) {
+  #book-stats-section .cs-text-block { text-align: center; gap: 1.5rem; }
+  #book-stats-section .cs-text-block h2 { font-size: 3.55rem; font-weight: 400; line-height: 1.1; letter-spacing: -0.04em; }
+  #book-stats-section .cs-text-block p { font-size: 1.6rem; font-weight: 300; line-height: 1.6; color: #252525; }
+  #book-stats-section .cs-text-block p br { display: none; }
+}
+
+/* --- FIX: <350px — subnagłówki countera -20% --- */
+@media screen and (max-width: 349px) {
+  #book-stats-section .cs-counter-sub {
+    font-size: max(2.88cqi, 9px);
+  }
+}
+
+/* --- FIX: <479px — divider ukryty, piętra blisko siebie --- */
+@media screen and (max-width: 479px) {
+  #book-stats-section .cs-divider { display: none; }
+  #book-stats-section .cs-floor--images { margin-bottom: var(--gap-md); }
+}
+
+
+/* ============================================================
+   COUNTER REELS — cqi-native
+   ============================================================
+   Bazowa jednostka: 18cqi (font-size cyfr)
+   Digits margin: -0.625em top, -0.775em bottom (kompensacja mask)
+   Spacing: space-between (height:100%, fluid gapy)
+   Sub <350px: -20% (2.88cqi / 9px floor)
+   ============================================================ */
+
+/* --- Zmienne animacji (scoped) --- */
+#book-stats-section {
+  isolation: isolate;
+  --cr-ease-reel: cubic-bezier(0.22, 1.35, 0.36, 1);
+  --cr-ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --cr-duration: 2400ms;
+  --cr-text-main: #111111;
+}
+
+/* --- Counter root: flex column ---
+   Reset kaskady defensywny (na wypadek dziedziczenia).
+   Żyje wewnątrz .cs-stats-placeholder (piętro 2, prawa kolumna). */
+#book-stats-section .cs-counters {
+  text-transform: none;
+  letter-spacing: normal;
+  color: var(--cr-text-main);
+  font-weight: 400;
+  font-size: 1rem;
+  user-select: auto;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  padding: 0 2cqi;
+  height: 100%;
+  justify-content: space-between;
+  position: relative;
+}
+
+/* --- Dividery między wierszami ---
+   ::before = między row 1 a 2
+   ::after  = między row 2 a 3
+   position:absolute → zero wpływu na layout/space-between.
+   Styl: 2px dual-line (cień + highlight) z fade na krawędziach. */
+#book-stats-section .cs-counters::before,
+#book-stats-section .cs-counters::after {
+  content: '';
+  position: absolute;
+  left: 2cqi;
+  right: 2cqi;
+  height: 2px;
+  background: linear-gradient(to bottom,
+    rgba(58, 46, 30, 0.15) 0%, rgba(58, 46, 30, 0.15) 50%,
+    rgba(255, 255, 255, 0.6) 50%, rgba(255, 255, 255, 0.6) 100%
+  );
+  mask-image: linear-gradient(90deg, transparent, #000 20%, #000 80%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 20%, #000 80%, transparent);
+  transform: translateZ(0);
+  pointer-events: none;
+}
+#book-stats-section .cs-counters::before {
+  top: 33.33%;
+}
+#book-stats-section .cs-counters::after {
+  top: 66.66%;
+}
+
+/* --- Counter row --- */
+#book-stats-section .cs-counter-row {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+}
+
+/* --- Cyfry i sufiksy: fade in na .visible --- */
+#book-stats-section .cs-counter-digits,
+#book-stats-section .cs-counter-suffix {
+  opacity: 0;
+  transition: opacity 0.8s var(--cr-ease-out-expo);
+}
+#book-stats-section .cs-counter-row.visible .cs-counter-digits,
+#book-stats-section .cs-counter-row.visible .cs-counter-suffix {
+  opacity: 1;
+}
+
+/* --- KOL 1: Bębny cyfrowe ---
+   height/padding-top/mask w em → skalują się z font-size automatycznie.
+   1.05em = HARD CONSTRAINT (musi = translateY multiplier w JS). */
+#book-stats-section .cs-counter-digits {
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  font-feature-settings: "tnum";
+  font-variant-numeric: tabular-nums;
+  overflow: hidden;
+  font-size: 18cqi;
+  line-height: 1;
+  letter-spacing: -0.04em;
+  font-weight: 700;
+  height: 2.5em;
+  padding-top: 0.725em;
+  margin-top: -0.625em;
+  margin-bottom: -0.775em;
+  transform: translateZ(0); /* #13: Samsung Internet — GPU-promote parent to fix mask + animated children glitch */
+  mask-image: linear-gradient(to bottom,
+    transparent 0%, transparent 25%,
+    black 40%, black 60%,
+    transparent 75%, transparent 100%
+  );
+  -webkit-mask-image: linear-gradient(to bottom,
+    transparent 0%, transparent 25%,
+    black 40%, black 60%,
+    transparent 75%, transparent 100%
+  );
+}
+
+/* --- KOL 2: Sufiks (%, h) — superscript --- */
+#book-stats-section .cs-counter-suffix {
+  font-size: 5.8cqi;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: -0.04em;
+  padding-left: 0.14em;
+  align-self: center;
+  margin-top: -3.9cqi;
+  min-width: 6cqi;
+}
+
+/* --- KOL 3: Label (heading + subheading) --- */
+#book-stats-section .cs-counter-label {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: max(0.65cqi, 2px);
+  margin-left: 3cqi;
+  align-self: center;
+  flex: 1;
+  min-width: 0;
+}
+
+/* Heading: sweep gradient szary→czarny (GSAP animuje backgroundPosition) */
+#book-stats-section .cs-counter-heading {
+  font-size: 4.7cqi;
+  font-weight: 700;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  background: linear-gradient(to right, var(--cr-text-main) 49%, #666 51%);
+  background-size: 200% 100%;
+  background-position: 100% 0;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Subheading: safety floor max(cqi, 11px) na małych kontenerach */
+#book-stats-section .cs-counter-sub {
+  font-size: max(3.6cqi, 11px);
+  font-weight: 300;
+  line-height: 1.15;
+  color: #666;
+  white-space: nowrap;
+}
+
+/* --- Reel: kolumna cyfrowa --- */
+#book-stats-section .cs-reel {
+  display: flex;
+  flex-direction: column;
+  /* #16: will-change managed by JS — added before spin, removed after transitionend */
+  transform: translateY(0);
+  transition: transform var(--cr-duration) var(--cr-ease-reel);
+}
+
+/* --- Digit: slot w bębnie ---
+   height: 1.05em — MUSI odpowiadać mnożnikowi w JS translateY */
+#book-stats-section .cs-digit {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 1.05em;
+}
+
+/* --- Symbol suffiksu (span wewnątrz suffix slot) --- */
+#book-stats-section .cs-suffix-symbol {
+  display: block;
+}
+
+/* [FIX-6] Container Query fallback — Safari <16, Chrome <105.
+   Without cqi support, font-size/margin/padding fall to inherited values → broken layout.
+   clamp/vw approximations keep counters readable. @supports not → zero impact on modern. */
+@supports not (container-type: inline-size) {
+  #book-stats-section .cs-counter-digits  { font-size: clamp(2.6rem, 9vw, 5.4rem); }
+  #book-stats-section .cs-counter-suffix  { font-size: clamp(1.1rem, 3.2vw, 1.8rem); min-width: 2rem; margin-top: -1rem; }
+  #book-stats-section .cs-counter-heading { font-size: clamp(1rem, 3.2vw, 1.6rem); }
+  #book-stats-section .cs-counter-sub     { font-size: clamp(0.75rem, 2.6vw, 1rem); }
+  #book-stats-section .cs-counter-label   { margin-left: 1rem; gap: 2px; }
+  #book-stats-section .cs-counters        { padding: 0 0.5rem; }
+  #book-stats-section .cs-counters::before,
+  #book-stats-section .cs-counters::after  { left: 0.5rem; right: 0.5rem; }
+}

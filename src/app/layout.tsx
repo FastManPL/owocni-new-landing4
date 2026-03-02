@@ -8,6 +8,7 @@ import 'lenis/dist/lenis.css';
 import './globals.css';
 
 import { SmoothScrollProvider } from '@/components/SmoothScrollProvider';
+import { ResourceHints } from '@/providers/ResourceHints';
 
 // === FONTS (Konstytucja A4) ===
 const lexend = Lexend({
@@ -82,6 +83,7 @@ export default function RootLayout({
         */}
       </head>
       <body className="font-brand antialiased bg-canvas">
+        <ResourceHints />
         <SmoothScrollProvider>{children}</SmoothScrollProvider>
       </body>
     </html>
