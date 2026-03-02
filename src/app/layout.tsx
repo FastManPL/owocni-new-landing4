@@ -3,7 +3,7 @@ import { Lexend, Fraunces } from 'next/font/google';
 
 // === CSS IMPORT ORDER (Konstytucja C7) ===
 // 1. Vendor CSS first
-import 'lenis/lenis.css';
+import 'lenis/dist/lenis.css';
 // 2. Own globals last (może nadpisać vendor)
 import './globals.css';
 

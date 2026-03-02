@@ -26,6 +26,7 @@
     "server-only": "0.0.1"
   },
   "devDependencies": {
+    "babel-plugin-react-compiler": "^1.0.0",
     "typescript": "5.7.3",
     "@types/node": "20.17.19",
     "@types/react": "19.0.10",
