@@ -5,6 +5,33 @@
    ════════════════════════════════════════════════════════════════════════════ */
 
 /* -----------------------------------------------------------
+   Sekcja — responsive font-size (rem w potomkach względem tej bazy)
+   ----------------------------------------------------------- */
+#book-stats-section {
+  font-size: 1rem;
+}
+@media screen and (min-width: 1801px) {
+  #book-stats-section {
+    font-size: 1.25rem;
+  }
+}
+@media screen and (max-width: 1800px) and (min-width: 992px) {
+  #book-stats-section {
+    font-size: calc(1.1vw);
+  }
+}
+@media screen and (max-width: 991px) and (min-width: 480px) {
+  #book-stats-section {
+    font-size: calc(0.3rem + 1.5vw);
+  }
+}
+@media screen and (max-width: 479px) {
+  #book-stats-section {
+    font-size: 5vw;
+  }
+}
+
+/* -----------------------------------------------------------
    Sekcja i kontener
    ----------------------------------------------------------- */
 #book-stats-section {
@@ -24,7 +51,7 @@
 
 #book-stats-section .container {
   width: 100%;
-  max-width: 82rem;
+  max-width: 82em;
   margin-left: auto;
   margin-right: auto;
 }
