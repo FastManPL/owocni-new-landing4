@@ -1,0 +1,32 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    scrollbar-gutter: stable;
+  }
+
+  /* 
+   * overscroll-behavior: none
+   * - Blokuje natywny rubber-band bounce (iOS/macOS)
+   * - Zapobiega "pull to refresh" na mobile
+   * - Lenis przejmuje pełną kontrolę nad scrollem
+   * 
+   * Uwaga: lenis.css ustawia "contain" na html.lenis
+   * "none" jest bardziej agresywne i nadpisuje to
+   */
+  html,
+  body {
+    overscroll-behavior: none;
+  }
+
+  body {
+    background-color: #f7f6f4;
+  }
+
+  /* Polish: selekcja tekstu */
+  ::selection {
+    background-color: rgba(20, 20, 20, 0.15);
+  }
+}

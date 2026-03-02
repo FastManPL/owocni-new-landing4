@@ -1,0 +1,42 @@
+{
+  "name": "lp-project",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": "20.x"
+  },
+  "scripts": {
+    "dev": "next dev",
+    "dev:webpack": "next dev --webpack",
+    "build": "next build",
+    "build:webpack": "next build --webpack",
+    "start": "next start",
+    "typecheck": "tsc --noEmit",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "analyze": "cross-env ANALYZE=true next build"
+  },
+  "dependencies": {
+    "next": "16.1.6",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "gsap": "3.12.7",
+    "@gsap/react": "2.1.1",
+    "lenis": "1.1.18",
+    "server-only": "0.0.1"
+  },
+  "devDependencies": {
+    "typescript": "5.7.3",
+    "@types/node": "20.17.19",
+    "@types/react": "19.0.10",
+    "@types/react-dom": "19.0.4",
+    "eslint": "9.20.1",
+    "eslint-config-next": "16.1.6",
+    "@eslint/eslintrc": "3.2.0",
+    "cross-env": "7.0.3",
+    "@next/bundle-analyzer": "16.1.6",
+    "tailwindcss": "3.4.17",
+    "postcss": "8.5.3",
+    "autoprefixer": "10.4.20"
+  }
+}

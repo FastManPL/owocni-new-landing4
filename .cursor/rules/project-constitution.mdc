@@ -1,0 +1,32 @@
+---
+description: Konstytucja projektu LP — zasady twarde i struktura. Czytać CONSTITUTION_v2.5.md przy każdej zmianie.
+alwaysApply: true
+---
+
+# Konstytucja projektu LP
+
+**Źródło prawdy:** Plik `CONSTITUTION_v2.5.md` w katalogu głównym projektu. Przy każdej zmianie w tym repozytorium należy się do niego stosować.
+
+## Stack i cel
+- **Next.js 16** (App Router), React 19, Tailwind CSS. Turbopack domyślnie; fallback: `next build --webpack`.
+- Landing page: **INP ≤ 200 ms (P75)**, **CLS < 0.1**, **LCP < 2.5 s**. Portrait-only.
+
+## Zasady nie do łamania
+- **Sekcje:** zamknięte moduły, zero importów krzyżowych. Tylko Shared Core: `scrollRuntime`, `moduleLoader`, design tokens, `next/font`, vitals, consent.
+- **Scroll:** jeden właściciel — `scrollRuntime` z `src/lib/scrollRuntime.ts`. Sekcje NIGDY nie wywołują `ScrollTrigger.refresh()` ani `new Lenis()`; używają `scrollRuntime.requestRefresh(reason)`.
+- **Assety:** klasy HOT (hero, LCP) / WARM (prefetch) / COLD (lazy). Hero: `priority` + `fetchPriority="high"`. Obrazy przez `next/image` z `sizes`.
+- **DCI (warianty):** rozwiązywane na serwerze w `page.tsx`, `getVariant(searchParams)` z `src/config/variants.ts` (server-only), `React.cache()` na getVariant — NIE `"use cache"`.
+- **Sekcje z mutowalną geometrią** (accordion, expand): `geometryMutable: true` w manifeście, elementy z `data-geometry`, hook `useGeometryRefresh(sectionId)` w client boundary gdy `geometryRefresh: "none"`.
+- **Root każdej sekcji:** `isolation: isolate`; namespace `#[nazwa]-section`, ID wewnętrzne `[nazwa]-*`. Zakaz w CSS sekcji: `html {}`, `body {}`, `:root {}`, globalne `* {}`.
+- **GSAP:** logika tylko wewnątrz `useGSAP`; Scroll Trigger przez scrollRuntime. Typ B (fizyka/ticker): `pause`/`resume`/`kill` + „skip first frame”.
+- **Formularze:** React 19 Actions + `useActionState`/`useFormStatus`, ZAKAZ tradycyjnego `onSubmit` + useState loader.
+
+## Struktura (zgodna z konstytucją)
+- `src/app/`: layout (SmoothScrollProvider, fonty), page.tsx (DCI + lista sekcji), loading.tsx, globals.css.
+- `src/sections/[nazwa]/`: `[Nazwa]Section.tsx`, `[nazwa].manifest.ts`, `[nazwa]-section.css`, opcjonalnie `*.config.ts` (Timeline Contract, LOCKED).
+- `src/lib/`: scrollRuntime, moduleLoader, autoTier. `src/hooks/`: useGeometryRefresh. `src/config/`: variants.ts (server-only).
+
+## Przed dodaniem sekcji
+Sprawdź manifest (typ A/B, HOT/WARM/COLD, warmup, geometryMutable), Evidence Pack, stabilną geometrię, `isolation: isolate`, passive listeners, idempotencję callbacków ST, Ghost States (`:active` w CSS) na interaktywnych elementach.
+
+**Szczegóły, wyjątki, bramki i checklisty:** zawsze w `CONSTITUTION_v2.5.md`.
