@@ -28,7 +28,7 @@
 | `window.lenis ? window.lenis.scroll : window.scrollY` | `scrollRuntime.scroll()` |
 | `window.scrollRuntime.requestRefresh()` | `scrollRuntime.requestRefresh()` |
 
-**Import:** `import { scrollRuntime } from '@/shared/scroll-runtime'`
+**Import:** `import { scrollRuntime } from '@/lib/scrollRuntime'`
 
 ---
 

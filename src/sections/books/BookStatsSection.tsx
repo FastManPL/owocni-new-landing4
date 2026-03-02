@@ -4,7 +4,7 @@ import { useRef } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { scrollRuntime } from '@/shared/scroll-runtime';
+import { scrollRuntime } from '@/lib/scrollRuntime';
 import './book-stats.css';
 
 gsap.registerPlugin(ScrollTrigger);
@@ -26,7 +26,7 @@ function init(container: HTMLElement | null): { kill: () => void; pause: () => v
   const DEBUG_MODE = (new URLSearchParams(window.location.search)).has('debug')
     || localStorage.getItem('debug') === '1';
 
-  const getScroll = function() { return scrollRuntime.scroll(); };
+  const getScroll = function() { return scrollRuntime.getScroll(); };
 
   const cleanups: Array<() => void> = [];
   const gsapInstances: Array<gsap.core.Tween | gsap.core.Timeline> = [];
