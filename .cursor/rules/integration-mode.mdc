@@ -1,0 +1,66 @@
+---
+description: Tryb integracji sekcji LP. Nie edytuj sekcji ani rdzenia scrollu. Źródło prawdy: SECTION_MANIFEST. Stosuj gdy użytkownik pisze że integruje sekcje.
+globs: src/app/page.tsx, src/app/layout.tsx, src/providers/**/*
+alwaysApply: false
+---
+
+# Tryb integracji sekcji LP (Integrator)
+
+Gdy użytkownik mówi, że pracujesz w **trybie integracji sekcji** lub wkleja prompt integracyjny — stosuj te zasady. Rola: złożyć gotowe sekcje w stronę. **Nie** modyfikujesz zawartości sekcji ani rdzenia scrollu.
+
+## Immutable — NIGDY nie proponuj zmian
+
+- **`src/sections/**`** — cały katalog. Zero wyjątków. Każdy diff dotykający tych plików = odrzuć i napisz: zmiana wymaga Fabryki.
+- **`src/lib/scrollRuntime.ts`** — rdzeń scrollu.
+- **`src/components/SmoothScrollProvider.tsx`**
+
+Jeśli użytkownik prosi o zmianę „w sekcji” lub „w scrollRuntime” — odpowiedz: **STOP**, to obszar immutable; takie zmiany robi Fabryka / poprawka do Konstytucji.
+
+## Obszar roboczy integracji
+
+- **`src/app/page.tsx`** — wstawianie sekcji (import, kolejność, dynamic import, skeleton, props z `dciProps`).
+- **`src/app/layout.tsx`** — resource hints (preload/prefetch/preconnect) **tylko** to, co jest w SECTION_MANIFEST; jeśli jest ustandaryzowany generator (np. ResourceHints) — używaj tylko tam.
+- **`src/providers/`** — np. hook geometrii `useGeometryRefresh(sectionId)` gdy manifest ma `geometryMutable: true` **i** `geometryRefresh: 'none'`. Hook musi być w pliku z `"use client"`, **nie** w `page.tsx` (Server Component).
+
+## Jedno źródło prawdy
+
+**SECTION_MANIFEST** każdej sekcji. Jeśli manifest czegoś nie mówi — nie dodawaj. Niezrozumiałe pole → zaproponuj: „Zapytaj Fabrykę”.
+
+- Kolejność sekcji, `dynamicImport`, `clientOnly`, `skeleton` → z `perf.loading` (lub odpowiednika w manifeście).
+- Resource hints → tylko z manifestu (preload/prefetch/preconnect per sekcja).
+- Props do sekcji → tylko z `dciProps`; zero ekstra.
+
+## Zakazane (czerwone flagi — nie proponuj, a jeśli użytkownik to wklei, wskaż błąd)
+
+| Zakaz | Powód |
+|-------|--------|
+| Edycja plików w `src/sections/**` | Sekcje są immutable |
+| `ScrollTrigger.refresh()` | Tylko `scrollRuntime.requestRefresh(reason)` |
+| `gsap.registerPlugin()` w layout/page | Zależności są w sekcjach |
+| `useGeometryRefresh` w `page.tsx` | page = Server Component |
+| `content-visibility: auto` na sekcji z ScrollTrigger | Psuje obliczenia ST |
+| Nowe paczki w `package.json` | Tylko po jawnej akceptacji użytkownika |
+| `preconnect` dla sGTM/GA bez manifestu | dns-prefetch, nie preconnect (LCP) |
+| `window.__scroll` poza blokiem DEV | Tylko do debugu |
+| `import dynamic` dla hero | Hero nigdy dynamic |
+| Skeleton brak / `'none'` dla sekcji z pinem | CLS + pin jump → STOP, Fabryka |
+
+## Przepływ pracy (sugeruj użytkownikowi)
+
+1. **Plan** — „Na podstawie manifestów wygeneruj Integration Plan. Bez kodu.” Użytkownik weryfikuje kolejność, dynamic/skeleton, resource hints.
+2. **Sekcja po sekcji** — „Dodaj tylko sekcję [slug] do page.tsx.” Import z `src/sections/[slug]/[Slug]Section`, props tylko z manifestu, przy dynamic + pin — skeleton z minHeight.
+3. **Resource hints** — osobno, tylko to co w manifeście dla danej sekcji.
+4. **Hook geometrii** — tylko gdy manifest: `geometryMutable: true` i `geometryRefresh: 'none'`; w client boundary (np. provider), nie w page.tsx.
+
+## Po każdej sekcji (przypomnij użytkownikowi)
+
+- `npm run dev` → scroll przez nową sekcję, Console: 0 błędów (Errors). Jedna sekcja na commit.
+- Grep gates: brak `ScrollTrigger.refresh(`, brak `window.__scroll` w prod, `git diff --name-only` nie może zawierać `src/sections/`.
+
+## Eskalacja
+
+- Zmiana wewnątrz sekcji / problem z GSAP/timing/cleanup → **Fabryka**.
+- Problem w scrollRuntime / SmoothScrollProvider → **poprawka do Konstytucji** + review.
+- Wzorzec nieopisany w P4_INTEGRATOR → nie improwizuj, zaproponuj zapytanie do Fabryki.
+
+**Dokument szczegółowy:** `hero/P4_INTEGRATOR (2).md` (lub aktualny P4_INTEGRATOR.md). Przy integracji użytkownik wkleja manifesty i aktualny stan page.tsx / package.json — pracuj wyłącznie na tej podstawie.

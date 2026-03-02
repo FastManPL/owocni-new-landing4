@@ -1,0 +1,2662 @@
+/* ==========================================================================
+           HOUDINI API - ANIMACJA STARTOWA (Wymagane do interpolacji zmiennych)
+           ========================================================================== */
+        @property --hero-hue1 { syntax: "<number>"; inherits: false; initial-value: 47; }
+        @property --hero-hue2 { syntax: "<number>"; inherits: false; initial-value: 260; }
+        
+        /* NOWE ZMIENNE dla Wariantu 102 */
+        @property --hero-L1 { syntax: "<number>"; inherits: false; initial-value: 0.75; } /* Jasność zewnętrzna */
+        @property --hero-C1 { syntax: "<number>"; inherits: false; initial-value: 0.35; } /* Nasycenie zewnętrzne */
+        @property --hero-L2 { syntax: "<number>"; inherits: false; initial-value: 0.60; } /* Jasność wewnętrzna (środek) */
+        @property --hero-C2 { syntax: "<number>"; inherits: false; initial-value: 0.30; } /* Nasycenie wewnętrzne */
+        
+        @property --hero-opc { syntax: "<percentage>"; inherits: false; initial-value: 0%; }
+        @property --hero-gradient-h { syntax: "<percentage>"; inherits: false; initial-value: 0%; }
+        @property --hero-gradient-w { syntax: "<percentage>"; inherits: false; initial-value: 0%; }
+        @property --hero-gradient-inner-opacity { syntax: "<percentage>"; inherits: false; initial-value: 0%; }
+        @property --hero-gradient-middle-opacity { syntax: "<percentage>"; inherits: false; initial-value: 100%; }
+        @property --hero-gradient-outer-opacity { syntax: "<percentage>"; inherits: false; initial-value: 100%; }
+        @property --hero-radial-center { syntax: "<percentage>"; inherits: false; initial-value: 35%; }
+        @property --hero-conic-rotate { syntax: "<angle>"; inherits: false; initial-value: 0deg; }
+
+        #hero-section {
+            --background-color: #f7f6f4;
+            --text-main: #050505;
+            --text-secondary: #252525;
+            --cta-color: #FFC600;
+            --blob-mask-color: #fdfcfb;
+            
+            /* Logo height — synchronizowane z .main-logo height clamp */
+            --logo-height: clamp(3.4rem, 3.062rem + 1.739vw, 4rem);
+            
+            /* Content lift — przesunięcie contentu w górę (tło zostaje)
+               ≤600px: 25px | >600px: 50px */
+            --content-lift: 25px;
+            
+            /* Płynne skalowanie 1200px → 2000px */
+            --hero-text-width: clamp(42rem, 65vw, 75.6rem);
+            --banner-width: clamp(62.5rem, 88vw, 110rem);
+            --h1-size: clamp(2.5rem, 3.7vw, 4.6rem);
+            --lead-size: clamp(1.15rem, 1.45vw, 1.79rem);
+            --h1-lead-gap: clamp(1.6rem, 2.7vw, 3.375rem);
+            
+            /* Animacja startowa */
+            --start-hue1: 47; 
+            --start-hue2: 260;
+            --anim-duration: 5s;
+            
+            /* ═══════════════════════════════════════════════════════════
+               CENTRALNE OPÓŹNIENIA BADGE'ÓW
+               Zmiana tych wartości przesuwa cały badge + jego podpis
+               ═══════════════════════════════════════════════════════════ */
+            --badge-satysfakcji-delay: 1.75s;
+            --badge-google-delay: 1.25s;
+            --badge-20lat-delay: 1.25;
+            --lottie-delay: 1750;
+            --marquee-offset: 2.0;
+            
+            /* Silk Pulse CTA */
+            --cta-intro-dur: 0.55s;
+            --cta-loop-dur: 3.5s;
+            --cta-loop-delay: 2.05s;
+            --cta-depth-intro: 4px;
+            --cta-depth-tap1: 4.5px;
+            --cta-depth-tap2: 4px;
+            --cta-depth-bounce: 0.5px;
+            --cta-ease-silk: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+            --cta-ease-press: cubic-bezier(0.32, 0, 0.67, 0);
+            --cta-ease-release: cubic-bezier(0.33, 1, 0.68, 1);
+            
+            /* Action area - kontrola layoutu */
+            --action-direction: row;
+            --action-justify: flex-start;
+            --action-align: center;
+            --action-gap: 3rem;
+            --badge20-ml: 5rem;
+            --cta-mr: 10rem;
+            --cta-mt: 0;
+            --cta-width: auto;
+            
+            /* Brands marquee */
+            --marquee-right-space: 8rem;  /* TESTOWA WARTOŚĆ - do dostrojenia */
+            
+            /* Mobile layout - domyślne wartości desktop */
+            --content-padding-top: 2rem;
+            --center-padding-top: calc(1.5rem + var(--h1-size) * 0.5);
+            --logo-margin-bottom: 2.5rem;
+            --h1-margin-top: 1.2rem;
+        }
+        
+        @media (min-width: 1600px) {
+            #hero-section {
+                --cta-mr: 15rem;
+            }
+        }
+        
+        @media (min-width: 601px) {
+            #hero-section {
+                --logo-height: clamp(4rem, 0.684rem + 7.126vw, 7.5rem);
+                --content-lift: 50px;
+            }
+        }
+        
+        @media (max-width: 1450px) {
+            #hero-section {
+                --badge20-ml: 3rem;
+                --cta-mr: 3rem;
+            }
+        }
+        
+        @media (max-width: 1300px) {
+            #hero-section {
+                --cta-mr: 1rem;
+                --badge20-ml: 0.5rem;
+            }
+        }
+        
+        @media (max-width: 1200px) {
+            #hero-section {
+                --action-direction: row;
+                --action-justify: center;
+                --action-align: flex-start;
+                --badge20-ml: 0;
+                --cta-mr: 0;
+                --cta-mt: 2rem;
+                --cta-width: 100%;
+                --h1-lead-gap: 3rem;  /* 1.5x odstęp między H1 a opisem */
+            }
+        }
+        
+        @media (max-width: 600px) {
+            #hero-section {
+                --content-padding-top: 0;
+                --center-padding-top: 10px; /* 25px minus ~15px ascender space fontu */
+                --logo-margin-bottom: 50px;
+                --h1-margin-top: 0;
+                --cta-mt: 3rem;
+                /* Mobile timing — przyspieszony start */
+                --badge-satysfakcji-delay: 0s;
+                --badge-google-delay: 0.25s;
+                --badge-20lat-delay: 0.25;
+                --lottie-delay: 750;
+                --marquee-offset: 1.0;
+            }
+            
+            #hero-section .center-wrapper {
+                padding-top: calc(10px + var(--logo-height) + 50px - var(--content-lift));
+            }
+        }
+
+        /* [SANITIZED] Was: html, body — document resets moved to test shell.
+           Only section-specific styles kept here. */
+        #hero-section {
+            font-family: 'Lexend', sans-serif;
+            color: var(--text-main);
+            background-color: var(--background-color);
+            font-size: 16px;
+        }
+
+        #hero-section {
+            position: relative;
+            width: 100%;
+            min-height: 100vh;
+            min-height: 100svh;
+            overflow: hidden;
+            isolation: isolate; /* FACTORY:B-ISO-01 AUTO-FIX — stacking context isolation */
+        }
+
+        /* ═══ DESKTOP BG FADEOUT >600px ═══
+           Miękkie przejście na dole viewportu — zakrywa ostre odcięcie gradientu
+           przy scrollowaniu. Czysto CSS, bez JS. */
+        @media (min-width: 601px) {
+            #hero-section::after {
+                content: '';
+                position: absolute;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                height: 25vh;
+                background: linear-gradient(
+                    to bottom,
+                    transparent 0%,
+                    #f7f6f4 100%
+                );
+                z-index: 1;
+                pointer-events: none;
+            }
+        }
+        
+        /* ═══ MOBILE BG FADEOUT ≤600px ═══
+           Warstwa zakrywająca tło poniżej hero-content.
+           --bg-cutoff ustawiany przez JS = bottom edge hero-content.
+           z-index: 1 = ponad tłem (0) ale pod contentem (10). */
+        @media (max-width: 600px) {
+            /* 1. Ograniczenie tła do wysokości hero-content */
+            #hero-section .gradient-perf-wrapper {
+                bottom: auto !important;
+                height: var(--bg-cutoff, 60%) !important;
+            }
+            
+            #hero-section .burst-container {
+                /* Proporcjonalnie przeskalowany do mniejszego kontenera */
+                top: calc(var(--bg-cutoff, 60%) * 0.35);
+            }
+            
+            /* 2. Miękkie przejście: gradient maskujący ostre odcięcie
+                  Góra: transparent (gładko wtapia się w startup-gradient)
+                  Dół: #f7f6f4 (zakrywa ostrą krawędź odcięcia) */
+            #hero-section::after {
+                content: '';
+                position: absolute;
+                top: calc(var(--bg-cutoff, 60%) - 15vh);
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: linear-gradient(
+                    to bottom,
+                    transparent 0%,
+                    #f7f6f4 15vh
+                );
+                z-index: 1;
+                pointer-events: none;
+            }
+        }
+
+        /* ==========================================================================
+           ANIMACJA STARTOWA - GRADIENT
+           Hierarchia: 
+           1. Domyślnie: display: none (bardzo stare przeglądarki)
+           2. @supports color-mix: DOWNFALL (burst-ripple)
+           3. @supports oklch: Premium (OKLCH + Conic)
+           ========================================================================== */
+        
+        /* WARSTWA 0: HARD OFF (default - bardzo stare przeglądarki) */
+        /* GPU Paint Optimization: wrapper clips, gradient renders at 50% and scales up
+           ═══════════════════════════════════════════════════════════════════════
+           ARCHITEKTURA: gradient maluje się w POŁOWIE rozdzielczości (width/height: 50%)
+           i jest rozciągany przez compositor (transform: scale(2)) — darmowa operacja GPU.
+           
+           Zysk: 4× mniej pikseli do paint per frame (8.3M → 2.1M na DPR 2.0).
+           oklch + conic-gradient + radial-mask = wyłącznie miękkie przejścia,
+           oko nie rozróżnia gradientu w 3840×2160 od 1920×1080.
+           
+           ⚠️  KRYTYCZNE: element .startup-gradient NIE MOŻE mieć will-change!
+           will-change sugeruje przeglądarce rasteryzację z wyprzedzeniem.
+           Chrome rasteryzuje warstwę w DOCELOWYM rozmiarze (po scale),
+           co niweluje cały trik — zamiast 50% pikseli maluje 100%.
+           Dlatego will-change jest na WRAPPERZE (contain: strict), nie na GRADIENCIE.
+           ═══════════════════════════════════════════════════════════════════════ */
+        #hero-section .gradient-perf-wrapper {
+            position: absolute;
+            top: 0; right: 0; bottom: 0; left: 0;
+            inset: 0;
+            overflow: hidden;
+            contain: strict;
+            z-index: 0;
+            pointer-events: none;
+        }
+        
+        #hero-section .startup-gradient {
+            display: none;
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 50%;
+            height: 50%;
+            transform: scale(2);
+            transform-origin: top left;
+        }
+        
+        /* Noise dither — rozbija gradient banding */
+        /* noise overlay removed — no visible difference at 0.08 opacity */
+        
+        /* DOWNFALL: Burst Ripple Container */
+        #hero-section .burst-container {
+            display: none;
+            position: absolute;
+            top: 35%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100vmin;
+            height: 100vmin;
+            pointer-events: none;
+            z-index: 0;
+        }
+        
+        #hero-section .burst-ripple {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            border-radius: 50%;
+            pointer-events: none;
+        }
+        
+        /* WARSTWA 1: DOWNFALL (color-mix support) */
+        @supports (color: color-mix(in oklab, red 50%, blue)) {
+            #hero-section {
+                --accent: rgb(244, 222, 173);
+                --accent-light: rgb(237, 221, 238);
+                --accent-warm: rgb(249, 218, 196);
+                --frm-trans-timing: cubic-bezier(0.16, 1, 0.3, 1);
+            }
+            
+            #hero-section .startup-gradient {
+                display: none !important;
+            }
+            
+            #hero-section .burst-container {
+                display: block;
+            }
+            
+            #hero-section .burst-ripple--1 {
+                background: radial-gradient(ellipse 60% 60% at center center,
+                    transparent 0%,
+                    color-mix(in oklab, var(--accent) 35%, transparent) 45%,
+                    color-mix(in oklab, var(--accent) 18%, transparent) 55%,
+                    transparent 65%);
+            }
+            
+            #hero-section .burst-ripple--2 {
+                background: radial-gradient(ellipse 60% 60% at center center,
+                    transparent 0%,
+                    color-mix(in oklab, var(--accent-warm) 28%, transparent) 45%,
+                    color-mix(in oklab, var(--accent-warm) 14%, transparent) 55%,
+                    transparent 65%);
+            }
+            
+            #hero-section .burst-ripple--3 {
+                background: radial-gradient(ellipse 60% 60% at center center,
+                    transparent 0%,
+                    color-mix(in oklab, var(--accent-light) 22%, transparent) 45%,
+                    color-mix(in oklab, var(--accent-light) 10%, transparent) 55%,
+                    transparent 65%);
+            }
+            
+            #hero-section .burst-ripple--4 {
+                background: radial-gradient(ellipse 60% 60% at center center,
+                    transparent 0%,
+                    color-mix(in oklab, var(--accent-light) 15%, transparent) 45%,
+                    color-mix(in oklab, var(--accent-light) 6%, transparent) 55%,
+                    transparent 65%);
+            }
+            
+            #hero-section .burst-container.animate .burst-ripple--1 {
+                animation: hero-frm-ripple 5s var(--frm-trans-timing) 0s forwards;
+            }
+            #hero-section .burst-container.animate .burst-ripple--2 {
+                animation: hero-frm-ripple 5.6s var(--frm-trans-timing) 0.6s forwards;
+            }
+            #hero-section .burst-container.animate .burst-ripple--3 {
+                animation: hero-frm-ripple 6.2s var(--frm-trans-timing) 1.2s forwards;
+            }
+            #hero-section .burst-container.animate .burst-ripple--4 {
+                animation: hero-frm-ripple 6.8s var(--frm-trans-timing) 1.8s forwards;
+            }
+            
+            @keyframes hero-frm-ripple {
+                0% {
+                    opacity: 0;
+                    transform: translate(-50%, -50%) scale(0.5);
+                }
+                15% {
+                    opacity: 1;
+                }
+                100% {
+                    opacity: 0;
+                    transform: translate(-50%, -50%) scale(4);
+                }
+            }
+        }
+        
+        /* WARSTWA 2: PREMIUM (oklch support - nadpisuje DOWNFALL) */
+        @supports (color: oklch(0 0 0)) {
+            #hero-section.fx-premium-active .burst-container {
+                display: none !important;
+            }
+            
+            #hero-section.fx-premium-active .startup-gradient {
+                display: block !important;
+                --hero-hue1: 47;
+                --hero-hue2: 260;
+                /* Wartości startowe dla Wariantu 102 */
+                --hero-L1: 0.75; --hero-C1: 0.35;
+                --hero-L2: 0.60; --hero-C2: 0.30;
+                --hero-opc: 100%;
+                --hero-gradient-h: 150%;
+                --hero-gradient-w: 100%;
+                --hero-gradient-inner-opacity: 0%;
+                --hero-gradient-middle-opacity: 100%;
+                --hero-gradient-outer-opacity: 100%;
+                --hero-radial-center: 35%;
+                
+                background-blend-mode: soft-light;
+                
+                background-image:
+                    radial-gradient(
+                        circle at 50% var(--hero-radial-center),
+                        /* ZMIANA: Użycie zmiennych L2/C2 zamiast stałych 0.60/0.30 */
+                        oklch(var(--hero-L2) var(--hero-C2) var(--hero-hue2) / var(--hero-opc)) 10%,
+                        oklch(0.75 0.35 var(--hero-hue1) / 0%) 66%
+                    ),
+                    conic-gradient(
+                        from var(--hero-conic-rotate) at 50% var(--hero-radial-center),
+                        /* ZMIANA: Użycie zmiennych L1/C1 zamiast stałych 0.75/0.35 */
+                        oklch(var(--hero-L1) var(--hero-C1) var(--hero-hue1) / var(--hero-opc)) 15%,
+                        /* ZMIANA: Użycie zmiennych L2/C2 zamiast stałych 0.60/0.30 */
+                        oklch(var(--hero-L2) var(--hero-C2) var(--hero-hue2) / var(--hero-opc)) 57%,
+                        /* ZMIANA: Użycie zmiennych L1/C1 zamiast stałych 0.75/0.35 */
+                        oklch(var(--hero-L1) var(--hero-C1) var(--hero-hue1) / var(--hero-opc)) 100%
+                    );
+                
+                mask-image: radial-gradient(
+                    var(--hero-gradient-w) var(--hero-gradient-h) at 50% var(--hero-radial-center),
+                    rgb(0 0 0 / var(--hero-gradient-inner-opacity)) 20%,
+                    rgb(0 0 0 / var(--hero-gradient-middle-opacity)) 40%,
+                    rgb(0 0 0 / var(--hero-gradient-middle-opacity)) 50%,
+                    rgb(0 0 0 / var(--hero-gradient-outer-opacity)) 75%
+                );
+                -webkit-mask-image: radial-gradient(
+                    var(--hero-gradient-w) var(--hero-gradient-h) at 50% var(--hero-radial-center),
+                    rgb(0 0 0 / var(--hero-gradient-inner-opacity)) 20%,
+                    rgb(0 0 0 / var(--hero-gradient-middle-opacity)) 40%,
+                    rgb(0 0 0 / var(--hero-gradient-middle-opacity)) 50%,
+                    rgb(0 0 0 / var(--hero-gradient-outer-opacity)) 75%
+                );
+                
+                mask-size: cover;
+                -webkit-mask-size: cover;
+                mask-position: center;
+                -webkit-mask-position: center;
+                mask-repeat: no-repeat;
+                
+                transition: opacity 0.15s ease-in;
+            }
+            
+            #hero-section.fx-premium-active .startup-gradient.animate {
+                opacity: 1;
+                visibility: visible;
+                /* ⚠️ will-change CELOWO USUNIĘTY — patrz komentarz przy .gradient-perf-wrapper.
+                   Dodanie will-change tutaj spowoduje że Chrome rasteryzuje warstwę
+                   w rozmiarze po scale(2) = pełna rozdzielczość = utrata 4× zysku paint. */
+                
+                animation: 
+                    hero-gradient-expand var(--anim-duration) cubic-bezier(0.278, 0.001, 0.393, 1) both,
+                    hero-zen-flow-dynamic var(--anim-duration) linear both;
+            }
+        }
+        
+        /* Keyframes dla Premium */
+        @keyframes hero-gradient-expand {
+            0% { 
+                --hero-radial-center: 30%; 
+                --hero-conic-rotate: -100deg; 
+                --hero-opc: 30%; 
+                --hero-gradient-h: 0%; 
+                --hero-gradient-w: 0%; 
+                --hero-gradient-inner-opacity: 0%; 
+                --hero-gradient-middle-opacity: 0%; 
+                --hero-gradient-outer-opacity: 0%; 
+            }
+            5% {
+                --hero-opc: 60%;
+            }
+            75% { 
+                --hero-radial-center: 35%; 
+                --hero-gradient-outer-opacity: 0%; 
+            }
+            100% { 
+                --hero-opc: 95%; 
+                --hero-radial-center: 35%; 
+                --hero-conic-rotate: 50deg; 
+                --hero-gradient-h: 220%; 
+                --hero-gradient-w: 220%; 
+                --hero-gradient-inner-opacity: 0%; 
+                --hero-gradient-middle-opacity: 55%; 
+                --hero-gradient-outer-opacity: 55%; 
+            }
+        }
+        
+        @keyframes hero-zen-flow-dynamic {
+            /* 0% - 25%: Idealna kopia oryginału (zachowujemy start) */
+            0% { 
+                --hero-hue1: 47; 
+                --hero-hue2: 260; 
+                /* Reset do wartości bazowych */
+                --hero-L1: 0.75; --hero-C1: 0.35; 
+                --hero-L2: 0.60; --hero-C2: 0.30; 
+            }
+            25% { 
+                --hero-hue1: 50; 
+                --hero-hue2: 275; 
+            }
+
+            /* 50%: Punkt zwrotny "Lemon" (Hue 55/270) */
+            50% { 
+                --hero-hue1: 55; 
+                --hero-hue2: 270; 
+                /* Jasność nadal bez zmian */
+                --hero-L1: 0.75; --hero-C1: 0.35; 
+            }
+
+            /* 75%: Przygotowanie do lądowania (Hue 75/100) */
+            75% { 
+                --hero-hue1: 75; 
+                --hero-hue2: 100; 
+                /* Jasność nadal trzyma kontrast */
+                --hero-L1: 0.75; --hero-C1: 0.35; 
+                --hero-L2: 0.60; --hero-C2: 0.30; 
+            }
+
+            /* 100%: FINALE 102 (Golden) */
+            100% { 
+                /* Barwa: Zbiegamy się w jednolitym złocie (85) */
+                --hero-hue1: 85; 
+                --hero-hue2: 85; 
+                
+                /* ZMIANA KLUCZOWA: Rozjaśnienie i Złagodzenie */
+                /* Zwiększamy jasność (L) z 0.75 na 0.85 */
+                --hero-L1: 0.85; 
+                /* Zmniejszamy nasycenie (C) z 0.35 na 0.18 (bardziej pastelowo/szlachetnie) */
+                --hero-C1: 0.18; 
+                
+                /* Środek gradientu podąża za zmianą */
+                --hero-L2: 0.80; /* Troszkę ciemniejszy niż zewnątrz dla głębi */
+                --hero-C2: 0.18; 
+            }
+        }
+
+        /* ==========================================================================
+           BLOBY - SEKWENCJA WEJŚCIA
+           Biały blob (blob-mask): wchodzi po 3s
+           Kolorowe bloby: USUNIĘTE (martwy kod — elementy .blob nigdy nie istniały w DOM)
+           ========================================================================== */
+        
+        /* BLOB MASK (under text) - statyczny, tylko opacity fade */
+        /* blob-mask: radial-gradient replaces filter: blur(30px) on static ellipse
+           Stops computed from Gaussian erf: α(d) = 0.5·erfc((d-R)/(σ√2)), σ=30px
+           Method 1 (analytical): erf at 1440/1600/1920px → f_edge ≈ 0.915-0.935
+           Method 2 (averaged): stops below = mean α across 3 viewports
+           Method 3 (smooth-step): transition 79-104% (confirms range)
+           Element enlarged by 120px (2σ/side) to contain full fade extent */
+        #hero-section .blob-mask {
+            position: absolute;
+            top: 46%;
+            left: 50%;
+            transform: translate3d(-50%, -50%, 0);
+            width: calc(90% + 120px);
+            height: calc(78.2% + 120px);
+            background: radial-gradient(ellipse closest-side at 50% 50%,
+                #fdfcfb 85%,
+                rgba(253,252,251,0.874) 88%,
+                rgba(253,252,251,0.742) 90%,
+                rgba(253,252,251,0.555) 92%,
+                rgba(253,252,251,0.350) 94%,
+                rgba(253,252,251,0.178) 96%,
+                rgba(253,252,251,0.072) 98%,
+                rgba(253,252,251,0) 100%
+            );
+            z-index: 3;
+            pointer-events: none;
+            animation: hero-blobMaskGrow 3s cubic-bezier(0.45, 0, 0.55, 1) forwards;
+        }
+        @keyframes hero-blobMaskGrow {
+            from { transform: translate3d(-50%, -50%, 0) scale(0.3); opacity: 0; }
+            to   { transform: translate3d(-50%, -50%, 0) scale(1); opacity: 0.85; }
+        }
+        @keyframes hero-blobMaskPulse {
+            0%      { transform: translate3d(-50%, -50%, 0) scale(1);   opacity: 0.85; }
+            14.3%   { transform: translate3d(-50%, -50%, 0) scale(0.3); opacity: 0; }
+            100%    { transform: translate3d(-50%, -50%, 0) scale(1);   opacity: 0.85; }
+        }
+        
+        /* Tablet 600-1200px — blob-mask 20% węższy, 30% niższy niż desktop (od środka) */
+        @media (max-width: 1200px) {
+            #hero-section .blob-mask {
+                top: 48%;
+                width: calc(50.4% + 120px);
+                height: calc(54.74% + 120px);
+            }
+        }
+        
+        /* Mobile ≤600px — dodatkowe: -15% width, -25% height, top +10% w dół */
+        @media (max-width: 600px) {
+            #hero-section .blob-mask {
+                top: 14.55%;
+                width: calc(31.21% + 120px);
+                height: calc(20.98% + 120px);
+            }
+        }
+
+        /* WHITE BANNER (visual card at bottom) */
+        /* white-banner USUNIĘTY — sekcja fullscreen, biały kontener przeniesiony do osobnej sekcji */
+
+        /* CONTENT LAYER */
+        #hero-section .content-layer {
+            position: relative;
+            /* z-index: removed — no stacking context, allows z-index layering between trail/laury/text */
+            width: 100%;
+            min-height: 100vh;
+            min-height: 100svh;
+            padding: var(--content-padding-top) 1rem 2rem 1rem;
+            box-sizing: border-box;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        #hero-section .center-wrapper {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-start;
+            padding-top: calc(var(--center-padding-top) + var(--logo-height) + var(--logo-margin-bottom) - var(--content-lift));
+            align-items: center;
+            width: 100%;
+            position: relative;
+        }
+
+        #hero-section .logo-area {
+            position: absolute;
+            top: calc(var(--center-padding-top) - var(--content-lift));
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 1; /* below trail (z:2) — images appear over logo */
+        }
+        /*
+         * LOGO LOTTIE — zastąpił inline SVG .main-logo
+         * Kontener div działa identycznie jak SVG: height=var(--logo-height),
+         * width auto przez aspect-ratio (504:196 = oryginalne viewBox SVG).
+         * Lottie SVG renderer renderuje wewnątrz → wypełnia kontener przez
+         * preserveAspectRatio="xMidYMid meet" ustawione w rendererSettings.
+         * UWAGA FORMAT: lottie-web@5.12.2 obsługuje tylko JSON.
+         * LOGO_OWOCNI.lottie (DotLottie/ZIP) wymaga albo:
+         *   a) Konwersji → LOGO_OWOCNI.json (narzędzie: lottiefiles.com/tools)
+         *   b) Lub podmiany CDN na @lottiefiles/dotlottie-web
+         * W reference.html używamy path: '/animations/LOGO_OWOCNI.json'
+         */
+        #hero-section .logo-lottie {
+            /* ═══ LOGO LOTTIE: Identyczny kontrakt wymiarów co .main-logo ═══
+               Size: 2 segmenty (mobile ≤600 / desktop >600)
+               Y: jeden clamp z plateau 35px na małych, spadek do -48px na dużych
+
+               Referencje (identyczne z usuniętym .main-logo SVG):
+               311px → 3.4rem, y:35  | 403px → 3.5rem, y:35
+               596px → 4.0rem, y:27  | 695px → 4.0rem, y:20
+               1014px → 5.2rem, y:2  | 1261px → 6.3rem, y:-18
+               1915px → 7.5rem, y:-48
+
+               width: calc zamiast aspect-ratio — jawna math, działa na Safari <16.4
+               Po konwersji .lottie→.json: jeśli kompozycja ma inne w/h niż 504/196
+               → zaktualizuj oba liczniki (sprawdź "w":X,"h":Y na początku JSON).
+            */
+            height: var(--logo-height);
+            width: calc(var(--logo-height) * 504 / 196);
+            display: block;
+            transform: translateY(clamp(-48px, 67.33px - 6.767vw, 20px));
+            cursor: default;
+        }
+        /* viewBoxOnly:true w rendererSettings sprawia że Lottie NIE wstrzykuje
+           atrybutów width/height na <svg> — CSS rządzi rozmiarem bez !important */
+        #hero-section .logo-lottie svg {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        /* 601-1200px: łagodna podróż Y zamiast stromego spadku
+           -2px na 601px → -14px na 1200px (tylko 12px różnicy) */
+        @media (min-width: 601px) and (max-width: 1200px) {
+            #hero-section .logo-lottie {
+                transform: translateY(clamp(-14px, 10.04px - 2.003vw, -2px));
+            }
+        }
+
+        @media (min-width: 1201px) {
+            #hero-section .logo-lottie {
+                /* Y: logo nie jedzie wyżej niż pozycja na ~1300px */
+                transform: translateY(clamp(-2px, 52.35px - 4.196vw, 2px));
+            }
+        }
+        /* USUNIĘTO: .main-logo path { fill: #ded6cb } — kolory kontroluje Lottie animationData */
+
+        /* HERO CONTENT */
+        /* 
+         * SZTYWNE KONTENERY (CLS Prevention)
+         * min-height w em gwarantuje stały wymiar niezależnie od font swap.
+         * Font swap zmienia glify, nie font-size — więc em pozostaje stałe.
+         * Eliminuje to drgania przy ładowaniu fontów (CLS = 0.00).
+         *
+         * PUNKT ODNIESIENIA DLA BLOB-MASK
+         * blob-mask jest wewnątrz hero-content (ruchome bloby usunięte).
+         * Dzięki temu jej pozycja (top %) odnosi się do tekstu, nie ekranu.
+         * Przy zmianie rozdzielczości blob-mask "podąża" za tekstem automatycznie.
+         */
+        #hero-section .hero-content {
+            position: relative;
+            text-align: center;
+            width: 100%;
+            max-width: var(--hero-text-width);
+            margin: 0 auto;
+            overflow: visible;
+            margin-top: -2rem; /* was: transform: translateY(-2rem) — changed to avoid stacking context */
+        }
+
+        #hero-section .hero-title {
+            position: relative;
+            z-index: 6; /* above trail (z:2) */
+            font-size: var(--h1-size);
+            font-weight: 400;
+            line-height: 1.15;
+            min-height: 2.3em;
+            margin: var(--h1-margin-top) 0 calc(var(--h1-lead-gap) - 1.2rem) 0;
+            letter-spacing: -0.03em;
+            color: #252030; /* fallback */
+            background-image: linear-gradient(
+                135deg,
+                #252030 2%,
+                #2a2130 44%,
+                #382630 56.7%,
+                #512b2b 67.5%,
+                #7d3527 80.2%,
+                #7d3527 100%
+            );
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-wrap: balance;
+        }
+
+        #hero-section .hero-title strong { font-weight: 800; }
+
+        #hero-section .hero-description {
+            position: relative;
+            z-index: 6; /* above trail */
+            font-size: var(--lead-size);
+            line-height: 1.6;
+            min-height: 4.8em;
+            margin: 0 auto;
+            color: var(--text-secondary);
+            font-weight: 300;
+            text-wrap: balance;
+        }
+        
+        /* Marquee logotypów pod hero-description (>600px) */
+        #hero-section .hero-brands-marquee {
+            position: relative;
+            z-index: 6; /* above trail */
+            width: 100%;
+            margin-top: var(--h1-lead-gap);
+        }
+        
+        @media (min-width: 1201px) {
+            #hero-section .hero-brands-marquee {
+                margin-top: calc(var(--h1-lead-gap) - 1rem);
+            }
+        }
+        
+        #hero-section .hero-brands-text {
+            font-size: 0.8rem;
+            line-height: 1.4;
+            color: #dcd3c7;
+            font-weight: 300;
+            margin: 0 0 0.2rem 0;
+        }
+        #hero-section .hero-brands-text strong {
+            font-weight: 400;
+        }
+        #hero-section .hero-brands-text--mobile { display: none; }
+        
+        @media (max-width: 600px) {
+            #hero-section .hero-brands-text--desktop { display: none; }
+            #hero-section .hero-brands-text--mobile { display: block; }
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════════════════
+           HAAT: CSS TIER SYSTEM
+           Selektory reagują na atrybuty ustawione na <html> przez script w <head>
+           ═══════════════════════════════════════════════════════════════════════════ */
+        
+        /* --- H1 TIERS (Desktop: max 2 linie) --- */
+        #hero-section[data-h1-tier="L"] .hero-title { --h1-size: clamp(2.8rem, 4.1vw, 5.1rem); }
+        #hero-section[data-h1-tier="M"] .hero-title { --h1-size: clamp(2.5rem, 3.7vw, 4.6rem); }
+        #hero-section[data-h1-tier="S"] .hero-title { --h1-size: clamp(2.2rem, 3.2vw, 4.0rem); }
+        
+        /* --- DESCRIPTION TIERS (Desktop: max 3 linie) --- */
+        #hero-section[data-desc-tier="L"] .hero-description { --lead-size: clamp(1.32rem, 1.67vw, 2.06rem); }
+        #hero-section[data-desc-tier="M"] .hero-description { --lead-size: clamp(1.22rem, 1.55vw, 1.9rem); }
+        #hero-section[data-desc-tier="S"] .hero-description { --lead-size: clamp(1.15rem, 1.45vw, 1.79rem); }
+        
+        /* --- FALLBACK: jeśli tier nie ustawiony --- */
+        #hero-section:not([data-h1-tier]) .hero-title { --h1-size: clamp(2.5rem, 3.7vw, 4.6rem); }
+        #hero-section:not([data-desc-tier]) .hero-description { --lead-size: clamp(1.15rem, 1.45vw, 1.79rem); }
+        
+        /* ═══════════════════════════════════════════════════════════════════════════
+           HAAT: MOBILE OVERRIDES
+           Na mobile: brak limitu linii, tylko limit wysokości pudełka
+           Font może być większy bo pudełko jest wyższe (więcej linii OK)
+           ═══════════════════════════════════════════════════════════════════════════ */
+        @media (max-width: 1200px) {
+            /* Mobile: fluid fonts z niższym minimum */
+            #hero-section[data-h1-tier="L"] .hero-title,
+            #hero-section[data-h1-tier="M"] .hero-title,
+            #hero-section[data-h1-tier="S"] .hero-title {
+                --h1-size: clamp(1.4rem, 4.5vw, 2.8rem);
+            }
+            
+            #hero-section[data-desc-tier="L"] .hero-description,
+            #hero-section[data-desc-tier="M"] .hero-description,
+            #hero-section[data-desc-tier="S"] .hero-description {
+                --lead-size: clamp(0.75rem, 3.5vw, 1.25rem);
+            }
+            
+            /* Tekst widoczny w całości - brak obcinania */
+            #hero-section .hero-title {
+                min-height: auto;
+                max-height: none;
+                overflow: visible;
+                padding: 0 5vw;
+            }
+            
+            #hero-section .hero-description {
+                min-height: auto;
+                max-height: none;
+                overflow: visible;
+            }
+        }
+        
+        /* Mobile ≤600px: naturalny rozmiar kontenera h1 */
+        @media (max-width: 600px) {
+            #hero-section .hero-title {
+                margin-top: 0;
+                padding: 0 5vw 0 5vw;
+            }
+        }
+
+        /* ACTION AREA (szerokość jak biały banner) */
+        #hero-section .action-area {
+            display: flex;
+            flex-direction: var(--action-direction);
+            align-items: var(--action-align);
+            justify-content: var(--action-justify);
+            gap: var(--action-gap);
+            width: 100%;
+            max-width: var(--banner-width);
+            margin-top: 2rem;
+            flex-wrap: wrap;
+        }
+        
+        @media (max-width: 1200px) {
+            #hero-section .action-area {
+                margin-top: 2.7rem;  /* 4.2rem - 1.5rem = podniesione w górę */
+            }
+        }
+        
+        /* TABLET: 601-1199px — action-area przyklejone, zmniejszone gapy */
+        @media (min-width: 601px) and (max-width: 1199px) {
+            #hero-section .hero-content {
+                /* margin-bottom compensation removed — margin-top:-2rem affects flow directly */
+            }
+            
+            #hero-section .hero-brands-marquee {
+                margin-top: calc(var(--h1-lead-gap) * 0.5);
+                text-align: center;
+            }
+            
+            #hero-section .hero-brands-text {
+                text-align: center;
+            }
+            
+            #hero-section .action-area {
+                margin-top: 1rem;
+                gap: calc(var(--action-gap) * 0.67);
+            }
+        }
+        
+        /* MOBILE SCALING: proporcjonalne zmniejszanie od 600px w dół */
+        @media (max-width: 600px) {
+            /* ═══════════════════════════════════════════════════════════════
+               MOBILE LAYOUT ≤600px
+               
+               Kolejność wizualna:
+               1. logo
+               2. badge-google (position absolute, pod logo)
+               3. H1 (+ laury w overflow)
+               4. brands-marquee ("4500+" + logotypy) — wyrównane z laurami
+               5. opis
+               6. CTA
+               7. badge-satysfakcji
+               ═══════════════════════════════════════════════════════════════ */
+            
+            /* Punkt odniesienia dla position absolute */
+            #hero-section .center-wrapper {
+                position: relative;
+            }
+            
+            /* Hero-content: zeruj transform, miejsce na badge-google */
+            #hero-section .hero-content {
+                margin-top: 0; /* cancel desktop -2rem offset */
+                padding-top: 10px;
+                display: flex;
+                flex-direction: column;
+            }
+            
+            /* Brands marquee: POD hero-title, wyrównane z laurami */
+            #hero-section .hero-brands-marquee {
+                order: 2;
+                margin-top: -14px;
+                margin-bottom: 9px; /* kompensacja: subnagłówek zostaje na miejscu */
+                text-align: center;
+                position: relative;
+                z-index: 6;
+            }
+            #hero-section .hero-brands-text {
+                text-align: center;
+                margin-bottom: -2px;
+            }
+            #hero-section .blob-mask { order: 0; }
+            #hero-section .hero-title-wrapper { order: 1; margin-top: clamp(0.8rem, 3vw, 1.5rem); }
+            #hero-section .hero-description { order: 3; margin-top: 0.5rem; }
+            
+            /* Badge Google: góra badge = góra hero-content
+               Od góry center-wrapper: padding-top + logo + logo-margin-bottom
+               Używamy zmiennych CSS dla stabilności
+               
+               zoom zmienia fizyczny rozmiar elementu, co przesuwa go w dół
+               (bo top jest stałe, ale element jest mniejszy).
+               Kompensujemy to przeliczając top: top_base / zoom */
+            #hero-section .badge-google-wrapper,
+            #hero-section .badge-google-wrapper.active,
+            #hero-section .badge-google-wrapper.anim-finished {
+                --badge-zoom: 0.65;
+                position: absolute;
+                top: calc((var(--center-padding-top) + var(--logo-height) + var(--logo-margin-bottom) - 8px - 0.4rem - var(--content-lift) - 4px) / var(--badge-zoom));
+                left: 0;
+                right: 0;
+                margin: 0 auto;
+                margin-left: auto; /* override desktop margin-left: -10px */
+                width: fit-content;
+                z-index: 10;
+                zoom: var(--badge-zoom);
+            }
+            
+            #hero-section .badge-google-wrapper .badge-caption {
+                display: none;
+            }
+            
+            /* Action-area: pionowy układ, 15px pod hero-description */
+            #hero-section .action-area {
+                flex-direction: column;
+                align-items: center;
+                margin-top: 15px;
+                gap: 0.8rem;
+            }
+            
+            /* Badge Satysfakcji: nad CTA, góra badge = góra action-area */
+            #hero-section .badge-wrapper {
+                order: -1;
+                margin-top: 0.25rem;
+                margin-bottom: calc(-1rem + 2px);
+                display: flex;
+                flex-direction: column;
+                position: relative;
+                z-index: 6; /* above ::after z:1 */
+            }
+            
+            /* CTA above ::after on mobile */
+            #hero-section .cta-group {
+                order: 0;
+                margin-left: auto;
+                margin-right: auto;
+                position: relative;
+                z-index: 6; /* above ::after z:1 */
+            }
+            
+            /* Trust-column rozpłaszcza dzieci */
+            #hero-section .trust-column {
+                display: contents;
+            }
+            
+            #hero-section .badge-wrapper .badge {
+                order: 2;
+            }
+            
+            #hero-section .badge-wrapper .badge-caption {
+                order: 1;
+                color: #baad9c;
+                margin-bottom: 12px;
+            }
+            #hero-section .badge-wrapper .badge-caption strong {
+                color: #baad9c;
+            }
+            
+            /* Badge 20lat ukryty */
+            #hero-section .badge-20lat-wrapper {
+                display: none;
+            }
+        }
+        
+        @media (max-width: 300px) {
+            #hero-section .action-area {
+                gap: 1rem;
+            }
+        }
+        
+        /* ═══ ACTION AREA DORMANT STATE (off-screen kill/revive) ═══
+           When [data-dormant] is set, ALL animations/transitions are killed.
+           Removing it restarts entrance choreography from scratch. */
+        #hero-section .action-area[data-dormant] {
+            visibility: hidden !important;
+            pointer-events: none !important;
+        }
+        #hero-section .action-area[data-dormant] *,
+        #hero-section .action-area[data-dormant] *::before,
+        #hero-section .action-area[data-dormant] *::after {
+            animation: none !important;
+            transition: none !important;
+        }
+        
+        /* CTA skalowanie na małych ekranach - płynne skoki co ~30px */
+        @media (max-width: 450px) {
+            #hero-section .cta-group { zoom: 0.85; }
+        }
+        
+        @media (max-width: 420px) {
+            #hero-section .cta-group { zoom: 0.80; }
+        }
+        
+        @media (max-width: 390px) {
+            #hero-section .cta-group { zoom: 0.75; }
+        }
+        
+        @media (max-width: 360px) {
+            #hero-section .cta-group { zoom: 0.70; }
+        }
+        
+        @media (max-width: 330px) {
+            #hero-section .cta-group { zoom: 0.65; }
+        }
+        
+        @media (max-width: 300px) {
+            #hero-section .cta-group { zoom: 0.60; }
+        }
+        
+        @media (max-width: 270px) {
+            #hero-section .cta-group { zoom: 0.50; }
+        }
+
+        /* Badge caption - wspólne style */
+        #hero-section .badge-caption {
+            font-size: 0.8rem; 
+            line-height: 1.3; 
+            color: var(--text-secondary); 
+            opacity: 0.7;
+            margin: 0; 
+            margin-top: 0.8rem;
+            font-weight: 300; 
+            text-transform: uppercase; 
+        }
+        #hero-section .badge-caption strong { color: var(--text-secondary); font-weight: 600; }
+        
+        /* Trust column z badge */
+        #hero-section .trust-column {
+            display: flex;
+            flex-direction: column;
+            gap: 0.8rem;
+        }
+        
+        #hero-section .trust-column:first-child {
+            margin-left: 1rem;
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           GOOGLE REVIEWS BADGE - ANIMATED ENTRY (FINAL VERSION)
+           ═══════════════════════════════════════════════════════════════ */
+
+        /* Wrapper dla animacji wejścia (skalowanie) - izolacja od hovera */
+        #hero-section .badge-google-wrapper {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin-left: -10px;
+            opacity: 0;
+            transform: scale(0.6);
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+
+        #hero-section .badge-google-wrapper.active {
+            animation: hero-badgeGoogleAppearCircle 0.4s ease var(--badge-google-delay) forwards;
+            will-change: transform, opacity;
+        }
+
+        #hero-section .badge-google-wrapper.anim-finished {
+            animation: none;
+            opacity: 1;
+            transform: scale(1) translateZ(0);
+            will-change: auto;
+        }
+
+        @keyframes hero-badgeGoogleAppearCircle { 
+            0% { opacity: 0; transform: scale(0.6) translateZ(0); } 
+            100% { opacity: 1; transform: scale(1) translateZ(0); } 
+        }
+        
+        #hero-section .badge-google {
+            height: 48px;
+            width: 48px;
+            border-radius: 24px;
+            position: relative;
+            background: linear-gradient(180deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.1) 100%);
+            box-shadow: inset 0 1px 1px rgba(255,255,255,0.8), inset 0 -1px 1px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
+            display: flex;
+            align-items: center;
+            padding-left: 10.5px;
+            overflow: hidden;
+            cursor: pointer;
+            user-select: none;
+            backface-visibility: hidden;
+            -webkit-backface-visibility: hidden;
+        }
+        
+        #hero-section .badge-google::before {
+            content: '';
+            position: absolute;
+            top: 0; right: 0; bottom: 0; left: 0;
+            inset: 0;
+            border-radius: 24px;
+            padding: 1px;
+            background: linear-gradient(180deg, rgba(255,255,255,0.8) 0%, rgba(0,0,0,0.1) 100%);
+            -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+            -webkit-mask-composite: xor;
+            mask-composite: exclude;
+            pointer-events: none;
+        }
+
+        /* Animacja wejścia (rozszerzanie width) */
+        #hero-section .badge-google-wrapper.active .badge-google {
+            animation: hero-badgeGoogleAspectWarp 1.0s cubic-bezier(0.5, 0, 0.1, 1) calc(var(--badge-google-delay) + 0.5s) forwards;
+            will-change: width;
+        }
+
+        /* Stan 'zapieczętowany' po animacji wejścia */
+        #hero-section .badge-google.anim-finished {
+            animation: none;
+            width: 175px;
+            will-change: auto;
+        }
+
+        @keyframes hero-badgeGoogleAspectWarp { 
+            0% { width: 48px; } 
+            100% { width: 175px; } 
+        }
+
+        /* ════════════ SZARFA 'VERIFIED' (RIBBON-INVERTED) ════════════ */
+        #hero-section .badge-google::after {
+            content: 'VERIFIED';
+            position: absolute;
+            top: 13px;
+            right: -69px;
+            width: 180px;
+            height: 14px;
+            line-height: 14px;
+            /* Ribbon-inverted: jasne tło, niebieski tekst */
+            background: linear-gradient(307deg, rgba(249, 248, 246, 1) 0%, rgba(249, 248, 246, 1) 44%, rgba(255, 255, 255, 1) 65%);
+            color: #3367D6;
+            transform: rotate(45deg) translate(0, 0);
+            font-family: 'Lexend', sans-serif;
+            font-size: 8px;
+            font-weight: 600;
+            letter-spacing: 1px;
+            text-align: center;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            pointer-events: none;
+            white-space: nowrap;
+            z-index: 30;
+            padding-right: 5px;
+            opacity: 0;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            text-rendering: geometricPrecision;
+            backface-visibility: hidden;
+        }
+
+        @keyframes hero-badgeGoogleRibbonEnter {
+            0% { transform: rotate(45deg) translate(50px, -50px); opacity: 0; }
+            100% { transform: rotate(45deg) translate(0, 0); opacity: 1; }
+        }
+
+        #hero-section .badge-google-wrapper.active .badge-google::after {
+            animation: hero-badgeGoogleRibbonEnter 0.9s cubic-bezier(0.34, 1.56, 0.64, 1) calc(var(--badge-google-delay) + 0.45s) forwards;
+        }
+
+        #hero-section .badge-google.anim-finished::after {
+            opacity: 1;
+            transform: rotate(45deg) translateZ(0);
+            animation: none;
+        }
+
+        /* ════════════ LOGO GOOGLE ════════════ */
+        #hero-section .badge-google .google-icon {
+            width: 35px;
+            height: 35px;
+            flex-shrink: 0;
+            z-index: 10;
+            transform: translateX(-4px); /* Startuje wycentrowane w okręgu */
+        }
+        
+        /* Animacja przesunięcia logo podczas rozszerzania */
+        #hero-section .badge-google-wrapper.active .badge-google:not(.anim-finished) .google-icon {
+            animation: hero-badgeGoogleLogoSlide 1.0s cubic-bezier(0.5, 0, 0.1, 1) calc(var(--badge-google-delay) + 0.5s) forwards;
+        }
+        
+        #hero-section .badge-google.anim-finished .google-icon {
+            transform: translateX(0);
+            animation: none;
+        }
+        
+        @keyframes hero-badgeGoogleLogoSlide { 
+            0% { transform: translateX(-4px); } 
+            100% { transform: translateX(0); } 
+        }
+        
+        #hero-section .badge-google .google-icon path {
+            opacity: 0;
+            fill-opacity: 0;
+            stroke-width: 1.5;
+            stroke-dasharray: 80;
+            stroke-dashoffset: 80;
+            transform-origin: center;
+        }
+        
+        #hero-section .badge-google-wrapper.active .google-icon path {
+            animation: hero-badgeGoogleDrawFill 0.6s ease-out forwards, hero-badgeGoogleBloom 0.4s ease-out forwards;
+        }
+        #hero-section .badge-google-wrapper.active .google-icon path:nth-child(1) { animation-delay: calc(var(--badge-google-delay) + 0.1s); stroke: #4285F4; fill: #4285F4; }
+        #hero-section .badge-google-wrapper.active .google-icon path:nth-child(2) { animation-delay: calc(var(--badge-google-delay) + 0.2s); stroke: #34A853; fill: #34A853; }
+        #hero-section .badge-google-wrapper.active .google-icon path:nth-child(3) { animation-delay: calc(var(--badge-google-delay) + 0.3s); stroke: #FBBC05; fill: #FBBC05; }
+        #hero-section .badge-google-wrapper.active .google-icon path:nth-child(4) { animation-delay: calc(var(--badge-google-delay) + 0.4s); stroke: #EA4335; fill: #EA4335; }
+
+        #hero-section .badge-google-wrapper.anim-finished .google-icon path {
+            opacity: 1;
+            fill-opacity: 1;
+            stroke-dashoffset: 0;
+            stroke-width: 0;
+            animation: none;
+        }
+        #hero-section .badge-google-wrapper.anim-finished .google-icon path:nth-child(1) { fill: #4285F4; }
+        #hero-section .badge-google-wrapper.anim-finished .google-icon path:nth-child(2) { fill: #34A853; }
+        #hero-section .badge-google-wrapper.anim-finished .google-icon path:nth-child(3) { fill: #FBBC05; }
+        #hero-section .badge-google-wrapper.anim-finished .google-icon path:nth-child(4) { fill: #EA4335; }
+
+        @keyframes hero-badgeGoogleDrawFill { 
+            0% { stroke-dashoffset: 80; fill-opacity: 0; opacity: 0; } 
+            15% { opacity: 1; } 
+            70% { stroke-dashoffset: 0; fill-opacity: 0; } 
+            100% { stroke-dashoffset: 0; fill-opacity: 1; opacity: 1; stroke-width: 0; } 
+        }
+        @keyframes hero-badgeGoogleBloom { 
+            0% { transform: scale(0.6); } 
+            100% { transform: none; } 
+        }
+
+        /* ════════════ CONTENT COLUMN ════════════ */
+        #hero-section .badge-google .google-content {
+            display: flex; 
+            flex-direction: column; 
+            margin-left: 6px;
+            z-index: 20; 
+        }
+
+        /* ════════════ GWIAZDKI ════════════ */
+        #hero-section .badge-google .stars {
+            display: flex; 
+            margin-top: 0; 
+            perspective: 800px; 
+        }
+        
+        #hero-section .badge-google .star {
+            width: 18px; 
+            height: 18px; 
+            fill: #ffc602; 
+            opacity: 0; 
+            transform-origin: center;
+        }
+        
+        #hero-section .badge-google-wrapper.active .star {
+            opacity: 1;
+        }
+
+        /* Animacja wejścia gwiazdek */
+        #hero-section .badge-google-wrapper.active.entrance-playing .star {
+            animation: hero-badgeGoogleStarEntrance 0.48s cubic-bezier(0.175, 0.885, 0.32, 1.275) both; 
+            animation-delay: var(--ent-delay);
+        }
+        
+        /* Animacja hover gwiazdek */
+        #hero-section .badge-google.stars-running .star {
+            animation: hero-badgeGoogleStarFlip 1.2s cubic-bezier(0.4, 0, 0.2, 1) forwards !important;
+            opacity: 1;
+            animation-delay: var(--hov-delay) !important;
+        }
+        
+        #hero-section .badge-google.stars-finished .star {
+            opacity: 1; 
+            transform: rotateY(180deg) scale(1.1); 
+            fill: #ffc602; 
+        }
+        
+        #hero-section .badge-google-wrapper.anim-finished .star {
+            opacity: 1;
+            transform: none;
+            animation: none;
+        }
+
+        @keyframes hero-badgeGoogleStarEntrance {
+            0% { transform: scale(0); opacity: 0; } 
+            60% { transform: scale(1.4); opacity: 1; } 
+            100% { transform: none; opacity: 1; }
+        }
+        
+        @keyframes hero-badgeGoogleStarFlip {
+            0% { transform: rotateY(0deg); fill: #ffc602; }
+            20% { transform: rotateY(90deg); fill: #ffc602; } 
+            21% { fill: #bfbfbf; }
+            40% { transform: rotateY(180deg); fill: #bfbfbf; }
+            55% { transform: rotateY(180deg) scale(1); fill: #bfbfbf; }
+            70% { transform: rotateY(180deg) scale(1); fill: #fff; }
+            85% { transform: rotateY(180deg) scale(1.1); fill: #ffc602; }
+            100% { transform: rotateY(180deg) scale(1.1); fill: #ffc602; }
+        }
+
+        /* ════════════ TEKST OPINII ════════════ */
+        #hero-section .badge-google .google-text {
+            font-family: 'Lexend', sans-serif;
+            font-size: 14px;
+            color: #4b5563;
+            font-weight: 500;
+            margin-top: 1px;
+            margin-left: 1px;
+            text-transform: uppercase;
+            white-space: nowrap;
+            clip-path: inset(0 100% 0 0);
+            -webkit-clip-path: inset(0 100% 0 0);
+            text-shadow: 0 1px 0 rgba(255, 255, 255, 0.8);
+            backface-visibility: hidden;
+        }
+        
+        #hero-section .badge-google-wrapper.active .google-text {
+            animation: hero-badgeGoogleTextReveal 0.5s ease-out calc(var(--badge-google-delay) + 0.88s) forwards; 
+        }
+        
+        #hero-section .badge-google-wrapper.anim-finished .google-text {
+            clip-path: inset(0 0 0 0);
+            -webkit-clip-path: inset(0 0 0 0);
+            animation: none;
+        }
+        
+        @keyframes hero-badgeGoogleTextReveal { 
+            to { clip-path: inset(0 0 0 0); -webkit-clip-path: inset(0 0 0 0); } 
+        }
+        
+        /* Podpis - integralna część animacji Badge Google */
+        #hero-section .badge-google-wrapper .badge-caption {
+            animation: hero-badgeGoogleCaptionFadeIn 2.9s cubic-bezier(0.25, 0.1, 0.25, 1) calc(var(--badge-google-delay) + 1.35s) backwards;
+            /* GPU Hack - zapobiega "pyknięciu" po animacji */
+            transform: translateZ(0);
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+        }
+        
+        #hero-section .badge-google-wrapper.anim-finished .badge-caption {
+            animation: none;
+            opacity: 1;
+            transform: translateZ(0);
+        }
+        
+        @keyframes hero-badgeGoogleCaptionFadeIn {
+            0% { opacity: 0; transform: translateZ(0); }
+            100% { opacity: 1; transform: translateZ(0); }
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           BADGE COMBO-R
+           ═══════════════════════════════════════════════════════════════ */
+        
+        /* ═══════════════════════════════════════════════════════════════
+           BADGE 100% SATYSFAKCJI — CROSS-FADE FINAL
+           ═══════════════════════════════════════════════════════════════ */
+        
+        #hero-section .badge-wrapper {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            --bg-solid: #f0ede7;
+            --gold-g5: linear-gradient(90deg, #ae7f25 0%, #c9a855 25%, #e5d49e 50%, #c9a855 75%, #ae7f25 100%);
+            --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
+            --ease-back: cubic-bezier(0.34, 1.56, 0.64, 1);
+            --ease-out-expo: cubic-bezier(0.19, 1, 0.22, 1);
+            --ease-mirror: cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        
+        #hero-section .badge {
+            display: flex;
+            align-items: stretch;
+            cursor: pointer;
+            border-radius: 2px;
+            background: transparent;
+            border-top: 1px solid rgba(255,255,255,0.9);
+            border-left: 1px solid rgba(255,255,255,0.7);
+            border-right: 1px solid rgba(0,0,0,0.04);
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+            transition: border-color 0.5s var(--ease-expo);
+            width: fit-content;
+            position: relative;
+            z-index: 1;
+            transform-origin: center center;
+        }
+
+        @media (hover: hover) {
+        #hero-section .badge:hover {
+            /* transform usunięty - badge statyczny */
+            border-bottom-color: rgba(0,0,0,0.1);
+            border-right-color: rgba(0,0,0,0.05);
+        }
+        }
+
+        #hero-section .badge .gold {
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding: 7px 15px 7px 10px;
+            background: var(--bg-solid);
+            clip-path: polygon(0 0, 100% 0, 85% 100%, 0 100%);
+            position: relative;
+            transition: none;
+            overflow: hidden;
+        }
+        
+        @media (hover: hover) {
+        #hero-section .badge:hover .gold {
+            background: var(--bg-solid); 
+        }
+        }
+
+        #hero-section .badge .gold::before {
+            content: '';
+            position: absolute;
+            top: 0; right: 0; bottom: 0; left: 0;
+            inset: 0;
+            background: none;
+            clip-path: inherit;
+        }
+
+        #hero-section .badge .gold::after {
+            content: '';
+            position: absolute;
+            top: 2px;
+            left: 2px;
+            right: 6px;
+            bottom: 2px;
+            border-top: 1px solid rgba(255,255,255,0.8);
+            border-left: 1px solid rgba(255,255,255,0.6);
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+            border-right: 1px solid rgba(0,0,0,0.04);
+            clip-path: polygon(0 0, 100% 0, 92% 100%, 0 100%);
+        }
+        
+        #hero-section .badge .shine {
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 40%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.9), transparent);
+            opacity: 0;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* --- UKŁAD WARSTWOWY (CROSS-FADE) --- */
+        #hero-section .number-stack {
+            position: relative;
+            z-index: 1;
+            display: grid;
+            place-items: center;
+        }
+
+        #hero-section .layer-common {
+            font-family: 'Fraunces', serif;
+            font-size: 28px;
+            font-weight: 400;
+            font-style: italic;
+            line-height: 1;
+            letter-spacing: -0.5px;
+            white-space: nowrap;
+        }
+
+        /* WARSTWA 1: ZŁOTA (GŁĘBOKI BRĄZ) */
+        #hero-section .layer-gold {
+            grid-area: 1 / 1;
+            opacity: 0;
+            color: transparent;
+            background: linear-gradient(135deg, 
+                #5C4411 35%, 
+                #A68523 42%, 
+                #FFFBEA 49.5%, 
+                #FFFBEA 50.5%, 
+                #A68523 58%, 
+                #5C4411 65% 
+            );
+            -webkit-background-clip: text;
+            background-clip: text;
+            background-size: 200% 200%;
+            filter: drop-shadow(0px 1px 0px rgba(92, 68, 17, 0.2));
+        }
+
+        /* WARSTWA 2: CZARNA (SOLID) */
+        #hero-section .layer-black {
+            grid-area: 1 / 1;
+            z-index: 2;
+            color: #1a1406;
+            text-shadow: 0 1px 0 rgba(255,255,255,0.8);
+        }
+
+        #hero-section .layer-black .char {
+            display: inline-block;
+        }
+
+        /* --- TEKSTY OBOK --- */
+        #hero-section .badge .badge-text {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            padding: 5px 12px 5px 6px;
+            gap: 2px;
+            position: relative;
+        }
+
+        #hero-section .badge .main {
+            font-family: 'Lexend', sans-serif;
+            font-size: 13px;
+            font-weight: 600;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            color: #1a1406;
+            -webkit-background-clip: border-box;
+            background-clip: border-box;
+            -webkit-text-fill-color: #1a1406;
+            /* GPU Hack - zapobiega "pyknięciu" po animacji */
+            transform: translateZ(0);
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+        }
+
+        #hero-section .badge .sub {
+            font-family: 'Lexend', sans-serif;
+            font-size: 11px;
+            font-weight: 500;
+            color: #4b4b4b;
+            /* GPU Hack - zapobiega "pyknięciu" po animacji */
+            transform: translateZ(0);
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+        }
+
+        #hero-section .badge .badge-text::before {
+            content: '';
+            position: absolute;
+            top: 4px;
+            left: -10px;
+            right: 4px;
+            bottom: 4px;
+            border-right: 1px solid rgba(0,0,0,0.08);
+            background: 
+                linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.05) 100%) top / 100% 1px no-repeat,
+                linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.05) 100%) bottom / 100% 1px no-repeat;
+            border-radius: 0 1px 1px 0;
+            pointer-events: none;
+            transition: border-color 0.4s ease, background 0.4s ease;
+        }
+
+        @media (hover: hover) {
+        #hero-section .badge:hover .badge-text::before {
+            border-color: rgba(0,0,0,0.15);
+            background: 
+                linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.1) 100%) top / 100% 1px no-repeat,
+                linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.1) 100%) bottom / 100% 1px no-repeat;
+        }
+        }
+
+        /* --- ZŁOTA LINIA (PASEK) - FIX NA "PYKNIĘCIE" --- */
+        #hero-section .badge .badge-text::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 6px;
+            right: 14px;
+            height: 1px;
+            margin-top: 1px;
+            background: var(--gold-g5);
+            background-size: 200% 100%;
+            /* FIX: translateZ(0) wymusza renderowanie na GPU - brak przeskoku */
+            transform: scaleX(1) translateZ(0);
+            transform-origin: left;
+            transition: transform 0.5s var(--ease-out-expo);
+            will-change: transform;
+            backface-visibility: hidden;
+        }
+
+        @media (hover: hover) {
+        #hero-section .badge:hover .badge-text::after {
+            transform: scaleX(0) translateZ(0);
+        }
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════
+           BADGE FLIP ANIMATION - delay 1s, backwards fill-mode
+           ═══════════════════════════════════════════════════════════════ */
+        
+        #hero-section .badge-wrapper .badge {
+            animation: hero-badgeFlipCentralMirror 0.8s var(--ease-mirror) var(--badge-satysfakcji-delay) backwards;
+        }
+        
+        /* Animacje liczb - czarna warstwa */
+        #hero-section .badge-wrapper .layer-black .char {
+            animation: hero-charScaleFromBehind 0.8s var(--ease-back) backwards;
+            animation-delay: calc(var(--badge-satysfakcji-delay) + 0.2s + var(--i) * 0.12s);
+        }
+        
+        /* Cross-fade: czarna znika, złota wchodzi */
+        #hero-section .badge-wrapper .layer-black {
+            animation: hero-fadeOutBlack 1.5s ease forwards;
+            animation-delay: calc(var(--badge-satysfakcji-delay) + 1s);
+        }
+        
+        #hero-section .badge-wrapper .layer-gold {
+            animation: hero-fadeInGold 0.1s linear calc(var(--badge-satysfakcji-delay) + 1s) forwards,
+                       hero-foilShift 10s ease-in-out calc(var(--badge-satysfakcji-delay) + 1.1s) infinite;
+        }
+        
+        #hero-section .badge-wrapper .main {
+            animation: hero-badgeMainSlide 0.6s ease-out calc(var(--badge-satysfakcji-delay) + 0.3s) backwards;
+        }
+        
+        #hero-section .badge-wrapper .sub {
+            animation: hero-badgeSubSlide 0.6s ease-out calc(var(--badge-satysfakcji-delay) + 0.4s) backwards;
+        }
+        
+        #hero-section .badge-wrapper .shine {
+            animation: hero-badgeShine 0.9s ease-in-out calc(var(--badge-satysfakcji-delay) + 0.5s) both;
+        }
+        
+        /* Podpis - integralna część animacji Badge Satysfakcji */
+        #hero-section .badge-wrapper .badge-caption {
+            animation: hero-badgeCaptionFadeIn 2.9s cubic-bezier(0.25, 0.1, 0.25, 1) calc(var(--badge-satysfakcji-delay) + 0.85s) backwards;
+            /* GPU Hack - zapobiega "pyknięciu" po animacji */
+            transform: translateZ(0);
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+        }
+        
+        @keyframes hero-badgeCaptionFadeIn {
+            0% { opacity: 0; transform: translateZ(0); }
+            100% { opacity: 1; transform: translateZ(0); }
+        }
+        
+        @keyframes hero-badgeFlipCentralMirror {
+            0% { opacity: 0; transform: perspective(1000px) rotateY(-90deg); }
+            100% { opacity: 1; transform: perspective(1000px) rotateY(0deg); }
+        }
+        
+        @keyframes hero-charScaleFromBehind {
+            0% { opacity: 0; transform: perspective(600px) translateZ(-80px) scale(0.2); }
+            65% { opacity: 1; transform: perspective(600px) translateZ(8px) scale(1.1); }
+            100% { opacity: 1; transform: perspective(600px) translateZ(0px) scale(1); }
+        }
+        
+        @keyframes hero-fadeOutBlack { 
+            to { opacity: 0; } 
+        }
+        
+        @keyframes hero-fadeInGold { 
+            to { opacity: 1; } 
+        }
+        
+        @keyframes hero-foilShift {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+        
+        @keyframes hero-badgeMainSlide {
+            0% { opacity: 0; transform: translateX(-12px) translateZ(0); }
+            100% { opacity: 1; transform: translateX(0) translateZ(0); }
+        }
+        
+        @keyframes hero-badgeSubSlide {
+            0% { opacity: 0; transform: translateX(-12px) translateZ(0); }
+            100% { opacity: 1; transform: translateX(0) translateZ(0); }
+        }
+        
+        @keyframes hero-badgeShine {
+            0% { opacity: 0.6; left: -40%; }
+            100% { opacity: 0; left: 140%; }
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           BADGE 20 LAT - TRANSPARENT NEUMORPHISM
+           ═══════════════════════════════════════════════════════════════ */
+
+        /* ═══════════════════════════════════════════════════════════════
+           HERO-TITLE WRAPPER
+           Punkt odniesienia (positioning context) dla Laurów Lottie.
+           top: 100% wewnątrz tego wrappera = fizyczna dolna linia <h1>.
+           ═══════════════════════════════════════════════════════════════ */
+        
+        #hero-section .hero-title-wrapper {
+            position: relative;
+            overflow: visible;
+            width: 100%;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════
+           LOTTIE LAUR — POZYCJONOWANIE
+           ═══════════════════════════════════════════════════════════════
+           PUNKT ODNIESIENIA: dolna linia hero-title (top: 100% w wrapperze)
+           
+           Zmienne:
+           --laur-scale      → skala (clamp: 0.85 → 1.14)
+           --laur-offset     → odległość X od środka (clamp: 390 → 604px)
+           --laur-from-title → offset Y od dolnej linii h1 (clamp)
+           --laur-w / --laur-h → wymiary kontenera
+           
+           transform-origin: center top — laur rośnie W DÓŁ od punktu kotwiczenia
+           
+           ──────────────────────────────────────────────
+           ZMIERZONE WARTOŚCI REFERENCYJNE (desktop ≥1200px)
+           ──────────────────────────────────────────────
+           viewport  │  scale  │  offset  │  from-title
+           ──────────┼─────────┼──────────┼────────────
+           1200px    │  0.854  │  390px   │  -229px
+           1300px    │  0.898  │  422px   │  -247px
+           1500px    │  0.972  │  487px   │  -276px
+           1800px    │  1.117  │  582px   │  -311px
+           1864px    │  1.140  │  602px   │  -317px
+           2300px+   │  1.140  │  604px   │  -304px
+           ──────────┴─────────┴──────────┴────────────
+           ═══════════════════════════════════════════════════════════════ */
+        
+        #hero-section .lottie-laur-container {
+            position: absolute;
+            
+            /* Przezroczystość */
+            opacity: 0.5;
+            
+            /* Dodatkowy lift mobilny — 0 na desktop */
+            --laur-mobile-lift: 0px;
+            
+            /* 
+               1. SKALA 
+               Start: 0.85 (1200px) -> Koniec: 1.14 (osiągane przy ~1864px)
+               Wzór: 0.33 + 0.0437 * (szerokość / 100)
+            */
+            --laur-scale: clamp(0.85, 0.33 + 0.0437 * (100vw / 100px), 1.14);
+            
+            /* 
+               2. OFFSET (X)
+               Start: 390px -> Koniec dynamiki: ~602px (przy 1864px)
+               Wzór: 7px + 31.93vw (bardzo dynamiczny wzrost)
+               Limit: 604px (sztywna blokada dla ekranów >2000px)
+            */
+            --laur-offset: clamp(390px, 7px + 31.93vw, 604px);
+            
+            /* 
+               3. POZYCJA Y (offset od dolnej linii hero-title)
+               Wartość ujemna = laur przesuwa się W GÓRĘ od dolnej linii h1
+               Obliczone aby odwzorować identyczną pozycję jak system bottom:0
+               Zakres: -229px (1200px) → -317px (1864px) → -304px (2500px+)
+            */
+            --laur-from-title: clamp(-260px, -87px - 8.7vw, -190px);
+            
+            /* Wymiary - stałe */
+            --laur-w: 402px;
+            --laur-h: 525px;
+            
+            /* Wymiary */
+            width: var(--laur-w);
+            height: var(--laur-h);
+            
+            /* NOWY ANCHOR: dolna linia hero-title (top: 100% wrappera) */
+            top: 100%;
+            left: 50%;
+            
+            /* Warstwa - za tekstem */
+            z-index: 1;
+            pointer-events: none;
+            
+            /* Optymalizacja GPU */
+            will-change: transform;
+        }
+        
+        /* WIDOK MOBILNY (Poniżej 1200px) — top:0, laury ~10% nad hero-title */
+        @media (max-width: 1199px) {
+            #hero-section .lottie-laur-container {
+                --laur-scale: clamp(0.42, 0.32 + 0.04 * (100vw / 100px), 0.75);
+                --laur-offset: clamp(80px, 12.7px + 29.10vw, 275px);
+                --laur-from-title: clamp(-39px, -23px - 1.336vw, -31px);
+                top: 0;
+            }
+        }
+        
+        /* WIDOK MOBILE SMALL (Poniżej 600px) — laury od TOP wrappera, stabilne niezależnie od linii h1 */
+        @media (max-width: 600px) {
+            #hero-section .lottie-laur-container {
+                --laur-scale: clamp(0.336, 0.256 + 0.032 * (100vw / 100px), 0.60);
+                --laur-offset: clamp(80px, 35.6px + 30.71vw, 275px);
+                --laur-from-title: clamp(-40px, -45.75px + 2.45vw, -31px);
+                --laur-rotate: clamp(0, 40 - 6.67 * (100vw / 100px), 20);
+                
+                /* Dodatkowe przesunięcie W GÓRĘ na mobile
+                   280px → 20px w górę | 580px → 40px w górę
+                   Liniowa interpolacja: 1.333px + 6.67vw
+                   clamp zabezpiecza przed ekstremalnym undershotem/overshotem */
+                --laur-mobile-lift: clamp(20px, 1.333px + 6.67vw, 40px);
+                
+                top: 0;
+            }
+        }
+        
+        /* Lewy laur - odbicie lustrzane */
+        #hero-section .lottie-laur-left {
+            transform: 
+                translateX(calc(-50% - var(--laur-offset))) 
+                translateY(var(--laur-from-title)) 
+                scale(var(--laur-scale)) 
+                scaleX(-1);
+            transform-origin: center top;
+        }
+        
+        /* Prawy laur - normalny */
+        #hero-section .lottie-laur-right {
+            transform: 
+                translateX(calc(-50% + var(--laur-offset))) 
+                translateY(var(--laur-from-title)) 
+                scale(var(--laur-scale));
+            transform-origin: center top;
+        }
+        
+        /* Hero-content musi przepuszczać overflow dla Lottie */
+        #hero-section .hero-content {
+            overflow: visible !important;
+        }
+        
+        /* MOBILE ≤600px: transform z rotate + mobile-lift — MUSI być po bezwarunkowych regułach */
+        @media (max-width: 600px) {
+            #hero-section .lottie-laur-left {
+                transform: 
+                    translateX(calc(-50% - var(--laur-offset))) 
+                    translateY(calc(var(--laur-from-title) - var(--laur-mobile-lift))) 
+                    scale(var(--laur-scale)) 
+                    scaleX(-1)
+                    rotate(calc(1deg * var(--laur-rotate)));
+            }
+            #hero-section .lottie-laur-right {
+                transform: 
+                    translateX(calc(-50% + var(--laur-offset))) 
+                    translateY(calc(var(--laur-from-title) - var(--laur-mobile-lift))) 
+                    scale(var(--laur-scale))
+                    rotate(calc(1deg * var(--laur-rotate)));
+            }
+        }
+
+        /* ═══ FALLBACK: przeglądarki bez CSS Values Level 4 (typed division) ═══
+           Chrome <99, Safari <15.4 nie obsługują calc(100vw / 100px).
+           Bez fallback → --laur-scale invalid → cały transform drop → laury 402×525 full-size.
+           Stałe wartości = aproksymacja midpointów per breakpoint.
+           --laur-offset i --laur-from-title używają czystej matematyki length — nie wymagają fallback. */
+        @supports not (transform: scale(calc(100vw / 100px))) {
+            #hero-section .lottie-laur-container {
+                --laur-scale: 0.95;
+            }
+            @media (max-width: 1199px) {
+                #hero-section .lottie-laur-container {
+                    --laur-scale: 0.65;
+                }
+            }
+            @media (max-width: 600px) {
+                #hero-section .lottie-laur-container {
+                    --laur-scale: 0.38;
+                    --laur-rotate: 12;
+                }
+            }
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+           BADGE 20 LAT — WERSJA KULOODPORNA
+           ═══════════════════════════════════════════════════════════════ */
+        
+        #hero-section .badge-20lat-wrapper {
+            margin-top: -1rem;
+            align-self: center;
+            --size: 89px;
+            --shadow-color: 0, 0, 0;
+            --light-color: 255, 255, 255;
+            --background-color: #f7f6f4;
+            --ease: cubic-bezier(.33,.45,.3,1);
+            
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 26px;
+            position: relative;
+            margin-left: var(--badge20-ml);
+            
+            /* Touch Guard: Prevent double-tap zoom on iOS */
+            touch-action: manipulation;
+            
+            /* Prevent text selection on tap */
+            -webkit-user-select: none;
+            user-select: none;
+            
+            /* GSAP kontroluje widoczność przez autoAlpha */
+        }
+
+        #hero-section .badge-20lat {
+            appearance: none;
+            border: none;
+            outline: none;
+            padding: 0;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 2;
+            width: var(--size);
+            height: var(--size);
+            background: none;
+            border-radius: 50%;
+            transition: none; /* Animations handled by GSAP */
+            
+            /* Prevent tap highlight on mobile */
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        #hero-section .badge-20lat::before {
+            content: '';
+            position: absolute;
+            top: 0; right: 0; bottom: 0; left: 0;
+            inset: 0;
+            border-radius: inherit;
+            filter: blur(0.5px);
+            background:
+                radial-gradient(160% 160% at 57.5% 60%, rgba(var(--light-color), 0) 30%, rgba(var(--light-color), 0.6) 45%),
+                radial-gradient(180% 200% at 40% 17.5%, rgba(var(--shadow-color), 0) 35%, rgba(var(--shadow-color), 0.08) 50%),
+                radial-gradient(120% 120% at 45% 45%, rgba(var(--shadow-color), 0) 42%, rgba(var(--shadow-color), 0.03) 50%);
+            box-shadow:
+                inset -2px -2px 2px -2px rgba(var(--shadow-color), 0.06),
+                5px 7px 10px -2px rgba(var(--shadow-color), 0.08),
+                13px 13px 21px rgba(var(--shadow-color), 0.03),
+                -6px -6px 9px -4px rgba(var(--light-color), 1),
+                -2px -2px 4px -2px rgba(var(--light-color), 1);
+        }
+
+        #hero-section .badge-20lat::after {
+            content: '';
+            position: absolute;
+            top: 3px; right: 3px; bottom: 3px; left: 3px;
+            inset: 3px;
+            border-radius: inherit;
+            background: 
+                radial-gradient(150% 150% at 75% 75%, rgba(var(--shadow-color), 0) 30%, rgba(var(--shadow-color), 0.18)),
+                radial-gradient(150% 150% at -10% -10%, rgba(var(--light-color), 0) 50%, rgba(var(--light-color), 0.8));
+            opacity: 0;
+            filter: blur(2px);
+            transform: scale3d(0.95, 0.95, 1);
+            transition: none; /* Animations handled by GSAP */
+        }
+
+        /* Only show hover effect on devices with hover capability */
+        @media (hover: hover) {
+            #hero-section .badge-20lat-wrapper:hover .badge-20lat::after {
+                opacity: 1;
+                transform: none;
+            }
+        }
+
+        #hero-section .badge-20lat .pulse {
+            position: absolute;
+            top: 0; right: 0; bottom: 0; left: 0;
+            inset: 0;
+            border-radius: 50%;
+            opacity: 0;
+            background: radial-gradient(circle at center, rgba(201,169,98,0.08) 0%, transparent 60%);
+            z-index: 5;
+        }
+
+        @media (hover: hover) {
+            #hero-section .badge-20lat-wrapper:hover .pulse {
+                opacity: 1;
+                animation: hero-pulse20 2s var(--ease) infinite;
+            }
+        }
+
+        @keyframes hero-pulse20 {
+            0%, 100% { transform: scale(0.95); opacity: 0.5; }
+            50% { transform: scale(1); opacity: 1; }
+        }
+
+        #hero-section .badge-20lat .typography-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            z-index: 10;
+            transform: translateY(-4px);
+        }
+
+        #hero-section .badge-20lat .number-20 {
+            font-family: 'Lexend', sans-serif;
+            font-weight: 800;
+            font-size: 52px;
+            line-height: 1;
+            color: var(--background-color);
+            text-shadow:
+                -2px -2px 3px rgba(255,255,255,1),
+                2px 2px 3px rgba(0,0,0,0.15);
+            transform: translateY(-5px);
+            transition: none; /* Animations handled by GSAP */
+        }
+
+        #hero-section .badge-20lat-wrapper .label-lat {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            /* Fallback - GSAP nadpisze przy mount */
+            transform: translate(calc(-50% + 1px), 15px);
+            z-index: 10;
+            pointer-events: none;
+            font-family: 'Lexend', sans-serif;
+            font-size: 12px;
+            letter-spacing: 0.25em;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: #a0a0a0;
+            text-shadow: 1px 1px 0px rgba(255,255,255,0.8);
+            transition: none; /* Animations handled by GSAP */
+        }
+
+        #hero-section .badge-20lat-wrapper .rotating-svg {
+            position: absolute;
+            top: 50%;
+            margin-top: -70px; /* -(140/2) = center SVG on badge */
+            width: 140px;
+            height: 140px;
+            cursor: pointer;
+            z-index: 1;
+            will-change: transform;
+            transform-origin: 50% 50%;
+        }
+
+        #hero-section .badge-20lat-wrapper .rotating-text {
+            font-family: 'Lexend', sans-serif;
+            font-size: 8px;
+            letter-spacing: 0.25em;
+            font-weight: 300;
+            text-transform: uppercase;
+            opacity: 0.8;
+            fill: #b69d67;
+            transition: none; /* Animations handled by GSAP */
+        }
+
+        @media (hover: hover) {
+            #hero-section .badge-20lat-wrapper:hover .rotating-text {
+                fill: #c9a962;
+            }
+        }
+        
+        @media (max-width: 650px) {
+            #hero-section .badge-20lat-wrapper {
+                display: none;
+            }
+        }
+
+        #hero-section .cta-group {
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            margin-left: auto; 
+            margin-right: var(--cta-mr); 
+            align-self: flex-end; 
+            margin-top: var(--cta-mt); 
+            width: var(--cta-width);
+            position: relative;
+        }
+        
+        
+        @media (max-width: 1200px) {
+            #hero-section .cta-group {
+                margin-left: 0; 
+                align-self: center;
+                justify-content: center;
+            }
+        }
+        
+        /* BRANDS SECTION (nad białym kafelkiem) */
+        #hero-section .brands-section {
+            display: flex;
+            flex-direction: row;
+            align-items: flex-start;
+            justify-content: flex-start;
+            gap: var(--action-gap);  /* Taki sam gap jak między badge'ami: 3rem */
+            width: 100%;
+            max-width: var(--banner-width);
+            margin-top: 7rem;
+            margin-bottom: 0;
+        }
+        
+        /* Lewa część - tekst (zawsze po lewej) */
+        #hero-section .brands-text-column {
+            flex-shrink: 0;
+            margin-left: var(--badge20-ml);  /* Taki sam odstęp jak Badge 20 lat */
+        }
+        
+        /* Prawa część - logotypy (zajmuje resztę przestrzeni) */
+        #hero-section .brands-logos-column {
+            flex: 1;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            justify-content: flex-start;
+            overflow: hidden;  /* Logotypy nie wyjeżdżają poza kontener */
+            padding-right: var(--marquee-right-space);
+            box-sizing: border-box;
+        }
+        
+        #hero-section .brands-text {
+            font-size: 0.8rem;
+            line-height: 1.4;
+            color: #4b4b4b;
+            font-weight: 300;
+        }
+        
+        #hero-section .brands-text strong {
+            color: #4b4b4b;
+            font-weight: 400;
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════
+           BRANDS MARQUEE — LUXURY LOGO SCROLL
+           ═══════════════════════════════════════════════════════════════ */
+        
+        #hero-section .luxury-wrapper {
+            width: 100%; 
+            height: 65px; 
+            display: flex; 
+            align-items: center; 
+            isolation: isolate; 
+            contain: layout paint;
+            box-sizing: border-box;
+            margin-top: 0.5rem;
+            mask-image: linear-gradient(to right, transparent 7.5%, black 27.5%, black 72.5%, transparent 92.5%); 
+            -webkit-mask-image: linear-gradient(to right, transparent 7.5%, black 27.5%, black 72.5%, transparent 92.5%); 
+        }
+
+        #hero-section .marquee-track {
+            display: flex;
+            gap: 2.18rem; 
+            width: max-content;
+            transform-style: preserve-3d;
+            will-change: transform;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+            animation: none; 
+        }
+
+        /* Logo Item Box */
+        #hero-section .logo-item {
+            width: 131px;
+            height: 65px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-shrink: 0;
+            opacity: 1;
+            transform: translate3d(0, 0, 0) scale(1) rotateY(0deg);
+            transform-origin: center center;
+            -webkit-backface-visibility: hidden;
+            backface-visibility: hidden;
+        }
+
+        .logo-item svg, 
+        #hero-section .logo-item img {
+            display: block;
+            max-width: 100%;
+            max-height: 100%;
+            width: auto;
+            height: auto;
+        }
+
+        /* Animacja wejścia (tylko pierwszy zestaw) */
+        #hero-section .logo-item.with-entry {
+            opacity: 0;
+            transform: translate3d(-18px, 18px, 0) scale(0.9) rotateY(35deg);
+            will-change: transform, opacity;
+            animation: 
+                hero-liquidFlowTransform 1.8s cubic-bezier(0.25, 1, 0.5, 1) forwards,
+                hero-liquidFlowOpacity 1.6s ease forwards;
+        }
+
+        @keyframes hero-liquidFlowTransform {
+            0% { transform: perspective(1000px) translate3d(-18px, 18px, 0) scale(0.9) rotateY(35deg); }
+            100% { transform: perspective(1000px) translate3d(0, 0, 0) scale(1) rotateY(0deg); }
+        }
+
+        @keyframes hero-liquidFlowOpacity { 
+            0% { opacity: 0; } 
+            100% { opacity: 1; } 
+        }
+
+        /* ECO MODE */
+        @media (prefers-reduced-motion: reduce) {
+            #hero-section .logo-item.with-entry {
+                opacity: 1; 
+                transform: translate3d(0, 0, 0) scale(1) rotateY(0deg); 
+                animation: none; 
+            }
+            #hero-section .marquee-track { animation: none !important; }
+        }
+
+        /* ═══ BRANDS MOBILE ≤600px ═══ */
+        @media (max-width: 600px) {
+            #hero-section .brands-section {
+                flex-direction: column-reverse;
+                align-items: center;
+                gap: 0.8rem;
+                margin-top: 3rem;
+                /* Pełna szerokość — wyłamujemy się z max-width */
+                max-width: none;
+                width: 100vw;
+                margin-left: calc(-50vw + 50%);
+            }
+            
+            #hero-section .brands-text-column {
+                margin-left: 0;
+                text-align: center;
+            }
+            
+            /* Skrócony tekst: tylko "4500+ Udanych projektów." */
+            #hero-section .brands-text {
+                font-size: 0;
+                line-height: 0;
+            }
+            #hero-section .brands-text strong {
+                font-size: 0.75rem;
+                line-height: 1.4;
+            }
+            
+            #hero-section .brands-logos-column {
+                width: 100%;
+                padding-right: 0;
+            }
+            
+            /* Logo 2x mniejsze */
+            #hero-section .luxury-wrapper {
+                height: 33px;
+                margin-top: 0;
+                /* Extend closer to edges: break out of 1rem padding */
+                margin-left: -0.5rem;
+                margin-right: -0.5rem;
+                /* Fade edges 60% smaller: 20% → 8% each side */
+                mask-image: linear-gradient(to right, transparent 3%, black 11%, black 89%, transparent 97%);
+                -webkit-mask-image: linear-gradient(to right, transparent 3%, black 11%, black 89%, transparent 97%);
+            }
+            
+            #hero-section .logo-item {
+                width: 66px;
+                height: 33px;
+            }
+            
+            #hero-section .marquee-track {
+                gap: 1rem;
+            }
+        }
+
+        /* ═══════════════════════════════════════════════════════════════
+            SILK PULSE CTA - STRUCTURE
+            ═══════════════════════════════════════════════════════════════ */
+
+        #hero-section .btn-wrapper-wave {
+            position: relative;
+            display: inline-flex;
+            justify-content: center;
+            align-items: center;
+            border-radius: 999px;
+            cursor: pointer;
+            box-shadow:
+                inset 0px 5px 1px transparent,
+                inset 0px 0px 0px transparent,
+                0px 0px 0px transparent,
+                0px 8px 2px #898788,
+                4px 10px 3px #ffffff90,
+                0px 20px 30px rgba(166, 166, 166, 0.75),
+                0px 0px 0px transparent;
+            transition: box-shadow 150ms ease-out;
+        }
+
+        #hero-section .cta-button {
+            display: inline-flex; 
+            align-items: center; 
+            justify-content: center;
+            height: 57px; 
+            padding: 0 1.25em;
+            border: 3px solid #262626; 
+            border-radius: 999px;
+            font-family: 'Lexend', sans-serif; 
+            font-size: 1.6rem; 
+            font-weight: 800;
+            text-decoration: none; 
+            cursor: pointer; 
+            z-index: 10; 
+            white-space: nowrap; 
+            background-color: #ffc600;
+            box-shadow: 
+                0 7px 0 0 #262626,
+                0 8.5px 1px 0 #898788,
+                0 10.5px 3px 1px rgba(255,255,255,1);
+            position: relative;
+            transform: translateY(0) translateZ(0);
+            will-change: transform, box-shadow;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: transparent;
+            outline: none;
+            -webkit-font-smoothing: antialiased;
+            backface-visibility: hidden;
+        }
+
+        #hero-section .cta-button:focus-visible { 
+            outline: 3px solid rgba(38,38,38,0.35); 
+            outline-offset: 6px; 
+        }
+
+        /* ═══ HOVER - SILK PULSE ═══ */
+        @media (hover: hover) and (pointer: fine) {
+            #hero-section .btn-wrapper-wave:hover {
+                animation:
+                    hero-ring-intro var(--cta-intro-dur) var(--cta-ease-silk) forwards,
+                    hero-ring-pulse var(--cta-loop-dur) var(--cta-ease-silk) var(--cta-loop-delay) infinite;
+            }
+            
+            #hero-section .btn-wrapper-wave:hover .cta-button {
+                animation: 
+                    hero-silk-intro var(--cta-intro-dur) var(--cta-ease-silk) forwards,
+                    hero-silk-pulse var(--cta-loop-dur) var(--cta-ease-silk) var(--cta-loop-delay) infinite;
+            }
+
+            #hero-section .btn-wrapper-wave:hover .btn-cap {
+                animation: 
+                    hero-cap-intro var(--cta-intro-dur) var(--cta-ease-silk) forwards,
+                    hero-cap-pulse var(--cta-loop-dur) var(--cta-ease-silk) var(--cta-loop-delay) infinite;
+            }
+            
+            #hero-section .btn-wrapper-wave:hover .btn-text::after {
+                background-position: -50% 0;
+                transition: background-position 0.9s var(--cta-ease-release);
+            }
+        }
+
+        /* ═══ KEYFRAMES - INTRO ═══ */
+        @keyframes hero-silk-intro {
+            0%   { transform: translateY(0);                       box-shadow: 0 7px 0 0 #262626, 0 8.5px 1px 0 #898788, 0 10.5px 3px 1px rgba(255,255,255,1); }
+            45%  { transform: translateY(var(--cta-depth-intro));  box-shadow: 0 3px 0 0 #262626, 0 4.5px 1px 0 #898788, 0 6.5px 3px 1px rgba(255,255,255,1); }
+            100% { transform: translateY(0);                       box-shadow: 0 7px 0 0 #262626, 0 8.5px 1px 0 #898788, 0 10.5px 3px 1px rgba(255,255,255,1); }
+        }
+
+        @keyframes hero-ring-intro {
+            0%   { box-shadow: inset 0px 5px 1px transparent, inset 0px 0px 0px transparent, 0px 0px 0px transparent, 0px 8px 2px #898788, 4px 10px 3px #ffffff90, 0px 20px 30px rgba(166, 166, 166, 0.75), 0px 0px 0px transparent; }
+            45%  { box-shadow: inset 0px 5px 1px transparent, inset 0px 0px 0px transparent, 0px 0px 0px transparent, 0px 7px 1px #b6baab, 4px 10px 3px #fcfcfc, 1px 6px 1px #b6baab, 0px 0px 0px transparent; }
+            100% { box-shadow: inset 0px 5px 1px transparent, inset 0px 0px 0px transparent, 0px 0px 0px transparent, 0px 8px 2px #898788, 4px 10px 3px #ffffff90, 0px 20px 30px rgba(166, 166, 166, 0.75), 0px 0px 0px transparent; }
+        }
+
+        @keyframes hero-cap-intro {
+            0% { opacity: 1; }
+            45% { opacity: 0.08; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes hero-cap-pulse {
+            0%, 56% { opacity: 1; }
+            62% { opacity: 0.08; }
+            67% { opacity: 0.08; }
+            73% { opacity: 0.08; }
+            85%, 100% { opacity: 1; }
+        }
+
+        /* ═══ KEYFRAMES - DOUBLE TAP PULSE ═══ */
+        @keyframes hero-silk-pulse {
+            0%, 56%   { transform: translateY(0);                        box-shadow: 0 7px 0 0 #262626,   0 8.5px 1px 0 #898788, 0 10.5px 3px 1px rgba(255,255,255,1); }
+            62%       { transform: translateY(var(--cta-depth-tap1));    box-shadow: 0 2.5px 0 0 #262626, 0 4px 1px 0 #898788,   0 6px 3px 1px rgba(255,255,255,1); }
+            67%       { transform: translateY(var(--cta-depth-bounce)); box-shadow: 0 6.5px 0 0 #262626, 0 8px 1px 0 #898788,   0 10px 3px 1px rgba(255,255,255,1); }
+            73%       { transform: translateY(var(--cta-depth-tap2));   box-shadow: 0 3px 0 0 #262626,   0 4.5px 1px 0 #898788, 0 6.5px 3px 1px rgba(255,255,255,1); }
+            85%, 100% { transform: translateY(0);                        box-shadow: 0 7px 0 0 #262626,   0 8.5px 1px 0 #898788, 0 10.5px 3px 1px rgba(255,255,255,1); }
+        }
+
+        @keyframes hero-ring-pulse {
+            0%, 56%   { box-shadow: inset 0px 5px 1px transparent, inset 0px 0px 0px transparent, 0px 0px 0px transparent, 0px 8px 2px #898788, 4px 10px 3px #ffffff90, 0px 20px 30px rgba(166, 166, 166, 0.75), 0px 0px 0px transparent; }
+            62%       { box-shadow: inset 0px 5px 1px transparent, inset 0px 0px 0px transparent, 0px 0px 0px transparent, 0px 7px 1px #b6baab, 4px 10px 3px #fcfcfc, 1px 6px 1px #b6baab, 0px 0px 0px transparent; }
+            67%       { box-shadow: inset 0px 5px 1px transparent, inset 0px 0px 0px transparent, 0px 0px 0px transparent, 0px 7.5px 2px #898788, 4px 10px 3px #ffffff90, 0px 18px 25px rgba(166, 166, 166, 0.75), 0px 0px 0px transparent; }
+            73%       { box-shadow: inset 0px 5px 1px transparent, inset 0px 0px 0px transparent, 0px 0px 0px transparent, 0px 7px 1px #b6baab, 4px 10px 3px #fcfcfc, 1px 6px 1px #b6baab, 0px 0px 0px transparent; }
+            85%, 100% { box-shadow: inset 0px 5px 1px transparent, inset 0px 0px 0px transparent, 0px 0px 0px transparent, 0px 8px 2px #898788, 4px 10px 3px #ffffff90, 0px 20px 30px rgba(166, 166, 166, 0.75), 0px 0px 0px transparent; }
+        }
+
+        /* ═══ ACTIVE STATE ═══ */
+        #hero-section .btn-wrapper-wave { transition: box-shadow 0.08s ease-out; }
+        #hero-section .cta-button { transition: transform 0.08s ease-out, box-shadow 0.08s ease-out; }
+        #hero-section .btn-cap { transition: opacity 0.06s ease-out; }
+        
+        #hero-section .btn-wrapper-wave:active {
+            box-shadow: inset 0px 5px 1px transparent, inset 0px 0px 0px transparent, 0px 0px 0px transparent, 0px 7px 1px #b6baab, 4px 10px 3px #fcfcfc, 1px 6px 1px #b6baab, 0px 0px 0px transparent !important;
+            animation: none !important;
+            transition: box-shadow 0.04s ease-out !important;
+        }
+        #hero-section .btn-wrapper-wave:active .cta-button {
+            transform: translateY(7px) !important;
+            box-shadow: 0 0 0 0 #262626, 0 0.5px 1px 0 #898788, 0 2px 2px 0 rgba(255,255,255,0.6) !important;
+            transition: transform 0.04s ease-out, box-shadow 0.04s ease-out !important;
+            animation: none !important;
+        }
+        #hero-section .btn-wrapper-wave:active .btn-cap {
+            opacity: 0 !important;
+            transition: opacity 0.04s ease-out !important;
+            animation: none !important;
+        }
+
+        /* ═══ MOBILE TOUCH ═══ */
+        @media (hover: none) and (pointer: coarse) {
+            #hero-section .btn-wrapper-wave {
+                -webkit-tap-highlight-color: transparent;
+                touch-action: manipulation;
+                cursor: pointer;
+            }
+            #hero-section .btn-wrapper-wave:active { transition: box-shadow 0.02s ease-out !important; }
+            #hero-section .btn-wrapper-wave:active .cta-button { transition: transform 0.02s ease-out, box-shadow 0.02s ease-out !important; }
+            #hero-section .btn-wrapper-wave:active .btn-cap { transition: opacity 0.02s ease-out !important; }
+            #hero-section .cta-button:active {
+                transform: translateY(7px) !important;
+                box-shadow: 0 0 0 0 #262626, 0 0.5px 1px 0 #898788, 0 2px 2px 0 rgba(255,255,255,0.6) !important;
+                transition: transform 0.02s ease-out, box-shadow 0.02s ease-out !important;
+            }
+            #hero-section .cta-button:active .btn-cap { opacity: 0 !important; transition: opacity 0.02s ease-out !important; }
+        }
+
+        /* ═══ JS-DRIVEN TOUCH (.touching) ═══ */
+        #hero-section .btn-wrapper-wave.touching {
+            box-shadow: inset 0px 5px 1px transparent, inset 0px 0px 0px transparent, 0px 0px 0px transparent, 0px 7px 1px #b6baab, 4px 10px 3px #fcfcfc, 1px 6px 1px #b6baab, 0px 0px 0px transparent !important;
+            transition: box-shadow 0.02s ease-out !important;
+        }
+        #hero-section .btn-wrapper-wave.touching .cta-button {
+            transform: translateY(7px) !important;
+            box-shadow: 0 0 0 0 #262626, 0 0.5px 1px 0 #898788, 0 2px 2px 0 rgba(255,255,255,0.6) !important;
+            transition: transform 0.02s ease-out, box-shadow 0.02s ease-out !important;
+        }
+        #hero-section .btn-wrapper-wave.touching .btn-cap {
+            opacity: 0 !important;
+            transition: opacity 0.02s ease-out !important;
+        }
+
+        /* ═══ INNER LAYERS ═══ */
+        #hero-section .btn-hole {
+            position: absolute; 
+            top: 2px; left: 2px; right: 2px; bottom: 2px;
+            border-radius: 990px; 
+            background: #ffc600; 
+            overflow: hidden; 
+            pointer-events: none;
+            box-shadow: inset 0 6px 12px rgba(160, 60, 0, 0.25), inset 0 -3px 6px rgba(255, 255, 255, 0.8), 0 0 0 1px rgba(255,255,255,0.4); 
+        }
+        #hero-section .btn-cap {
+            position: absolute; 
+            top: 0; left: 0; right: 0; bottom: 0;
+            border-radius: 999px; 
+            opacity: 1;
+            background: 
+                radial-gradient(120% 120% at 0% 0%, rgba(255, 255, 255, 0.7) 0%, transparent 60%), 
+                radial-gradient(120% 120% at 100% 100%, rgba(160, 60, 0, 0.25) 0%, transparent 60%), 
+                #ffc600;
+            box-shadow: inset 0 8px 5px -4px rgba(255, 255, 255, 0.7), inset 2px 2px 5px rgba(160, 60, 0, 0.05), inset -2px -2px 5px rgba(255, 255, 255, 0.4);
+        }
+        #hero-section .btn-text {
+            position: relative; z-index: 20; color: #262626; 
+            text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4); 
+            pointer-events: none; transform: translateY(-0.08em);
+        }
+        #hero-section .btn-text::after {
+            content: attr(data-text); position: absolute; left: 0; top: 0; width: 100%; height: 100%;
+            background: linear-gradient(110deg, transparent 30%, rgba(254, 215, 79, 0.5) 45%, rgba(254, 215, 79, 1.0) 50%, rgba(254, 215, 79, 0.5) 55%, transparent 70%);
+            background-size: 200% 100%; background-position: 150% 0; 
+            -webkit-background-clip: text; background-clip: text; color: transparent; text-shadow: none;
+            transition: background-position 1.2s cubic-bezier(0.19, 1, 0.22, 1);
+        }
+
+        /* ═══ WAVE EFFECT ═══ */
+        #hero-section .wave-effect {
+            position: absolute; width: 120%; height: 160%; top: 58%; left: 50%;
+            transform: translate(-50%, -50%); border-radius: 999px;
+            background: linear-gradient(to bottom right, #d1d1d1 0%, #ffffff 100%);
+            box-shadow: 4px 4px 8px #c8c8c8, -4px -4px 8px #ffffff;
+            opacity: 0; z-index: 0; pointer-events: none; filter: blur(1px);
+        }
+        #hero-section .wave-effect.animating { animation: hero-wave-expand 2.34s cubic-bezier(0.1, 0.45, 0.4, 1) forwards; }
+        @keyframes hero-wave-expand {
+            0% { transform: translate(-50%, -50%) scale(0.9); opacity: 0.4; }
+            100% { transform: translate(-50%, -50%) scale(1.3); opacity: 0; }
+        }
+
+        /* ═══ CTA NOTE + PENDULUM ═══ */
+        #hero-section .cta-note-wrapper {
+            position: relative; display: flex; align-items: center; justify-content: center;
+            gap: 0; margin-top: 2rem; transform: translate(-10px, -20px);
+        }
+        #hero-section .cta-note { font-size: 1.2rem; color: #262626; text-align: center; padding-left: 4px; }
+        #hero-section .pendulum-container {
+            position: relative; width: 60px; height: 60px;
+            display: flex; justify-content: center; align-items: center;
+            flex-shrink: 0; margin-right: -18px;
+        }
+        #hero-section .cta-royal-canvas { width: 16px; height: 16px; background: #000; border-radius: 50%; position: relative; z-index: 3; }
+        #hero-section .aura {
+            position: absolute; width: 16px; height: 16px; border-radius: 50%;
+            background: #fec708; z-index: 1; will-change: opacity;
+            animation: hero-aura-core 3s ease-in-out infinite;
+        }
+        #hero-section .aura::before {
+            content: ''; position: absolute; top: -4px; right: -4px; bottom: -4px; left: -4px; inset: -4px; border-radius: 50%;
+            background: #fec708; opacity: 0; will-change: transform, opacity;
+            animation: hero-aura-ring 3s ease-out infinite; z-index: -1;
+        }
+        @keyframes hero-aura-core { 0%, 100% { opacity: 0.9; } 50% { opacity: 1; } }
+        @keyframes hero-aura-ring { 0% { transform: scale(0.8); opacity: 0.5; } 100% { transform: scale(2); opacity: 0; } }
+
+        #hero-section .sonar {
+            position: absolute; width: 60px; height: 60px;
+            display: flex; justify-content: center; align-items: center;
+            z-index: 2; opacity: 0; will-change: opacity;
+            animation: hero-sonar-fadein 0.2s ease-out forwards; pointer-events: none;
+        }
+        #hero-section .sonar::after {
+            content: ''; position: absolute; width: 16px; height: 16px;
+            border: none; box-shadow: inset 0 0 0 0.5px #ffc800; border-radius: 50%;
+            opacity: 0; will-change: transform, opacity;
+            animation: hero-sonar-ping 2s ease-out 0.2s infinite;
+        }
+        @keyframes hero-sonar-fadein { 0% { opacity: 0; } 100% { opacity: 1; } }
+        @keyframes hero-sonar-ping { 0% { transform: scale(1); opacity: 0; } 20% { opacity: 1; } 100% { transform: scale(2.3125); opacity: 0; } }
+
+        /* ═══ BRAIN TIP TOOLTIP (hidden below 600px) ═══ */
+        #hero-section .brain-tooltip {
+            position: absolute; bottom: calc(100% + 8px); left: 50%;
+            padding: 20px 24px; background: #f7f6f4; border-radius: 20px;
+            box-shadow: 8px 8px 20px rgba(0,0,0,0.08), -8px -8px 20px rgba(255,255,255,0.9);
+            opacity: 0; visibility: hidden; pointer-events: none; z-index: 100;
+            text-align: center; transform: translateX(-50%) translateY(-20px);
+            transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+        #hero-section .brain-tooltip::before {
+            content: ''; position: absolute; top: 100%; left: 50%;
+            transform: translateX(-50%); border: 8px solid transparent; border-top-color: #f7f6f4;
+        }
+        #hero-section .brain-tooltip.visible {
+            opacity: 1; visibility: visible; transform: translateX(-50%) translateY(0); pointer-events: auto;
+        }
+        #hero-section .tooltip-close {
+            position: absolute; top: -10px; right: -10px; width: 24px; height: 24px;
+            border: none; background: #f7f6f4; border-radius: 50%;
+            box-shadow: 2px 2px 6px rgba(0,0,0,0.08), -2px -2px 6px rgba(255,255,255,0.9);
+            cursor: pointer; opacity: 0.6; transition: opacity 0.2s ease; padding: 0;
+        }
+        #hero-section .tooltip-close:hover { opacity: 1; }
+        #hero-section .tooltip-close::before, #hero-section .tooltip-close::after {
+            content: ''; position: absolute; top: 50%; left: 50%; width: 10px; height: 1.5px;
+            background: #262626; border-radius: 1px;
+        }
+        #hero-section .tooltip-close::before { transform: translate(-50%, -50%) rotate(45deg); }
+        #hero-section .tooltip-close::after { transform: translate(-50%, -50%) rotate(-45deg); }
+        #hero-section .tooltip-header { font-size: 0.9rem; font-weight: 500; color: rgba(38,38,38,0.25); white-space: nowrap; line-height: 2.0; }
+        #hero-section .tooltip-header .brain-tip { font-weight: 800; color: rgba(38,38,38,0.25); margin-right: 0.5em; }
+        #hero-section .tooltip-sub { font-size: 0.8rem; font-weight: 300; color: #555; line-height: 2.0; white-space: nowrap; }
+        #hero-section .tooltip-sub em { font-style: italic; }
+        #hero-section .tooltip-sub strong { font-weight: 600; }
+        @media (max-width: 600px) {
+            #hero-section .brain-tooltip { display: none !important; }
+        }
+
+        /* footer-strip USUNIĘTY — sekcja fullscreen */
+
+        /* [SANITIZED] Removed: .resolution-info (dead CSS, no DOM element) */
+        
+        /* [SANITIZED] Removed: .resolution-info (dead CSS, no DOM element) */
+        
+        /* [SANITIZED] Removed: .resolution-info (dead CSS, no DOM element) */
+
+        /* ═══ TRAIL COMPONENT (≥1201px only) ═══ */
+        #hero-section .trail-container {
+            display: none;
+        }
+        @media (min-width: 1201px) {
+            #hero-section .trail-container {
+                display: block;
+                position: absolute;
+                top: 0; right: 0; bottom: 0; left: 0;
+                inset: 0;
+                z-index: 2; /* above laury (z:1) */
+                pointer-events: none;
+                overflow: hidden;
+            }
+            #hero-section .action-area {
+                position: relative;
+                z-index: 6; /* above trail — only needed on desktop where trail is visible */
+            }
+        }
+        #hero-section .trail-wrap {
+            position: absolute;
+            pointer-events: none;
+        }
+        #hero-section .trail-wrap.hw-hint {
+            will-change: transform, filter;
+        }
+        #hero-section .trail-block {
+            transform-origin: center;
+            pointer-events: none;
+            border-radius: 4px;
+            position: relative;
+            width: 100%;
+            height: 100%;
+        }
+        #hero-section .trail-block.is-photo {
+            overflow: hidden;
+        }
+        #hero-section .trail-block.is-photo .photo-inner {
+            position: absolute;
+            background-color: #d4a373; /* fallback gdy img nie załadowany */
+        }
+        #hero-section .trail-block.is-photo .photo-inner img {
+            display: block;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
+            /* draggable=false ustawiony w JS */
+        }
+        /* Gdy img nie załaduje — ukryj, fallback-color zostaje */
+        #hero-section .load-failed {
+            opacity: 0;
+        }
