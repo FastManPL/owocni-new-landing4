@@ -16,6 +16,7 @@ const getLottie = () => import('lottie-web').then((m) => m.default);
 // ═══════════════════════════════════════════════════════════════════════════
 
 function heroSectionInit(container: HTMLElement | null) {
+    if (!container) return { pause: () => {}, resume: () => {}, kill: () => {} };
 
     const heroInitT0 = performance.now(); // timestamp for deferred systems
 
