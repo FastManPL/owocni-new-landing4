@@ -15,7 +15,7 @@ const getLottie = () => import('lottie-web').then((m) => m.default);
 // hasPin: false | hasSnap: false | hasScrollTrigger: false
 // ═══════════════════════════════════════════════════════════════════════════
 
-function heroSectionInit(container) {
+function heroSectionInit(container: HTMLElement | null) {
 
     const heroInitT0 = performance.now(); // timestamp for deferred systems
 
