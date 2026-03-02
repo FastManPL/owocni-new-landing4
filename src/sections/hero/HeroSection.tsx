@@ -953,11 +953,11 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
     // BLOCK 4: BRANDS MARQUEE (logotypy z /LOGOTYPY/)
     // ═════════════════════════════════════════════════════════════════
     {
-            // 1. ZASOBY — pliki z public/LOGOTYPY (kolejność: numer + nazwa + 1.svg)
+            // 1. ZASOBY — pliki z public/LOGOTYPY (wersje _new)
             const logoFiles = [
-                '1sklepy1.svg', '2mbank1.svg', '3zabka1.svg', '4deloitte1.svg',
-                '5grycan1.svg', '6gsk1.svg', '7ministerstwo1.svg', '8mokate1.svg',
-                '9wella1.svg', '10oracle1.svg', '11sokolow1.svg', '12skanska1.svg'
+                '1sklepy1_new.svg', '2mbank1_new.svg', '3zabka1_new.svg', '4deloitte1_new.svg',
+                '5grycan1_new.svg', '6gsk1_new.svg', '7ministerstwo1_new.svg', '8mokate1_new.svg',
+                '9wella1_new.svg', '10oracle1_new.svg', '11sokolow1_new.svg', '12skanska1_new.svg'
             ];
             const logosOnScreen = 10;
 
