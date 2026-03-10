@@ -193,6 +193,7 @@
   contain-intrinsic-size: auto 30rem; /* #14: Firefox mobile — hint for engines with contain + height:auto bugs */
   display: block;
   width: 100%;
+  min-width: 12rem; /* gwarantuje sensowne cqi przy pierwszym layoucie (React/Next) */
   height: 100%;
   min-height: 12rem;
   background: transparent;
@@ -337,7 +338,7 @@
 
 /* --- KOL 1: Bębny cyfrowe ---
    height/padding-top/mask w em → skalują się z font-size (18cqi), zero przycinania.
-   1.05em = HARD CONSTRAINT (musi = translateY multiplier w JS). */
+   clamp() = fallback gdy cqi=0 (React pierwszy paint) — liczby zawsze widoczne. */
 #book-stats-section .cs-counter-digits {
   display: flex;
   align-items: flex-start;
@@ -345,7 +346,7 @@
   font-feature-settings: "tnum";
   font-variant-numeric: tabular-nums;
   overflow: hidden;
-  font-size: 18cqi;
+  font-size: clamp(2rem, 18cqi, 5.4rem);
   line-height: 1;
   letter-spacing: -0.04em;
   font-weight: 700;
@@ -368,7 +369,7 @@
 
 /* --- KOL 2: Sufiks (%, h) — superscript --- */
 #book-stats-section .cs-counter-suffix {
-  font-size: 5.8cqi;
+  font-size: clamp(1rem, 5.8cqi, 1.8rem);
   line-height: 1;
   font-weight: 700;
   letter-spacing: -0.04em;
@@ -392,7 +393,7 @@
 
 /* Heading: sweep gradient szary→czarny (GSAP animuje backgroundPosition) */
 #book-stats-section .cs-counter-heading {
-  font-size: 4.7cqi;
+  font-size: clamp(1rem, 4.7cqi, 1.6rem);
   font-weight: 700;
   line-height: 1.15;
   letter-spacing: -0.02em;
