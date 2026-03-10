@@ -49,7 +49,7 @@ function init(container: HTMLElement | null): { kill: () => void; pause: () => v
      - digit=0 → fullRotations=1 (pełny obrót, ląduje na 0)
      - digit>0 → fullRotations=0 (bezpośredni spin do targetu)
      - _totalSteps = fullRotations×10 + target
-     - translateY = _totalSteps × 1.05rem (HARD CONSTRAINT)
+     - translateY = _totalSteps × 1.05em (HARD CONSTRAINT)
   */
   function buildReel(parent: HTMLElement, target: number, fullRotations: number): HTMLDivElement & { _totalSteps: number } {
     const reel = document.createElement('div') as HTMLDivElement & { _totalSteps: number };
@@ -136,7 +136,7 @@ function init(container: HTMLElement | null): { kill: () => void; pause: () => v
            Bez tego transition może nie odpalić. */
         requestAnimationFrame(function() {
           requestAnimationFrame(function() {
-            reel.style.transform = 'translateY(-' + (reel._totalSteps * 1.05) + 'rem)';
+            reel.style.transform = 'translateY(-' + (reel._totalSteps * 1.05) + 'em)';
           });
         });
       });
