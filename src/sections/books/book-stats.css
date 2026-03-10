@@ -5,66 +5,39 @@
    ════════════════════════════════════════════════════════════════════════════ */
 
 /* -----------------------------------------------------------
-   Sekcja — responsive font-size (em w potomkach względem tej bazy)
-   ----------------------------------------------------------- */
-#book-stats-section {
-  font-size: 1em;
-}
-@media screen and (min-width: 1801px) {
-  #book-stats-section {
-    font-size: 1.25em;
-  }
-}
-@media screen and (max-width: 1800px) and (min-width: 992px) {
-  #book-stats-section {
-    font-size: calc(1.1vw);
-  }
-}
-@media screen and (max-width: 991px) and (min-width: 480px) {
-  #book-stats-section {
-    font-size: calc(0.3em + 1.5vw);
-  }
-}
-@media screen and (max-width: 479px) {
-  #book-stats-section {
-    font-size: 5vw;
-  }
-}
-
-/* -----------------------------------------------------------
    Sekcja i kontener
    ----------------------------------------------------------- */
 #book-stats-section {
   isolation: isolate;
-  padding: 5em 1.25em;
+  padding: 5rem 1.25rem;
   position: relative;
   width: 100%;
 }
 @media screen and (max-width: 991px) {
   #book-stats-section {
-  isolation: isolate; padding: 3.5em 2em; }
+  isolation: isolate; padding: 3.5rem 2rem; }
 }
 @media screen and (max-width: 767px) {
   #book-stats-section {
-  isolation: isolate; padding: 2.5em 1em; }
+  isolation: isolate; padding: 2.5rem 1rem; }
 }
 
 #book-stats-section .container {
   width: 100%;
-  max-width: 82em;
+  max-width: 82rem;
   margin-left: auto;
   margin-right: auto;
 }
 
 /* -----------------------------------------------------------
    CUSTOM SECTIONS — Piętro layout
-   Proporcja: lewa ~45.3% | gap 0.5em | prawa ~54.1%
+   Proporcja: lewa ~45.3% | gap 0.5rem | prawa ~54.1%
    flex: 453/541 → flexbox sam odlicza gap. ZERO overflow.
    ----------------------------------------------------------- */
 #book-stats-section .cs-floor {
   display: flex;
   flex-direction: row;
-  gap: 0.5em;
+  gap: 0.5rem;
 }
 #book-stats-section .cs-floor__left {
   flex: 453 1 0%;
@@ -95,10 +68,10 @@
   align-items: center;
   justify-content: center;
   color: rgba(37,32,48,0.3);
-  font-size: 1em;
+  font-size: 1rem;
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.1rem;
   user-select: none;
   /* Soft edge blend — 2% fade from each edge into page background.
      Masks compression artifacts at image borders (WebP/AVIF color shift).
@@ -178,16 +151,16 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 1.5em;
+  gap: 1.5rem;
 }
 #book-stats-section .cs-text-block h2 {
-  font-size: 4.1em;
+  font-size: 4.1rem;
   font-weight: 400;
   line-height: 1.125;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.04rem;
   color: #252030;
-  padding-bottom: 0.15em;   /* [FIX-15] Descender safety for ą/ę with background-clip:text */
-  margin-bottom: -0.15em;   /* [FIX-15] Neutralizes padding — net displacement = 0 */
+  padding-bottom: 0.15rem;   /* [FIX-15] Descender safety for ą/ę with background-clip:text */
+  margin-bottom: -0.15rem;   /* [FIX-15] Neutralizes padding — net displacement = 0 */
   background-image: linear-gradient(
     135deg,
     #252030 2%,
@@ -206,7 +179,7 @@
   -webkit-text-fill-color: transparent;
 }
 #book-stats-section .cs-text-block p {
-  font-size: 2.25em;
+  font-size: 2.25rem;
   color: #252525;
   font-weight: 300;
   line-height: 1.6;
@@ -217,11 +190,11 @@
    Background jako fallback przed załadowaniem. */
 #book-stats-section .cs-stats-placeholder {
   container-type: inline-size;
-  contain-intrinsic-size: auto 30em; /* #14: Firefox mobile — hint for engines with contain + height:auto bugs */
+  contain-intrinsic-size: auto 30rem; /* #14: Firefox mobile — hint for engines with contain + height:auto bugs */
   display: block;
   width: 100%;
   height: 100%;
-  min-height: 12em;
+  min-height: 12rem;
   background: transparent;
   overflow: hidden;
   padding: 0;
@@ -236,8 +209,8 @@
 
 /* --- Tablet (768–991px) --- */
 @media screen and (max-width: 991px) {
-  #book-stats-section .cs-text-block h2 { font-size: 2.5em; }
-  #book-stats-section .cs-text-block p { font-size: 1.25em; }
+  #book-stats-section .cs-text-block h2 { font-size: 2.5rem; }
+  #book-stats-section .cs-text-block p { font-size: 1.25rem; }
 }
 
 /* --- Mobile (<767px) --- */
@@ -252,16 +225,16 @@
   #book-stats-section .cs-floor--texts .cs-floor__left  { order: 1; }
   #book-stats-section .cs-floor--texts .cs-floor__right { order: 2; }
 
-  #book-stats-section .cs-text-block h2 { font-size: 1.75em; line-height: 1.1; }
-  #book-stats-section .cs-text-block p { font-size: 1em; }
-  #book-stats-section .cs-stats-placeholder { height: auto; min-height: 10em; }
+  #book-stats-section .cs-text-block h2 { font-size: 1.75rem; line-height: 1.1; }
+  #book-stats-section .cs-text-block p { font-size: 1rem; }
+  #book-stats-section .cs-stats-placeholder { height: auto; min-height: 10rem; }
 }
 
 /* --- FIX: zakres 480–767px --- */
 @media screen and (min-width: 480px) and (max-width: 767px) {
-  #book-stats-section .cs-text-block { text-align: center; gap: 1.5em; }
-  #book-stats-section .cs-text-block h2 { font-size: 3.55em; font-weight: 400; line-height: 1.1; letter-spacing: -0.04em; }
-  #book-stats-section .cs-text-block p { font-size: 1.6em; font-weight: 300; line-height: 1.6; color: #252525; }
+  #book-stats-section .cs-text-block { text-align: center; gap: 1.5rem; }
+  #book-stats-section .cs-text-block h2 { font-size: 3.55rem; font-weight: 400; line-height: 1.1; letter-spacing: -0.04rem; }
+  #book-stats-section .cs-text-block p { font-size: 1.6rem; font-weight: 300; line-height: 1.6; color: #252525; }
   #book-stats-section .cs-text-block p br { display: none; }
 }
 
@@ -283,7 +256,7 @@
    COUNTER REELS — cqi-native
    ============================================================
    Bazowa jednostka: 18cqi (font-size cyfr)
-   Digits margin: -0.625em top, -0.775em bottom (kompensacja mask)
+   Digits margin: -0.625rem top, -0.775rem bottom (kompensacja mask)
    Spacing: space-between (height:100%, fluid gapy)
    Sub <350px: -20% (2.88cqi / 9px floor)
    ============================================================ */
@@ -305,7 +278,7 @@
   letter-spacing: normal;
   color: var(--cr-text-main);
   font-weight: 400;
-  font-size: 1em;
+  font-size: 1rem;
   user-select: auto;
   display: flex;
   flex-direction: column;
@@ -363,8 +336,8 @@
 }
 
 /* --- KOL 1: Bębny cyfrowe ---
-   height/padding-top/mask w em → skalują się z font-size automatycznie.
-   1.05em = HARD CONSTRAINT (musi = translateY multiplier w JS). */
+   height/padding-top/mask w rem → względem root (html 16px).
+   1.05rem = HARD CONSTRAINT (musi = translateY multiplier w JS). */
 #book-stats-section .cs-counter-digits {
   display: flex;
   align-items: flex-start;
@@ -374,12 +347,12 @@
   overflow: hidden;
   font-size: 18cqi;
   line-height: 1;
-  letter-spacing: -0.04em;
+  letter-spacing: -0.04rem;
   font-weight: 700;
-  height: 2.5em;
-  padding-top: 0.725em;
-  margin-top: -0.625em;
-  margin-bottom: -0.775em;
+  height: 2.5rem;
+  padding-top: 0.725rem;
+  margin-top: -0.625rem;
+  margin-bottom: -0.775rem;
   transform: translateZ(0); /* #13: Samsung Internet — GPU-promote parent to fix mask + animated children glitch */
   mask-image: linear-gradient(to bottom,
     transparent 0%, transparent 25%,
@@ -398,8 +371,8 @@
   font-size: 5.8cqi;
   line-height: 1;
   font-weight: 700;
-  letter-spacing: -0.04em;
-  padding-left: 0.14em;
+  letter-spacing: -0.04rem;
+  padding-left: 0.14rem;
   align-self: center;
   margin-top: -3.9cqi;
   min-width: 6cqi;
@@ -422,7 +395,7 @@
   font-size: 4.7cqi;
   font-weight: 700;
   line-height: 1.15;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.02rem;
   white-space: nowrap;
   background: linear-gradient(to right, var(--cr-text-main) 49%, #666 51%);
   background-size: 200% 100%;
@@ -451,12 +424,12 @@
 }
 
 /* --- Digit: slot w bębnie ---
-   height: 1.05em — MUSI odpowiadać mnożnikowi w JS translateY */
+   height: 1.05rem — MUSI odpowiadać mnożnikowi w JS translateY */
 #book-stats-section .cs-digit {
   display: flex;
   justify-content: center;
   align-items: center;
-  height: 1.05em;
+  height: 1.05rem;
 }
 
 /* --- Symbol suffiksu (span wewnątrz suffix slot) --- */
@@ -468,12 +441,12 @@
    Without cqi support, font-size/margin/padding fall to inherited values → broken layout.
    clamp/vw approximations keep counters readable. @supports not → zero impact on modern. */
 @supports not (container-type: inline-size) {
-  #book-stats-section .cs-counter-digits  { font-size: clamp(2.6em, 9vw, 5.4em); }
-  #book-stats-section .cs-counter-suffix  { font-size: clamp(1.1em, 3.2vw, 1.8em); min-width: 2em; margin-top: -1em; }
-  #book-stats-section .cs-counter-heading { font-size: clamp(1em, 3.2vw, 1.6em); }
-  #book-stats-section .cs-counter-sub     { font-size: clamp(0.75em, 2.6vw, 1em); }
-  #book-stats-section .cs-counter-label   { margin-left: 1em; gap: 2px; }
-  #book-stats-section .cs-counters        { padding: 0 0.5em; }
+  #book-stats-section .cs-counter-digits  { font-size: clamp(2.6rem, 9vw, 5.4rem); }
+  #book-stats-section .cs-counter-suffix  { font-size: clamp(1.1rem, 3.2vw, 1.8rem); min-width: 2rem; margin-top: -1rem; }
+  #book-stats-section .cs-counter-heading { font-size: clamp(1rem, 3.2vw, 1.6rem); }
+  #book-stats-section .cs-counter-sub     { font-size: clamp(0.75rem, 2.6vw, 1rem); }
+  #book-stats-section .cs-counter-label   { margin-left: 1rem; gap: 2px; }
+  #book-stats-section .cs-counters        { padding: 0 0.5rem; }
   #book-stats-section .cs-counters::before,
-  #book-stats-section .cs-counters::after  { left: 0.5em; right: 0.5em; }
+  #book-stats-section .cs-counters::after  { left: 0.5rem; right: 0.5rem; }
 }
