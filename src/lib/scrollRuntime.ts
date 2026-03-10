@@ -19,6 +19,7 @@ interface ScrollRuntime {
   getScroll: () => number;
   getRawScroll: () => number;
   requestRefresh: (reason?: string) => void;
+  requestRefreshImmediate: () => void;
   scrollTo: (
     target: number | string | HTMLElement,
     options?: ScrollToOptions
@@ -38,7 +39,6 @@ let pendingRefresh: string | null = null;
 
 // Event handlers (dla cleanup)
 let tickerCallback: ((time: number) => void) | null = null;
-let orientationHandler: (() => void) | null = null;
 let visibilityHandler: (() => void) | null = null;
 let resizeHandler: (() => void) | null = null;
 
@@ -64,7 +64,7 @@ function init(): void {
     duration: 1.2,
     smoothWheel: true,
     wheelMultiplier: 1,
-    touchMultiplier: 2,
+    touchMultiplier: 1,
   });
 
   // === GSAP TICKER (Konstytucja C3) ===
@@ -77,14 +77,6 @@ function init(): void {
 
   // ScrollTrigger update on scroll
   lenis.on('scroll', ScrollTrigger.update);
-
-  // === ORIENTATION CHANGE (Konstytucja C5) ===
-  orientationHandler = () => {
-    requestRefresh('orientationchange');
-  };
-  window.addEventListener('orientationchange', orientationHandler, {
-    passive: true,
-  });
 
   // === RESIZE HANDLER (Desktop) ===
   // ignoreMobileResize chroni przed toolbar hide/show na mobile
@@ -148,12 +140,7 @@ function destroy(): void {
     tickerCallback = null;
   }
 
-  // Remove event listeners
-  if (orientationHandler) {
-    window.removeEventListener('orientationchange', orientationHandler);
-    orientationHandler = null;
-  }
-
+  // Remove event listeners (orientation in SmoothScrollProvider)
   if (resizeHandler) {
     window.removeEventListener('resize', resizeHandler);
     resizeHandler = null;
@@ -231,6 +218,23 @@ function requestRefresh(reason?: string): void {
   }, REFRESH_DEBOUNCE_MS);
 }
 
+// === REQUEST REFRESH IMMEDIATE (orientationchange — bez debounce) ===
+function requestRefreshImmediate(): void {
+  if (!lenis) return;
+  if (refreshTimeout) {
+    clearTimeout(refreshTimeout);
+    refreshTimeout = null;
+  }
+  rafId = requestAnimationFrame(() => {
+    rafId = requestAnimationFrame(() => {
+      ScrollTrigger.refresh(true);
+      if (process.env.NODE_ENV === 'development') {
+        console.debug('[scrollRuntime] refresh executed: immediate');
+      }
+    });
+  });
+}
+
 // === SCROLL TO ===
 function scrollTo(
   target: number | string | HTMLElement,
@@ -271,6 +275,7 @@ export const scrollRuntime: ScrollRuntime = {
   getScroll,
   getRawScroll,
   requestRefresh,
+  requestRefreshImmediate,
   scrollTo,
   getLenis,
   isReady,

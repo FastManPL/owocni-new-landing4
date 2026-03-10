@@ -1275,7 +1275,7 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
                          : 0.7 + (vw - 1200) / 800 * 0.3;
 
         const V = {
-            ASPECT:         713 / 910,    // proporcje realnych zdjęć (910×713px)
+            ASPECT:         241 / 308,    // proporcje realnych zdjęć (308×241px)
             SIZE_MAX:       Math.round(288 * SIZE_SCALE),
             SIZE_MIN_RATIO: 0.80,
             SPACING_SLOW:   250,
@@ -1297,7 +1297,6 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
             IN_ROT_EASE:    "power2.out",
             OUT_EASE:       "power2.in",
             BORDER_RADIUS:  4,
-            INNER_BLEED:    20,
             INNER_MASK_START: 0.35,
             BRIGHT_START:   200,
             DRIFT_MULT:     110,
@@ -1339,8 +1338,6 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
             C: ['C1','C2','C3','C4'],
             D: ['D1','D2','D3','D4'],
         };
-        // Kolor fallback (tło gdy img jeszcze się ładuje) per grupa
-        const GROUP_FALLBACK = { A: '#d9765b', B: '#b07d62', C: '#b5835a', D: '#bf8f6e' };
         const GROUP_KEYS = Object.keys(IMAGE_GROUPS);
         const FLAT_META  = GROUP_KEYS.flatMap(k => IMAGE_GROUPS[k].map(c => ({ k, c })));
 
@@ -1431,7 +1428,14 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
         /* ═══ STATE ═══ */
         const trail  = [];
         const dying  = new Set();
-        const history = [];
+
+        // Ring buffer — zero alokacji w runtime (eliminuje GC pressure)
+        const HIST_SIZE = 12;
+        const histX = new Float32Array(HIST_SIZE);
+        const histY = new Float32Array(HIST_SIZE);
+        const histT = new Float32Array(HIST_SIZE);
+        let histHead = 0, histLen = 0;
+
         let mx = 0, my = 0;
         let lmx = 0, lmy = 0;
         let cmx = 0, cmy = 0;
@@ -1440,24 +1444,35 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
         let zIdx = 1;
 
         /* ═══ HELPERS ═══ */
-        const sizeMin    = () => Math.round(V.SIZE_MAX * V.SIZE_MIN_RATIO);
-        const getSize    = (t) => V.SIZE_MAX - (V.SIZE_MAX - sizeMin()) * t;
+        const SIZE_MIN   = Math.round(V.SIZE_MAX * V.SIZE_MIN_RATIO);  // pre-computed
+        const getSize    = (t) => V.SIZE_MAX - (V.SIZE_MAX - SIZE_MIN) * t;
         const getSpacing = (t) => V.SPACING_SLOW + (V.SPACING_FAST - V.SPACING_SLOW) * t;
         const dist       = (ax, ay, bx, by) => Math.hypot(ax - bx, ay - by);
         const lerp       = (a, b, n) => (1 - n) * a + n * b;
 
         const pushHistory = (x, y) => {
             const now = performance.now();
-            history.push({ x, y, t: now });
-            while (history.length > 1 && now - history[0].t > V.HISTORY_MS) history.shift();
+            histX[histHead] = x;
+            histY[histHead] = y;
+            histT[histHead] = now;
+            histHead = (histHead + 1) % HIST_SIZE;
+            if (histLen < HIST_SIZE) histLen++;
+
+            // Trim old entries (equivalent to while loop)
+            while (histLen > 1) {
+                const oldest = (histHead - histLen + HIST_SIZE) % HIST_SIZE;
+                if (now - histT[oldest] > V.HISTORY_MS) histLen--;
+                else break;
+            }
         };
 
         const getSpeed = () => {
-            if (history.length < 2) return 0;
-            const f = history[0], l = history[history.length - 1];
-            const dt = l.t - f.t;
+            if (histLen < 2) return 0;
+            const oldest = (histHead - histLen + HIST_SIZE) % HIST_SIZE;
+            const newest = (histHead - 1 + HIST_SIZE) % HIST_SIZE;
+            const dt = histT[newest] - histT[oldest];
             if (dt < 4) return 0;
-            return Math.hypot(l.x - f.x, l.y - f.y) / dt;
+            return Math.hypot(histX[newest] - histX[oldest], histY[newest] - histY[oldest]) / dt;
         };
 
         const speedNorm = () => Math.min(1, Math.max(0,
@@ -1481,6 +1496,9 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
                 gsap.killTweensOf(obj.animTarget);
                 gsap.killTweensOf(obj.wrap);
             }
+            if (obj.flash) {
+                gsap.killTweensOf(obj.flash);
+            }
 
             // Mask-close exit: photo counter-scales UP while mask shrinks DOWN
             if (obj.animTarget) {
@@ -1502,7 +1520,6 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
         /* ═══ SPAWN ═══ */
         const spawn = (t) => {
             const key   = pickColor();                   // 'A1'…'D4' — QuotaCycle zarządza grupą
-            const color = GROUP_FALLBACK[key[0]] || '#d4a373'; // fallback tło per grupa
 
             // EarlyFlush: przy zmianie grupy ubij żywych natychmiast → 0% miksów
             if (strategy.flush) {
@@ -1534,15 +1551,14 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
             inner.className = "trail-block is-photo";
             inner.style.borderRadius = V.BORDER_RADIUS + "px";
 
-            const photoInner = document.createElement("div");
-            photoInner.className = "photo-inner";
-            photoInner.style.cssText =
-                `top:${-V.INNER_BLEED/2}px;left:${-V.INNER_BLEED/2}px;` +
-                `width:calc(100% + ${V.INNER_BLEED}px);height:calc(100% + ${V.INNER_BLEED}px);` +
-                `background:${color};`;
+            const img = _getPhotoEl(key);
+            img.style.cssText = "width:100%;height:100%;object-fit:cover;display:block;";
 
-            photoInner.appendChild(_getPhotoEl(key));
-            inner.appendChild(photoInner);
+            // Flash overlay (GPU-optimized — opacity jest COMPOSITE, nie PAINT)
+            const flash = document.createElement("div");
+            flash.className = "trail-flash";
+            inner.appendChild(img);
+            inner.appendChild(flash);
             wrap.appendChild(inner);
             trailEl.appendChild(wrap);
 
@@ -1576,10 +1592,21 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
             gsap.to(wrap, {
                 rotation: rot, duration: V.IN_S, ease: V.IN_ROT_EASE, overwrite: "auto"
             });
-            // Entry — mask reveal + brightness flash on photoInner
-            gsap.fromTo(photoInner,
-                { scale: V.INNER_MASK_START, filter: `brightness(${V.BRIGHT_START}%)` },
-                { scale: 1, filter: "brightness(100%)", duration: V.IN_S, ease: V.IN_EASE }
+            // Entry — scale on img
+            gsap.fromTo(img,
+                { scale: V.INNER_MASK_START },
+                { scale: 1, duration: V.IN_S, ease: V.IN_EASE }
+            );
+            // Entry — flash overlay (opacity = GPU COMPOSITE, nie PAINT!)
+            gsap.fromTo(flash,
+                { opacity: 0 },
+                {
+                    keyframes: [
+                        { opacity: 0, duration: 0 },
+                        { opacity: 0.7, duration: 0.12, ease: "power2.out" },
+                        { opacity: 0, duration: 0.48, ease: "power2.inOut" }
+                    ]
+                }
             );
             // Drift — momentum slide in movement direction
             gsap.to(wrap, {
@@ -1587,7 +1614,7 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
                 duration: V.DRIFT_S, ease: V.DRIFT_EASE, delay: 0.05
             });
 
-            trail.push({ wrap, inner, animTarget: photoInner, rot, born: performance.now(), die: performance.now() + lifespan });
+            trail.push({ wrap, inner, animTarget: img, flash, rot, born: performance.now(), die: performance.now() + lifespan });
         };
 
         /* ═══ SPAWN / CLEANUP LOOP ═══ */
@@ -1647,10 +1674,40 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
              2. Minimum 3.5s elapsed since heroSectionInit start
            This prevents visual overload during hero entrance animation. */
 
+        /* ═══ PRELOAD ALL TRAIL IMAGES ═══
+           Efekt trail NIE włącza się dopóki wszystkie 16 zdjęć nie są załadowane.
+           Dzięki temu flash (brightness) działa na widocznym obrazku, nie na pustym. */
+
+        let imagesPreloaded = false;
+
+        function preloadAllImages() {
+            return new Promise<void>((resolve) => {
+                const keys = FLAT_META.map(m => m.c);  // ['A1','A2',...,'D4']
+                const res = _useRetina ? '_RETINA' : '';
+                const fmt = (_avifSupported === false) ? 'webp' : 'avif';
+
+                let loaded = 0;
+                const total = keys.length;
+
+                keys.forEach(key => {
+                    const img = new Image();
+                    img.onload = img.onerror = () => {
+                        loaded++;
+                        if (loaded >= total) {
+                            imagesPreloaded = true;
+                            resolve();
+                        }
+                    };
+                    img.src = `/trail/${key}_strrona_internetowa${res}.${fmt}`;
+                });
+            });
+        }
+
         let trailActive = false;
 
         function activateTrail() {
             if (trailActive) return;
+            if (!imagesPreloaded) return;
             trailActive = true;
 
             addHfListener(document, "mousemove", (e) => {
@@ -1695,9 +1752,11 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
         function tryActivate() {
             const elapsed = performance.now() - heroInitT0;
             if (elapsed >= TRAIL_MIN_DELAY) {
-                activateTrail();
+                preloadAllImages().then(activateTrail);
             } else {
-                trackedTimeout(activateTrail, TRAIL_MIN_DELAY - elapsed);
+                trackedTimeout(() => {
+                    preloadAllImages().then(activateTrail);
+                }, TRAIL_MIN_DELAY - elapsed);
             }
         }
 
@@ -1705,6 +1764,19 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
         // Reference.html: skrypt na końcu <body> → DOMContentLoaded już wystrzelił.
         // Nie rejestrujemy window.load wewnątrz init() (INIT-DOM-01).
         tryActivate();
+
+        // Trail cleanup for global kill()
+        cleanups.push(() => {
+            trail.forEach(obj => {
+                gsap.killTweensOf(obj.wrap);
+                gsap.killTweensOf(obj.inner);
+                gsap.killTweensOf(obj.animTarget);
+                if (obj.flash) gsap.killTweensOf(obj.flash);
+                obj.wrap.remove();
+            });
+            trail.length = 0;
+            dying.clear();
+        });
 
         })();
     }

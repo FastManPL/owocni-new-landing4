@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useLayoutEffect } from 'react';
 import type { ReactNode } from 'react';
 import { scrollRuntime } from '@/lib/scrollRuntime';
 
@@ -15,6 +15,20 @@ export function SmoothScrollProvider({ children }: SmoothScrollProviderProps) {
     return () => {
       scrollRuntime.destroy();
     };
+  }, []);
+
+  // orientationchange — szybki refresh od razu + drugi po ustabilizowaniu layoutu
+  useLayoutEffect(() => {
+    const handleOrientationChange = () => {
+      scrollRuntime.requestRefreshImmediate();
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          scrollRuntime.requestRefresh('orientationchange-settle');
+        });
+      });
+    };
+    window.addEventListener('orientationchange', handleOrientationChange);
+    return () => window.removeEventListener('orientationchange', handleOrientationChange);
   }, []);
 
   return <>{children}</>;

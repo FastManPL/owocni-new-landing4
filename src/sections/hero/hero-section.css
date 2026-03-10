@@ -2631,7 +2631,7 @@
             pointer-events: none;
         }
         #hero-section .trail-wrap.hw-hint {
-            will-change: transform, filter;
+            will-change: transform;
         }
         #hero-section .trail-block {
             transform-origin: center;
@@ -2643,6 +2643,20 @@
         }
         #hero-section .trail-block.is-photo {
             overflow: hidden;
+        }
+        /* GPU layer promotion dla animowanego img */
+        #hero-section .trail-block.is-photo img {
+            will-change: transform;
+        }
+        /* Flash overlay — GPU COMPOSITE path */
+        #hero-section .trail-flash {
+            position: absolute;
+            inset: 0;
+            background: #fff;
+            opacity: 0;
+            pointer-events: none;
+            mix-blend-mode: overlay;
+            will-change: opacity;
         }
         #hero-section .trail-block.is-photo .photo-inner {
             position: absolute;
