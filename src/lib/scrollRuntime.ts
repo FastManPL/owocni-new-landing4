@@ -67,6 +67,23 @@ function init(): void {
     touchMultiplier: 1,
   });
 
+  // === SCROLLER PROXY (Lenis + ScrollTrigger) ===
+  // ScrollTrigger domyślnie czyta window.scrollY; Lenis używa własnej wartości .scroll.
+  // Bez proxy ST widzi złą pozycję → animacje scrub (np. sekcja fakty) są przesunięte/na końcu.
+  // Źródło: GSAP + Lenis integration (scrollerProxy).
+  ScrollTrigger.scrollerProxy(document.body, {
+    scrollTop(value?: number): number {
+      if (value !== undefined && lenis) {
+        lenis.scrollTo(value, { immediate: true });
+      }
+      return lenis ? lenis.scroll : 0;
+    },
+    getBoundingClientRect() {
+      return { top: 0, left: 0, width: window.innerWidth, height: window.innerHeight };
+    },
+    fixedMarkers: true,
+  });
+
   // === GSAP TICKER (Konstytucja C3) ===
   // Sygnatura: add(callback, once?, prioritize?)
   // false = nie jednorazowo, true = priorytet Lenisa przed ST/sekcjami
@@ -151,7 +168,7 @@ function destroy(): void {
     visibilityHandler = null;
   }
 
-  // Destroy Lenis
+  // Destroy Lenis (scrollerProxy pozostaje — przy następnym init() zostanie nadpisany)
   lenis.off('scroll', ScrollTrigger.update);
   lenis.destroy();
   lenis = null;
