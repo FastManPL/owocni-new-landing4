@@ -7,6 +7,8 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { scrollRuntime } from '@/lib/scrollRuntime';
 import './book-stats-section.css';
 
+import statsPosterImg from './Statystyki-stron.png';
+
 // ⚠️ GSAP-SSR-01: ZAKAZ gsap.registerPlugin() na module top-level.
 // Next.js pre-renderuje Client Components na serwerze — window/document nie istnieją.
 // registerPlugin() WYŁĄCZNIE wewnątrz useGSAP(() => { ... }) jak poniżej.
@@ -267,38 +269,6 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
       return 0;
     }
 
-    /* ── Placeholder frames ── */
-    function generatePlaceholders() {
-      const arr: HTMLCanvasElement[] = new Array(FRAME_COUNT);
-      for (let i = 0; i < FRAME_COUNT; i++) {
-        const hue = Math.round((i / FRAME_COUNT) * 300 + 20);
-        const offscreen = document.createElement('canvas');
-        offscreen.width = 1000;
-        offscreen.height = 720;
-        const octx = offscreen.getContext('2d');
-        if (!octx) continue;
-
-        const grad = octx.createLinearGradient(0, 0, 1000, 720);
-        grad.addColorStop(0, 'hsl(' + hue + ', 30%, 75%)');
-        grad.addColorStop(1, 'hsl(' + ((hue + 40) % 360) + ', 25%, 65%)');
-        octx.fillStyle = grad;
-        octx.fillRect(0, 0, 1000, 720);
-
-        octx.fillStyle = 'rgba(0,0,0,0.25)';
-        octx.font = 'bold 180px sans-serif';
-        octx.textAlign = 'center';
-        octx.textBaseline = 'middle';
-        octx.fillText(String(i + 1), 500, 340);
-
-        octx.fillStyle = 'rgba(0,0,0,0.15)';
-        octx.font = '32px sans-serif';
-        octx.fillText('Frame ' + (i + 1) + ' / ' + FRAME_COUNT, 500, 460);
-
-        arr[i] = offscreen;
-      }
-      return arr;
-    }
-
     /* ── DPR-aware canvas setup ── */
     function setupCanvasDPR() {
       if (!canvas || !ctx) return;
@@ -415,53 +385,33 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
       bookRO.observe(bookContainer!);
     }
 
-    /* ── Preload (TEST SHELL: placeholders) ── */
+    /* ── Preload: klatki z /books/Ksiazka-Klatki/ (frame-001.webp … frame-023.webp) ── */
     function startPreload() {
       if (preloadStarted) return;
       preloadStarted = true;
 
-      const placeholders = generatePlaceholders();
+      const BASE_URL = '/books/Ksiazka-Klatki/';
       const loadOrder = buildLoadOrder(FRAME_COUNT);
-
-      for (let i = 0; i < loadOrder.length; i++) {
-        const idx = loadOrder[i]!;
-        frames[idx] = placeholders[idx]!;
-        loaded[idx] = true;
-        loadedCount++;
-      }
-      allLoaded = true;
-
-      setupCanvasDPR();
-      drawFrame(0);
-      if (canvas) canvas.classList.add('is-ready');
-
-      createScrollAnimation();
-      setupResizeObserver();
-
-      /* ─── PRODUCTION PATTERN (uncomment to replace above) ─── */
-      /*
-      var BASE_URL = '/assets/book-frames/';
-      var loadOrder = buildLoadOrder(FRAME_COUNT);
-      var loadQueue = loadOrder.slice();
-      var concurrency = 0;
-      var MAX_CONCURRENT = 3;
+      const loadQueue = loadOrder.slice();
+      let concurrency = 0;
+      const MAX_CONCURRENT = 3;
 
       function loadNext() {
         while (concurrency < MAX_CONCURRENT && loadQueue.length > 0) {
-          var idx = loadQueue.shift();
+          const idx = loadQueue.shift()!;
           concurrency++;
-          preloadSingleFrame(idx).then(function(loadedIdx) {
+          preloadSingleFrame(idx).then(function(loadedIdx: number) {
             concurrency--;
             onFrameLoaded(loadedIdx);
 
             if (!_scrollEnabled && loadedCount >= _PRIORITY_COUNT) {
-              canvas.classList.add('is-ready');
+              if (canvas) canvas.classList.add('is-ready');
               createScrollAnimation();
               setupResizeObserver();
             }
 
             loadNext();
-          }).catch(function(err) {
+          }).catch(function(err: unknown) {
             concurrency--;
             console.warn('Frame load failed:', err);
             loadNext();
@@ -469,23 +419,23 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
         }
       }
 
-      function preloadSingleFrame(index) {
-        var url = BASE_URL + 'frame-' + String(index + 1).padStart(3, '0') + '.webp';
+      function preloadSingleFrame(index: number): Promise<number> {
+        const url = BASE_URL + 'frame-' + String(index + 1).padStart(3, '0') + '.webp';
         return fetch(url)
           .then(function(res) {
             if (!res.ok) throw new Error('HTTP ' + res.status + ' for ' + url);
             return res.blob();
           })
           .then(function(blob) {
-            if (window.createImageBitmap) {
+            if (typeof window.createImageBitmap === 'function') {
               return createImageBitmap(blob).then(function(bmp) {
                 frames[index] = bmp;
                 return index;
               });
             }
             return new Promise(function(resolve) {
-              var img = new Image();
-              var objUrl = URL.createObjectURL(blob);
+              const img = new Image();
+              const objUrl = URL.createObjectURL(blob);
               img.onload = function() {
                 URL.revokeObjectURL(objUrl);
                 if (img.decode) {
@@ -510,20 +460,17 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
           });
       }
 
-      preloadSingleFrame(loadOrder[0]).then(function(idx) {
+      preloadSingleFrame(loadOrder[0]!).then(function(idx: number) {
         onFrameLoaded(idx);
         setupCanvasDPR();
         drawFrame(0);
-        canvas.classList.add('is-ready');
+        if (canvas) canvas.classList.add('is-ready');
 
         loadQueue.shift();
-
         loadNext();
-      }).catch(function(err) {
+      }).catch(function(err: unknown) {
         console.error('Critical: frame 0 failed to load', err);
       });
-      */
-      /* ─── END PRODUCTION PATTERN ─── */
     }
 
     /* ── Sentry IO: early preload ── */
@@ -662,7 +609,17 @@ export function BookStatsSection() {
         {/* PIĘTRO 1: OBRAZY */}
         <div className="cs-floor cs-floor--images">
           <div className="cs-floor__left">
-            <div className="cs-img-placeholder cs-img--stats"><span>Statystyki · 606 × 456</span></div>
+            <video
+              className="cs-img--stats cs-video"
+              src="/books/banner-konwersja-strony.mp4"
+              poster={statsPosterImg.src}
+              playsInline
+              muted
+              loop
+              autoPlay
+              preload="metadata"
+              aria-hidden
+            />
           </div>
           <div className="cs-floor__right">
             <div className="cs-img-placeholder cs-img--book">
