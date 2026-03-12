@@ -103,6 +103,7 @@ function init(container: HTMLElement): { kill: () => void } {
   }
 
   function computeAndSetBase() {
+    if (!faktyBlock || !faktyDom) return;
     const targetW = faktyBlock.getBoundingClientRect().width;
     const rows = faktyDom.querySelectorAll('.title-row');
     const r1 = rows[0] as HTMLElement | undefined;
@@ -147,6 +148,7 @@ function init(container: HTMLElement): { kill: () => void } {
   }
 
   function measureCharOffsets() {
+    if (!faktyBlock || !faktyDom) return;
     const blockRect = faktyBlock.getBoundingClientRect();
     charOffsets = [];
     faktyDom.querySelectorAll('.video-fill').forEach(el => {
@@ -163,12 +165,13 @@ function init(container: HTMLElement): { kill: () => void } {
     if (index === currentFrame) return;
     currentFrame = index;
     const value = frameValues[index];
-    if (value) {
+    if (value && faktyDom) {
       faktyDom.style.setProperty('--current-frame-url', value);
     }
   }
 
   function setupVideoFill() {
+    if (!faktyBlock) return;
     const blockW = faktyBlock.getBoundingClientRect().width;
     const frameH = Math.round(blockW * 540 / 960);
     charOffsets.forEach(co => {
@@ -179,6 +182,7 @@ function init(container: HTMLElement): { kill: () => void } {
   }
 
   function buildPhase1() {
+    if (!faktyBlock || !faktyDom) return;
     const rows = faktyDom.querySelectorAll('.title-row');
     const row1 = rows[0] as HTMLElement | undefined;
     const row2 = rows[1] as HTMLElement | undefined;
@@ -232,6 +236,7 @@ function init(container: HTMLElement): { kill: () => void } {
 
   function buildFrameScroll() {
     if (frameST) { frameST.kill(); frameST = null; }
+    if (!faktyBlock || !faktyDom) return;
     const row1 = faktyDom.querySelector('.title-row--1');
     if (!row1) return;
 
@@ -263,10 +268,10 @@ function init(container: HTMLElement): { kill: () => void } {
     if (currentInnerWidth === lastInnerWidth) return;
     lastInnerWidth = currentInnerWidth;
     stableViewportHeight = window.innerHeight;
-    
+
     if (resizeTimer !== null) clearTimeout(resizeTimer);
     resizeTimer = setTimeout(() => {
-      if (isKilled || !container.isConnected) return;
+      if (isKilled || !container.isConnected || !faktyBlock) return;
       const currentWidth = faktyBlock.offsetWidth;
       if (currentWidth === lastBlockWidth) return;
       lastBlockWidth = currentWidth;
@@ -298,11 +303,11 @@ function init(container: HTMLElement): { kill: () => void } {
     });
     observers.forEach(obs => { try { obs?.disconnect?.(); } catch(e) { /* ignore */ } });
     gsapInstances.forEach(inst => {
-      try { (inst as ScrollTrigger)?.revert?.(); } catch(e) { /* ignore */ }
+      try { (inst as ScrollTrigger & { revert?: () => void })?.revert?.(); } catch(e) { /* ignore */ }
       try { inst?.kill?.(); } catch(e) { /* ignore */ }
     });
-    faktyBlock.classList.remove('ready');
-    faktyDom.innerHTML = '';
+    if (faktyBlock) faktyBlock.classList.remove('ready');
+    if (faktyDom) faktyDom.innerHTML = '';
   }
 
   document.fonts.ready.then(async () => {
@@ -310,6 +315,7 @@ function init(container: HTMLElement): { kill: () => void } {
     stableViewportHeight = window.innerHeight;
     buildDOM();
     computeAndSetBase();
+    if (!faktyBlock) return;
     lastBlockWidth = faktyBlock.offsetWidth;
     measureCharOffsets();
     setupVideoFill();
