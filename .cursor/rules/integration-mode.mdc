@@ -63,4 +63,6 @@ Jeśli użytkownik prosi o zmianę „w sekcji” lub „w scrollRuntime” — 
 - Problem w scrollRuntime / SmoothScrollProvider → **poprawka do Konstytucji** + review.
 - Wzorzec nieopisany w P4_INTEGRATOR → nie improwizuj, zaproponuj zapytanie do Fabryki.
 
-**Dokument szczegółowy:** `hero/P4_INTEGRATOR (2).md` (lub aktualny P4_INTEGRATOR.md). Przy integracji użytkownik wkleja manifesty i aktualny stan page.tsx / package.json — pracuj wyłącznie na tej podstawie.
+**Dokumenty szczegółowe (źródło prawdy integracji):**
+- **P4_INTEGRATOR (3).md** — pełny prompt integracji (Krok 0–6, STOP-y, resource hints, SectionsClient, scope_constraint). Stosować 1:1 przy integracji sekcji.
+- **P4_DEVELOPER_GUIDE.md** — dla operatora: co immutable, kolejność sesji, Grep Gates, Console Gate, eskalacja. Przy integracji użytkownik wkleja manifesty i aktualny stan page.tsx / layout.tsx / package.json — pracuj wyłącznie na tej podstawie.

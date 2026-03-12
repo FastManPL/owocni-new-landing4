@@ -30,8 +30,17 @@ html {
     background-color: #f7f6f4;
   }
 
-  /* Polish: selekcja tekstu */
+  /* Zaznaczenie tekstu — branding Owocni */
   ::selection {
-    background-color: rgba(20, 20, 20, 0.15);
+    background-color: #feb4e6;
+    color: #fbf7b6;
+    text-shadow: 2px 2px 0px #f29cc9;
+  }
+
+  /* Rozszerzenie dla starszych przeglądarek (Firefox) */
+  ::-moz-selection {
+    background-color: #feb4e6;
+    color: #fbf7b6;
+    text-shadow: 2px 2px 0px #f29cc9;
   }
 }
