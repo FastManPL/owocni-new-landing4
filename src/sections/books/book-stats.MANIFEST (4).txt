@@ -1,0 +1,66 @@
+════════════════════════════════════════
+SECTION_MANIFEST: book-stats
+════════════════════════════════════════
+
+slug:     'book-stats'
+type:     'B'
+requires: ['scrollRuntime', 'gsap', 'ScrollTrigger']
+
+assets:
+  - kind:     'canvas'
+    src:      '/assets/book-frames/frame-NNN.webp (23 klatek, Binary Subdivision)'
+    priority: 'HOT'
+    critical: true
+    lcp:      false
+  - kind:     'video'
+    src:      'cs-img--stats → <video poster="/assets/stats-poster.webp">'
+    priority: 'HOT'
+    critical: true
+    lcp:      false
+
+warmup: ['fonts.googleapis.com']
+
+scrollTriggersCount: 1
+
+geometryMutable: false
+geometryRefresh: 'none'
+
+dciProps: ['headline', 'sub', 'tier']
+
+timelineContract: undefined
+
+specialNotes:
+  breakpoints:           ['479px', '480px', '767px', '991px', '349px']
+  platformGuards:        ['reduced-motion']
+  cpuGatingMechanism:    'N/A'
+  cpuGatingPath:         null
+  gatingStrategy:        'ST-native (pin+scrub) — Ścieżka 3a, brak IO gating'
+
+integrationNotes:
+  hasPin:                true
+  hasSnap:               false
+  affectsGeometryBelow:  true
+  sensitiveTo:           ['geometry-above']
+  testWith:              ['faq', 'accordion', 'header']
+
+perf:
+  dynamicImport:         false
+  isHero:                false
+  gracefulDegradation:   false
+  preloadCandidates:     ['/assets/book-frames/frame-001.webp', '/assets/stats-poster.webp']
+  prefetchCandidates:    ['/assets/stats-video.webm']
+  coldCandidates:        []
+  preconnectDomains:     []
+  containApplied:        false
+  warnings:              ['PERF-W7', 'PERF-W10']
+
+scrollRuntimeRecommendations:
+  - 'is-scrolling pointer-events guard (body.is-scrolling section * { pointer-events: none })'
+
+runtimeChecks:
+  CLN-01: 'PASS'          # owner potwierdził — KILL w ?debug=1, orphan pin-spacers: 0
+  SM-01:  'PASS'          # owner potwierdził — INIT AGAIN 3×, ST count stabilny
+  SM-02:  'PASS'          # pokryte przez ST-01 (brak side-effect callbacków) + owner confirm
+  INT-01: 'PASS'          # stack.html — accordion expand/collapse, pin stabilny po refresh
+  INT-02: 'PASS'          # stack.html — FakePinnedAbove, triggery bez driftu
+  INT-03: 'PASS'          # stack.html — FakeAbove height change, sekcja stabilna po refresh

@@ -1,43 +1,73 @@
-/* ════════════════════════════════════════════════════════════════════════════
-   book-stats.css — FACTORY P3 OUTPUT
-   Źródło: reference.html (P2A)
-   Zmiany: Brak (Google Fonts CDN ładowany przez layout, nie @import)
-   ════════════════════════════════════════════════════════════════════════════ */
+/* ═══════════════════════════════════════════════════════════
+   SECTION CSS: book-stats — hardened
+   Dodano: isolation: isolate (B-ISO-01 AUTO-FIX)
+   ═══════════════════════════════════════════════════════════ */
 
-/* -----------------------------------------------------------
-   Sekcja i kontener
-   ----------------------------------------------------------- */
+/* --- Sekcja root + HARDENING --- */
 #book-stats-section {
-  isolation: isolate;
-  padding: 5rem 1.25rem;
+  padding-block: clamp(3.41rem, 5.5vw, 6.25rem);
+  padding-inline: 0;
   position: relative;
-  width: 100%;
+  /* ═══ FACTORY HARDENING: B-ISO-01 ═══ */
+  isolation: isolate;
 }
 @media screen and (max-width: 991px) {
   #book-stats-section {
-  isolation: isolate; padding: 3.5rem 2rem; }
+    padding-block: calc(1.05rem + 5.25vw);
+  }
 }
 @media screen and (max-width: 767px) {
   #book-stats-section {
-  isolation: isolate; padding: 2.5rem 1rem; }
+    padding-block: calc(0.75rem + 3.75vw);
+  }
+}
+@media screen and (max-width: 479px) {
+  #book-stats-section {
+    padding-block: 12.5vw;
+  }
 }
 
+/* --- Container --- */
 #book-stats-section .container {
-  width: 100%;
-  max-width: 82rem;
+  width: calc(100% - clamp(1.364rem, 2.2vw, 2.5rem));
+  max-width: clamp(55.924rem, 90.2vw, 102.5rem);
   margin-left: auto;
   margin-right: auto;
 }
+@media screen and (max-width: 991px) {
+  #book-stats-section .container {
+    width: calc(100% - 0.6rem - 3vw);
+  }
+}
+@media screen and (max-width: 479px) {
+  #book-stats-section .container {
+    width: 90vw;
+  }
+}
 
-/* -----------------------------------------------------------
-   CUSTOM SECTIONS — Piętro layout
-   Proporcja: lewa ~45.3% | gap 0.5rem | prawa ~54.1%
-   flex: 453/541 → flexbox sam odlicza gap. ZERO overflow.
-   ----------------------------------------------------------- */
+/* --- CSS Variables lokalne --- */
+#book-stats-section {
+  --48: clamp(2.046rem, 3.3vw, 3.75rem);
+  --gap-md: clamp(1.023rem, 1.65vw, 1.875rem);
+}
+@media screen and (max-width: 991px) {
+  #book-stats-section {
+    --48: calc(0.9rem + 4.5vw);
+    --gap-md: calc(0.45rem + 2.25vw);
+  }
+}
+@media screen and (max-width: 479px) {
+  #book-stats-section {
+    --48: 15vw;
+    --gap-md: 7.5vw;
+  }
+}
+
+/* --- Piętro layout --- */
 #book-stats-section .cs-floor {
   display: flex;
   flex-direction: row;
-  gap: 0.5rem;
+  gap: clamp(0.341rem, 0.55vw, 0.625rem);
 }
 #book-stats-section .cs-floor__left {
   flex: 453 1 0%;
@@ -48,17 +78,11 @@
   min-width: 0;
 }
 
-#book-stats-section .cs-floor--images .cs-floor__left .cs-video--banner {
-  width: 100%;
-  height: auto;
-  display: block;
-  vertical-align: middle;
-}
-
 /* --- Piętro 1: Obrazy --- */
 #book-stats-section .cs-floor--images {
   margin-bottom: var(--48);
   align-items: center;
+  gap: clamp(1.023rem, 1.65vw, 1.875rem);
 }
 
 #book-stats-section .cs-img-placeholder {
@@ -68,14 +92,11 @@
   align-items: center;
   justify-content: center;
   color: rgba(37,32,48,0.3);
-  font-size: 1rem;
+  font-size: clamp(0.682rem, 1.1vw, 1.25rem);
   font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.1rem;
+  letter-spacing: 0.1em;
   user-select: none;
-  /* Soft edge blend — 2% fade from each edge into page background.
-     Masks compression artifacts at image borders (WebP/AVIF color shift).
-     intersect = all 4 must agree → uniform corner treatment. */
   -webkit-mask-image:
     linear-gradient(to right,  transparent 0%, black 2%),
     linear-gradient(to left,   transparent 0%, black 2%),
@@ -100,25 +121,22 @@
   background: linear-gradient(135deg, #e2ddd8 0%, #d8d2cc 60%, #cec7bf 100%);
   position: relative;
 }
-/* [FIX-5] aspect-ratio fallback — Safari <15, Chrome <88.
-   padding-bottom creates proportional height. overflow:hidden on parent
-   → min-height:auto=0 → height:0 respected. Canvas (absolute) fills padding box. */
 @supports not (aspect-ratio: 1 / 1) {
-  #book-stats-section .cs-img--stats { height: 0; padding-bottom: 75.25%; /* 456/606 */ }
-  #book-stats-section .cs-img--book  { height: 0; padding-bottom: 72%;    /* 720/1000 */ }
+  #book-stats-section .cs-img--stats { height: 0; padding-bottom: 75.25%; }
+  #book-stats-section .cs-img--book  { height: 0; padding-bottom: 72%; }
 }
 
-/* --- Canvas frame sequence: fills parent, hidden until ready --- */
+/* --- Canvas frame sequence --- */
 #book-stats-section #book-stats-canvas {
   position: absolute;
-  top: 0; right: 0; bottom: 0; left: 0; /* [FIX-4] Safari <14.1 longhand fallback */
+  top: 0; right: 0; bottom: 0; left: 0;
   inset: 0;
   width: 100%;
   height: 100%;
   display: block;
   opacity: 0;
   transition: opacity 0.4s ease;
-  will-change: transform; /* #12: Guarantee dedicated compositor layer for drawImage */
+  will-change: transform;
 }
 #book-stats-section #book-stats-canvas.is-ready {
   opacity: 1;
@@ -137,8 +155,9 @@
 #book-stats-section .cs-floor--texts {
   align-items: stretch;
 }
-/* [FIX-14] Safari 13-15.3: height:100% fails in flex-stretched items.
-   Dual mechanism: modern browsers use height:100%, old Safari uses flex-grow:1. */
+#book-stats-section .cs-floor--texts .cs-floor__left {
+  padding-inline: 5%;
+}
 #book-stats-section .cs-floor--texts .cs-floor__right {
   display: flex;
   flex-direction: column;
@@ -151,16 +170,16 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 1.5rem;
+  gap: clamp(1.023rem, 1.65vw, 1.875rem);
 }
 #book-stats-section .cs-text-block h2 {
-  font-size: 4.1rem;
+  font-size: clamp(2.7962rem, 4.51vw, 5.125rem);
   font-weight: 400;
   line-height: 1.125;
-  letter-spacing: -0.04rem;
+  letter-spacing: -0.04em;
   color: #252030;
-  padding-bottom: 0.15rem;   /* [FIX-15] Descender safety for ą/ę with background-clip:text */
-  margin-bottom: -0.15rem;   /* [FIX-15] Neutralizes padding — net displacement = 0 */
+  padding-bottom: 0.15em;
+  margin-bottom: -0.15em;
   background-image: linear-gradient(
     135deg,
     #252030 2%,
@@ -179,39 +198,51 @@
   -webkit-text-fill-color: transparent;
 }
 #book-stats-section .cs-text-block p {
-  font-size: 2.25rem;
+  font-size: clamp(1.5345rem, 2.475vw, 2.8125rem);
   color: #252525;
   font-weight: 300;
   line-height: 1.6;
 }
+#book-stats-section .cs-text-block p strong {
+  font-weight: 650;
+}
 
-/* --- Stats placeholder: container query host (COUNTER LIVES HERE) ---
-   Override: display block, container-type dla cqi units wewnątrz.
-   Background jako fallback przed załadowaniem. */
+/* --- Stats placeholder --- */
 #book-stats-section .cs-stats-placeholder {
   container-type: inline-size;
-  contain-intrinsic-size: auto 30rem; /* #14: Firefox mobile — hint for engines with contain + height:auto bugs */
+  contain-intrinsic-size: auto 30rem;
   display: block;
   width: 100%;
-  min-width: 12rem; /* gwarantuje sensowne cqi przy pierwszym layoucie (React/Next) */
   height: 100%;
-  min-height: 12rem;
+  min-height: clamp(8.184rem, 13.2vw, 15rem);
   background: transparent;
-  overflow: hidden;
   padding: 0;
 }
 
 #book-stats-section .cs-divider {
   width: 100%;
-  height: 1px;
-  background: rgba(37,32,48,0.08);
+  height: 2px;
+  background: linear-gradient(to bottom,
+    rgba(58, 46, 30, 0.15) 0%, rgba(58, 46, 30, 0.15) 50%,
+    rgba(255, 255, 255, 0.6) 50%, rgba(255, 255, 255, 0.6) 100%
+  );
+  mask-image: linear-gradient(90deg, transparent, #000 20%, #000 80%, transparent);
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 20%, #000 80%, transparent);
   margin-bottom: var(--48);
+}
+#book-stats-section .cs-divider--bottom {
+  margin-bottom: 0;
+  margin-top: var(--48);
 }
 
 /* --- Tablet (768–991px) --- */
 @media screen and (max-width: 991px) {
-  #book-stats-section .cs-text-block h2 { font-size: 2.5rem; }
-  #book-stats-section .cs-text-block p { font-size: 1.25rem; }
+  #book-stats-section .cs-text-block h2 {
+    font-size: calc(0.75rem + 3.75vw);
+  }
+  #book-stats-section .cs-text-block p {
+    font-size: calc(0.375rem + 1.875vw);
+  }
 }
 
 /* --- Mobile (<767px) --- */
@@ -226,60 +257,85 @@
   #book-stats-section .cs-floor--texts .cs-floor__left  { order: 1; }
   #book-stats-section .cs-floor--texts .cs-floor__right { order: 2; }
 
-  #book-stats-section .cs-text-block h2 { font-size: 1.75rem; line-height: 1.1; }
-  #book-stats-section .cs-text-block p { font-size: 1rem; }
-  #book-stats-section .cs-stats-placeholder { height: auto; min-height: 10rem; }
+  #book-stats-section .cs-text-block h2 {
+    font-size: calc(0.525rem + 2.625vw);
+    line-height: 1.1;
+  }
+  #book-stats-section .cs-text-block p {
+    font-size: calc(0.3rem + 1.5vw);
+  }
+  #book-stats-section .cs-stats-placeholder {
+    height: auto;
+    min-height: calc(3rem + 15vw);
+  }
 }
 
 /* --- FIX: zakres 480–767px --- */
 @media screen and (min-width: 480px) and (max-width: 767px) {
-  #book-stats-section .cs-text-block { text-align: center; gap: 1.5rem; }
-  #book-stats-section .cs-text-block h2 { font-size: 3.55rem; font-weight: 400; line-height: 1.1; letter-spacing: -0.04rem; }
-  #book-stats-section .cs-text-block p { font-size: 1.6rem; font-weight: 300; line-height: 1.6; color: #252525; }
+  #book-stats-section .cs-text-block {
+    text-align: center;
+    gap: calc(0.45rem + 2.25vw);
+  }
+  #book-stats-section .cs-text-block h2 {
+    font-size: calc(1.065rem + 5.325vw);
+    font-weight: 400;
+    line-height: 1.1;
+    letter-spacing: -0.04em;
+  }
+  #book-stats-section .cs-text-block p {
+    font-size: calc(0.48rem + 2.4vw);
+    font-weight: 300;
+    line-height: 1.6;
+    color: #252525;
+  }
   #book-stats-section .cs-text-block p br { display: none; }
 }
 
-/* --- FIX: <350px — subnagłówki countera -20% --- */
+/* --- Mobile ≤479px --- */
+@media screen and (max-width: 479px) {
+  #book-stats-section .cs-text-block h2 {
+    font-size: 8.75vw;
+    line-height: 1.1;
+  }
+  #book-stats-section .cs-text-block p {
+    font-size: 5vw;
+  }
+  #book-stats-section .cs-stats-placeholder {
+    min-height: 50vw;
+  }
+}
+
+/* --- FIX: <350px --- */
 @media screen and (max-width: 349px) {
   #book-stats-section .cs-counter-sub {
     font-size: max(2.88cqi, 9px);
   }
 }
 
-/* --- FIX: <479px — divider ukryty, piętra blisko siebie --- */
+/* --- FIX: <479px divider + piętro spacing --- */
 @media screen and (max-width: 479px) {
   #book-stats-section .cs-divider { display: none; }
   #book-stats-section .cs-floor--images { margin-bottom: var(--gap-md); }
 }
 
 
-/* ============================================================
+/* ════════════════════════════════════
    COUNTER REELS — cqi-native
-   ============================================================
-   Bazowa jednostka: 18cqi (font-size cyfr)
-   height/padding/margin w em → skalują się z 18cqi, brak przycinania liczb.
-   Spacing: space-between (height:100%, fluid gapy)
-   Sub <350px: -20% (2.88cqi / 9px floor)
-   ============================================================ */
+   ════════════════════════════════════ */
 
-/* --- Zmienne animacji (scoped) --- */
 #book-stats-section {
-  isolation: isolate;
   --cr-ease-reel: cubic-bezier(0.22, 1.35, 0.36, 1);
   --cr-ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
   --cr-duration: 2400ms;
   --cr-text-main: #111111;
 }
 
-/* --- Counter root: flex column ---
-   Reset kaskady defensywny (na wypadek dziedziczenia).
-   Żyje wewnątrz .cs-stats-placeholder (piętro 2, prawa kolumna). */
 #book-stats-section .cs-counters {
   text-transform: none;
   letter-spacing: normal;
   color: var(--cr-text-main);
   font-weight: 400;
-  font-size: 1rem;
+  font-size: clamp(0.682rem, 1.1vw, 1.25rem);
   user-select: auto;
   display: flex;
   flex-direction: column;
@@ -290,11 +346,6 @@
   position: relative;
 }
 
-/* --- Dividery między wierszami ---
-   ::before = między row 1 a 2
-   ::after  = między row 2 a 3
-   position:absolute → zero wpływu na layout/space-between.
-   Styl: 2px dual-line (cień + highlight) z fade na krawędziach. */
 #book-stats-section .cs-counters::before,
 #book-stats-section .cs-counters::after {
   content: '';
@@ -318,14 +369,12 @@
   top: 66.66%;
 }
 
-/* --- Counter row --- */
 #book-stats-section .cs-counter-row {
   display: flex;
   flex-direction: row;
   align-items: center;
 }
 
-/* --- Cyfry i sufiksy: fade in na .visible --- */
 #book-stats-section .cs-counter-digits,
 #book-stats-section .cs-counter-suffix {
   opacity: 0;
@@ -336,9 +385,6 @@
   opacity: 1;
 }
 
-/* --- KOL 1: Bębny cyfrowe ---
-   height/padding-top/mask w em → skalują się z font-size (18cqi), zero przycinania.
-   clamp() = fallback gdy cqi=0 (React pierwszy paint) — liczby zawsze widoczne. */
 #book-stats-section .cs-counter-digits {
   display: flex;
   align-items: flex-start;
@@ -346,7 +392,7 @@
   font-feature-settings: "tnum";
   font-variant-numeric: tabular-nums;
   overflow: hidden;
-  font-size: clamp(2rem, 18cqi, 5.4rem);
+  font-size: 18cqi;
   line-height: 1;
   letter-spacing: -0.04em;
   font-weight: 700;
@@ -354,7 +400,7 @@
   padding-top: 0.725em;
   margin-top: -0.625em;
   margin-bottom: -0.775em;
-  transform: translateZ(0); /* #13: Samsung Internet — GPU-promote parent to fix mask + animated children glitch */
+  transform: translateZ(0);
   mask-image: linear-gradient(to bottom,
     transparent 0%, transparent 25%,
     black 40%, black 60%,
@@ -367,9 +413,8 @@
   );
 }
 
-/* --- KOL 2: Sufiks (%, h) — superscript --- */
 #book-stats-section .cs-counter-suffix {
-  font-size: clamp(1rem, 5.8cqi, 1.8rem);
+  font-size: 5.8cqi;
   line-height: 1;
   font-weight: 700;
   letter-spacing: -0.04em;
@@ -379,7 +424,6 @@
   min-width: 6cqi;
 }
 
-/* --- KOL 3: Label (heading + subheading) --- */
 #book-stats-section .cs-counter-label {
   display: flex;
   flex-direction: column;
@@ -391,14 +435,14 @@
   min-width: 0;
 }
 
-/* Heading: sweep gradient szary→czarny (GSAP animuje backgroundPosition) */
 #book-stats-section .cs-counter-heading {
-  font-size: clamp(1rem, 4.7cqi, 1.6rem);
+  font-size: 4.7cqi;
   font-weight: 700;
   line-height: 1.15;
   letter-spacing: -0.02em;
   white-space: nowrap;
-  background: linear-gradient(to right, var(--cr-text-main) 49%, #666 51%);
+  width: fit-content;
+  background: linear-gradient(to right, var(--cr-text-main) 49%, #b8b8b8 51%);
   background-size: 200% 100%;
   background-position: 100% 0;
   -webkit-background-clip: text;
@@ -406,7 +450,6 @@
   -webkit-text-fill-color: transparent;
 }
 
-/* Subheading: safety floor max(cqi, 11px) na małych kontenerach */
 #book-stats-section .cs-counter-sub {
   font-size: max(3.6cqi, 11px);
   font-weight: 300;
@@ -415,17 +458,13 @@
   white-space: nowrap;
 }
 
-/* --- Reel: kolumna cyfrowa --- */
 #book-stats-section .cs-reel {
   display: flex;
   flex-direction: column;
-  /* #16: will-change managed by JS — added before spin, emoved after transitionend */
   transform: translateY(0);
   transition: transform var(--cr-duration) var(--cr-ease-reel);
 }
 
-/* --- Digit: slot w bębnie ---
-   height: 1.05em — MUSI odpowiadać mnożnikowi w JS translateY */
 #book-stats-section .cs-digit {
   display: flex;
   justify-content: center;
@@ -433,21 +472,49 @@
   height: 1.05em;
 }
 
-/* --- Symbol suffiksu (span wewnątrz suffix slot) --- */
 #book-stats-section .cs-suffix-symbol {
   display: block;
 }
 
-/* [FIX-6] Container Query fallback — Safari <16, Chrome <105.
-   Without cqi support, font-size/margin/padding fall to inherited values → broken layout.
-   clamp/vw approximations keep counters readable. @supports not → zero impact on modern. */
+/* ════════════════════════════════════
+   Container Query fallback — Safari <16, Chrome <105
+   ════════════════════════════════════ */
 @supports not (container-type: inline-size) {
-  #book-stats-section .cs-counter-digits  { font-size: clamp(2.6rem, 9vw, 5.4rem); }
-  #book-stats-section .cs-counter-suffix  { font-size: clamp(1.1rem, 3.2vw, 1.8rem); min-width: 2em; margin-top: -1em; }
-  #book-stats-section .cs-counter-heading { font-size: clamp(1rem, 3.2vw, 1.6rem); }
-  #book-stats-section .cs-counter-sub     { font-size: clamp(0.75rem, 2.6vw, 1rem); }
-  #book-stats-section .cs-counter-label   { margin-left: 1rem; gap: 2px; }
-  #book-stats-section .cs-counters        { padding: 0 0.5rem; }
+
+  #book-stats-section .cs-counter-digits  { font-size: clamp(3.683rem, 5.94vw, 6.75rem); }
+  #book-stats-section .cs-counter-suffix  { font-size: clamp(1.228rem, 1.98vw, 2.25rem); }
+  #book-stats-section .cs-counter-heading { font-size: clamp(1.091rem, 1.76vw, 2rem); }
+  #book-stats-section .cs-counter-sub     { font-size: clamp(0.682rem, 1.1vw, 1.25rem); }
+
+  #book-stats-section .cs-counter-suffix  { min-width: clamp(1.364rem, 2.2vw, 2.5rem); margin-top: calc(-1 * clamp(0.682rem, 1.1vw, 1.25rem)); }
+  #book-stats-section .cs-counter-label   { margin-left: clamp(0.682rem, 1.1vw, 1.25rem); gap: 2px; }
+  #book-stats-section .cs-counters        { padding: 0 clamp(0.341rem, 0.55vw, 0.625rem); }
   #book-stats-section .cs-counters::before,
-  #book-stats-section .cs-counters::after  { left: 0.5rem; right: 0.5rem; }
+  #book-stats-section .cs-counters::after  { left: clamp(0.341rem, 0.55vw, 0.625rem); right: clamp(0.341rem, 0.55vw, 0.625rem); }
+
+  @media screen and (max-width: 991px) {
+    #book-stats-section .cs-counter-digits  { font-size: 9vw; }
+    #book-stats-section .cs-counter-suffix  { font-size: 3.2vw; }
+    #book-stats-section .cs-counter-heading { font-size: 3.2vw; }
+    #book-stats-section .cs-counter-sub     { font-size: calc(0.3rem + 1.5vw); }
+
+    #book-stats-section .cs-counter-suffix  { min-width: calc(0.6rem + 3vw); margin-top: calc(-0.3rem - 1.5vw); }
+    #book-stats-section .cs-counter-label   { margin-left: calc(0.3rem + 1.5vw); }
+    #book-stats-section .cs-counters        { padding: 0 calc(0.15rem + 0.75vw); }
+    #book-stats-section .cs-counters::before,
+    #book-stats-section .cs-counters::after  { left: calc(0.15rem + 0.75vw); right: calc(0.15rem + 0.75vw); }
+  }
+
+  @media screen and (max-width: 479px) {
+    #book-stats-section .cs-counter-digits  { font-size: 13vw; }
+    #book-stats-section .cs-counter-suffix  { font-size: 5.5vw; }
+    #book-stats-section .cs-counter-heading { font-size: 5vw; }
+    #book-stats-section .cs-counter-sub     { font-size: 3.75vw; }
+
+    #book-stats-section .cs-counter-suffix  { min-width: 10vw; margin-top: -5vw; }
+    #book-stats-section .cs-counter-label   { margin-left: 5vw; }
+    #book-stats-section .cs-counters        { padding: 0 2.5vw; }
+    #book-stats-section .cs-counters::before,
+    #book-stats-section .cs-counters::after  { left: 2.5vw; right: 2.5vw; }
+  }
 }
