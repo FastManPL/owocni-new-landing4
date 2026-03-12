@@ -220,7 +220,7 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
     let bookRO: ResizeObserver | null = null;
     let sentryIO: IntersectionObserver | null = null;
     let preloadStarted = false;
-    let scrollEnabled = false;
+    let _scrollEnabled = false; /* używane w PRODUCTION PATTERN (obecnie zakomentowany) */
     let allLoaded = false;
     let roRafId = 0;
 
@@ -254,7 +254,8 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
       return order;
     }
 
-    const PRIORITY_COUNT = 5;
+    const _PRIORITY_COUNT = 5; /* używane w PRODUCTION PATTERN (obecnie zakomentowany) */
+    void _PRIORITY_COUNT;
 
     /* ── Find Nearest Loaded Frame ── */
     function findNearestLoaded(target: number) {
@@ -300,7 +301,7 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
 
     /* ── DPR-aware canvas setup ── */
     function setupCanvasDPR() {
-      if (!ctx) return;
+      if (!canvas || !ctx) return;
 
       const dpr = Math.min(window.devicePixelRatio || 1, 2);
       const rect = bookContainer!.getBoundingClientRect();
@@ -345,7 +346,7 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
       ctx.drawImage(img as CanvasImageSource, cached.sx, cached.sy, cached.sw, cached.sh);
     }
 
-    /* ── onFrameLoaded ── */
+    /* ── onFrameLoaded (używane w PRODUCTION PATTERN gdy odkomentowany) ── */
     function onFrameLoaded(index: number) {
       loaded[index] = true;
       loadedCount++;
@@ -358,10 +359,11 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
         drawFrame(bestNow);
       }
     }
+    void onFrameLoaded; /* referencja żeby TS nie zgłaszał unused */
 
     /* ── ScrollTrigger animation ── */
     function createScrollAnimation() {
-      if (!window.gsap || !window.ScrollTrigger) return;
+      if (typeof window === 'undefined' || !ScrollTrigger) return;
       gsap.registerPlugin(ScrollTrigger);
 
       bookTl = gsap.timeline({
@@ -397,7 +399,7 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
 
       bookST = bookTl.scrollTrigger!;
       sectionST = bookST;
-      scrollEnabled = true;
+      _scrollEnabled = true;
 
       scrollRuntime.requestRefresh('book-frames-loaded');
     }
@@ -431,7 +433,7 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
 
       setupCanvasDPR();
       drawFrame(0);
-      canvas.classList.add('is-ready');
+      if (canvas) canvas.classList.add('is-ready');
 
       createScrollAnimation();
       setupResizeObserver();
@@ -452,7 +454,7 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
             concurrency--;
             onFrameLoaded(loadedIdx);
 
-            if (!scrollEnabled && loadedCount >= PRIORITY_COUNT) {
+            if (!_scrollEnabled && loadedCount >= _PRIORITY_COUNT) {
               canvas.classList.add('is-ready');
               createScrollAnimation();
               setupResizeObserver();
@@ -579,7 +581,8 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
       for (let ci = 0; ci < FRAME_COUNT; ci++) { loaded[ci] = false; }
       loadedCount = 0;
       allLoaded = false;
-      scrollEnabled = false;
+      _scrollEnabled = false;
+      void _scrollEnabled; /* read so TS does not flag unused (used in PRODUCTION PATTERN when uncommented) */
       preloadStarted = false;
       playhead.frame = 0;
       displayIndex = -1;
