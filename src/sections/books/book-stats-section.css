@@ -115,6 +115,13 @@
   aspect-ratio: 606 / 456;
   background: linear-gradient(135deg, #e8e4e0 0%, #ddd8d2 60%, #d5cfc8 100%);
 }
+/* Video w lewej kolumnie — te same wymiary i flow co .cs-img-placeholder (jak w PREVIEW) */
+#book-stats-section .cs-floor--images .cs-floor__left .cs-img--stats.cs-video {
+  width: 100%;
+  display: block;
+  object-fit: cover;
+  overflow: hidden;
+}
 
 #book-stats-section .cs-img--book {
   aspect-ratio: 1000 / 720;

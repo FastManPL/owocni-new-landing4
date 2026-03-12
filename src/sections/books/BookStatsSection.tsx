@@ -150,18 +150,17 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
       cleanups.push(cleanupLayers);
     }
 
-    if (window.gsap) {
-      const headings = [].slice.call(container.querySelectorAll('.cs-counter-heading')) as HTMLElement[];
-      headings.forEach(function(h: HTMLElement, i: number) {
-        const tween = gsap.to(h, {
-          backgroundPosition: '0% 0',
-          duration: 3,
-          delay: 0.3 + i * 0.15,
-          ease: 'bounce.out'
-        });
-        gsapInstances.push(tween);
+    /* GSAP z importu (nie window.gsap) — animacja „reveal” nagłówków liczników */
+    const headings = [].slice.call(container.querySelectorAll('.cs-counter-heading')) as HTMLElement[];
+    headings.forEach(function(h: HTMLElement, i: number) {
+      const tween = gsap.to(h, {
+        backgroundPosition: '0% 0',
+        duration: 3,
+        delay: 0.3 + i * 0.15,
+        ease: 'bounce.out'
       });
-    }
+      gsapInstances.push(tween);
+    });
   }
 
   /* --- IO: counters visibility --- */
