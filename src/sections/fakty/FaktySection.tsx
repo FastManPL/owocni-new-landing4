@@ -205,10 +205,10 @@ function init(container: HTMLElement): { kill: () => void } {
 
     const opacityEnd = 54;
 
-    // Start: 'center center' — animacja startuje gdy środek wiersza jest na środku viewportu.
-    // Dzięki temu przy sekcji w pierwszym viewporcie nie jesteśmy od razu "za" startem (center bottom → 0).
+    // Start: 'top bottom' = górna krawędź triggera przy dolnym brzegu viewportu — sekcja właśnie wjeżdża.
+    // Zależy tylko od pozycji sekcji w dokumencie; dodanie sekcji powyżej przesuwa ten moment.
     const st1 = ScrollTrigger.create({
-      trigger: row1, start: 'center center', end: 'top top+=20%', scrub: true,
+      trigger: row1, start: 'top bottom', end: 'top top+=20%', scrub: true,
       animation: gsap.to(row1Chars, { ease: 'power1', stagger: 0.07, rotationX: 0, z: 0 }),
       onLeave: () => setWC(row1Chars, 'auto'),
       onEnterBack: () => setWC(row1Chars, 'transform, opacity'),
@@ -217,7 +217,7 @@ function init(container: HTMLElement): { kill: () => void } {
     gsapInstances.push(st1);
 
     const st2 = ScrollTrigger.create({
-      trigger: row1, start: 'center center', end: `top top+=${opacityEnd}%`, scrub: true,
+      trigger: row1, start: 'top bottom', end: `top top+=${opacityEnd}%`, scrub: true,
       animation: gsap.to(row1Chars, { opacity: 1, ease: 'power2.in', stagger: 0.07 }),
     });
     gsapInstances.push(st2);
@@ -225,7 +225,7 @@ function init(container: HTMLElement): { kill: () => void } {
     const tl = gsap.timeline();
     tl.to(row2Word, { ease: 'power1.inOut', scaleY: 1, duration: 0.50 }, 0.08);
     const st3 = ScrollTrigger.create({
-      trigger: faktyBlock, start: 'center center', end: 'top top', scrub: true, animation: tl,
+      trigger: faktyBlock, start: 'top bottom', end: 'top top', scrub: true, animation: tl,
       onEnter: () => setWC([row2Word], 'transform'),
       onLeave: () => setWC([row2Word], 'auto'),
       onEnterBack: () => setWC([row2Word], 'transform'),
@@ -244,11 +244,11 @@ function init(container: HTMLElement): { kill: () => void } {
 
     playhead.frame = 0;
     currentFrame = -1;
-    // Zgodnie z buildPhase1: start gdy środek sekcji w centrum viewportu (nie 'top top+=66%' — przy krótkim page od razu za startem).
+    // Start: 'top bottom' — jak wyżej, w odniesieniu do pozycji sekcji w dokumencie.
     const tween = gsap.to(playhead, { frame: FRAME_COUNT - 1, snap: 'frame', ease: 'none' });
 
     frameST = ScrollTrigger.create({
-      trigger: row1, start: 'center center',
+      trigger: row1, start: 'top bottom',
       end: function() {
         const ratio = faktyBlock.offsetHeight / stableViewportHeight;
         const endPct = Math.max(5, Math.round(ratio * 45));
