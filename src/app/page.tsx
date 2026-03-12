@@ -8,8 +8,6 @@ export default function HomePage() {
       <HeroSection />
       <BookStatsSection />
       <FaktySection />
-      {/* Spacer pod sekcją Fakty — ScrollTrigger scrub potrzebuje dystansu scrollu (jak w preview: .preview-spacer 100vh). Bez tego animacja ściska się w kilka pikseli. */}
-      <div style={{ minHeight: '100vh' }} aria-hidden="true" />
     </main>
   );
 }
