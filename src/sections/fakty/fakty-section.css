@@ -1,0 +1,78 @@
+/* ═══════════════════════════════════════════════════════════
+   SEKCJA: fakty
+   NAMESPACE: #fakty-section
+   ═══════════════════════════════════════════════════════════ */
+
+/* ⚠️ NIE DODAWAĆ isolation: isolate — sekcja ma background: transparent,
+   nie używa blend-mode. Izolacja nie rozwiązuje Safari 
+   background-clip:text + 3D transform bug. Odrzucone po analizie. */
+
+/* ⚠️ NIE DODAWAĆ contain: layout style — koliduje z kerning margins 
+   na .char (row1) i nietestowane z background-clip:text.
+   Odrzucone po analizie — nie jest to pominięcie. */
+
+#fakty-section {
+  min-height: 100vh;
+  display: flex; flex-direction: column; align-items: center;
+  justify-content: center;
+  padding: 0;
+  background: transparent;
+}
+
+#fakty-section .title-block {
+  text-align: center;
+  width: calc((100% - clamp(1.364rem, 2.2vw, 2.5rem)) * 0.9);
+  max-width: clamp(50.33rem, 81.18vw, 92.25rem);
+  margin-inline: auto;
+  --base: 100px;
+  --ratio: 0.625;
+  --gap-ratio: -0.066;
+  --sideoffset-r1: 0px;
+  --sideoffset-r2: 0px;
+  line-height: 0.92;
+  display: flex; flex-direction: column;
+  align-items: flex-start;
+  gap: 0;
+  position: relative;
+  visibility: hidden;
+}
+#fakty-section .title-block.ready { visibility: visible; }
+
+@media screen and (max-width: 991px) {
+  #fakty-section .title-block { width: calc((100% - 0.6rem - 3vw) * 0.9); }
+}
+@media screen and (max-width: 479px) {
+  #fakty-section .title-block { width: calc(90vw * 0.9); }
+}
+
+#fakty-section .title-row { display: inline-flex; text-transform: uppercase; letter-spacing: -0.02em; white-space: nowrap; }
+#fakty-section .title-row--1 {
+  font-weight: 900;
+  font-size: var(--base, 1px);
+  padding-left: var(--sideoffset-r1, 0px);
+}
+#fakty-section .title-row--2 {
+  font-weight: 139;
+  font-size: calc(var(--base, 1px) * var(--ratio));
+  margin-top: calc(var(--base, 1px) * var(--gap-ratio));
+  padding-left: var(--sideoffset-r2, 0px);
+}
+#fakty-section .word { display: inline-block; position: relative; }
+#fakty-section .word + .word { margin-left: 0.25em; }
+#fakty-section .char {
+  display: inline-block;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
+#fakty-section .char.video-fill,
+#fakty-section .word.video-fill {
+  display: inline-block;
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+  color: transparent !important;
+  background-repeat: no-repeat, no-repeat;
+  /* Warstwa 1: obraz wideo, Warstwa 2: czarny fallback (zawsze widoczny gdy obraz pending/failed) */
+  background-image: var(--current-frame-url), linear-gradient(#0a0a0c, #0a0a0c);
+}

@@ -1,0 +1,469 @@
+<!DOCTYPE html>
+<!-- ⚠️ PREVIEW ONLY — NIE WKLEJAJ DO REPO -->
+<!-- Źródło prawdy: FaktySection.tsx + fakty-section.css -->
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>fakty — PREVIEW</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.7/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.7/ScrollTrigger.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+  <style>
+    html.lenis, html.lenis body { height: auto; }
+    .lenis.lenis-smooth { scroll-behavior: auto !important; }
+    .lenis.lenis-smooth [data-lenis-prevent] { overscroll-behavior: contain; }
+    .lenis.lenis-stopped { overflow: hidden; }
+    html { font-size: 16px; } /* zamrożona baza = produkcja (globals.css: html { font-size: 16px }) */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { 
+      font-family: 'Lexend', sans-serif;
+      font-weight: 700;
+      background: #f7f6f4;
+      -webkit-font-smoothing: antialiased;
+    }
+    .preview-spacer { height: 100vh; display: flex; align-items: center; justify-content: center; color: rgba(0,0,0,0.12); font-size: 1.2rem; text-transform: uppercase; letter-spacing: 0.1em; }
+    /* ═══ fakty-section.css — LITERALNA KOPIA, ZERO MODYFIKACJI ═══ */
+    /* ═══════════════════════════════════════════════════════════
+       SEKCJA: fakty
+       NAMESPACE: #fakty-section
+       ═══════════════════════════════════════════════════════════ */
+
+    /* ⚠️ NIE DODAWAĆ isolation: isolate — sekcja ma background: transparent,
+       nie używa blend-mode. Izolacja nie rozwiązuje Safari 
+       background-clip:text + 3D transform bug. Odrzucone po analizie. */
+
+    /* ⚠️ NIE DODAWAĆ contain: layout style — koliduje z kerning margins 
+       na .char (row1) i nietestowane z background-clip:text.
+       Odrzucone po analizie — nie jest to pominięcie. */
+
+    #fakty-section {
+      min-height: 100vh;
+      display: flex; flex-direction: column; align-items: center;
+      justify-content: center;
+      padding: 0;
+      background: transparent;
+    }
+
+    #fakty-section .title-block {
+      text-align: center;
+      width: calc((100% - clamp(1.364rem, 2.2vw, 2.5rem)) * 0.9);
+      max-width: clamp(50.33rem, 81.18vw, 92.25rem);
+      margin-inline: auto;
+      --base: 100px;
+      --ratio: 0.625;
+      --gap-ratio: -0.066;
+      --sideoffset-r1: 0px;
+      --sideoffset-r2: 0px;
+      line-height: 0.92;
+      display: flex; flex-direction: column;
+      align-items: flex-start;
+      gap: 0;
+      position: relative;
+      visibility: hidden;
+    }
+    #fakty-section .title-block.ready { visibility: visible; }
+
+    @media screen and (max-width: 991px) {
+      #fakty-section .title-block { width: calc((100% - 0.6rem - 3vw) * 0.9); }
+    }
+    @media screen and (max-width: 479px) {
+      #fakty-section .title-block { width: calc(90vw * 0.9); }
+    }
+
+    #fakty-section .title-row { display: inline-flex; text-transform: uppercase; letter-spacing: -0.02em; white-space: nowrap; }
+    #fakty-section .title-row--1 {
+      font-weight: 900;
+      font-size: var(--base, 1px);
+      padding-left: var(--sideoffset-r1, 0px);
+    }
+    #fakty-section .title-row--2 {
+      font-weight: 139;
+      font-size: calc(var(--base, 1px) * var(--ratio));
+      margin-top: calc(var(--base, 1px) * var(--gap-ratio));
+      padding-left: var(--sideoffset-r2, 0px);
+    }
+    #fakty-section .word { display: inline-block; position: relative; }
+    #fakty-section .word + .word { margin-left: 0.25em; }
+    #fakty-section .char {
+      display: inline-block;
+      -webkit-backface-visibility: hidden;
+      backface-visibility: hidden;
+    }
+
+    #fakty-section .char.video-fill,
+    #fakty-section .word.video-fill {
+      display: inline-block;
+      -webkit-background-clip: text !important;
+      background-clip: text !important;
+      -webkit-text-fill-color: transparent !important;
+      color: transparent !important;
+      background-repeat: no-repeat, no-repeat;
+      /* Warstwa 1: obraz wideo, Warstwa 2: czarny fallback */
+      background-image: var(--current-frame-url), linear-gradient(#0a0a0c, #0a0a0c);
+    }
+    /* ═══ KONIEC CSS SEKCJI ═══ */
+  </style>
+</head>
+<body>
+  <div class="preview-spacer">Scrolluj w dół ↓</div>
+  <section id="fakty-section">
+    <div class="title-block" id="fakty-block">
+      <div class="title-dom" id="fakty-dom"></div>
+    </div>
+  </section>
+  <div class="preview-spacer">— koniec —</div>
+  <script>
+    // ═══ GSAP NAJPIERW ═══
+    gsap.registerPlugin(ScrollTrigger);
+    ScrollTrigger.config({ ignoreMobileResize: true });
+
+    // ═══ LENIS PO GSAP ═══
+    const lenis = new Lenis({
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true,
+      wheelMultiplier: 1,
+      touchMultiplier: 2,
+    });
+    window.lenis = lenis;
+
+    // Connect Lenis to GSAP (ScrollTrigger już zarejestrowany)
+    lenis.on('scroll', ScrollTrigger.update);
+    gsap.ticker.add((time) => { lenis.raf(time * 1000); });
+    gsap.ticker.lagSmoothing(0);
+
+    // requestRefresh z debounce 120ms — spójność z produkcją
+    let _previewRefreshTimer = null;
+    const scrollRuntime = {
+      getScroll:      () => window.lenis?.scroll ?? window.scrollY,
+      getRawScroll:   () => window.lenis?.actualScroll ?? window.scrollY,
+      requestRefresh: (reason) => {
+        clearTimeout(_previewRefreshTimer);
+        _previewRefreshTimer = setTimeout(() => ScrollTrigger.refresh(true), 120);
+      }
+    };
+
+    // ═══ init(container) — KOD IDENTYCZNY Z TYM CO WCHODZI DO useGSAP ═══
+    function init(container) {
+      const $id = (id) => container.querySelector('#' + id);
+
+      const cleanups = [];
+      const gsapInstances = [];
+      const timerIds = [];
+      const observers = [];
+
+      const KERNING_MARGINS = [0, -0.1459, -0.1101, -0.1196, -0.1316];
+      const TEXT_ROWS = [
+        { text: 'FAKTY', weight: 900, kerning: KERNING_MARGINS },
+        { text: 'SĄ TAKIE', weight: 139, kerning: null }
+      ];
+
+      const faktyBlock = $id('fakty-block');
+      const faktyDom = $id('fakty-dom');
+
+      if (!faktyBlock || !faktyDom) {
+        console.warn('[fakty] Brak wymaganych elementów DOM');
+        return { kill: () => {} };
+      }
+
+      let charOffsets = [];
+      let currentFrame = -1;
+      const playhead = { frame: 0 };
+      let isKilled = false;
+      let stableViewportHeight = window.innerHeight;
+
+      function buildDOM() {
+        faktyDom.innerHTML = '';
+        TEXT_ROWS.forEach((rowDef, ri) => {
+          const rowSpan = document.createElement('span');
+          rowSpan.className = 'title-row title-row--' + (ri + 1);
+
+          if (ri === 0) {
+            const words = rowDef.text.split(' ');
+            let charIndex = 0;
+            words.forEach(word => {
+              const wordSpan = document.createElement('span');
+              wordSpan.className = 'word';
+              [...word].forEach(ch => {
+                const span = document.createElement('span');
+                span.className = 'char video-fill';
+                span.textContent = ch;
+                if (rowDef.kerning && charIndex < rowDef.kerning.length && rowDef.kerning[charIndex] !== 0) {
+                  span.style.marginLeft = rowDef.kerning[charIndex] + 'em';
+                }
+                wordSpan.appendChild(span);
+                charIndex++;
+              });
+              rowSpan.appendChild(wordSpan);
+              charIndex++;
+            });
+          } else {
+            const wordSpan = document.createElement('span');
+            wordSpan.className = 'word video-fill';
+            wordSpan.textContent = rowDef.text;
+            rowSpan.appendChild(wordSpan);
+          }
+          faktyDom.appendChild(rowSpan);
+        });
+      }
+
+      function computeAndSetBase() {
+        const targetW = faktyBlock.getBoundingClientRect().width;
+        const rows = faktyDom.querySelectorAll('.title-row');
+        const r1 = rows[0], r2 = rows[1];
+        if (!r1 || !r2) return;
+
+        r1.style.fontSize = '200px';
+        r2.style.fontSize = '200px';
+        const r1w = r1.getBoundingClientRect().width;
+        const r2w = r2.getBoundingClientRect().width;
+        const base = Math.floor((targetW / r1w) * 200);
+        const ratio = (r1w / r2w).toFixed(4);
+
+        faktyBlock.style.setProperty('--base', base + 'px');
+        faktyBlock.style.setProperty('--ratio', ratio);
+        r1.style.fontSize = '';
+        r2.style.fontSize = '';
+
+        const row1Size = base;
+        const row2Size = base * parseFloat(ratio);
+        const measureCanvas = document.createElement('canvas');
+        const measureCtx = measureCanvas.getContext('2d');
+        if (!measureCtx) return;
+        
+        measureCtx.font = '900 ' + row1Size + 'px Lexend';
+        const bearingR1 = Math.abs(measureCtx.measureText('F').actualBoundingBoxLeft);
+        measureCtx.font = '139 ' + row2Size + 'px Lexend';
+        const bearingR2 = Math.abs(measureCtx.measureText('S').actualBoundingBoxLeft);
+        const bearingDiff = bearingR1 - bearingR2;
+        
+        if (bearingDiff > 0.5) {
+          faktyBlock.style.setProperty('--sideoffset-r1', '0px');
+          faktyBlock.style.setProperty('--sideoffset-r2', bearingDiff.toFixed(1) + 'px');
+        } else if (bearingDiff < -0.5) {
+          faktyBlock.style.setProperty('--sideoffset-r1', (-bearingDiff).toFixed(1) + 'px');
+          faktyBlock.style.setProperty('--sideoffset-r2', '0px');
+        } else {
+          faktyBlock.style.setProperty('--sideoffset-r1', '0px');
+          faktyBlock.style.setProperty('--sideoffset-r2', '0px');
+        }
+        faktyBlock.classList.add('ready');
+      }
+
+      function measureCharOffsets() {
+        const blockRect = faktyBlock.getBoundingClientRect();
+        charOffsets = [];
+        faktyDom.querySelectorAll('.video-fill').forEach(el => {
+          const r = el.getBoundingClientRect();
+          charOffsets.push({ el: el, x: r.left - blockRect.left, y: r.top - blockRect.top });
+        });
+      }
+
+      const FRAME_COUNT = 34;
+      const FRAME_PATH = 'frames/fakty-';
+      
+      // ═══ IMAGE-SET FEATURE DETECTION ═══
+      // Przeglądarka wybiera AVIF jeśli obsługuje, inaczej WebP
+      const supportsImageSet = typeof CSS !== 'undefined' && 
+        CSS.supports && 
+        CSS.supports('background-image', 'image-set(url("x.webp") type("image/webp"))');
+
+      function buildFrameValue(index) {
+        const num = String(index + 1).padStart(2, '0');
+        if (supportsImageSet) {
+          return `image-set(url('${FRAME_PATH}${num}.avif') type('image/avif'), url('${FRAME_PATH}${num}.webp') type('image/webp'))`;
+        }
+        // Fallback dla starych przeglądarek — WebP
+        return `url('${FRAME_PATH}${num}.webp')`;
+      }
+
+      // Pre-build wszystkie wartości CSS
+      const frameValues = Array.from({ length: FRAME_COUNT }, (_, i) => buildFrameValue(i));
+
+      // ═══ FRAME APPLICATION ═══
+      // Bez ręcznego preloadu — przeglądarka ładuje przez CSS image-set()
+      // visibilitychange listener wymusza re-apply frame po tab switch
+
+      function applyFrame(index) {
+        if (index === currentFrame) return;
+        currentFrame = index;
+        const value = frameValues[index];
+        if (value) { faktyDom.style.setProperty('--current-frame-url', value); }
+      }
+
+      function setupVideoFill() {
+        const blockW = faktyBlock.getBoundingClientRect().width;
+        const frameH = Math.round(blockW * 540 / 960);
+        charOffsets.forEach(co => {
+          // Dwie warstwy: obraz wideo + czarny fallback
+          co.el.style.backgroundSize = blockW + 'px ' + frameH + 'px, cover';
+          co.el.style.backgroundPosition = (-co.x) + 'px ' + (-co.y) + 'px, center';
+        });
+      }
+
+      function buildPhase1() {
+        const rows = faktyDom.querySelectorAll('.title-row');
+        const row1 = rows[0], row2 = rows[1];
+        if (!row1 || !row2) return;
+        
+        const row1Chars = [...row1.querySelectorAll('.char')];
+        if (row1Chars.length === 0) return;
+        
+        row1Chars.forEach(ch => gsap.set(ch.parentNode, { perspective: 1000 }));
+        const setWC = (els, value) => els.forEach(el => { el.style.willChange = value; });
+
+        setWC(row1Chars, 'transform, opacity');
+        gsap.set(row1Chars, { opacity: 0, rotationX: -90, z: -200, transformOrigin: '50% 0%' });
+
+        const row2Word = row2.querySelector('.word.video-fill');
+        if (!row2Word) return;
+        
+        setWC([row2Word], 'transform');
+        gsap.set(row2Word, { scaleY: 0, transformOrigin: '50% 0%' });
+
+        const opacityEnd = 54;
+
+        const st1 = ScrollTrigger.create({
+          trigger: row1, start: 'center bottom', end: 'top top+=20%', scrub: true,
+          animation: gsap.to(row1Chars, { ease: 'power1', stagger: 0.07, rotationX: 0, z: 0 }),
+          onLeave: () => setWC(row1Chars, 'auto'),
+          onEnterBack: () => setWC(row1Chars, 'transform, opacity'),
+          onLeaveBack: () => setWC(row1Chars, 'auto'),
+        });
+        gsapInstances.push(st1);
+
+        const st2 = ScrollTrigger.create({
+          trigger: row1, start: 'center bottom', end: `top top+=${opacityEnd}%`, scrub: true,
+          animation: gsap.to(row1Chars, { opacity: 1, ease: 'power2.in', stagger: 0.07 }),
+        });
+        gsapInstances.push(st2);
+
+        const tl = gsap.timeline();
+        tl.to(row2Word, { ease: 'power1.inOut', scaleY: 1, duration: 0.50 }, 0.08);
+        const st3 = ScrollTrigger.create({
+          trigger: faktyBlock, start: 'center bottom', end: 'top top', scrub: true, animation: tl,
+          onEnter: () => setWC([row2Word], 'transform'),
+          onLeave: () => setWC([row2Word], 'auto'),
+          onEnterBack: () => setWC([row2Word], 'transform'),
+          onLeaveBack: () => setWC([row2Word], 'auto'),
+        });
+        gsapInstances.push(st3);
+      }
+
+      let frameST = null;
+
+      function buildFrameScroll() {
+        if (frameST) { frameST.kill(); frameST = null; }
+        const row1 = faktyDom.querySelector('.title-row--1');
+        if (!row1) return;
+
+        playhead.frame = 0;
+        currentFrame = -1;
+        const START_PCT = 66;
+
+        const tween = gsap.to(playhead, { frame: FRAME_COUNT - 1, snap: 'frame', ease: 'none' });
+
+        frameST = ScrollTrigger.create({
+          trigger: row1, start: 'top top+=' + START_PCT + '%',
+          end: function() {
+            const ratio = faktyBlock.offsetHeight / stableViewportHeight;
+            const endPct = Math.max(5, Math.round(ratio * 45));
+            return 'top top-=' + endPct + '%';
+          },
+          scrub: true, invalidateOnRefresh: true, animation: tween,
+          onUpdate: function() { applyFrame(Math.round(playhead.frame)); },
+        });
+        gsapInstances.push(frameST);
+      }
+
+      let resizeTimer = null;
+      let lastBlockWidth = 0;
+      let lastInnerWidth = window.innerWidth;
+      
+      function onResize() {
+        const currentInnerWidth = window.innerWidth;
+        if (currentInnerWidth === lastInnerWidth) return;
+        lastInnerWidth = currentInnerWidth;
+        stableViewportHeight = window.innerHeight;
+        
+        if (resizeTimer !== null) clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(() => {
+          if (isKilled || !container.isConnected) return;
+          const currentWidth = faktyBlock.offsetWidth;
+          if (currentWidth === lastBlockWidth) return;
+          lastBlockWidth = currentWidth;
+
+          computeAndSetBase();
+          measureCharOffsets();
+          setupVideoFill();
+          currentFrame = -1;
+          applyFrame(Math.round(playhead.frame));
+          scrollRuntime.requestRefresh('st-refresh');
+        }, 150);
+      }
+      window.addEventListener('resize', onResize, { passive: true });
+      cleanups.push(() => window.removeEventListener('resize', onResize));
+      timerIds.push({ type: 'timeout', id: () => resizeTimer });
+
+      function kill() {
+        isKilled = true;
+        cleanups.forEach(fn => { try { fn(); } catch(e) {} });
+        timerIds.forEach(t => {
+          try {
+            const id = typeof t.id === 'function' ? t.id() : t.id;
+            if (id == null) return;
+            if (t.type === 'timeout') clearTimeout(id);
+            else if (t.type === 'interval') clearInterval(id);
+            else if (t.type === 'raf') cancelAnimationFrame(id);
+            else if (t.type === 'idle' && typeof cancelIdleCallback === 'function') cancelIdleCallback(id);
+          } catch(e) {}
+        });
+        observers.forEach(obs => { try { obs?.disconnect?.(); } catch(e) {} });
+        gsapInstances.forEach(inst => {
+          try { inst?.revert?.(); } catch(e) {}
+          try { inst?.kill?.(); } catch(e) {}
+        });
+        faktyBlock.classList.remove('ready');
+        faktyDom.innerHTML = '';
+      }
+
+      document.fonts.ready.then(() => {
+        if (isKilled || !container.isConnected) return;
+        stableViewportHeight = window.innerHeight;
+        buildDOM();
+        computeAndSetBase();
+        lastBlockWidth = faktyBlock.offsetWidth;
+        measureCharOffsets();
+        setupVideoFill();
+        applyFrame(0);
+        buildPhase1();
+        buildFrameScroll();
+        
+        // FIX: Force re-apply frame po powrocie do karty
+        function onVisibilityChange() {
+          if (document.visibilityState === 'visible') {
+            const frame = currentFrame;
+            currentFrame = -1;  // reset guard
+            applyFrame(frame);
+          }
+        }
+        document.addEventListener('visibilitychange', onVisibilityChange);
+        cleanups.push(() => document.removeEventListener('visibilitychange', onVisibilityChange));
+      });
+
+      return { kill };
+    }
+    // ═══ KONIEC init(container) ═══
+
+    document.addEventListener('DOMContentLoaded', () => {
+      const el = document.getElementById('fakty-section');
+      if (!el) throw new Error('[PREVIEW] Missing #fakty-section — sprawdź HTML sekcji');
+      window.faktyPreview = init(el);
+    });
+  </script>
+</body>
+</html>
