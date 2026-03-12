@@ -67,6 +67,7 @@ function init(container: HTMLElement): { kill: () => void } {
   const frameValues = Array.from({ length: FRAME_COUNT }, (_, i) => buildFrameValue(i));
 
   function buildDOM() {
+    if (!faktyDom) return;
     faktyDom.innerHTML = '';
     TEXT_ROWS.forEach((rowDef, ri) => {
       const rowSpan = document.createElement('span');
