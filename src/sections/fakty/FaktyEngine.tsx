@@ -227,10 +227,12 @@ function init(container: HTMLElement): { kill: () => void } {
     buildOrganicST();
 
     // ── ANIMACJA LITER (3D transform) — st1, st2, st3 ─────────────────────
-    // Wartości z pliku źródłowego fakty.PREVIEW (4).html: trigger = row1 / faktyBlock,
-    // start = 'center bottom' (napis „dotyka” dolnej krawędzi i wjeżdża w górę).
+    // Trigger = sekcja (container), start = 'top bottom' — animacja startuje gdy SEKCJA
+    // zaczyna się pojawiać na ekranie (górna krawędź sekcji przy dolnej krawędzi viewportu).
+    // Nie używamy row1/faktyBlock jako triggera — po refreshu / w appce ich pozycje
+    // bywają liczone w złym momencie i animacja zaczynała się za wcześnie.
     const st1 = ScrollTrigger.create({
-      trigger: row1, start: 'center bottom', end: 'top top+=20%', scrub: true,
+      trigger: container, start: 'top bottom', end: 'top top+=20%', scrub: true,
       animation: gsap.to(row1Chars, { ease: 'power1', stagger: 0.07, rotationX: 0, z: 0 }),
       onLeave:     () => setWC(row1Chars, 'auto'),
       onEnterBack: () => setWC(row1Chars, 'transform, opacity'),
@@ -239,7 +241,7 @@ function init(container: HTMLElement): { kill: () => void } {
     gsapInstances.push(st1);
 
     const st2 = ScrollTrigger.create({
-      trigger: row1, start: 'center bottom', end: 'top top+=' + opacityEnd + '%', scrub: true,
+      trigger: container, start: 'top bottom', end: 'top top+=' + opacityEnd + '%', scrub: true,
       animation: gsap.to(row1Chars, { opacity: 1, ease: 'power2.in', stagger: 0.07 }),
     });
     gsapInstances.push(st2);
@@ -247,7 +249,7 @@ function init(container: HTMLElement): { kill: () => void } {
     const tl = gsap.timeline();
     tl.to(row2Word, { ease: 'power1.inOut', scaleY: 1, duration: 0.50 }, 0.08);
     const st3 = ScrollTrigger.create({
-      trigger: faktyBlock, start: 'center bottom', end: 'top top', scrub: true, animation: tl,
+      trigger: container, start: 'top bottom', end: 'top top', scrub: true, animation: tl,
       onEnter:     () => setWC([row2Word], 'transform'),
       onLeave:     () => setWC([row2Word], 'auto'),
       onEnterBack: () => setWC([row2Word], 'transform'),
