@@ -7,7 +7,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { scrollRuntime } from '@/lib/scrollRuntime';
 import './book-stats-section.css';
 
-import statsPosterImg from './Statystyki-stron.png';
+// Poster wideo: public/books/Statystyki-stron.png → /books/Statystyki-stron.png
 
 // ⚠️ GSAP-SSR-01: ZAKAZ gsap.registerPlugin() na module top-level.
 // Next.js pre-renderuje Client Components na serwerze — window/document nie istnieją.
@@ -611,7 +611,7 @@ export function BookStatsSection() {
             <video
               className="cs-img--stats cs-video"
               src="/books/banner-konwersja-strony.mp4"
-              poster={statsPosterImg.src}
+              poster="/books/Statystyki-stron.png"
               playsInline
               muted
               loop

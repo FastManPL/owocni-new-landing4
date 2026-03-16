@@ -14,14 +14,14 @@ export function ResourceHints() {
       {/* book-stats — preload HOT (perf.preloadCandidates) */}
       <link
         rel="preload"
-        href="/assets/book-frames/frame-001.webp"
+        href="/books/Ksiazka-Klatki/frame-001.webp"
         as="image"
         type="image/webp"
       />
-      <link rel="preload" href="/assets/stats-poster.webp" as="image" />
+      <link rel="preload" href="/books/Statystyki-stron.png" as="image" />
 
-      {/* book-stats — prefetch WARM (perf.prefetchCandidates) */}
-      <link rel="prefetch" href="/assets/stats-video.webm" as="video" type="video/webm" />
+      {/* book-stats — prefetch WARM (użyty w sekcji: video w piętrze obrazów) */}
+      <link rel="prefetch" href="/books/banner-konwersja-strony.mp4" as="video" type="video/mp4" />
     </>
   );
 }
