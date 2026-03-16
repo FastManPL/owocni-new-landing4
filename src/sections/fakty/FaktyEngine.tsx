@@ -217,42 +217,33 @@ function init(container: HTMLElement): { kill: () => void } {
     if (row1Chars.length === 0) return;
     row1Chars.forEach(ch => gsap.set(ch.parentNode, { perspective: 1000 }));
     const setWC = (els: HTMLElement[], value: string) => els.forEach(el => { el.style.willChange = value; });
-    setWC(row1Chars, 'transform, opacity');
-    gsap.set(row1Chars, { opacity: 0, rotationX: -90, z: -200, transformOrigin: '50% 0%' });
+    setWC(row1Chars, 'transform');
+    gsap.set(row1Chars, { rotationX: -90, z: -200, transformOrigin: '50% 0%' });
     const row2Word = row2.querySelector<HTMLElement>('.word');
     if (!row2Word) return;
     setWC([row2Word], 'transform');
     gsap.set(row2Word, { scaleY: 0, transformOrigin: '50% 0%' });
     buildOrganicST();
 
-    // ── ANIMACJA LITER (3D transform) — st1, st2, st3 ─────────────────────
+    // ── ANIMACJA LITER (3D transform) — st1, st3 (bez opacity, jak w oryginale) ─────────────────────
     // Trigger = container. End = 'center center' → po zakończeniu animacji napis na środku ekranu.
     const ST_END = 'center center';
 
-    // st1: rotationX — wyraźnie opóźniony start (od ~30% zakresu)
+    // st1: rotationX — mocno opóźniony (od ~42% zakresu)
     const tlRotation = gsap.timeline();
-    tlRotation.to(row1Chars, { ease: 'power1', stagger: 0.07, rotationX: 0, z: 0, duration: 0.42 }, 0.30);
+    tlRotation.to(row1Chars, { ease: 'power1', stagger: 0.07, rotationX: 0, z: 0, duration: 0.35 }, 0.42);
     const st1 = ScrollTrigger.create({
       trigger: container, start: 'top bottom-=35%', end: ST_END, scrub: true,
       animation: tlRotation,
       onLeave:     () => setWC(row1Chars, 'auto'),
-      onEnterBack: () => setWC(row1Chars, 'transform, opacity'),
+      onEnterBack: () => setWC(row1Chars, 'transform'),
       onLeaveBack: () => setWC(row1Chars, 'auto'),
     });
     gsapInstances.push(st1);
 
-    // st2: opacity — szybkie wejście (w pierwszych ~15% zakresu scroll)
-    const tlOpacity = gsap.timeline();
-    tlOpacity.to(row1Chars, { opacity: 1, ease: 'power2.in', stagger: 0.07, duration: 0.15 }, 0);
-    const st2 = ScrollTrigger.create({
-      trigger: container, start: 'top bottom-=25%', end: ST_END, scrub: true,
-      animation: tlOpacity,
-    });
-    gsapInstances.push(st2);
-
     const tl = gsap.timeline();
-    // „SĄ TAKIE”: dużo niżej — rozrost dopiero od ~58% zakresu scroll
-    tl.to(row2Word, { ease: 'power1.inOut', scaleY: 1, duration: 0.30 }, 0.58);
+    // „SĄ TAKIE”: bardzo niżej — rozrost dopiero od ~72% zakresu scroll
+    tl.to(row2Word, { ease: 'power1.inOut', scaleY: 1, duration: 0.22 }, 0.72);
     const st3 = ScrollTrigger.create({
       trigger: container, start: 'top bottom-=25%', end: ST_END, scrub: true, animation: tl,
       onEnter:     () => setWC([row2Word], 'transform'),
