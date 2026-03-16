@@ -1,0 +1,375 @@
+═══════════════════════════════════════
+EVIDENCE PACK — fakty
+═══════════════════════════════════════
+
+AUDYT WEJŚCIA (P1): PASS — P2A evidence potwierdza przejście P1
+  namespace:     OK (wszystkie selektory #fakty-section scoped)
+  lifecycle:     OK
+  triaż:         Typ A potwierdzony
+  scroll split:  N/A
+
+CPU GATING (P2A): Ścieżka 2
+  mechanizm:        IO→disableOrganic() safety net
+  gatingTarget:     #fakty-block (root — IO observe na faktyBlock)
+  rootMargin:       clamp(200px, 0.5×VH, 1200px) — ~400px na desktopie 1080p
+  viewport source:  visualViewport.height (fallback: innerHeight)
+  recreate on:      visualViewport.resize → _onVVResize → _recreateIO (debounce 50ms)
+
+AUTO-FIXy ZASTOSOWANE (P2A):
+  1. TS-LINT-UNUSED-01: usunięto nieużywaną funkcję hslO() (zastąpiona przez _bakeHSL)
+  2. FRAMES_BASE_PATH: wydzielony placeholder z komentarzem dla integratora
+  3. B-CPU-01: dodano CPU Gating Ścieżka 2 (IO → disableOrganic safety net)
+  4. INP-LEAK-01: named handler _onVVResize dla visualViewport.resize
+  5. IO-SAFE-01: entries[0] null guard w _ioCallback
+
+TUNNEL-PATCH (pending wdrożenia w P2A):
+  Owner zlecił 4 zmiany w tunnel engine przed P3:
+  1. tunnelCanvas getContext: { alpha: false } → { alpha: true }
+  2. atlas getContext: { alpha: false } → { alpha: true }
+  3. Usunięcie ac.fillStyle='#f7f6f4'; ac.fillRect(ox,oy,TW,TH); z pętli atlasu
+  4. tunnelDraw: globalCompositeOperation='copy' przed drawImage, 'source-over' po
+  Stack-harness wygenerowany Z patchem. P2A hardened JS/reference.html BEZ patcha.
+  Owner MUSI wdrożyć patch w P2A przed przejściem do P3.
+  Uzasadnienie: tunnel canvas ma być transparentny — blend z tłem strony przez organic overlay (mix-blend-mode: screen) jest celowy. Zamiast isolation:isolate (które obcięłoby blend) → naprawienie tunnel na alpha:true + copy blit.
+
+BRAMKI BEZPIECZEŃSTWA:
+  B-CPU-03  [REVIEW]  idempotencja pause/resume:          OK — enableOrganic/disableOrganic idempotentne przez orgActive flag
+  B-CPU-04  [REVIEW]  listener options:                    N/A — Typ A, brak publicznego resume()
+  B-CPU-05  [REVIEW]  cleanup order:                       OK — cleanups[] → timerIds → observers → gsapInstances (revert+kill)
+  B-VEL-01  [—]       velocity reset resume:               N/A — brak velocity/physics loop
+  B-VEL-02  [—]       velocity init:                       N/A
+  B-REF-01  [STATIC]  requestRefresh:                      OK — ScrollTrigger.refresh(true) tylko w onResize (setTimeout 150ms, guard isKilled+isConnected)
+  B-REF-02  [STATIC]  refresh kaskada:                     OK — brak kaskady
+  B-GEO-01  [STATIC]  geometry:                            N/A — sekcja nie zmienia wysokości
+  B-PIN-01  [REVIEW]  pin refresh:                         N/A — brak pin
+  B-CSS-01  [STATIC]  CSS vs GSAP:                         OK — transition: opacity 0.3s na #organic-overlay, GSAP nie animuje opacity na orgOverlay. classList add/remove('active') → CSS transition. Brak konfliktu.
+  B-ISO-01  [—]       isolation:                           NIE — Owner Decision: brak isolation:isolate. mix-blend-mode:screen na #organic-overlay celowo blenduje z tłem strony. Tunnel naprawiony na alpha:true (TUNNEL-PATCH pending).
+  CLN-01    [RUNTIME]  cleanup:                            PENDING (owner: kliknij KILL w overlay)
+  ST-01     [REVIEW]  ST idempotent:                       OK — onEnter/onLeave callbacks wywołują setWC (idempotentny) i enableOrganic/pauseOrganic (idempotentne przez flagi)
+  INP-01    [STATIC]  passive listeners:                   OK — resize: { passive: true }. Brak wheel/touchmove/touchstart.
+  INP-02    [STATIC]  pointermove:                         N/A — brak pointermove/mousemove per-frame
+  MED-01    [STATIC]  media attributes:                    N/A — brak <video>, <img>, <audio>
+  VAN-SPLIT [REVIEW]  SplitText:                           N/A — brak SplitText
+  J-GPU-01  [REVIEW]  GPU cleanup:                         OK — row1Chars scrubowane (N/A). setWC('auto') w onLeave — poprawny wzorzec.
+  SM-01     [RUNTIME]  INIT AGAIN 3×:                      PENDING (owner: kliknij INIT AGAIN w overlay)
+  SM-02     [REVIEW]  double callbacks:                    OK — pokryte przez idempotentność (ST-01)
+  INIT-CPU-01 [REVIEW] long task init:                     WARNING: preRenderTunnelAtlas() ~1080 Canvas 2D operacji (90 steps × 12 iteracji). Jednorazowe — niskie ryzyko w produkcji.
+  GL-CPU-01 [REVIEW]  GL loop:                             N/A — Canvas 2D, nie WebGL
+  GL-CPU-02 [REVIEW]  GL pause:                            N/A
+  GL-MEM-01 [REVIEW]  GL dispose:                          N/A
+  GL-WARM-01 [REVIEW] WARM state + compileAsync:           N/A
+  GL-LC-01  [REVIEW]  lifecycle COLD/WARM/HOT/OFF:         N/A
+  GL-IDLE-01 [REVIEW] rIC fallback:                        N/A
+  GL-MEM-02 [REVIEW]  GL resume:                           N/A
+  GL-TIER-01 [REVIEW] GL tier0:                            N/A
+  GL-OFF-01 [MANIFEST-CHECK] timed dispose:                N/A
+  B-LC-RET-01 [STATIC] return handle:                      OK — init() zwraca { kill } jako ostatnia instrukcja
+  ST-CLEAN-01 [REVIEW] ST cleanup scope:                   OK — gsapInstances[] zawiera wszystkie 6 ST. kill() iteruje z revert()+kill(). Brak ScrollTrigger.killAll().
+  INP-LEAK-01 [STATIC] named handlers:                     OK — onResize (named, cleanup), onVisibilityChange (named, cleanup), _onVVResize (named, cleanup)
+  INIT-DOM-01 [STATIC] DOMContentLoaded w init:            OK — brak DOMContentLoaded ani window.load wewnątrz init()
+  DEV-DEL-01  [REVIEW] overlay side-effects:               OK — cały overlay w if(DEBUG_MODE){...}. devTicker w cleanups[]. Brak mutacji stanu sekcji poza debug blokiem.
+
+PERFORMANCE (P2A):
+  PERF-01   [—]       media attributes:    N/A — brak <img>/<video>
+  PERF-02   [—]       contain layout:      SKIP — #fakty-tunnel left:-25% width:150% wychodzi poza bounds. contain: layout przyciąłby overflow.
+  PERF-03   [DEV]     telemetria:          INIT [?]ms | REFRESH [?]ms | ST 6 | DOM ~12 (.char + .word + .title-row) | FRAME avg [?]ms
+                                           (otwórz reference.html?debug=1 i sprawdź overlay)
+  PERF-W7   [REVIEW]  Lexend latin-ext:    WARNING — 'SĄ TAKIE' zawiera Ą. Zweryfikuj next/font config: latin-ext subset dla Lexend.
+  PERF-W*   [REVIEW]  pozostałe:           CLEAN (W1–W6, W8–W14)
+
+ANTI-FOUC (P3 wypełni):
+  PERF-04   [—]       inline styles JSX:  PENDING (P3)
+
+DYNAMIC IMPORT (P3 wypełni):
+  PERF-05   [—]       dynamic import:     PENDING (P3) — owner decision: TAK
+
+STACK-HARNESS: WYGENEROWANY
+  Warunki P2B-01 spełnione:
+    geometryContract: 'geometry-sensitive' (!= 'normal') ✓
+    sensitiveTo: ['geometry-above'] (length > 0) ✓
+    refreshSignals: ['fonts-ready'] (length > 0) ✓
+  scrollRuntime:       stub (window.scrollY) — INT-* testują ST drift, NIE scrollRuntime policy
+  TUNNEL-PATCH:        zastosowany w harnesie (pending w P2A)
+  INT-01    [RUNTIME]  accordion expand:  PENDING (owner)
+  INT-02    [RUNTIME]  pin above:         PENDING (owner)
+  INT-03    [RUNTIME]  height change:     PENDING (owner)
+
+TESTY WEBGL: N/A — Canvas 2D, nie WebGL
+  WGL-T1 — WGL-T5:    N/A
+
+EXTERNAL CDN LIBRARIES:
+  https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.7/gsap.min.js → gsap
+  https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.7/ScrollTrigger.min.js → ScrollTrigger
+
+GSAP VERSION NOTE:
+  reference.html + stack.html: 3.12.7 CDN
+  Produkcja: 3.12.7 (npm — spójne środowisko)
+  Smoke test w repo wymagany po konwersji React (P3, DEVELOPER_HANDOFF.md)
+
+WERDYKT: PASS — wszystkie STATIC/REVIEW bramki OK, RUNTIME do weryfikacji przez właściciela
+  PENDING:
+    - CLN-01 (owner: KILL w overlay)
+    - SM-01 (owner: INIT AGAIN 3×)
+    - SM-02 (REVIEW OK, runtime confirmation pending)
+    - INT-01, INT-02, INT-03 (owner: stack-harness testy)
+  BLOCKER do wdrożenia:
+    - TUNNEL-PATCH: owner MUSI wdrożyć 4 zmiany w P2A hardened JS/reference.html
+
+═══ RAW P2A EVIDENCE (verbatim) ═══
+
+# fakty — Evidence Pack P2A + Factory Handoff
+
+> Wygenerowany przez: PROMPT 2A — CPU Gating + Hardening  
+> Status: PROCEED  
+> Data: 2026-03-16
+
+---
+
+## EVIDENCE PACK — P2A
+
+```
+Slug: fakty
+Typ:  A
+CPU Gating: Ścieżka 2 (IO → disableOrganic() safety net)
+rootMargin: clamp(200px, 0.5×VH, 1200px) — ~400px na desktopie 1080p
+```
+
+---
+
+### Geometry Contract [P2A-02]
+
+```
+geometryContract        = geometry-sensitive
+syntheticContextAllowed = false
+entryExitInvariant      = false
+sensitiveTo             = ["document height above section"]
+
+Mechanizm ryzyka:
+  st1 / st2 / st3 / tunnelST / orgST NIE mają invalidateOnRefresh
+  (tylko frameST ma invalidateOnRefresh: true).
+  Jeśli document height powyżej sekcji zmieni się po hydration
+  (lazy assets, dynamic content above), ST triggers będą rozjechane.
+
+  Pokrycie: scrollRuntime.requestRefresh() po fonts.ready MUSI
+  odpalić PO ustabilizowaniu document height (po lazy load powyżej).
+  Kolejność ma znaczenie — integrator musi to zagwarantować.
+  Samo requestRefresh w fonts.ready pokrywa przypadek,
+  pod warunkiem że lazy assets above sekcji załadowały się wcześniej.
+
+P2A-01 (preview spacery): POMINIĘTE
+  syntheticContextAllowed: false → brak <div class="preview-spacer">
+  Kontekst scrolla dostarcza P2B stack-harness, nie standalone preview.
+  reference.html służy wyłącznie do weryfikacji CSS/DOM renderingu.
+```
+
+---
+
+### AUTO-FIXy zastosowane
+
+| # | Kod | Opis |
+|---|-----|------|
+| 1 | TS-LINT-UNUSED-01 | Usunięto funkcję `hslO()` — zadeklarowana, nigdzie niecallowana (zastąpiona przez `_bakeHSL`) |
+| 2 | FRAMES_BASE_PATH  | `FRAME_PATH` wydzielony jako `FRAMES_BASE_PATH` z komentarzem dla integratora |
+| 3 | B-CPU-01          | Dodano CPU Gating Ścieżka 2: `_io`, `_recreateIO`, `_onVVResize`, `_ioCallback` |
+| 4 | INP-LEAK-01       | Named handler `_onVVResize` dla `visualViewport.resize` |
+| 5 | IO-SAFE-01        | `entries[0]` guard w `_ioCallback`: `const e=entries[0]; if(!e)return;` |
+
+---
+
+### Bramki hardeningu
+
+#### LIFECYCLE
+
+| Bramka | Wynik | Uzasadnienie |
+|--------|-------|--------------|
+| B-LC-RET-01 | **PASS** | `init()` zwraca `{ kill }` jako ostatnia instrukcja |
+| PIN-DISABLE-01 | **N/A** | Brak `pin: true` w jakimkolwiek ScrollTrigger |
+
+#### CPU / LIFECYCLE
+
+| Bramka | Wynik | Uzasadnienie |
+|--------|-------|--------------|
+| B-CPU-01 | **AUTO-FIX** | IO gating dodany — Ścieżka 2. On leave → `disableOrganic()`. On enter → brak akcji (frameST dominuje). |
+| B-CPU-03 | **PASS** | `enableOrganic` / `disableOrganic` idempotentne przez flagi `orgActive`. IO wywołuje tylko `disableOrganic()` — bez ryzyka duplikacji loopów. |
+| B-CPU-04 | **N/A** | Typ A — brak publicznego `resume()` |
+| B-CPU-05 | **PASS** | `kill()` czyści w kolejności: `cleanups[]` (disableOrganic, onResize, visibilityChange, tunnelAtlas cleanup, `_onVVResize`) → `timerIds` (resizeTimer) → `observers` (wszystkie IO) → `gsapInstances` (frameST, orgST, st1, st2, st3, tunnelST z `revert()+kill()`) |
+
+#### VELOCITY / PHYSICS
+
+| Bramka | Wynik |
+|--------|-------|
+| B-VEL-01 | **N/A** — brak velocity/physics loop |
+| B-VEL-02 | **N/A** |
+
+#### REFRESH / GEOMETRY
+
+| Bramka | Wynik | Uzasadnienie |
+|--------|-------|--------------|
+| B-REF-01 | **PASS** | `ScrollTrigger.refresh(true)` wyłącznie w `onResize` callback — `setTimeout(150ms)` z guardem `isKilled \|\| !container.isConnected`. Whitelist OK. |
+| B-REF-02 | **PASS** | Brak refresh kaskady |
+| B-GEO-01 | **N/A** | Sekcja nie zmienia wysokości (brak accordion/expand/collapse) |
+| B-PIN-01 | **N/A** | Brak `pin` |
+
+#### WebGL
+
+Wszystkie bramki GL-*: **N/A** — Canvas 2D API, nie WebGL.
+
+#### CSS / RENDER
+
+| Bramka | Wynik | Uzasadnienie |
+|--------|-------|--------------|
+| B-CSS-01 | **PASS** | `transition: opacity 0.3s ease` na `#organic-overlay` — GSAP nie animuje `opacity` na `orgOverlay` bezpośrednio. Zmiana przez `classList.add/remove('active')` → CSS transition. Brak konfliktu GSAP vs CSS na tej samej właściwości. |
+| B-ISO-01 | **OWNER-DECISION-PENDING(blend/filter)** | `isolation: isolate` wstrzymane — wykryto `mix-blend-mode: screen` na `#organic-overlay` (child `position: absolute`). Patrz sekcja *Owner Decisions*. |
+| HTML-FONTSIZE-01 | **PASS** | `html { font-size: 16px }` jest w SHELL_CSS (wykryte P1). SECTION_CSS nie zawiera `html/root font-size`. |
+| CLN-01 | **PENDING(owner)** | Weryfikacja przez KILL button w `?debug=1` |
+
+#### ISOLATION / SAFETY
+
+| Bramka | Wynik | Uzasadnienie |
+|--------|-------|--------------|
+| ST-01 | **PASS** | `onEnter/onLeave/onEnterBack/onLeaveBack` w `buildPhase1()` i `buildFrameScroll()` wywołują `setWC()` (willChange — idempotentny) i `enableOrganic/pauseOrganic` (idempotentne przez flagi). Brak side-effectów jednorazowych wymagających boolean guard. |
+| ST-CLEAN-01 | **PASS** | `gsapInstances[]` zawiera referencje do wszystkich ST: `tunnelST`, `frameST`, `orgST`, `st1`, `st2`, `st3`. `kill()` iteruje z `revert()+kill()`. Brak `ScrollTrigger.killAll()`. |
+| DEV-DEL-01 | **PASS** | Cały kod overlay wewnątrz `if (DEBUG_MODE) { ... }`. Zawartość: DOM overlay, `setInterval` telemetria, `console.log`. `devTicker` usuwany w `cleanups[]`. Brak addEventListener poza overlay DOM, brak mutacji stanu sekcji poza blokiem debug. |
+
+#### INPUT
+
+| Bramka | Wynik | Uzasadnienie |
+|--------|-------|--------------|
+| INP-01 | **PASS** | `window.addEventListener('resize', onResize, { passive: true })`. Brak `wheel/touchmove/touchstart`. |
+| INP-02 | **N/A** | Brak `pointermove/mousemove` per-frame |
+| INP-LEAK-01 | **PASS** | `onResize` — named, usuwana w `cleanups[]`. `onVisibilityChange` — named, usuwana w `cleanups[]`. `_onVVResize` — named (AUTO-FIX), usuwana w `cleanups[]`. |
+| INIT-DOM-01 | **PASS** | Brak `DOMContentLoaded` ani `window.load` wewnątrz `init()` |
+
+#### MEDIA
+
+| Bramka | Wynik |
+|--------|-------|
+| MED-01 | **N/A** — brak `<video>` |
+
+#### DOM
+
+| Bramka | Wynik |
+|--------|-------|
+| VAN-SPLIT-01 | **N/A** — brak SplitText |
+| J-GPU-01 | **PASS** — animacje `row1Chars` są scrubowane → reguła N/A dla scrubowanych. `setWC()` w `onLeave` ustawia `will-change: auto` — poprawny wzorzec. |
+
+#### STRICTMODE PROXY
+
+| Bramka | Wynik |
+|--------|-------|
+| SM-01 | **PENDING(owner)** — weryfikacja przez INIT AGAIN 3× w `?debug=1` |
+| SM-02 | **PASS** — pokryte przez idempotentność (ST-01) |
+
+#### INIT PERFORMANCE
+
+| Bramka | Wynik | Uwaga |
+|--------|-------|-------|
+| INIT-CPU-01 | **WARNING** | `preRenderTunnelAtlas()` zawiera pętlę `T_STEPS=90` × `12` iteracji = ~1080 Canvas 2D operacji. Jednorazowe — brak ryzyka w produkcji, ale może być zauważalne na starszych urządzeniach. |
+
+#### RUNTIME SAFETY
+
+| Bramka | Wynik | Uzasadnienie |
+|--------|-------|--------------|
+| TS-LINT-UNUSED-01 | **AUTO-FIX** | Usunięto `hslO()` — dead code, nigdzie niecallowana |
+| NULL-GUARD-01 | **PASS** | `rows[0]/[1]`: guard `if(!r1\|\|!r2)return` w `computeAndSetBase` i `buildPhase1`. `row1Chars`: guard `if(row1Chars.length===0)return`. `row2Word`: guard `if(!row2Word)return`. `frameURLsWrapped[index]`: guard `if(wrapped)`. `tunnelAtlasSource`: guard w `tunnelDraw`. `orgCtx`: guard `if(!orgCtx)return`. |
+| IO-SAFE-01 | **AUTO-FIX** | `const e=entries[0]; if(!e)return;` dodany w `_ioCallback` |
+| ARRAY-ASSIGN-01 | **N/A** | `preloadedImages[index]` — `index` z parametru funkcji, nie z DOM |
+
+---
+
+### CPU Gating — koegzystencja
+
+```
+Sekcja ma wewnętrzny ST-based gating:
+  frameST onEnter/onLeave → enableOrganic() / disableOrganic()
+
+Fabryka dodaje zewnętrzny IO gating:
+  rootMargin ~400px (0.5×VH na 1080p), clamp 200–1200px
+
+Koegzystencja bezpieczna:
+  B-CPU-03 PASS — enableOrganic/disableOrganic idempotentne przez flagi.
+  IO wywołuje TYLKO disableOrganic() przy wyjściu z rootMargin.
+  IO NIE wywołuje enableOrganic() — frameST dominuje w viewport.
+
+Asymetria rootMargin:
+  Factory IO (~400px) > frameST (viewport-edge) — korzystny wzorzec.
+  Factory IO zatrzymuje RAF gdy sekcja daleko poza viewport.
+  frameST zarządza precyzyjnie wewnątrz viewport.
+```
+
+---
+
+### Media attributes
+
+```
+Brak <img>, <video>, <audio> — N/A.
+Frame sequence jako CSS background-image (nie DOM elements).
+Graceful degradation: TAK (solid fill #0a0a0c) — już w CSS (color: #0a0a0c).
+Nie wymaga dodatkowych zmian.
+```
+
+---
+
+### Performance Warnings
+
+```
+PERF-W7 WARNING:
+  'SĄ TAKIE' zawiera Ą (polskie znaki).
+  Google Fonts CDN dla Lexend domyślnie zawiera latin-ext.
+  Zweryfikuj czy produkcyjna konfiguracja next/font ładuje subset
+  latin-ext dla Lexend (wght 100–900).
+
+PERF-W: Pozostałe W1–W6, W8–W14: CLEAN
+  Wyjątek INIT-CPU-01 WARNING: preRenderTunnelAtlas() ~1080 ops (jednorazowe).
+```
+
+---
+
+### RUNTIME bramki — wymagają ręcznej weryfikacji
+
+```
+CLN-01  PENDING(owner):
+  Otwórz ?debug=1 → kliknij KILL
+  Sprawdź: brak orphan inline styles na .char / .word
+  (sekcja nie ma pin → brak pin-spacerów do sprawdzenia)
+
+SM-01   PENDING(owner):
+  Otwórz ?debug=1 → kliknij INIT AGAIN 3×
+  Sprawdź: liczniki frame/orgActive stabilne, nie rosną sumarycznie
+  Sprawdź: brak zduplikowanych ScrollTriggerów w GSAP DevTools
+```
+
+---
+
+### GUARD PRESERVATION [P2A-03]
+
+```
+preserveExistingGuards: true
+
+Guardy wykryte przed hardningiem:
+  1. isKilled — w async boundary (fonts.ready) i onResize callback
+  2. container.isConnected — w async boundary i onResize callback
+  3. orgActive flag — idempotentność enableOrganic/pauseOrganic
+
+Guardy zachowane: TAK — żaden nie usunięty ani osłabiony
+
+Guardy dodane przez P2A:
+  - isKilled check w _recreateIO (przed nowym IO po debounce)
+  - entries[0] null guard w _ioCallback (IO-SAFE-01)
+```
+
+---
+
+### Owner Decisions — rozstrzygnięte
+
+```
+B-ISO-01: isolation_override = NIE
+  Decyzja: brak isolation:isolate na #fakty-section.
+  mix-blend-mode: screen na #organic-overlay celowo blenduje z tłem strony (#f7f6f4).
+  TUNNEL-PATCH: tunnel canvas naprawiony na alpha:true + copy blit (transparentny).
+  Efekt: organic overlay blenduje z tłem, tunnel nie zakrywa tła.
+  Status: ZAMKNIĘTE. Patch pending wdrożenia w P2A.
+```
+
+═══ KONIEC RAW P2A EVIDENCE ═══
+═══════════════════════════════════════

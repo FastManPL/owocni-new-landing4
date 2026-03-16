@@ -1,0 +1,129 @@
+SECTION_MANIFEST:
+
+  slug:     'fakty'
+  type:     'A'
+  requires: ['scrollRuntime', 'gsap', 'ScrollTrigger']
+
+  webgl:    null
+    # Canvas 2D API (tunnel + organic overlay), NIE WebGL/Three.js
+
+  assets:
+    - kind:     'img'
+      src:      'FRAMES_BASE_PATH + [01-34].webp (34 klatek sekwencji)'
+      priority: 'HOT'
+      critical: true
+      lcp:      false
+      note:     'Preload przez JS Image() constructor, concurrency 4. Frame 0 awaited przed framesReady.'
+    - kind:     'canvas'
+      src:      '#fakty-tunnel (tunnel atlas — Canvas 2D, generowany w runtime)'
+      priority: 'COLD'
+      critical: false
+      lcp:      false
+    - kind:     'canvas'
+      src:      '#organic-overlay (organic engine — Canvas 2D RAF loop)'
+      priority: 'COLD'
+      critical: false
+      lcp:      false
+
+  warmup: ['fonts.googleapis.com', 'fonts.gstatic.com']
+    # HOT frames: domena nieznana (FRAMES_BASE_PATH = placeholder)
+    # Integrator MUSI dodać domenę frames do preconnect po ustaleniu ścieżki
+
+  scrollTriggersCount: 6
+    # st1 (row1 chars rotationX), st2 (row1 chars opacity), st3 (row2 scaleY),
+    # tunnelST (tunnel draw), frameST (frame sequence), orgST (organic progress)
+
+  geometryMutable:  false
+    # B-GEO-01 N/A — sekcja NIE zmienia własnej wysokości
+  geometryRefresh:  'none'
+    # Sekcja nie wywołuje scrollRuntime.requestRefresh() sama.
+    # P3 Patch I implementuje requestRefresh po fonts.ready resolve.
+    # Wewnętrzny ScrollTrigger.refresh(true) w onResize — to refresh ST, nie scrollRuntime.
+
+  geometryContract:        'geometry-sensitive'
+  syntheticContextAllowed: false
+  entryExitInvariant:      false
+  preserveExistingGuards:  true
+
+  refreshSignals: ['fonts-ready']
+    # Wszystkie 6 ST tworzone po async boundary: fonts.load → fonts.ready → buildPhase1/buildFrameScroll/buildTunnel
+    # P3 Patch I: scrollRuntime.requestRefresh() MUSI odpalić PO ustabilizowaniu document height
+    # (po załadowaniu lazy assets powyżej sekcji). Kolejność krytyczna.
+
+  export:
+    mode: 'named'
+    name: 'FaktySection'
+
+  slots: []
+    # Brak slotów podmienialnych — frames to sekwencja, nie pojedyncze media sloty
+
+  dciProps: []
+    # TEXT_ROWS ('FAKTY', 'SĄ TAKIE') hardcoded — brak dynamicznych treści
+    # Jeśli integrator chce parametryzację → dodaj 'headline', 'sub' i rozszerz init()
+
+  timelineContract: undefined
+    # Hardcoded wartości — brak external config
+
+  specialNotes:
+    breakpoints:           ['991px', '479px']
+    platformGuards:        []
+    cpuGatingMechanism:    'IO-pause/resume'
+    cpuGatingPath:         2
+    tunnelPatchPending:    'TUNNEL-PATCH: alpha:true + copy blit — pending wdrożenia w P2A przed P3'
+    fontsRefreshNote:      'st1/st2/st3/tunnelST/orgST NIE mają invalidateOnRefresh. scrollRuntime.requestRefresh() po fonts.ready MUSI odpalić PO ustabilizowaniu document height (po załadowaniu lazy assets powyżej sekcji). Kolejność krytyczna.'
+
+  integrationNotes:
+    hasPin:                false
+    hasSnap:               false
+    affectsGeometryBelow:  false
+      # Sekcja nie zmienia własnej wysokości po init
+    sensitiveTo:           ['geometry-above']
+      # Sekcja ZALEŻNA od geometrii powyżej — ST triggers rozjadą się
+      # jeśli coś powyżej zmieni height po ich utworzeniu
+    testWith:              ['faq', 'accordion', 'header']
+      # stack-harness zawiera: fake-pinned (pin-spacer chain), fake-accordion (geometry change)
+
+    # B7.4 CHECK: sensitiveTo niepuste →
+    #   (a) refreshSignals: ['fonts-ready'] ✓
+    #   (b) stack-harness: WYGENEROWANY ✓
+    # B7.4: PASS — mechanizmy ochronne obecne
+
+  deliveryRisk: 'url-swap-no-preload'
+    # P2B-06: applyFrame() podmienia --current-frame-url (CSS background-image swap)
+    # HTML preloadCandidates: [] (FRAMES_BASE_PATH to placeholder)
+    # JS-based preload ISTNIEJE: Image() constructor, concurrency 4, frame 0 awaited
+    # Na wolnej sieci: fallback solid fill #0a0a0c (czarne litery, scroll działa normalnie)
+  preloadNote: 'JS-based preload via Image() constructor (concurrency 4). Fallback: solid fill #0a0a0c. Owner potwierdził akceptację degradacji na wolnej sieci.'
+
+  perf:
+    dynamicImport:       true
+    isHero:              false
+    gracefulDegradation: true
+    preloadCandidates:   []
+      # Frames ładowane przez JS (Image constructor), nie <link rel="preload">
+      # Integrator może dodać preload frame 0 po ustaleniu FRAMES_BASE_PATH
+    prefetchCandidates:  []
+    coldCandidates:      []
+      # Canvas 2D generowane runtime — brak elementów DOM do fetchpriority
+    preconnectDomains:   ['fonts.googleapis.com', 'fonts.gstatic.com']
+      # Domena frames NIEZNANA (FRAMES_BASE_PATH = placeholder)
+      # Integrator MUSI dodać domenę frames po ustaleniu ścieżki
+    containApplied:      false
+      # P2A: #fakty-tunnel left: -25%; width: 150% wychodzi poza bounds
+      # contain: layout przyciąłby overflow → wizualny błąd → SKIP
+    warnings:            ['PERF-W7']
+      # PERF-W7: Lexend latin-ext — zweryfikuj next/font config
+
+  scrollRuntimeRecommendations: []
+    # Brak dodatkowych rekomendacji — canvas pointer-events: none już w CSS
+
+  runtimeChecks:
+    CLN-01: 'PENDING'
+    SM-01:  'PENDING'
+    SM-02:  'PENDING'
+    INT-01: 'PENDING'
+    INT-02: 'PENDING'
+    INT-03: 'PENDING'
+    WGL-01: 'N/A'
+    WGL-02: 'N/A'
+    WGL-03: 'N/A'
