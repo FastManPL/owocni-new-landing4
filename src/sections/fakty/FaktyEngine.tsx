@@ -261,10 +261,10 @@ function init(container: HTMLElement): { kill: () => void } {
     });
     gsapInstances.push(st2);
 
-    // st3: scaleY „SĄ TAKIE” — rozrost tylko w ostatnich ~10% scrollu; set na 0 wymusza stan początkowy
+    // st3: scaleY „SĄ TAKIE” — rozrost w ~8–58% zakresu scrolla (zgodnie z oryg. PREVIEW)
     const tl = gsap.timeline();
     tl.set(row2Word, { scaleY: 0, transformOrigin: '50% 0%' }, 0);
-    tl.to(row2Word, { ease: 'power1.inOut', scaleY: 1, duration: 0.10 }, 0.90);
+    tl.to(row2Word, { ease: 'power1.inOut', scaleY: 1, duration: 0.50 }, 0.08);
     const st3 = ScrollTrigger.create({
       trigger: container, start: 'top bottom-=25%', end: ST_END, scrub: true, animation: tl,
       onEnter:     () => setWC([row2Word], 'transform'),
