@@ -749,7 +749,9 @@ function init(container: HTMLElement): { kill: () => void } {
   }
 
   // ── resize ─────────────────────────────────────────────────
-  let resizeTimer: ReturnType<typeof setTimeout> | null=null, lastBlockWidth=0, lastInnerWidth=window.innerWidth;
+  let resizeTimer: ReturnType<typeof setTimeout> | null=null;
+  let layoutSettleTimerId: ReturnType<typeof setTimeout> | null=null;
+  let lastBlockWidth=0, lastInnerWidth=window.innerWidth;
   function onResize() {
     const currentInnerWidth=window.innerWidth;
     if(currentInnerWidth===lastInnerWidth)return;
@@ -804,8 +806,27 @@ function init(container: HTMLElement): { kill: () => void } {
 
   _recreateIO();
 
-  // Żaden refresh ST z tej sekcji — requestRefresh/IO rozjeżdżały start/end przy scrolle od góry.
-  // ScrollTrigger używa stanu z momentu utworzenia; bez refreshu animacje działają tak samo od góry i od dołu.
+  // C6.3: refresh gdy sekcja wchodzi w viewport — start/end liczone przy ustalonym layoucie (scroll od góry).
+  // Jednorazowy IO + double rAF przed requestRefresh, żeby layout zdążył się namalować.
+  let sectionInViewRefreshed = false;
+  const ioSectionInView = new IntersectionObserver(
+    (entries) => {
+      const e = entries[0];
+      if (!e?.isIntersecting || sectionInViewRefreshed) return;
+      sectionInViewRefreshed = true;
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (!isKilled && container.isConnected) {
+            scrollRuntime.requestRefresh('section-in-view');
+          }
+          ioSectionInView.disconnect();
+        });
+      });
+    },
+    { rootMargin: '100px 0px', threshold: 0 }
+  );
+  ioSectionInView.observe(container);
+  observers.push(ioSectionInView);
 
   if(window.visualViewport){
     window.visualViewport.addEventListener('resize',_onVVResize,{passive:true});
@@ -862,8 +883,12 @@ function init(container: HTMLElement): { kill: () => void } {
     buildFrameScroll();
     buildTunnel();
     preloadRemainingFrames();
-    // Brak refresh z tego miejsca — refresh tylko gdy sekcja wejdzie w viewport (ioSectionInView + opóźnienie).
-    // Dzięki temu przy starcie na górze strony ST nie dostaje złych start/end.
+    // C6.3 layout-settle: jeden refresh po ~1s (sekcja od razu w viewporcie, długi spacer nad sekcją).
+    layoutSettleTimerId = setTimeout(() => {
+      if (isKilled || !container.isConnected) return;
+      scrollRuntime.requestRefresh('layout-settle');
+    }, 1000);
+    timerIds.push({ type: 'timeout', id: () => layoutSettleTimerId as number | null });
     // FIX 3: Force re-apply frame po powrocie do karty
     function onVisibilityChange() {
       if(document.visibilityState==='visible'&&framesReady){

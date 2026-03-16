@@ -42,9 +42,16 @@ let tickerCallback: ((time: number) => void) | null = null;
 let visibilityHandler: (() => void) | null = null;
 let resizeHandler: (() => void) | null = null;
 
+// Ostatnie wymiary do wykrycia „tylko toolbar” resize (height-only, mała delta)
+let lastResizeW = 0;
+let lastResizeH = 0;
+
 // === CONSTANTS ===
 const REFRESH_DEBOUNCE_MS = 120;
 const RESIZE_DEBOUNCE_MS = 250;
+// Wysokość zmiany viewportu (px) — poniżej uznajemy za „mobile toolbar” (chowanie paska adresu).
+// Refresh przy takim resize psuł pozycje ST w sekcji fakty przy scrolle do góry (book-stats).
+const MOBILE_TOOLBAR_RESIZE_THRESHOLD_PX = 150;
 
 // === INIT ===
 function init(): void {
@@ -95,12 +102,31 @@ function init(): void {
   // ScrollTrigger update on scroll
   lenis.on('scroll', ScrollTrigger.update);
 
+  lastResizeW = window.innerWidth;
+  lastResizeH = window.innerHeight;
+
   // === RESIZE HANDLER (Desktop) ===
-  // ignoreMobileResize chroni przed toolbar hide/show na mobile
-  // ale desktop resize wymaga refresh (zmiana layoutu)
+  // ignoreMobileResize w ST nie blokuje naszego listenera — resize i tak się odpala.
+  // Przy „mobile toolbar” (tylko height, mała delta) pomijamy refresh — inaczej
+  // przy scrolle do góry (np. do book-stats) pozycje ST w sekcji fakty się rozjeżdżają.
   resizeHandler = () => {
     clearTimeout(resizeTimeout ?? undefined);
     resizeTimeout = setTimeout(() => {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const isFirst = lastResizeW === 0 && lastResizeH === 0;
+      if (!isFirst) {
+        const heightOnly = w === lastResizeW;
+        const smallHeightChange = Math.abs(h - lastResizeH) <= MOBILE_TOOLBAR_RESIZE_THRESHOLD_PX;
+        if (heightOnly && smallHeightChange) {
+          if (process.env.NODE_ENV === 'development') {
+            console.debug('[scrollRuntime] resize: skip (mobile toolbar?)');
+          }
+          return;
+        }
+      }
+      lastResizeW = w;
+      lastResizeH = h;
       requestRefresh('resize');
     }, RESIZE_DEBOUNCE_MS);
   };
