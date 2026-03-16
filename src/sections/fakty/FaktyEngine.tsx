@@ -207,7 +207,8 @@ function init(container: HTMLElement): { kill: () => void } {
   }
 
   // ── PHASE 1 ANIMATIONS ─────────────────────────────────────
-  function buildPhase1() {
+  // Stan początkowy animacji (bez ST) — żeby sekcja nie „migała” przed lazy build ST.
+  function setInitialAnimationState() {
     if (!faktyDom) return;
     const rows = faktyDom.querySelectorAll<HTMLElement>('.title-row');
     const row1 = rows[0], row2 = rows[1];
@@ -222,6 +223,18 @@ function init(container: HTMLElement): { kill: () => void } {
     if (!row2Word) return;
     setWC([row2Word], 'transform');
     gsap.set(row2Word, { scaleY: 0, transformOrigin: '50% 0%' });
+  }
+  function buildPhase1() {
+    if (!faktyDom) return;
+    const rows = faktyDom.querySelectorAll<HTMLElement>('.title-row');
+    const row1 = rows[0], row2 = rows[1];
+    if (!row1 || !row2) return;
+    const row1Chars = [...row1.querySelectorAll<HTMLElement>('.char')];
+    if (row1Chars.length === 0) return;
+    const row2Word = row2.querySelector<HTMLElement>('.word');
+    if (!row2Word) return;
+    const setWC = (els: HTMLElement[], value: string) => els.forEach(el => { el.style.willChange = value; });
+    setInitialAnimationState(); // idempotent
     buildOrganicST();
 
     // ── ANIMACJA LITER: st1 (rotationX), st2 (opacity), st3 (scaleY „SĄ TAKIE”) ─────────────────────
@@ -727,6 +740,18 @@ function init(container: HTMLElement): { kill: () => void } {
     if(tunnelCanvas){tunnelCanvas.width=0;tunnelCanvas.height=0;}
   });
 
+  // Lazy build ST: tylko gdy sekcja wchodzi w viewport lub po settle — zero requestRefresh, więc żaden
+  // późniejszy refresh nie przelicza start/end w złym momencie (scroll od góry / podjazd do book-stats).
+  let stBuilt = false;
+  function buildScrollTriggers() {
+    if (stBuilt || isKilled || !container.isConnected) return;
+    stBuilt = true;
+    buildPhase1();
+    buildFrameScroll();
+    buildTunnel();
+    preloadRemainingFrames();
+  }
+
   // ── frameST ────────────────────────────────────────────────
   let frameST: ScrollTrigger | null=null;
   function buildFrameScroll() {
@@ -806,27 +831,25 @@ function init(container: HTMLElement): { kill: () => void } {
 
   _recreateIO();
 
-  // C6.3: refresh gdy sekcja wchodzi w viewport — start/end liczone przy ustalonym layoucie (scroll od góry).
-  // Jednorazowy IO + double rAF przed requestRefresh, żeby layout zdążył się namalować.
-  let sectionInViewRefreshed = false;
-  const ioSectionInView = new IntersectionObserver(
+  // Lazy ST: tworzenie ScrollTriggerów dopiero gdy sekcja wchodzi w viewport (layout ustalony).
+  // Żaden requestRefresh z tej sekcji — każdy refresh przeliczał start/end w złym momencie.
+  let sectionInViewFired = false;
+  const ioStReady = new IntersectionObserver(
     (entries) => {
       const e = entries[0];
-      if (!e?.isIntersecting || sectionInViewRefreshed) return;
-      sectionInViewRefreshed = true;
+      if (!e?.isIntersecting || sectionInViewFired) return;
+      sectionInViewFired = true;
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          if (!isKilled && container.isConnected) {
-            scrollRuntime.requestRefresh('section-in-view');
-          }
-          ioSectionInView.disconnect();
+          buildScrollTriggers();
+          ioStReady.disconnect();
         });
       });
     },
     { rootMargin: '100px 0px', threshold: 0 }
   );
-  ioSectionInView.observe(container);
-  observers.push(ioSectionInView);
+  ioStReady.observe(container);
+  observers.push(ioStReady);
 
   if(window.visualViewport){
     window.visualViewport.addEventListener('resize',_onVVResize,{passive:true});
@@ -879,15 +902,11 @@ function init(container: HTMLElement): { kill: () => void } {
     if(isKilled||!container.isConnected)return;
     setupVideoFill();
     applyFrame(0);
-    buildPhase1();
-    buildFrameScroll();
-    buildTunnel();
-    preloadRemainingFrames();
-    // C6.3 layout-settle: jeden refresh po ~1s (sekcja od razu w viewporcie, długi spacer nad sekcją).
+    setInitialAnimationState();
+    // Lazy ST: fallback — jeśli sekcja nie weszła w viewport (np. od razu w viewporcie), zbuduj ST po ~1.2s.
     layoutSettleTimerId = setTimeout(() => {
-      if (isKilled || !container.isConnected) return;
-      scrollRuntime.requestRefresh('layout-settle');
-    }, 1000);
+      buildScrollTriggers();
+    }, 1200);
     timerIds.push({ type: 'timeout', id: () => layoutSettleTimerId as number | null });
     // FIX 3: Force re-apply frame po powrocie do karty
     function onVisibilityChange() {
