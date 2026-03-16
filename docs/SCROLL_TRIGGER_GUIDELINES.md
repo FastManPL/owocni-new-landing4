@@ -4,6 +4,17 @@ Dokument dla zespołu tworzącego nowe sekcje z animacjami scroll (GSAP ScrollTr
 
 ---
 
+## 0. Trigger = root sekcji (pozycja w dokumencie)
+
+**Start/end animacji muszą zależeć od pozycji sekcji w dokumencie**, nie od wewnętrznego bloku (np. tytułu czy wrappera). Używaj jako `trigger` **roota sekcji** (elementu `<section>` przekazanego do `init(container)`), czyli `container`:
+
+- `trigger: container` — ScrollTrigger liczy start/end od pozycji całej sekcji w stronie (zależy od treści nad sekcją), a nie od layoutu wewnątrz sekcji (fonty, canvas).
+- Unikaj `trigger: elementWewnętrzny` (np. `#fakty-block`, `.title-row`) dla zakresu „kiedy sekcja wchodzi na ekran” — wewnętrzny element może być mierzony w złym momencie i dawać „animacja startuje za wcześnie”.
+
+Wyjątek: jeśli celowo animujesz tylko wtedy, gdy konkretny wewnętrzny element (np. wiersz) jest w danym miejscu viewportu, możesz zostawić trigger na tym elemencie.
+
+---
+
 ## 1. Dlaczego „animacja startuje za wcześnie”?
 
 ScrollTrigger mapuje **progress 0→1** na przedział scrolla `[start, end]`. Wartości `start` i `end` są liczone w momencie **`ScrollTrigger.refresh()`** (wywoływanego przez `scrollRuntime.requestRefresh()`).
@@ -55,6 +66,7 @@ W pliku PREVIEW sekcji (np. `fakty.PREVIEW.html`):
 
 ## 5. Checklist dla nowej sekcji z ScrollTrigger
 
+- [ ] Jako `trigger` używany jest **root sekcji** (`container`), nie wewnętrzny blok — pozycja animacji zależy od pozycji sekcji w dokumencie.
 - [ ] Po utworzeniu wszystkich ScrollTriggerów jest wywołanie `scrollRuntime.requestRefresh('layout-settle')` w `setTimeout(..., 600–1200 ms)` (rekomendacja 1000 ms).
 - [ ] Identyfikator timera jest w `timerIds` i jest czyszczony w `kill()`.
 - [ ] W PREVIEW: ten sam opóźniony refresh; spacery nad/pod sekcją rozróżnione (np. above/below).

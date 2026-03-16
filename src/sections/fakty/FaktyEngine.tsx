@@ -231,7 +231,7 @@ function init(container: HTMLElement): { kill: () => void } {
     buildOrganicST();
 
     const st1 = ScrollTrigger.create({
-      trigger: row1, start: 'center bottom', end: 'top top+=20%', scrub: true,
+      trigger: container, start: 'center bottom', end: 'top top+=20%', scrub: true,
       animation: gsap.to(row1Chars, { ease: 'power1', stagger: 0.07, rotationX: 0, z: 0 }),
       onLeave:     () => setWC(row1Chars, 'auto'),
       onEnterBack: () => setWC(row1Chars, 'transform, opacity'),
@@ -240,7 +240,7 @@ function init(container: HTMLElement): { kill: () => void } {
     gsapInstances.push(st1);
 
     const st2 = ScrollTrigger.create({
-      trigger: row1, start: 'center bottom', end: `top top+=${opacityEnd}%`, scrub: true,
+      trigger: container, start: 'center bottom', end: `top top+=${opacityEnd}%`, scrub: true,
       animation: gsap.to(row1Chars, { opacity: 1, ease: 'power2.in', stagger: 0.07 }),
     });
     gsapInstances.push(st2);
@@ -248,7 +248,7 @@ function init(container: HTMLElement): { kill: () => void } {
     const tl = gsap.timeline();
     tl.to(row2Word, { ease: 'power1.inOut', scaleY: 1, duration: 0.50 }, 0.08);
     const st3 = ScrollTrigger.create({
-      trigger: faktyBlock, start: 'center bottom', end: 'top top', scrub: true, animation: tl,
+      trigger: container, start: 'center bottom', end: 'top top', scrub: true, animation: tl,
       onEnter:     () => setWC([row2Word], 'transform'),
       onLeave:     () => setWC([row2Word], 'auto'),
       onEnterBack: () => setWC([row2Word], 'transform'),
@@ -622,7 +622,7 @@ function init(container: HTMLElement): { kill: () => void } {
     resizeOrgCanvas();
     const tween=gsap.to(orgState,{
       progress:1,ease:'none',
-      scrollTrigger:{ trigger:faktyBlock, start:'top bottom-=30%', end:'bottom center', scrub:1 }
+      scrollTrigger:{ trigger:container, start:'top bottom-=30%', end:'bottom center', scrub:1 }
     });
     orgST=tween.scrollTrigger ?? null;
     if(orgST) gsapInstances.push(orgST);
@@ -711,7 +711,7 @@ function init(container: HTMLElement): { kill: () => void } {
       tunnelAtlasSource=atlas; tunnelDraw(0);
     }
     tunnelST=ScrollTrigger.create({
-      trigger:faktyBlock, start:'top bottom', end:'bottom top', scrub:true,
+      trigger:container, start:'top bottom', end:'bottom top', scrub:true,
       onUpdate:function(self){ tunnelDraw(Math.floor(self.progress*T_SPEED*(T_STEPS-1))); }
     });
     gsapInstances.push(tunnelST);
@@ -732,10 +732,11 @@ function init(container: HTMLElement): { kill: () => void } {
     playhead.frame=0;currentFrame=-1;
     const START_PCT=61;
     const tween=gsap.to(playhead,{frame:FRAME_COUNT-1,snap:'frame',ease:'none'});
+    // Trigger = section root (container) — progress klatek zależny od pozycji sekcji w dokumencie
     frameST=ScrollTrigger.create({
-      trigger:row1, start:'top top+='+START_PCT+'%',
+      trigger:container, start:'top top+='+START_PCT+'%',
       end:function(){
-        const ratio=faktyBlock.offsetHeight/stableViewportHeight;
+        const ratio=(container?.offsetHeight ?? 0)/stableViewportHeight;
         const endPct=Math.max(5,Math.round(ratio*45));
         return 'top top-='+endPct+'%';
       },
