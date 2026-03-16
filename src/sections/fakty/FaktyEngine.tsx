@@ -230,7 +230,7 @@ function init(container: HTMLElement): { kill: () => void } {
     // To są jedyne triggery sterujące napisem „FAKTY” / „SĄ TAKIE” (rotationX, opacity, scaleY).
     // Tunel, organic overlay i frame scrub (tło) = osobne triggery niżej (tunnelST, orgST, frameST).
     const st1 = ScrollTrigger.create({
-      trigger: container, start: 'top bottom-=35%', end: 'bottom top', scrub: true,
+      trigger: container, start: 'top bottom-=25%', end: 'bottom top+=20%', scrub: true,
       animation: gsap.to(row1Chars, { ease: 'power1', stagger: 0.07, rotationX: 0, z: 0 }),
       onLeave:     () => setWC(row1Chars, 'auto'),
       onEnterBack: () => setWC(row1Chars, 'transform, opacity'),
@@ -239,7 +239,7 @@ function init(container: HTMLElement): { kill: () => void } {
     gsapInstances.push(st1);
 
     const st2 = ScrollTrigger.create({
-      trigger: container, start: 'top bottom-=35%', end: 'bottom top', scrub: true,
+      trigger: container, start: 'top bottom-=25%', end: 'bottom top+=20%', scrub: true,
       animation: gsap.to(row1Chars, { opacity: 1, ease: 'power2.in', stagger: 0.07 }),
     });
     gsapInstances.push(st2);
@@ -247,7 +247,7 @@ function init(container: HTMLElement): { kill: () => void } {
     const tl = gsap.timeline();
     tl.to(row2Word, { ease: 'power1.inOut', scaleY: 1, duration: 0.50 }, 0.08);
     const st3 = ScrollTrigger.create({
-      trigger: container, start: 'top bottom-=35%', end: 'bottom top', scrub: true, animation: tl,
+      trigger: container, start: 'top bottom-=25%', end: 'bottom top+=20%', scrub: true, animation: tl,
       onEnter:     () => setWC([row2Word], 'transform'),
       onLeave:     () => setWC([row2Word], 'auto'),
       onEnterBack: () => setWC([row2Word], 'transform'),

@@ -373,7 +373,7 @@
         buildOrganicST();
 
         var st1 = ScrollTrigger.create({
-          trigger: container, start: 'top bottom-=35%', end: 'bottom top', scrub: true,
+          trigger: container, start: 'top bottom-=25%', end: 'bottom top+=20%', scrub: true,
           animation: gsap.to(row1Chars, { ease: 'power1', stagger: 0.07, rotationX: 0, z: 0 }),
           onLeave:     function() { setWC(row1Chars, 'auto'); },
           onEnterBack: function() { setWC(row1Chars, 'transform, opacity'); },
@@ -382,7 +382,7 @@
         gsapInstances.push(st1);
 
         var st2 = ScrollTrigger.create({
-          trigger: container, start: 'top bottom-=35%', end: 'bottom top', scrub: true,
+          trigger: container, start: 'top bottom-=25%', end: 'bottom top+=20%', scrub: true,
           animation: gsap.to(row1Chars, { opacity: 1, ease: 'power2.in', stagger: 0.07 }),
         });
         gsapInstances.push(st2);
@@ -390,7 +390,7 @@
         var tl = gsap.timeline();
         tl.to(row2Word, { ease: 'power1.inOut', scaleY: 1, duration: 0.50 }, 0.08);
         var st3 = ScrollTrigger.create({
-          trigger: container, start: 'top bottom-=35%', end: 'bottom top', scrub: true, animation: tl,
+          trigger: container, start: 'top bottom-=25%', end: 'bottom top+=20%', scrub: true, animation: tl,
           onEnter:     function() { setWC([row2Word], 'transform'); },
           onLeave:     function() { setWC([row2Word], 'auto'); },
           onEnterBack: function() { setWC([row2Word], 'transform'); },
