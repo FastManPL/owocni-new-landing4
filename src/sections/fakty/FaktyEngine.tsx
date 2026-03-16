@@ -226,11 +226,10 @@ function init(container: HTMLElement): { kill: () => void } {
     buildOrganicST();
 
     // ── ANIMACJA LITER (3D transform) — st1, st2, st3 ─────────────────────
-    // Jak w oryginale preview: trigger = napis (row1 / faktyBlock), start = 'center bottom'
-    // → napisy „dotykają” dolnej krawędzi viewportu i wjeżdżają w górę (rotationX + scaleY z origin 50% 0%).
-    const opacityEnd = 54;
+    // To są jedyne triggery sterujące napisem „FAKTY” / „SĄ TAKIE” (rotationX, opacity, scaleY).
+    // Tunel, organic overlay i frame scrub (tło) = osobne triggery niżej (tunnelST, orgST, frameST).
     const st1 = ScrollTrigger.create({
-      trigger: row1, start: 'center bottom', end: 'top top+=20%', scrub: true,
+      trigger: container, start: 'top bottom-=25%', end: 'bottom top+=20%', scrub: true,
       animation: gsap.to(row1Chars, { ease: 'power1', stagger: 0.07, rotationX: 0, z: 0 }),
       onLeave:     () => setWC(row1Chars, 'auto'),
       onEnterBack: () => setWC(row1Chars, 'transform, opacity'),
@@ -239,7 +238,7 @@ function init(container: HTMLElement): { kill: () => void } {
     gsapInstances.push(st1);
 
     const st2 = ScrollTrigger.create({
-      trigger: row1, start: 'center bottom', end: 'top top+=' + opacityEnd + '%', scrub: true,
+      trigger: container, start: 'top bottom-=25%', end: 'bottom top+=20%', scrub: true,
       animation: gsap.to(row1Chars, { opacity: 1, ease: 'power2.in', stagger: 0.07 }),
     });
     gsapInstances.push(st2);
@@ -247,7 +246,7 @@ function init(container: HTMLElement): { kill: () => void } {
     const tl = gsap.timeline();
     tl.to(row2Word, { ease: 'power1.inOut', scaleY: 1, duration: 0.50 }, 0.08);
     const st3 = ScrollTrigger.create({
-      trigger: faktyBlock, start: 'center bottom', end: 'top top', scrub: true, animation: tl,
+      trigger: container, start: 'top bottom-=25%', end: 'bottom top+=20%', scrub: true, animation: tl,
       onEnter:     () => setWC([row2Word], 'transform'),
       onLeave:     () => setWC([row2Word], 'auto'),
       onEnterBack: () => setWC([row2Word], 'transform'),
