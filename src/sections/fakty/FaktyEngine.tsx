@@ -244,7 +244,8 @@ function init(container: HTMLElement): { kill: () => void } {
     gsapInstances.push(st2);
 
     const tl = gsap.timeline();
-    tl.to(row2Word, { ease: 'power1.inOut', scaleY: 1, duration: 0.50 }, 0.08);
+    // „SĄ TAKIE”: dłużej spłaszczone (0–28% zakresu scroll), potem rozrost — jak na oryginale preview
+    tl.to(row2Word, { ease: 'power1.inOut', scaleY: 1, duration: 0.38 }, 0.28);
     const st3 = ScrollTrigger.create({
       trigger: container, start: 'top bottom-=25%', end: 'bottom top+=20%', scrub: true, animation: tl,
       onEnter:     () => setWC([row2Word], 'transform'),

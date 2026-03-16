@@ -389,7 +389,8 @@
         gsapInstances.push(st2);
 
         var tl = gsap.timeline();
-        tl.to(row2Word, { ease: 'power1.inOut', scaleY: 1, duration: 0.50 }, 0.08);
+        // „SĄ TAKIE”: dłużej spłaszczone (0–28% zakresu), potem rozrost — jak na oryginale
+        tl.to(row2Word, { ease: 'power1.inOut', scaleY: 1, duration: 0.38 }, 0.28);
         var st3 = ScrollTrigger.create({
           trigger: container, start: 'top bottom-=25%', end: 'bottom top+=20%', scrub: true, animation: tl,
           onEnter:     function() { setWC([row2Word], 'transform'); },
