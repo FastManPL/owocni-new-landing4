@@ -319,7 +319,7 @@ function init(container: HTMLElement): { kill: () => void } {
     tl.to(
       row2Word,
       { ease: "power1.inOut", scaleY: 1, y: 0, duration: 0.5 },
-      0.28,
+      0.5,
     );
     const st3 = ScrollTrigger.create({
       trigger: container,
