@@ -210,10 +210,6 @@
         return { kill: function() {} };
       }
 
-      // Start animacji gdy ~15% sekcji widoczne, koniec gdy ~75%
-      function sectionVisibleStart() { return 'top bottom-=' + Math.round((container && container.offsetHeight) ? container.offsetHeight * 0.15 : 0) + 'px'; }
-      function sectionVisibleEnd()   { return 'top bottom-=' + Math.round((container && container.offsetHeight) ? container.offsetHeight * 0.75 : 0) + 'px'; }
-
       var charOffsets          = [];
       var currentFrame         = -1;
       var playhead             = { frame: 0 };
@@ -377,7 +373,7 @@
         buildOrganicST();
 
         var st1 = ScrollTrigger.create({
-          trigger: container, start: sectionVisibleStart, end: sectionVisibleEnd, scrub: true, invalidateOnRefresh: true,
+          trigger: container, start: 'top bottom-=35%', end: 'bottom top', scrub: true,
           animation: gsap.to(row1Chars, { ease: 'power1', stagger: 0.07, rotationX: 0, z: 0 }),
           onLeave:     function() { setWC(row1Chars, 'auto'); },
           onEnterBack: function() { setWC(row1Chars, 'transform, opacity'); },
@@ -386,7 +382,7 @@
         gsapInstances.push(st1);
 
         var st2 = ScrollTrigger.create({
-          trigger: container, start: sectionVisibleStart, end: sectionVisibleEnd, scrub: true, invalidateOnRefresh: true,
+          trigger: container, start: 'top bottom-=35%', end: 'bottom top', scrub: true,
           animation: gsap.to(row1Chars, { opacity: 1, ease: 'power2.in', stagger: 0.07 }),
         });
         gsapInstances.push(st2);
@@ -394,7 +390,7 @@
         var tl = gsap.timeline();
         tl.to(row2Word, { ease: 'power1.inOut', scaleY: 1, duration: 0.50 }, 0.08);
         var st3 = ScrollTrigger.create({
-          trigger: container, start: sectionVisibleStart, end: sectionVisibleEnd, scrub: true, invalidateOnRefresh: true, animation: tl,
+          trigger: container, start: 'top bottom-=35%', end: 'bottom top', scrub: true, animation: tl,
           onEnter:     function() { setWC([row2Word], 'transform'); },
           onLeave:     function() { setWC([row2Word], 'auto'); },
           onEnterBack: function() { setWC([row2Word], 'transform'); },
@@ -738,7 +734,7 @@
         resizeOrgCanvas();
         var tween=gsap.to(orgState,{
           progress:1,ease:'none',
-          scrollTrigger:{ trigger:container, start:sectionVisibleStart, end:sectionVisibleEnd, scrub:1, invalidateOnRefresh:true }
+          scrollTrigger:{ trigger:container, start:'top bottom-=35%', end:'bottom top', scrub:1 }
         });
         orgST=tween.scrollTrigger;
         if(orgST) gsapInstances.push(orgST);
@@ -821,7 +817,7 @@
           tunnelAtlasSource=atlas; tunnelDraw(0);
         }
         tunnelST=ScrollTrigger.create({
-          trigger:container, start:sectionVisibleStart, end:sectionVisibleEnd, scrub:true, invalidateOnRefresh:true,
+          trigger:container, start:'top bottom-=35%', end:'bottom top', scrub:true,
           onUpdate:function(self){ tunnelDraw(Math.floor(self.progress*T_SPEED*(T_STEPS-1))); }
         });
         gsapInstances.push(tunnelST);
@@ -841,7 +837,7 @@
         playhead.frame=0;currentFrame=-1;
         var tween=gsap.to(playhead,{frame:FRAME_COUNT-1,snap:'frame',ease:'none'});
         frameST=ScrollTrigger.create({
-          trigger:container, start:sectionVisibleStart, end:sectionVisibleEnd,
+          trigger:container, start:'top bottom-=35%', end:'bottom top',
           scrub:true, invalidateOnRefresh:true, animation:tween,
           onEnter:     function(){enableOrganic();},
           onLeave:     function(){pauseOrganic();},
@@ -900,6 +896,22 @@
       function _onVVResize() { _recreateIO(); }
 
       _recreateIO();
+
+      // Odświeżenie ST gdy sekcja wchodzi w viewport — pozycja w dokumencie już ustalona (działa przy dowolnym spacerze)
+      var sectionInViewRefreshed = false;
+      var ioSectionInView = new IntersectionObserver(
+        function(entries){
+          var e=entries[0]; if(!e||!e.isIntersecting)return;
+          if(sectionInViewRefreshed)return;
+          sectionInViewRefreshed=true;
+          scrollRuntime.requestRefresh('section-in-view');
+          ioSectionInView.disconnect();
+        },
+        { rootMargin:'100px 0px', threshold:0 }
+      );
+      ioSectionInView.observe(container);
+      observers.push(ioSectionInView);
+
       if(window.visualViewport){
         window.visualViewport.addEventListener('resize',_onVVResize,{passive:true});
         cleanups.push(function(){

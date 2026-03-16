@@ -56,10 +56,6 @@ function init(container: HTMLElement): { kill: () => void } {
     return { kill: () => {} };
   }
 
-  // Start animacji gdy ~15% sekcji widoczne, koniec gdy ~75% (pozycja zależna od sekcji)
-  const sectionVisibleStart = () => `top bottom-=${Math.round((container?.offsetHeight ?? 0) * 0.15)}px`;
-  const sectionVisibleEnd = () => `top bottom-=${Math.round((container?.offsetHeight ?? 0) * 0.75)}px`;
-
   let charOffsets: { el: HTMLElement; x: number; y: number }[] = [];
   let currentFrame         = -1;
   const playhead           = { frame: 0 };
@@ -230,8 +226,11 @@ function init(container: HTMLElement): { kill: () => void } {
     gsap.set(row2Word, { scaleY: 0, transformOrigin: '50% 0%' });
     buildOrganicST();
 
+    // ── ANIMACJA LITER (3D transform) — st1, st2, st3 ─────────────────────
+    // To są jedyne triggery sterujące napisem „FAKTY” / „SĄ TAKIE” (rotationX, opacity, scaleY).
+    // Tunel, organic overlay i frame scrub (tło) = osobne triggery niżej (tunnelST, orgST, frameST).
     const st1 = ScrollTrigger.create({
-      trigger: container, start: sectionVisibleStart, end: sectionVisibleEnd, scrub: true, invalidateOnRefresh: true,
+      trigger: container, start: 'top bottom-=35%', end: 'bottom top', scrub: true,
       animation: gsap.to(row1Chars, { ease: 'power1', stagger: 0.07, rotationX: 0, z: 0 }),
       onLeave:     () => setWC(row1Chars, 'auto'),
       onEnterBack: () => setWC(row1Chars, 'transform, opacity'),
@@ -240,7 +239,7 @@ function init(container: HTMLElement): { kill: () => void } {
     gsapInstances.push(st1);
 
     const st2 = ScrollTrigger.create({
-      trigger: container, start: sectionVisibleStart, end: sectionVisibleEnd, scrub: true, invalidateOnRefresh: true,
+      trigger: container, start: 'top bottom-=35%', end: 'bottom top', scrub: true,
       animation: gsap.to(row1Chars, { opacity: 1, ease: 'power2.in', stagger: 0.07 }),
     });
     gsapInstances.push(st2);
@@ -248,7 +247,7 @@ function init(container: HTMLElement): { kill: () => void } {
     const tl = gsap.timeline();
     tl.to(row2Word, { ease: 'power1.inOut', scaleY: 1, duration: 0.50 }, 0.08);
     const st3 = ScrollTrigger.create({
-      trigger: container, start: sectionVisibleStart, end: sectionVisibleEnd, scrub: true, invalidateOnRefresh: true, animation: tl,
+      trigger: container, start: 'top bottom-=35%', end: 'bottom top', scrub: true, animation: tl,
       onEnter:     () => setWC([row2Word], 'transform'),
       onLeave:     () => setWC([row2Word], 'auto'),
       onEnterBack: () => setWC([row2Word], 'transform'),
@@ -622,7 +621,7 @@ function init(container: HTMLElement): { kill: () => void } {
     resizeOrgCanvas();
     const tween=gsap.to(orgState,{
       progress:1,ease:'none',
-      scrollTrigger:{ trigger:container, start:sectionVisibleStart, end:sectionVisibleEnd, scrub:1, invalidateOnRefresh:true }
+      scrollTrigger:{ trigger:container, start:'top bottom-=35%', end:'bottom top', scrub:1 }
     });
     orgST=tween.scrollTrigger ?? null;
     if(orgST) gsapInstances.push(orgST);
@@ -711,7 +710,7 @@ function init(container: HTMLElement): { kill: () => void } {
       tunnelAtlasSource=atlas; tunnelDraw(0);
     }
     tunnelST=ScrollTrigger.create({
-      trigger:container, start:sectionVisibleStart, end:sectionVisibleEnd, scrub:true, invalidateOnRefresh:true,
+      trigger:container, start:'top bottom-=35%', end:'bottom top', scrub:true,
       onUpdate:function(self){ tunnelDraw(Math.floor(self.progress*T_SPEED*(T_STEPS-1))); }
     });
     gsapInstances.push(tunnelST);
@@ -732,7 +731,7 @@ function init(container: HTMLElement): { kill: () => void } {
     playhead.frame=0;currentFrame=-1;
     const tween=gsap.to(playhead,{frame:FRAME_COUNT-1,snap:'frame',ease:'none'});
     frameST=ScrollTrigger.create({
-      trigger:container, start:sectionVisibleStart, end:sectionVisibleEnd,
+      trigger:container, start:'top bottom-=35%', end:'bottom top',
       scrub:true, invalidateOnRefresh:true, animation:tween,
       onEnter:     ()=>enableOrganic(),
       onLeave:     ()=>pauseOrganic(),
@@ -798,6 +797,22 @@ function init(container: HTMLElement): { kill: () => void } {
   function _onVVResize() { _recreateIO(); }  // named handler — INP-LEAK-01
 
   _recreateIO();
+
+  // Odświeżenie ST gdy sekcja wchodzi w viewport — pozycja w dokumencie już ustalona (działa przy dowolnym spacerze)
+  let sectionInViewRefreshed = false;
+  const ioSectionInView = new IntersectionObserver(
+    (entries)=>{
+      const e=entries[0]; if(!e?.isIntersecting)return;
+      if(sectionInViewRefreshed)return;
+      sectionInViewRefreshed=true;
+      scrollRuntime.requestRefresh('section-in-view');
+      ioSectionInView.disconnect();
+    },
+    { rootMargin:'100px 0px', threshold:0 }
+  );
+  ioSectionInView.observe(container);
+  observers.push(ioSectionInView);
+
   if(window.visualViewport){
     window.visualViewport.addEventListener('resize',_onVVResize,{passive:true});
     cleanups.push(()=>{
