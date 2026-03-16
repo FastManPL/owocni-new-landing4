@@ -869,7 +869,7 @@ function init(container: HTMLElement): { kill: () => void } {
     layoutSettleTimerId=setTimeout(()=>{
       if(isKilled||!container.isConnected)return;
       scrollRuntime.requestRefresh('layout-settle');
-    },400);
+    },1000);
     timerIds.push({ type:'timeout', id: ()=> layoutSettleTimerId as number | null });
     // FIX 3: Force re-apply frame po powrocie do karty
     function onVisibilityChange() {

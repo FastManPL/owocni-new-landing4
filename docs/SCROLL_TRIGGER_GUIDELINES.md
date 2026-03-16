@@ -17,8 +17,8 @@ ScrollTrigger mapuje **progress 0→1** na przedział scrolla `[start, end]`. Wa
 
 **Każda sekcja, która tworzy ScrollTriggery** (z `trigger` / `start` / `end`), musi **po zbudowaniu wszystkich ST** zaplanować **jeden opóźniony** `requestRefresh` z reason `'layout-settle'`.
 
-- **Opóźnienie:** 300–500 ms (rekomendacja: **400 ms**) od momentu utworzenia ostatniego ScrollTriggera / zakończenia `fonts.ready` (jeśli sekcja czeka na fonty).
-- **Sposób:** `setTimeout(() => { scrollRuntime.requestRefresh('layout-settle'); }, 400)`.
+- **Opóźnienie:** 600–1200 ms (rekomendacja: **1000 ms**) od momentu utworzenia ostatniego ScrollTriggera / zakończenia `fonts.ready` (jeśli sekcja czeka na fonty). Przy ciężkiej treści nad sekcją (długi spacer, wiele obrazów) warto użyć 1000 ms lub więcej.
+- **Sposób:** `setTimeout(() => { scrollRuntime.requestRefresh('layout-settle'); }, 1000)`.
 - **Cleanup:** Identyfikator timera zapisany w `timerIds` i czyszczony w `kill()` (tak jak inne timeouty w sekcji).
 
 Przykład (wzorzec z sekcji fakty):
@@ -28,7 +28,7 @@ Przykład (wzorzec z sekcji fakty):
 layoutSettleTimerId = setTimeout(() => {
   if (isKilled || !container.isConnected) return;
   scrollRuntime.requestRefresh('layout-settle');
-}, 400);
+}, 1000);
 timerIds.push({ type: 'timeout', id: () => layoutSettleTimerId });
 ```
 
@@ -48,14 +48,14 @@ W `kill()`: istniejący mechanizm czyszczenia `timerIds` (clearTimeout) wystarcz
 W pliku PREVIEW sekcji (np. `fakty.PREVIEW.html`):
 
 - **Spacer nad sekcją** („scroll przed sekcją”) i **spacer pod sekcją** powinny być **rozróżnialne** (np. klasy `.preview-spacer-above` i `.preview-spacer-below`), żeby przy testach z długim spacerem nad sekcją (np. 200vh) było jasne, że to **górny** spacer decyduje o tym, kiedy sekcja „wchodzi” na ekran.
-- W init preview (odpowiednik `init(container)`) **ten sam** opóźniony refresh: po zbudowaniu ST, `setTimeout(..., 400)` wywołujący `scrollRuntime.requestRefresh('layout-settle')` (w preview stub to i tak robi `ScrollTrigger.refresh(true)`).
+- W init preview (odpowiednik `init(container)`) **ten sam** opóźniony refresh: po zbudowaniu ST, `setTimeout(..., 1000)` wywołujący `scrollRuntime.requestRefresh('layout-settle')` (w preview stub to i tak robi `ScrollTrigger.refresh(true)`).
 - Komentarz w CSS/HTML: po zmianie wysokości spacerów (szczególnie nad sekcją) refresh po załadowaniu i tak odpali się z opóźnieniem; przy dynamicznej zmianie spacerów w dev trzeba ręcznie wywołać `ScrollTrigger.refresh(true)` po ustabilizowaniu layoutu.
 
 ---
 
 ## 5. Checklist dla nowej sekcji z ScrollTrigger
 
-- [ ] Po utworzeniu wszystkich ScrollTriggerów jest wywołanie `scrollRuntime.requestRefresh('layout-settle')` w `setTimeout(..., 300–500 ms)`.
+- [ ] Po utworzeniu wszystkich ScrollTriggerów jest wywołanie `scrollRuntime.requestRefresh('layout-settle')` w `setTimeout(..., 600–1200 ms)` (rekomendacja 1000 ms).
 - [ ] Identyfikator timera jest w `timerIds` i jest czyszczony w `kill()`.
 - [ ] W PREVIEW: ten sam opóźniony refresh; spacery nad/pod sekcją rozróżnione (np. above/below).
 - [ ] W manifeście: w `refreshSignals` lub w opisie jest wzmianka o `layout-settle` (dla audytu).
