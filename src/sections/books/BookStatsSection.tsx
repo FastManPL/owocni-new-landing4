@@ -4,7 +4,6 @@ import { useRef } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { scrollRuntime } from '@/lib/scrollRuntime';
 import './book-stats-section.css';
 
 // Poster wideo: public/books/Statystyki-stron.png → /books/Statystyki-stron.png
@@ -29,7 +28,6 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
   // (DEV overlay has its own declaration; this was dead code)
 
   // getScroll removed — TS-LINT-UNUSED-01: declared but never called inside init()
-  // scrollRuntime.getScroll() available via module import if needed
 
   const cleanups: (() => void)[] = [];
   const gsapInstances: gsap.core.Tween[] = [];
