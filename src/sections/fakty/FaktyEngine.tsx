@@ -228,9 +228,9 @@ function init(container: HTMLElement): { kill: () => void } {
     // ── ANIMACJA LITER: st1 (rotationX), st2 (opacity), st3 (scaleY „SĄ TAKIE”) ─────────────────────
     const ST_END = 'center center';
 
-    // st1: rotationX FAKTY — opóźniony start
+    // st1: rotationX FAKTY — mocno opóźniony (od ~52% zakresu), żeby nie startował za wcześnie
     const tlRotation = gsap.timeline();
-    tlRotation.to(row1Chars, { ease: 'power1', stagger: 0.07, rotationX: 0, z: 0, duration: 0.35 }, 0.42);
+    tlRotation.to(row1Chars, { ease: 'power1', stagger: 0.07, rotationX: 0, z: 0, duration: 0.30 }, 0.52);
     const st1 = ScrollTrigger.create({
       trigger: container, start: 'top bottom-=35%', end: ST_END, scrub: true,
       animation: tlRotation,
@@ -249,10 +249,10 @@ function init(container: HTMLElement): { kill: () => void } {
     });
     gsapInstances.push(st2);
 
-    // st3: scaleY „SĄ TAKIE” — rozrost dopiero w ostatniej części scrollu; stan początkowy w timeline
+    // st3: scaleY „SĄ TAKIE” — rozrost tylko w ostatnich ~10% scrollu; set na 0 wymusza stan początkowy
     const tl = gsap.timeline();
     tl.set(row2Word, { scaleY: 0, transformOrigin: '50% 0%' }, 0);
-    tl.to(row2Word, { ease: 'power1.inOut', scaleY: 1, duration: 0.15 }, 0.85);
+    tl.to(row2Word, { ease: 'power1.inOut', scaleY: 1, duration: 0.10 }, 0.90);
     const st3 = ScrollTrigger.create({
       trigger: container, start: 'top bottom-=25%', end: ST_END, scrub: true, animation: tl,
       onEnter:     () => setWC([row2Word], 'transform'),
@@ -805,20 +805,8 @@ function init(container: HTMLElement): { kill: () => void } {
 
   _recreateIO();
 
-  // Odświeżenie ST gdy sekcja wchodzi w viewport — pozycja w dokumencie już ustalona (działa przy dowolnym spacerze)
-  let sectionInViewRefreshed = false;
-  const ioSectionInView = new IntersectionObserver(
-    (entries)=>{
-      const e=entries[0]; if(!e?.isIntersecting)return;
-      if(sectionInViewRefreshed)return;
-      sectionInViewRefreshed=true;
-      scrollRuntime.requestRefresh('section-in-view');
-      ioSectionInView.disconnect();
-    },
-    { rootMargin:'100px 0px', threshold:0 }
-  );
-  ioSectionInView.observe(container);
-  observers.push(ioSectionInView);
+  // Nie robimy refresh przy wejściu sekcji w viewport — przy powrocie scrollem start/end były przeliczane
+  // na nowo i animacje (FAKTY / SĄ TAKIE) działały źle. Zostają tylko fonts-ready-settle i layout-settle.
 
   if(window.visualViewport){
     window.visualViewport.addEventListener('resize',_onVVResize,{passive:true});
