@@ -13,6 +13,11 @@ Dokument dla zespołu tworzącego nowe sekcje z animacjami scroll (GSAP ScrollTr
 
 Wyjątek: jeśli celowo animujesz tylko wtedy, gdy konkretny wewnętrzny element (np. wiersz) jest w danym miejscu viewportu, możesz zostawić trigger na tym elemencie.
 
+**Zakres progressu (start/end):** żeby animacja nie była „już skończona”, gdy sekcja wchodzi na ekran, używaj **widoczności sekcji w viewportcie**:
+- **Start (progress 0):** gdy widoczne jest ~**15%** wysokości sekcji (dolna krawędź viewportu = góra sekcji + 15% jej wysokości). W GSAP: `start: () => \`top bottom-=${Math.round((container?.offsetHeight ?? 0) * 0.15)}px\``.
+- **Koniec (progress 1):** gdy widoczne jest ~**75%** wysokości sekcji. W GSAP: `end: () => \`top bottom-=${Math.round((container?.offsetHeight ?? 0) * 0.75)}px\``.
+- Daj `invalidateOnRefresh: true`, żeby przy refresh (np. resize) wartości były przeliczane.
+
 ---
 
 ## 1. Dlaczego „animacja startuje za wcześnie”?

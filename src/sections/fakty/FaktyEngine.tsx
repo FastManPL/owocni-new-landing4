@@ -56,12 +56,14 @@ function init(container: HTMLElement): { kill: () => void } {
     return { kill: () => {} };
   }
 
+  // Start animacji gdy ~15% sekcji widoczne, koniec gdy ~75% (pozycja zależna od sekcji)
+  const sectionVisibleStart = () => `top bottom-=${Math.round((container?.offsetHeight ?? 0) * 0.15)}px`;
+  const sectionVisibleEnd = () => `top bottom-=${Math.round((container?.offsetHeight ?? 0) * 0.75)}px`;
+
   let charOffsets: { el: HTMLElement; x: number; y: number }[] = [];
   let currentFrame         = -1;
   const playhead           = { frame: 0 };
   let isKilled             = false;
-  let stableViewportHeight = window.innerHeight;
-
   // ── DOM BUILD ──────────────────────────────────────────────
   function buildDOM() {
     if (!faktyDom) return;
@@ -226,12 +228,10 @@ function init(container: HTMLElement): { kill: () => void } {
     if (!row2Word) return;
     setWC([row2Word], 'transform');
     gsap.set(row2Word, { scaleY: 0, transformOrigin: '50% 0%' });
-    const opacityEnd = 54;
-
     buildOrganicST();
 
     const st1 = ScrollTrigger.create({
-      trigger: container, start: 'center bottom', end: 'top top+=20%', scrub: true,
+      trigger: container, start: sectionVisibleStart, end: sectionVisibleEnd, scrub: true, invalidateOnRefresh: true,
       animation: gsap.to(row1Chars, { ease: 'power1', stagger: 0.07, rotationX: 0, z: 0 }),
       onLeave:     () => setWC(row1Chars, 'auto'),
       onEnterBack: () => setWC(row1Chars, 'transform, opacity'),
@@ -240,7 +240,7 @@ function init(container: HTMLElement): { kill: () => void } {
     gsapInstances.push(st1);
 
     const st2 = ScrollTrigger.create({
-      trigger: container, start: 'center bottom', end: `top top+=${opacityEnd}%`, scrub: true,
+      trigger: container, start: sectionVisibleStart, end: sectionVisibleEnd, scrub: true, invalidateOnRefresh: true,
       animation: gsap.to(row1Chars, { opacity: 1, ease: 'power2.in', stagger: 0.07 }),
     });
     gsapInstances.push(st2);
@@ -248,7 +248,7 @@ function init(container: HTMLElement): { kill: () => void } {
     const tl = gsap.timeline();
     tl.to(row2Word, { ease: 'power1.inOut', scaleY: 1, duration: 0.50 }, 0.08);
     const st3 = ScrollTrigger.create({
-      trigger: container, start: 'center bottom', end: 'top top', scrub: true, animation: tl,
+      trigger: container, start: sectionVisibleStart, end: sectionVisibleEnd, scrub: true, invalidateOnRefresh: true, animation: tl,
       onEnter:     () => setWC([row2Word], 'transform'),
       onLeave:     () => setWC([row2Word], 'auto'),
       onEnterBack: () => setWC([row2Word], 'transform'),
@@ -622,7 +622,7 @@ function init(container: HTMLElement): { kill: () => void } {
     resizeOrgCanvas();
     const tween=gsap.to(orgState,{
       progress:1,ease:'none',
-      scrollTrigger:{ trigger:container, start:'top bottom-=30%', end:'bottom center', scrub:1 }
+      scrollTrigger:{ trigger:container, start:sectionVisibleStart, end:sectionVisibleEnd, scrub:1, invalidateOnRefresh:true }
     });
     orgST=tween.scrollTrigger ?? null;
     if(orgST) gsapInstances.push(orgST);
@@ -711,7 +711,7 @@ function init(container: HTMLElement): { kill: () => void } {
       tunnelAtlasSource=atlas; tunnelDraw(0);
     }
     tunnelST=ScrollTrigger.create({
-      trigger:container, start:'top bottom', end:'bottom top', scrub:true,
+      trigger:container, start:sectionVisibleStart, end:sectionVisibleEnd, scrub:true, invalidateOnRefresh:true,
       onUpdate:function(self){ tunnelDraw(Math.floor(self.progress*T_SPEED*(T_STEPS-1))); }
     });
     gsapInstances.push(tunnelST);
@@ -730,16 +730,9 @@ function init(container: HTMLElement): { kill: () => void } {
     const row1=faktyDom.querySelector<HTMLElement>('.title-row--1');
     if(!row1)return;
     playhead.frame=0;currentFrame=-1;
-    const START_PCT=61;
     const tween=gsap.to(playhead,{frame:FRAME_COUNT-1,snap:'frame',ease:'none'});
-    // Trigger = section root (container) — progress klatek zależny od pozycji sekcji w dokumencie
     frameST=ScrollTrigger.create({
-      trigger:container, start:'top top+='+START_PCT+'%',
-      end:function(){
-        const ratio=(container?.offsetHeight ?? 0)/stableViewportHeight;
-        const endPct=Math.max(5,Math.round(ratio*45));
-        return 'top top-='+endPct+'%';
-      },
+      trigger:container, start:sectionVisibleStart, end:sectionVisibleEnd,
       scrub:true, invalidateOnRefresh:true, animation:tween,
       onEnter:     ()=>enableOrganic(),
       onLeave:     ()=>pauseOrganic(),
@@ -756,7 +749,6 @@ function init(container: HTMLElement): { kill: () => void } {
     const currentInnerWidth=window.innerWidth;
     if(currentInnerWidth===lastInnerWidth)return;
     lastInnerWidth=currentInnerWidth;
-    stableViewportHeight=window.innerHeight;
     if(resizeTimer!==null)clearTimeout(resizeTimer);
     resizeTimer=setTimeout(()=>{
       if(isKilled||!container.isConnected||!faktyBlock)return;
@@ -847,7 +839,6 @@ function init(container: HTMLElement): { kill: () => void } {
     document.fonts.load('139 16px Lexend'),
   ]).then(()=>document.fonts.ready).then(async()=>{
     if(isKilled||!container.isConnected)return;
-    stableViewportHeight=window.innerHeight;
     buildDOM();
     computeAndSetBase();
     if(!faktyBlock)return;
