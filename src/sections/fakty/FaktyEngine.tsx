@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -804,36 +804,8 @@ function init(container: HTMLElement): { kill: () => void } {
 
   _recreateIO();
 
-  // Jeden refresh ST wyłącznie gdy sekcja PIERWSZY RAZ wchodzi w viewport (z opóźnieniem, żeby scroll się ustalił).
-  // Bez refreshu przy ładowaniu (fonts/layout) — przy starcie na górze strony sekcja jest poniżej viewportu
-  // i start/end były liczone w złym momencie → animacje się rozjeżdżały. Teraz refresh tylko gdy sekcja w viewport.
-  const SECTION_VIEW_REFRESH_DELAY_MS = 200;
-  let sectionInViewRefreshed = false;
-  let sectionInViewTimerId: ReturnType<typeof setTimeout> | null = null;
-  const ioSectionInView = new IntersectionObserver(
-    (entries) => {
-      const e = entries[0];
-      if (!e?.isIntersecting) return;
-      if (sectionInViewRefreshed) return;
-      sectionInViewRefreshed = true;
-      if (sectionInViewTimerId != null) clearTimeout(sectionInViewTimerId);
-      sectionInViewTimerId = setTimeout(() => {
-        sectionInViewTimerId = null;
-        if (isKilled) return;
-        scrollRuntime.requestRefresh('section-in-view');
-        ioSectionInView.disconnect();
-      }, SECTION_VIEW_REFRESH_DELAY_MS);
-    },
-    { rootMargin: '50px 0px', threshold: 0 }
-  );
-  ioSectionInView.observe(container);
-  observers.push(ioSectionInView);
-  cleanups.push(() => {
-    if (sectionInViewTimerId != null) {
-      clearTimeout(sectionInViewTimerId);
-      sectionInViewTimerId = null;
-    }
-  });
+  // Żaden refresh ST z tej sekcji — requestRefresh/IO rozjeżdżały start/end przy scrolle od góry.
+  // ScrollTrigger używa stanu z momentu utworzenia; bez refreshu animacje działają tak samo od góry i od dołu.
 
   if(window.visualViewport){
     window.visualViewport.addEventListener('resize',_onVVResize,{passive:true});
@@ -933,21 +905,7 @@ export default function FaktyEngine() {
     // 2. useGSAP scope — context revert czyszczony przez React
   }, { scope: rootRef });
 
-  // Dynamic import: double rAF refresh po mount (pin/snap wrażliwe)
-  useEffect(() => {
-    scrollRuntime.requestRefresh('dynamic-mounted');
-    let id1 = 0;
-    let id2 = 0;
-    id1 = requestAnimationFrame(() => {
-      id2 = requestAnimationFrame(() => {
-        scrollRuntime.requestRefresh('dynamic-mounted-settle');
-      });
-    });
-    return () => {
-      if (id1) cancelAnimationFrame(id1);
-      if (id2) cancelAnimationFrame(id2);
-    };
-  }, []); // tylko przy pierwszym mount
+  // Bez refresh po mount — rozjeżdżało start/end przy starcie od góry strony.
 
   return (
     <section id="fakty-section" ref={rootRef}>
