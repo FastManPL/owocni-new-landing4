@@ -374,7 +374,7 @@
 
         var ST_END = 'center center';
         var tlRotation = gsap.timeline();
-        tlRotation.to(row1Chars, { ease: 'power1', stagger: 0.07, rotationX: 0, z: 0, duration: 0.48 }, 0.18);
+        tlRotation.to(row1Chars, { ease: 'power1', stagger: 0.07, rotationX: 0, z: 0, duration: 0.42 }, 0.30);
         var st1 = ScrollTrigger.create({
           trigger: container, start: 'top bottom-=35%', end: ST_END, scrub: true,
           animation: tlRotation,
@@ -393,7 +393,7 @@
         gsapInstances.push(st2);
 
         var tl = gsap.timeline();
-        tl.to(row2Word, { ease: 'power1.inOut', scaleY: 1, duration: 0.35 }, 0.40);
+        tl.to(row2Word, { ease: 'power1.inOut', scaleY: 1, duration: 0.30 }, 0.58);
         var st3 = ScrollTrigger.create({
           trigger: container, start: 'top bottom-=25%', end: ST_END, scrub: true, animation: tl,
           onEnter:     function() { setWC([row2Word], 'transform'); },

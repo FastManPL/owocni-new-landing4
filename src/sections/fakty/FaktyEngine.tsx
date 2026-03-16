@@ -229,9 +229,9 @@ function init(container: HTMLElement): { kill: () => void } {
     // Trigger = container. End = 'center center' → po zakończeniu animacji napis na środku ekranu.
     const ST_END = 'center center';
 
-    // st1: rotationX — opóźniony start (od ~18% zakresu), żeby nie było za wcześnie
+    // st1: rotationX — wyraźnie opóźniony start (od ~30% zakresu)
     const tlRotation = gsap.timeline();
-    tlRotation.to(row1Chars, { ease: 'power1', stagger: 0.07, rotationX: 0, z: 0, duration: 0.48 }, 0.18);
+    tlRotation.to(row1Chars, { ease: 'power1', stagger: 0.07, rotationX: 0, z: 0, duration: 0.42 }, 0.30);
     const st1 = ScrollTrigger.create({
       trigger: container, start: 'top bottom-=35%', end: ST_END, scrub: true,
       animation: tlRotation,
@@ -251,8 +251,8 @@ function init(container: HTMLElement): { kill: () => void } {
     gsapInstances.push(st2);
 
     const tl = gsap.timeline();
-    // „SĄ TAKIE”: opóźniony rozrost (od ~40% zakresu), żeby nie był za wcześnie
-    tl.to(row2Word, { ease: 'power1.inOut', scaleY: 1, duration: 0.35 }, 0.40);
+    // „SĄ TAKIE”: dużo niżej — rozrost dopiero od ~58% zakresu scroll
+    tl.to(row2Word, { ease: 'power1.inOut', scaleY: 1, duration: 0.30 }, 0.58);
     const st3 = ScrollTrigger.create({
       trigger: container, start: 'top bottom-=25%', end: ST_END, scrub: true, animation: tl,
       onEnter:     () => setWC([row2Word], 'transform'),
