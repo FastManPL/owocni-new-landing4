@@ -32,7 +32,8 @@ body {
 
 /* --- Sekcja root + HARDENING --- */
 #book-stats-section {
-  padding-block: clamp(3.41rem, 5.5vw, 6.25rem);
+  padding-block-start: clamp(3.41rem, 5.5vw, 6.25rem);
+  padding-block-end: 0;
   padding-inline: 0;
   position: relative;
   /* ═══ FACTORY HARDENING: B-ISO-01 ═══ */
@@ -40,17 +41,20 @@ body {
 }
 @media screen and (max-width: 991px) {
   #book-stats-section {
-    padding-block: calc(1.05rem + 5.25vw);
+    padding-block-start: calc(1.05rem + 5.25vw);
+    padding-block-end: 0;
   }
 }
 @media screen and (max-width: 767px) {
   #book-stats-section {
-    padding-block: calc(0.75rem + 3.75vw);
+    padding-block-start: calc(0.75rem + 3.75vw);
+    padding-block-end: 0;
   }
 }
 @media screen and (max-width: 479px) {
   #book-stats-section {
-    padding-block: 12.5vw;
+    padding-block-start: 12.5vw;
+    padding-block-end: 0;
   }
 }
 

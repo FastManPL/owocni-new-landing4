@@ -153,9 +153,8 @@ function init(container: HTMLElement): { kill: () => void } {
   }
 
   // ── FRAME SEQUENCE ─────────────────────────────────────────
-  // [AUTO-FIX 2] FRAMES_BASE_PATH — integrator podmienia na właściwą ścieżkę
-  // Przykład produkcja: '/sections/fakty/frames/fakty-'
-  const FRAMES_BASE_PATH = 'frames/fakty-';
+  // [AUTO-FIX 2] Klatki wideo w tle napisu — z public/frames (np. public/frames/fakty-01.webp → /frames/fakty-)
+  const FRAMES_BASE_PATH = '/frames/fakty-';
   const FRAME_COUNT      = 34;
   const FRAME_EXT        = '.webp';
   const frameURLs        = Array.from({ length: FRAME_COUNT }, (_, i) =>

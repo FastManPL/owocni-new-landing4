@@ -4,10 +4,46 @@ Dokument dla zespołu tworzącego nowe sekcje z animacjami scroll (GSAP ScrollTr
 
 ---
 
+## Zasada nadrzędna: scroll w oparciu o pozycję sekcji, nie o całą stronę
+
+Animacje scroll w sekcji muszą zależeć **wyłącznie od pozycji samej sekcji** względem viewportu. Nie od scrolla całej strony (np. „od 500px”), nie od innych sekcji ani od wysokości treści nad sekcją. Dzięki temu sekcja działa tak samo na górze strony, po 200vh spacerze lub w środku długiej LP.
+
+### Jak to osiągnąć
+
+1. **Trigger = root sekcji (`container`)**  
+   W każdym `ScrollTrigger.create()` (i w `scrollTrigger` w gsap.to) ustaw **`trigger: container`** (element `<section>` przekazany do `init(container)`). Nie używaj wewnętrznego diva ani innego elementu jako triggera dla zakresu „kiedy sekcja wchodzi / jest na ekranie”.
+
+2. **Start i end w notacji „element viewport”**  
+   Używaj wyłącznie notacji GSAP typu `"pozycja triggera pozycja viewportu"`, np.:
+   - `start: 'top bottom'` — start, gdy **góra sekcji** jest przy **dole viewportu** (sekcja dopiero wchodzi).
+   - `start: 'top bottom-=25%'` — start, gdy góra sekcji jest 25% viewportu nad dołem ekranu (animacja startuje, gdy ~25% viewportu to już sekcja).
+   - `end: 'bottom top'` — koniec, gdy **dół sekcji** jest przy **górze viewportu** (sekcja w całości przewinięta).
+   - `end: 'bottom top+=20%'` — koniec wcześniej w scrollu (dół sekcji 20% poniżej góry viewportu).
+
+   Nie używaj stałych w pikselach ani scroll position w dokumentach (np. „od 800px”) — tylko pozycja **triggera** (sekcji) względem **viewportu**.
+
+3. **Refresh gdy sekcja wchodzi w viewport**  
+   Dodaj **IntersectionObserver** na `container`: przy pierwszym wejściu sekcji w viewport wywołaj `scrollRuntime.requestRefresh('section-in-view')` i odłącz observer. Dzięki temu ScrollTrigger przelicza start/end w momencie, gdy pozycja sekcji w dokumencie jest już ustalona — niezależnie od tego, ile treści jest nad sekcją (spacer 0vh, 40vh, 200vh).
+
+4. **Layout-settle jako zapas**  
+   Po zbudowaniu wszystkich ScrollTriggerów zaplanuj opóźniony `requestRefresh('layout-settle')` (np. 1000 ms), timer w `timerIds`, cleanup w `kill()`. To pomaga, gdy sekcja od razu jest w viewporcie (krótki spacer).
+
+5. **W PREVIEW**  
+   Te same zasady: trigger = container, start/end w notacji „element viewport”, ten sam IO section-in-view i layout-settle. Spacery nad/pod sekcją rozróżnialne (np. `.preview-spacer-above` / `.preview-spacer-below`), żeby testować przy różnej wysokości spaceru — animacja ma zachowywać się tak samo względem sekcji.
+
+### Czego unikać
+
+- **Trigger na elemencie wewnętrznym** (np. `.title-block`, `.hero-content`) dla zakresu wejścia sekcji na ekran — wtedy pozycja zależy od layoutu wewnątrz sekcji (fonty, obrazy) i od treści nad sekcją.
+- **Stałe pozycje scrolla** (np. start przy 500px) — pozycja sekcji w dokumencie zależy od treści nad nią; stała wartość działa tylko przy jednym układzie strony.
+- **Poleganie tylko na jednym refreshu** (np. tylko layout-settle po 1 s) — przy długiej treści nad sekcją pozycja sekcji ustala się późno; konieczny jest refresh przy wejściu sekcji w viewport (IO).
+
+---
+
 ## Podział w sekcji „fakty” (na przyszłość)
 
 - **Animacja liter (3D transform)** — napis „FAKTY” / „SĄ TAKIE”: **tylko** ScrollTriggery **st1, st2, st3** (rotationX, opacity, scaleY na `.char` / `.word`). To one decydują, kiedy użytkownik widzi animację liter.
 - **Tło** — tunel z procentami, organic overlay, scrub klatek wideo na literach: **tunnelST, orgST, frameST**. Zmiany w start/end tych triggerów nie naprawiają problemu „animacja liter jest zła” — do tego służą wyłącznie st1, st2, st3.
+- **Klatki wideo w tle napisu:** sekwencja klatek (np. fakty-01.webp … fakty-34.webp) musi być w **`public/frames/`**. W silniku sekcji ustaw **`FRAMES_BASE_PATH`** tak, żeby wskazywał na tę ścieżkę od roota strony, np. `'/frames/fakty-'` (w Next.js pliki z `public/frames/` są serwowane pod `/frames/`). Bez tego napis ma tylko solid fill; z poprawną ścieżką — wypełnienie wideo w literach.
 
 ---
 
@@ -63,10 +99,13 @@ W pliku PREVIEW sekcji (np. `fakty.PREVIEW.html`):
 
 ## 5. Checklist dla nowej sekcji z ScrollTrigger
 
-- [ ] Jako `trigger` używany jest **root sekcji** (`container`), nie wewnętrzny blok.
-- [ ] **IntersectionObserver** na `container`: przy pierwszym wejściu w viewport → `requestRefresh('section-in-view')` + `disconnect()`; observer w `observers`.
+(Zgodnie z zasadą: scroll w oparciu o **pozycję sekcji**, nie o całą stronę.)
+
+- [ ] **Trigger = root sekcji:** `trigger: container` we wszystkich ST (nie wewnętrzny blok).
+- [ ] **Start/end w notacji „element viewport”:** tylko np. `'top bottom'`, `'top bottom-=25%'`, `'bottom top'`, `'bottom top+=20%'` — bez stałych px ani pozycji scrolla w dokumencie.
+- [ ] **Section-in-view:** IntersectionObserver na `container` → przy pierwszym wejściu w viewport: `requestRefresh('section-in-view')` + `disconnect()`; observer w `observers`.
 - [ ] **Layout-settle:** `setTimeout(..., 1000)` z `requestRefresh('layout-settle')`, timer w `timerIds`, cleanup w `kill()`.
-- [ ] W PREVIEW: ten sam IO section-in-view + layout-settle; spacery nad/pod sekcją rozróżnione (above/below).
+- [ ] **PREVIEW:** ten sam trigger (container), te same start/end, IO section-in-view + layout-settle; spacery above/below rozróżnione.
 
 ---
 
