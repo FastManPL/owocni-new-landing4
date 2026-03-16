@@ -229,19 +229,21 @@ function init(container: HTMLElement): { kill: () => void } {
     // Trigger = container. End = 'center center' → po zakończeniu animacji napis na środku ekranu.
     const ST_END = 'center center';
 
-    // st1: rotationX — start „wyżej” (gdy sekcja już wjechała)
+    // st1: rotationX — opóźniony start (od ~18% zakresu), żeby nie było za wcześnie
+    const tlRotation = gsap.timeline();
+    tlRotation.to(row1Chars, { ease: 'power1', stagger: 0.07, rotationX: 0, z: 0, duration: 0.48 }, 0.18);
     const st1 = ScrollTrigger.create({
       trigger: container, start: 'top bottom-=35%', end: ST_END, scrub: true,
-      animation: gsap.to(row1Chars, { ease: 'power1', stagger: 0.07, rotationX: 0, z: 0 }),
+      animation: tlRotation,
       onLeave:     () => setWC(row1Chars, 'auto'),
       onEnterBack: () => setWC(row1Chars, 'transform, opacity'),
       onLeaveBack: () => setWC(row1Chars, 'auto'),
     });
     gsapInstances.push(st1);
 
-    // st2: opacity — szybsze wejście (w pierwszych ~22% zakresu scroll)
+    // st2: opacity — szybkie wejście (w pierwszych ~15% zakresu scroll)
     const tlOpacity = gsap.timeline();
-    tlOpacity.to(row1Chars, { opacity: 1, ease: 'power2.in', stagger: 0.07, duration: 0.22 }, 0);
+    tlOpacity.to(row1Chars, { opacity: 1, ease: 'power2.in', stagger: 0.07, duration: 0.15 }, 0);
     const st2 = ScrollTrigger.create({
       trigger: container, start: 'top bottom-=25%', end: ST_END, scrub: true,
       animation: tlOpacity,
@@ -249,8 +251,8 @@ function init(container: HTMLElement): { kill: () => void } {
     gsapInstances.push(st2);
 
     const tl = gsap.timeline();
-    // „SĄ TAKIE”: dłużej spłaszczone (0–28% zakresu scroll), potem rozrost — jak na oryginale preview
-    tl.to(row2Word, { ease: 'power1.inOut', scaleY: 1, duration: 0.38 }, 0.28);
+    // „SĄ TAKIE”: opóźniony rozrost (od ~40% zakresu), żeby nie był za wcześnie
+    tl.to(row2Word, { ease: 'power1.inOut', scaleY: 1, duration: 0.35 }, 0.40);
     const st3 = ScrollTrigger.create({
       trigger: container, start: 'top bottom-=25%', end: ST_END, scrub: true, animation: tl,
       onEnter:     () => setWC([row2Word], 'transform'),
