@@ -370,7 +370,8 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
       sectionST = bookST;
       _scrollEnabled = true;
 
-      scrollRuntime.requestRefresh('book-frames-loaded');
+      // Nie wywołujemy requestRefresh — globalny refresh przelicza ST we wszystkich sekcjach
+      // (m.in. fakty) i psuje animacje przy scrolle od góry. Pin/scrub book-stats działają bez tego.
     }
 
     /* ── ResizeObserver ── */
