@@ -223,16 +223,13 @@ function init(container: HTMLElement): { kill: () => void } {
     if (!row2Word) return;
     setWC([row2Word], 'transform');
     gsap.set(row2Word, { scaleY: 0, transformOrigin: '50% 0%' });
-    const opacityEnd = 54; // Źródło: fakty.PREVIEW (4).html — osobny koniec dla opacity
     buildOrganicST();
 
     // ── ANIMACJA LITER (3D transform) — st1, st2, st3 ─────────────────────
-    // Trigger = sekcja (container), start = 'top bottom' — animacja startuje gdy SEKCJA
-    // zaczyna się pojawiać na ekranie (górna krawędź sekcji przy dolnej krawędzi viewportu).
-    // Nie używamy row1/faktyBlock jako triggera — po refreshu / w appce ich pozycje
-    // bywają liczone w złym momencie i animacja zaczynała się za wcześnie.
+    // Zgodnie z docs/SCROLL_TRIGGER_GUIDELINES.md: trigger = container (sekcja),
+    // start/end spójne z resztą sekcji. To są jedyne triggery sterujące napisem „FAKTY” / „SĄ TAKIE”.
     const st1 = ScrollTrigger.create({
-      trigger: container, start: 'top bottom', end: 'top top+=20%', scrub: true,
+      trigger: container, start: 'top bottom-=25%', end: 'bottom top+=20%', scrub: true,
       animation: gsap.to(row1Chars, { ease: 'power1', stagger: 0.07, rotationX: 0, z: 0 }),
       onLeave:     () => setWC(row1Chars, 'auto'),
       onEnterBack: () => setWC(row1Chars, 'transform, opacity'),
@@ -241,7 +238,7 @@ function init(container: HTMLElement): { kill: () => void } {
     gsapInstances.push(st1);
 
     const st2 = ScrollTrigger.create({
-      trigger: container, start: 'top bottom', end: 'top top+=' + opacityEnd + '%', scrub: true,
+      trigger: container, start: 'top bottom-=25%', end: 'bottom top+=20%', scrub: true,
       animation: gsap.to(row1Chars, { opacity: 1, ease: 'power2.in', stagger: 0.07 }),
     });
     gsapInstances.push(st2);
@@ -249,7 +246,7 @@ function init(container: HTMLElement): { kill: () => void } {
     const tl = gsap.timeline();
     tl.to(row2Word, { ease: 'power1.inOut', scaleY: 1, duration: 0.50 }, 0.08);
     const st3 = ScrollTrigger.create({
-      trigger: container, start: 'top bottom', end: 'top top', scrub: true, animation: tl,
+      trigger: container, start: 'top bottom-=25%', end: 'bottom top+=20%', scrub: true, animation: tl,
       onEnter:     () => setWC([row2Word], 'transform'),
       onLeave:     () => setWC([row2Word], 'auto'),
       onEnterBack: () => setWC([row2Word], 'transform'),
