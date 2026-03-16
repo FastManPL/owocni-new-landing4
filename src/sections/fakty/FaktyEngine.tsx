@@ -226,10 +226,12 @@ function init(container: HTMLElement): { kill: () => void } {
     buildOrganicST();
 
     // ── ANIMACJA LITER (3D transform) — st1, st2, st3 ─────────────────────
-    // Zgodnie z docs/SCROLL_TRIGGER_GUIDELINES.md: trigger = container (sekcja),
-    // start/end spójne z resztą sekcji. To są jedyne triggery sterujące napisem „FAKTY” / „SĄ TAKIE”.
+    // Trigger = container. End = 'center center' → po zakończeniu animacji napis na środku ekranu.
+    const ST_END = 'center center';
+
+    // st1: rotationX — start „wyżej” (gdy sekcja już wjechała)
     const st1 = ScrollTrigger.create({
-      trigger: container, start: 'top bottom-=25%', end: 'bottom top+=20%', scrub: true,
+      trigger: container, start: 'top bottom-=35%', end: ST_END, scrub: true,
       animation: gsap.to(row1Chars, { ease: 'power1', stagger: 0.07, rotationX: 0, z: 0 }),
       onLeave:     () => setWC(row1Chars, 'auto'),
       onEnterBack: () => setWC(row1Chars, 'transform, opacity'),
@@ -237,9 +239,12 @@ function init(container: HTMLElement): { kill: () => void } {
     });
     gsapInstances.push(st1);
 
+    // st2: opacity — szybsze wejście (w pierwszych ~22% zakresu scroll)
+    const tlOpacity = gsap.timeline();
+    tlOpacity.to(row1Chars, { opacity: 1, ease: 'power2.in', stagger: 0.07, duration: 0.22 }, 0);
     const st2 = ScrollTrigger.create({
-      trigger: container, start: 'top bottom-=25%', end: 'bottom top+=20%', scrub: true,
-      animation: gsap.to(row1Chars, { opacity: 1, ease: 'power2.in', stagger: 0.07 }),
+      trigger: container, start: 'top bottom-=25%', end: ST_END, scrub: true,
+      animation: tlOpacity,
     });
     gsapInstances.push(st2);
 
@@ -247,7 +252,7 @@ function init(container: HTMLElement): { kill: () => void } {
     // „SĄ TAKIE”: dłużej spłaszczone (0–28% zakresu scroll), potem rozrost — jak na oryginale preview
     tl.to(row2Word, { ease: 'power1.inOut', scaleY: 1, duration: 0.38 }, 0.28);
     const st3 = ScrollTrigger.create({
-      trigger: container, start: 'top bottom-=25%', end: 'bottom top+=20%', scrub: true, animation: tl,
+      trigger: container, start: 'top bottom-=25%', end: ST_END, scrub: true, animation: tl,
       onEnter:     () => setWC([row2Word], 'transform'),
       onLeave:     () => setWC([row2Word], 'auto'),
       onEnterBack: () => setWC([row2Word], 'transform'),
