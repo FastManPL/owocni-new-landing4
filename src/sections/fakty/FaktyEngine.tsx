@@ -222,7 +222,7 @@ function init(container: HTMLElement): { kill: () => void } {
     const row2Word = row2.querySelector<HTMLElement>('.word');
     if (!row2Word) return;
     setWC([row2Word], 'transform');
-    gsap.set(row2Word, { scaleY: 0.04, transformOrigin: '50% 0%', y: '-0.35em' });
+    gsap.set(row2Word, { scaleY: 0, transformOrigin: '50% 0%', y: '-0.35em' });
   }
   function buildPhase1() {
     if (!faktyDom) return;
@@ -261,10 +261,10 @@ function init(container: HTMLElement): { kill: () => void } {
     });
     gsapInstances.push(st2);
 
-    // st3: scaleY „SĄ TAKIE” — na starcie mocno spłaszczony (scaleY 0.04), podsunięty w górę (y), potem rozrost
+    // st3: scaleY „SĄ TAKIE” — na starcie całkowicie spłaszczony (scaleY 0), podsunięty w górę; animacja startuje później (niżej w scrollu)
     const tl = gsap.timeline();
-    tl.set(row2Word, { scaleY: 0.04, transformOrigin: '50% 0%', y: '-0.35em' }, 0);
-    tl.to(row2Word, { ease: 'power1.inOut', scaleY: 1, y: 0, duration: 0.50 }, 0.08);
+    tl.set(row2Word, { scaleY: 0, transformOrigin: '50% 0%', y: '-0.35em' }, 0);
+    tl.to(row2Word, { ease: 'power1.inOut', scaleY: 1, y: 0, duration: 0.50 }, 0.22);
     const st3 = ScrollTrigger.create({
       trigger: container, start: 'top bottom-=25%', end: ST_END, scrub: true, animation: tl,
       onEnter:     () => setWC([row2Word], 'transform'),
