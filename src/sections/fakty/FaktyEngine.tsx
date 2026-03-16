@@ -39,7 +39,6 @@ function init(container: HTMLElement): { kill: () => void } {
   const cleanups: (() => void)[] = [];
   const gsapInstances: { revert?(): void; kill?(): void }[] = [];
   const timerIds: { type: string; id: number | (() => number | null) }[] = [];
-  let layoutSettleTimerId: ReturnType<typeof setTimeout> | null = null;
   const observers: IntersectionObserver[] = [];
 
   const KERNING_MARGINS = [0, -0.1459, -0.1101, -0.1196, -0.1316];
@@ -805,8 +804,36 @@ function init(container: HTMLElement): { kill: () => void } {
 
   _recreateIO();
 
-  // Nie robimy refresh przy wejściu sekcji w viewport — przy powrocie scrollem start/end były przeliczane
-  // na nowo i animacje (FAKTY / SĄ TAKIE) działały źle. Zostają tylko fonts-ready-settle i layout-settle.
+  // Jeden refresh ST wyłącznie gdy sekcja PIERWSZY RAZ wchodzi w viewport (z opóźnieniem, żeby scroll się ustalił).
+  // Bez refreshu przy ładowaniu (fonts/layout) — przy starcie na górze strony sekcja jest poniżej viewportu
+  // i start/end były liczone w złym momencie → animacje się rozjeżdżały. Teraz refresh tylko gdy sekcja w viewport.
+  const SECTION_VIEW_REFRESH_DELAY_MS = 200;
+  let sectionInViewRefreshed = false;
+  let sectionInViewTimerId: ReturnType<typeof setTimeout> | null = null;
+  const ioSectionInView = new IntersectionObserver(
+    (entries) => {
+      const e = entries[0];
+      if (!e?.isIntersecting) return;
+      if (sectionInViewRefreshed) return;
+      sectionInViewRefreshed = true;
+      if (sectionInViewTimerId != null) clearTimeout(sectionInViewTimerId);
+      sectionInViewTimerId = setTimeout(() => {
+        sectionInViewTimerId = null;
+        if (isKilled) return;
+        scrollRuntime.requestRefresh('section-in-view');
+        ioSectionInView.disconnect();
+      }, SECTION_VIEW_REFRESH_DELAY_MS);
+    },
+    { rootMargin: '50px 0px', threshold: 0 }
+  );
+  ioSectionInView.observe(container);
+  observers.push(ioSectionInView);
+  cleanups.push(() => {
+    if (sectionInViewTimerId != null) {
+      clearTimeout(sectionInViewTimerId);
+      sectionInViewTimerId = null;
+    }
+  });
 
   if(window.visualViewport){
     window.visualViewport.addEventListener('resize',_onVVResize,{passive:true});
@@ -863,16 +890,8 @@ function init(container: HTMLElement): { kill: () => void } {
     buildFrameScroll();
     buildTunnel();
     preloadRemainingFrames();
-    // Patch I: fonts-ready refresh signal (manifest.refreshSignals)
-    requestAnimationFrame(()=>{
-      scrollRuntime.requestRefresh('fonts-ready-settle');
-    });
-    // Layout-settle: ST start/end computed after late layout (images above, long spacer) — avoids animation starting too early
-    layoutSettleTimerId=setTimeout(()=>{
-      if(isKilled||!container.isConnected)return;
-      scrollRuntime.requestRefresh('layout-settle');
-    },1000);
-    timerIds.push({ type:'timeout', id: ()=> layoutSettleTimerId as number | null });
+    // Brak refresh z tego miejsca — refresh tylko gdy sekcja wejdzie w viewport (ioSectionInView + opóźnienie).
+    // Dzięki temu przy starcie na górze strony ST nie dostaje złych start/end.
     // FIX 3: Force re-apply frame po powrocie do karty
     function onVisibilityChange() {
       if(document.visibilityState==='visible'&&framesReady){
