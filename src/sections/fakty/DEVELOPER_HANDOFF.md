@@ -46,6 +46,7 @@ Poniższe zostały zweryfikowane przez P3 jako STOP gates. Jeśli `tsc --noEmit`
 - ✅ `isKilled` flag w kill() + try/catch — idempotentność de facto
 - ✅ ScrollTrigger.refresh(true) → scrollRuntime.requestRefresh('st-refresh')
 - ✅ Patch I: scrollRuntime.requestRefresh('fonts-ready-settle') po fonts.ready + ST build
+- ✅ C6.3: layout-settle — opóźniony requestRefresh('layout-settle') 400 ms po ST build (timer w timerIds, cleanup w kill())
 - ✅ Dynamic import: FaktySection (wrapper) + FaktyEngine (engine, default export)
 - ✅ Dynamic import: useEffect double rAF refresh w FaktyEngine
 - ✅ PREVIEW-PLUGIN-01: GSAP_PLUGINS_USED = [] → brak dodatkowych pluginów do rejestracji
@@ -61,6 +62,12 @@ Poniższe zostały zweryfikowane przez P3 jako STOP gates. Jeśli `tsc --noEmit`
 - [ ] `npm run dev` → React StrictMode: konsola bez błędów po 2× mount/unmount (podwójne init/cleanup)
 - [ ] GSAP 3.12.7 smoke test: przewiń przez sekcję — animacje smooth, brak skoków
 - [ ] Conditional unmount nie dotyczy (hasPin: false, hasSnap: false)
+
+---
+
+## Wytyczne dla fabryki (kolejne sekcje z ScrollTrigger)
+
+Sekcje z ScrollTrigger **muszą** po zbudowaniu ST wywołać opóźniony `requestRefresh('layout-settle')` (C6.3), żeby animacja nie startowała „za wcześnie” przy długiej treści nad sekcją. Szczegóły i checklist: **`docs/SCROLL_TRIGGER_GUIDELINES.md`**.
 
 ---
 

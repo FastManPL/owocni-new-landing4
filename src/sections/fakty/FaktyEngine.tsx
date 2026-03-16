@@ -39,6 +39,7 @@ function init(container: HTMLElement): { kill: () => void } {
   const cleanups: (() => void)[] = [];
   const gsapInstances: { revert?(): void; kill?(): void }[] = [];
   const timerIds: { type: string; id: number | (() => number | null) }[] = [];
+  let layoutSettleTimerId: ReturnType<typeof setTimeout> | null = null;
   const observers: IntersectionObserver[] = [];
 
   const KERNING_MARGINS = [0, -0.1459, -0.1101, -0.1196, -0.1316];
@@ -864,6 +865,12 @@ function init(container: HTMLElement): { kill: () => void } {
     requestAnimationFrame(()=>{
       scrollRuntime.requestRefresh('fonts-ready-settle');
     });
+    // Layout-settle: ST start/end computed after late layout (images above, long spacer) — avoids animation starting too early
+    layoutSettleTimerId=setTimeout(()=>{
+      if(isKilled||!container.isConnected)return;
+      scrollRuntime.requestRefresh('layout-settle');
+    },400);
+    timerIds.push({ type:'timeout', id: ()=> layoutSettleTimerId as number | null });
     // FIX 3: Force re-apply frame po powrocie do karty
     function onVisibilityChange() {
       if(document.visibilityState==='visible'&&framesReady){
