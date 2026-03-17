@@ -48,5 +48,22 @@
 
 | Przejście | Zmiana |
 |-----------|--------|
-| **Fakty → Kinetic** | ScrollTrigger na `#bridge-wrapper`: gdy wrapper wjeżdża od dołu (`top bottom-=15%` → `top top`), animacja opacity 0→1 na warstwie Kinetic (miękki fade-in). |
-| **Kinetic → Block 4-5** | W Blok45Engine: trigger startu Kipiel = wejście **sekcji** (lub wave-wrap) w viewport (`trigger: container`, `start: 'top bottom'`), nie `voidSectionWrapper` — wave startuje razem z wjazdem Block 4. |
+| **Fakty → Kinetic** | ScrollTrigger na `#bridge-wrapper`: gdy wrapper wjeżdża od dołu (`top bottom` → `top top`), animacja opacity 0→1 na warstwie Kinetic (miękki fade-in). |
+| **Kinetic → Block 4-5** | W Blok45Engine: gdy jest `#bridge-pin-end-sentinel`, wave (stWaveVis + stWaveTrigger) używa sentinela z `start: 'top bottom'` — moment wejścia ~100vh przed końcem pinu (przed odmrożeniem). Wave w portalu nad Kinetic; onLeave jak w oryginale (display none). stWaveScroll bez zmian (waveAnchor). |
+
+---
+
+## Fazy końca Kinetic (dla ustawienia momentu wejścia Block 4-5)
+
+Żeby doprecyzować, **kiedy dokładnie** ma wchodzić sekcja blok-4-5 (wave), poniżej fazy końca Kinetic w bridge:
+
+| Faza | Opis | Progress timeline | Scroll |
+|------|------|-------------------|--------|
+| **SNAP1** | Pełne zdanie Block 1 | SNAP1_U / TOTAL_U | początek „kinetic” scrub |
+| **SNAP2** | „?” widoczny (U = I+9.5) | SNAP2_U / TOTAL_U | — |
+| **SNAP3** | Ostatnia klatka (cylinder, bloby) | SNAP3_U / TOTAL_U ≈ 0,955 | freeze start (FREEZE_ON) |
+| **Freeze** | Animacja zamrożona na SNAP3 | tlProgress ≥ FREEZE_ON | scroll w zakresie freeze |
+| **Koniec pinu** | Pin release, Kinetic „odmraża” i ucieka w górę | progress = 1 (koniec ST) | scroll = `st.end` = scrollTimelinePx + 100vh |
+
+- **Curtain** = ostatnie **100vh** scrollu pinu: `[st.end - innerHeight, st.end]`. W tym przedziale Kinetic jest już zamrożona, użytkownik scrolluje „w pustce”.
+- **Sentinel** `#bridge-pin-end-sentinel` jest na dole pin spacera. Gdy **góra sentinela** = **dół viewportu** (`start: 'top bottom'`), jesteśmy na początku curtain, czyli **~100vh przed odmrożeniem**. Wave powinien startować w tym momencie (lub wcześniej, np. `top bottom+=50%` = ~150vh przed końcem, jeśli potrzeba).

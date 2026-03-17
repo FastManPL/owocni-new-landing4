@@ -714,16 +714,13 @@
 #blok-4-5-section .x-icon { font-size: 0.9em; opacity: 0.7; }
 #blok-4-5-section .morph-ghost { position: fixed; pointer-events: none; z-index: 9998; opacity: 0; border-radius: 0; }
 
-/* Wave wrap — position fixed top 0, pełny viewport, bez overflow (curtain ma zasłonić cały Kinetic). */
+/* Wave wrap — jak w blok-4-5.stack.html: position fixed, inset 0, z-index 0, overflow hidden */
 #blok-4-5-section .blok-4-5-wave-wrap {
     position: fixed;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    z-index: 10;
+    inset: 0;
+    z-index: 0;
     pointer-events: none;
-    overflow: visible;
+    overflow: hidden;
     background: transparent;
 }
 #blok-4-5-section .blok-4-5-wave-overlay {

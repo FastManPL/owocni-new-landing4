@@ -212,11 +212,13 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         }
       }
 
-      // Curtain: wave startuje ~100vh przed odblokowaniem (sentinel top = viewport bottom), żeby było przed odmrożeniem.
-      // Wave-wrap w portalu nad Kinetic; po onLeave wraca do sekcji i dalej animuje (Kipiel/open) jak w oryginale.
+      // ═══ Oryginał z blok-4-5.stack.html: stWaveVis (trigger sekcja), stWaveTrigger (waveAnchor), stWaveScroll (waveAnchor).
+      // Integracja z Kinetic: gdy jest bridge-pin-end-sentinel używamy go zamiast sekcji/anchoru do WEJŚCIA (start przed odmrożeniem ~100vh).
       var pinEndSentinel = typeof document !== 'undefined' ? document.getElementById('bridge-pin-end-sentinel') : null;
-      var waveTriggerEl = pinEndSentinel || container;
-      var waveStart = pinEndSentinel ? 'top bottom' : 'top bottom';
+      var waveAnchor = $id('blok-4-5-voidSectionWrapper') || container.querySelector('.text-above-illustration');
+
+      // Visibility: oryginał trigger=container, start='top bottom'. W bridge: trigger=sentinel żeby wave wchodził przed odmrożeniem.
+      var visTrigger = pinEndSentinel || container;
       var curtainPortal: HTMLElement | null = null;
       var waveWrapOriginalParent: Node | null = null;
       var waveWrapOriginalNext: Node | null = null;
@@ -239,8 +241,8 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         }
       }
       var stWaveVis = ScrollTrigger.create({
-        trigger: waveTriggerEl,
-        start: waveStart,
+        trigger: visTrigger,
+        start: 'top bottom',
         end: 'bottom top',
         onEnter: function() {
           (waveWrap as HTMLElement).style.display = '';
@@ -248,7 +250,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         },
         onLeave: function() {
           if (pinEndSentinel) moveWaveBackToSection();
-          // Nie ustawiamy display none — wave zostaje w sekcji i dalej animuje (Kipiel/open), treść się odsłania jak w oryginale.
+          (waveWrap as HTMLElement).style.display = 'none';
         },
         onEnterBack: function() {
           (waveWrap as HTMLElement).style.display = '';
@@ -261,16 +263,21 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       });
       gsapInstances.push(stWaveVis);
       (waveWrap as HTMLElement).style.display = 'none';
-      var waveAnchor = $id('blok-4-5-voidSectionWrapper') || container.querySelector('.text-above-illustration');
+
+      // Trigger OPEN (Kipiel): oryginał trigger=waveAnchor. W bridge: sentinel żeby start przed odmrożeniem.
+      var openTrigger = pinEndSentinel || waveAnchor || container;
       var stWaveTrigger = ScrollTrigger.create({
-        trigger: waveTriggerEl,
-        start: waveStart,
+        trigger: openTrigger,
+        start: 'top bottom',
         onEnter: function() { startKipielOpen(); }
       });
       gsapInstances.push(stWaveTrigger);
+
+      // Scroll-driven CLOSE (jak w stacku): anchor = voidSectionWrapper, ten sam zakres co oryginał
       var getTriggerPercent = function() { return window.innerWidth < 600 ? 80 : 75; };
       var stWaveScroll = ScrollTrigger.create({
-        trigger: waveAnchor || container, start: 'top bottom',
+        trigger: waveAnchor || container,
+        start: 'top bottom',
         end: function() { return 'bottom ' + getTriggerPercent() + '%'; },
         invalidateOnRefresh: true,
         onUpdate: function(self) { handleScroll(self.progress, self.direction); },
