@@ -7,11 +7,9 @@ import { BridgeProvider } from './BridgeContext';
 
 /**
  * Makro-Sekcja: Fakty + Kinetic w jednym wrapperze z pinem (integracja §1, §7A).
- * Wysokość wrappera w vh = długość scrolla: użytkownik przescrollowuje CAŁĄ sekcję, dopiero potem Block 45.
+ * Block 4 poza wrapperem — Curtain Reveal (§7B).
  */
 const BRIDGE_FAKTY_U = 0;
-/** Ile viewportów ma „cała sekcja Kinetic” w DOM — tyle trzeba przescrollować, zanim wjedzie Block 45 */
-const SECTION_VIEWPORTS = 7;
 
 export function BridgeSection() {
   const wrapperRef = useRef<HTMLDivElement>(null);
@@ -31,8 +29,7 @@ export function BridgeSection() {
         style={{
           position: 'relative',
           overflow: 'hidden',
-          height: `${SECTION_VIEWPORTS}vh`,
-          minHeight: '100vh',
+          height: '100vh',
           isolation: 'isolate',
         }}
       >

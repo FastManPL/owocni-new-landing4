@@ -6,13 +6,16 @@ import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { scrollRuntime } from '@/lib/scrollRuntime';
+import { useBridgeContext } from '@/app/BridgeContext';
 import './kinetic-section.css';
 
 // ⚠️ GSAP-SSR-01: ZAKAZ gsap.registerPlugin() na module top-level.
 // Next.js pre-renderuje Client Components na serwerze — window/document nie istnieją.
 // registerPlugin() WYŁĄCZNIE wewnątrz useGSAP(() => { ... }) jak poniżej.
 
-    function init(container: HTMLElement): { kill: () => void; pause: () => void; resume: () => void; _s: Record<string, unknown> } {
+    function init(container: HTMLElement, opts?: { pinTriggerRef?: { current: HTMLElement | null } }): { kill: () => void; pause: () => void; resume: () => void; _s: Record<string, unknown> } {
+        const pinTrigger = (opts?.pinTriggerRef?.current ?? container) as HTMLElement;
+        const inBridge = pinTrigger !== container;
         const $ = (sel: string) => container.querySelector(sel);
         const $$ = (sel: string) => container.querySelectorAll(sel);
         const $id = (id: string) => container.querySelector('#' + id);
@@ -40,12 +43,12 @@ import './kinetic-section.css';
         gsap.registerPlugin(ScrollTrigger);
         // ScrollTrigger.config({ ignoreMobileResize: true }) → Shared Core (scrollRuntime.ts)
 
-        // ── IDEMPOTENT INIT: usuń stare piny tej sekcji ──
+        // ── IDEMPOTENT INIT: usuń stare piny tej sekcji (trigger = container lub wrapper w bridge) ──
         try {
             ScrollTrigger.getAll().forEach(function(st) {
                 if (!st) return;
-                if (st.trigger === container || (st.vars && st.vars.id === "KINETIC_PIN")) {
-                    st.kill(true); // true = usuń pin-spacer
+                if (st.trigger === container || st.trigger === pinTrigger || (st.vars && st.vars.id === "KINETIC_PIN")) {
+                    st.kill(true);
                 }
             });
         } catch (e) {}
@@ -2322,43 +2325,39 @@ import './kinetic-section.css';
             // Jeden właściciel scroll: lenis.scrollTo() — zero konfliktu
             // ══════════════════════════════════════════════════════════════
 
-            // Stan narracyjny zadeklarowany w STATE MACHINE v3 poniżej
-            // (var _sm zdefiniowane po stworzeniu pinnedTl)
+            // Długość scrolla na timeline (bez kurtyny). W bridge: end = scrollTimelinePx + 100vh, progress clamp 0..1
+            const scrollTimelinePx = svh * BRIDGE_MULTIPLIER + SCROLL_KINETIC + SCROLL_OVERSHOOT;
 
             const pinnedTl = gsap.timeline({
                 scrollTrigger: {
-                    trigger: container,
+                    trigger: pinTrigger,
                     start: "top top",
-                    // Dynamic endPx: re-evaluated on every ScrollTrigger.refresh() (auto on resize)
-                    // Fixes: resize viewport → stale endPx → over-scroll past progress 1.0
-                    end: () => {
-                        return '+=' + (svh * BRIDGE_MULTIPLIER + SCROLL_KINETIC + SCROLL_OVERSHOOT);
-                    },
+                    end: () => inBridge
+                        ? '+=' + (scrollTimelinePx + (typeof window !== 'undefined' ? window.innerHeight : svh))
+                        : '+=' + scrollTimelinePx,
                     id: "KINETIC_PIN",
-                    scrub: true,              // 1-frame latency; Lenis IS the smoothing layer
+                    scrub: inBridge ? false : true,
                     pin: true,
-                    anticipatePin: 0,         // Lenis eliminates pin flash
+                    anticipatePin: 0,
                     invalidateOnRefresh: true,
                     preventOverlaps: true,
 
-                    // P1: Auto-pause — stop canvas work when section off-screen
                     onEnter: function() { _sectionVisible = true; },
                     onEnterBack: function() { _sectionVisible = true; },
                     onLeave: function() { _sectionVisible = false; },
                     onLeaveBack: function() { _sectionVisible = false; },
 
-                    // snap: {} USUNIĘTE — zastąpione przez state machine + lenis.scrollTo()
-                    // ScrollTrigger pełni tylko rolę: pin + scrub (czyta scroll, nie pisze)
-
                     onUpdate: function(self) {
-                        if (!freezeFinal && self.progress >= FREEZE_ON) {
+                        if (inBridge) {
+                            var start = self.start;
+                            var progress = (self.scroll() - start) / scrollTimelinePx;
+                            pinnedTl.progress(Math.min(1, Math.max(0, progress)));
+                        }
+                        if (!freezeFinal && (inBridge ? pinnedTl.progress() : self.progress()) >= FREEZE_ON) {
                             freezeFinal = true;
-                        } else if (freezeFinal && self.progress <= FREEZE_OFF) {
+                        } else if (freezeFinal && (inBridge ? pinnedTl.progress() : self.progress()) <= FREEZE_OFF) {
                             freezeFinal = false;
                         }
-                        // v139 FIX: Scroll clamp — gdy freezeFinal, przyciągaj do snap3 tylko gdy
-                        // użytkownik „uciekł" w górę (scroll < _s3). Gdy scroll >= _s3, NIE
-                        // blokuj — pozwól przewinąć w dół do kolejnych sekcji (np. block-45).
                         if (freezeFinal && !_freezeClampBusy) {
                             var _snap3Px = _getSnapGeometry();
                             if (_snap3Px) {
@@ -2437,7 +2436,7 @@ import './kinetic-section.css';
                 if (_geoCache._valid) return _geoCache;
                 var st = pinnedTl.scrollTrigger;
                 if (!st || st.start == null || st.end == null) return null;
-                var total = st.end - st.start;
+                var total = inBridge ? scrollTimelinePx : (st.end - st.start);
                 _geoCache.stStart = st.start;
                 _geoCache.total = total;
                 _geoCache.grabStart = st.start + GRAB_START * total;
@@ -3545,24 +3544,22 @@ import './kinetic-section.css';
 
 export function KineticSection() {
   const rootRef = useRef<HTMLElement | null>(null);
+  const bridge = useBridgeContext();
 
   useGSAP(() => {
-    gsap.registerPlugin(ScrollTrigger); // ← TUTAJ, nie na top-level
+    gsap.registerPlugin(ScrollTrigger);
 
     const el = rootRef.current;
     if (!el) {
-      // DEV: twardy sygnał — null tu oznacza błąd wiring-u ref w JSX
       if (process.env.NODE_ENV !== 'production') {
         throw new Error('[P3] rootRef.current is null — ref not attached to <section>.');
       }
       return;
     }
-    const inst = init(el);
+    const opts = bridge?.wrapperRef ? { pinTriggerRef: bridge.wrapperRef } : undefined;
+    const inst = init(el, opts);
     return () => inst?.kill?.();
-    // scope: useGSAP Context revertuje instancje GSAP z init() automatycznie
-    // inst.kill() revertuje je powtórnie + czyści observers/timers/listeners
-    // Double cleanup nie jest problemem — _killed guard w kill() gwarantuje idempotencję
-  }, { scope: rootRef });
+  }, { scope: rootRef, dependencies: [bridge?.wrapperRef] });
 
   return (
     <section id="kinetic-section" ref={rootRef}>

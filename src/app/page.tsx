@@ -1,7 +1,6 @@
 import { HeroSection } from "@/sections/hero/HeroSection";
 import { BookStatsSection } from "@/sections/books/BookStatsSection";
-import { FaktySection } from "@/sections/fakty/FaktySection";
-import { KineticSection } from "@/sections/kinetic/KineticSection";
+import { BridgeSection } from "@/app/BridgeSection";
 import { SectionsClient } from "./SectionsClient";
 
 export default function HomePage() {
@@ -9,8 +8,7 @@ export default function HomePage() {
     <main>
       <HeroSection />
       <BookStatsSection />
-      <FaktySection />
-      <KineticSection />
+      <BridgeSection />
       <SectionsClient />
     </main>
   );
