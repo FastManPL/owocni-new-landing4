@@ -7,7 +7,7 @@ import 'lenis/dist/lenis.css';
 // 2. Own globals last (może nadpisać vendor)
 import './globals.css';
 
-import { SmoothScrollProvider } from '@/components/SmoothScrollProvider';
+import { StableTree } from '@/components/StableTree';
 import { ResourceHints } from '@/providers/ResourceHints';
 
 // === FONTS (Konstytucja A4) ===
@@ -84,7 +84,7 @@ export default function RootLayout({
       </head>
       <body className="font-brand antialiased bg-canvas">
         <ResourceHints />
-        <SmoothScrollProvider>{children}</SmoothScrollProvider>
+        <StableTree>{children}</StableTree>
       </body>
     </html>
   );
