@@ -120,7 +120,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         var TPL_PRE: string[] = [], TPL_MID: string[] = [], TPL_POST: string[] = [];
         for (var i = 0; i < SEG; i++) { TPL_PRE[i] = ' C ' + CP[i] + ' '; TPL_MID[i] = ' ' + CP[i] + ' '; TPL_POST[i] = ' ' + P[i] + ' '; }
         var maxTime = 0;
-        for (var p = 0; p < NUM_PATHS; p++) { var t = PER_PATH[p].delay + PER_PATH[p].duration + DELAY_MAX; if (t > maxTime) maxTime = t; }
+        for (var p = 0; p < NUM_PATHS; p++) { var perPath = PER_PATH[p]!; var t = perPath.delay + perPath.duration + DELAY_MAX; if (t > maxTime) maxTime = t; }
         var pointsBuf = new Float64Array(NUM_POINTS);
         var _kParts: Array<string | number> = new Array(2 + SEG * 6);
         function updatePath(time: number, duration: number, pathIdx: number) {
@@ -147,7 +147,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         var TPL_PRE: string[] = [], TPL_MID: string[] = [], TPL_POST: string[] = [];
         for (var i = 0; i < SEG; i++) { TPL_PRE[i] = ' C ' + CP[i] + ' '; TPL_MID[i] = ' ' + CP[i] + ' '; TPL_POST[i] = ' ' + P[i] + ' '; }
         var maxTime = 0;
-        for (var p = 0; p < NUM_PATHS; p++) { var t = PER_PATH[p].delay + PER_PATH[p].duration + DELAY_MAX; if (t > maxTime) maxTime = t; }
+        for (var p = 0; p < NUM_PATHS; p++) { var perPath = PER_PATH[p]!; var t = perPath.delay + perPath.duration + DELAY_MAX; if (t > maxTime) maxTime = t; }
         var pointsBuf = new Float64Array(NUM_POINTS);
         var _oParts: Array<string | number> = new Array(2 + SEG * 6);
         function updatePath(time: number, duration: number) {
