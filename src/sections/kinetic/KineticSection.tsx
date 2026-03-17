@@ -2205,8 +2205,8 @@ import './kinetic-section.css';
             }
 
             // ============================================
-            // BRIDGE + KINETIC: logika w VIEWPORTACH (nie pikselach)
-            // Cała sekcja Kinetic = N viewportów scrolla; dopiero potem Block 45
+            // PIN = pełna wysokość sekcji (wrapper ma height: N vh w DOM)
+            // Użytkownik przescrollowuje CAŁĄ sekcję; dopiero potem Block 45
             // ============================================
             const KINETIC_U = 23.0;
             
@@ -2236,20 +2236,12 @@ import './kinetic-section.css';
                 }
             }
             
-            // ═══════════════════════════════════════════════════════════
-            // SCROLL W VIEWPORTACH: cała Kinetic = VIEWPORTS_KINETIC ekranów
-            // Dopiero po przescrollowaniu całej sekcji (progress=1) wjeżdża Block 45
-            // ═══════════════════════════════════════════════════════════
-            const VIEWPORTS_KINETIC = 5;   // ile viewportów scrolla na całą animację Kinetic (bridge + bloki 1–3)
-            const VIEWPORTS_CURTAIN = 1.5; // ile viewportów z zamrożoną Kinetic zanim Block 45 zacznie wjeżdżać
-            const SCROLL_TIMELINE_PX = VIEWPORTS_KINETIC * svh;
-            const CURTAIN_REVEAL_PX = VIEWPORTS_CURTAIN * svh;
-            const SCROLL_TOTAL_PX = SCROLL_TIMELINE_PX + CURTAIN_REVEAL_PX;
+            // Długość pina = wysokość triggera (bridge-wrapper ma height: N vh). Progress 0→1 na pierwszej części, reszta = kurtyna.
+            const TIMELINE_FRACTION = 5 / 7; // pierwsze 5/7 scrolla = animacja, ostatnie 2/7 = zamrożenie przed Block 45
             
-            // Jednostki timeline (TOTAL_U) — proporcje bridge/kinetic zachowane, skala scrolla = viewporty
             const BRIDGE_MULTIPLIER = 2.7;
             const TEXT_START_RATIO = 0.72;
-            const SCROLL_KINETIC_REF = 3526; // referencyjne px (do proporcji I_BASE)
+            const SCROLL_KINETIC_REF = 3526;
             const I_BASE = KINETIC_U * (svh / SCROLL_KINETIC_REF);
             const I = I_BASE * BRIDGE_MULTIPLIER;
             const OVERSHOOT_U = 1.5;
@@ -2304,10 +2296,10 @@ import './kinetic-section.css';
                 scrollTrigger: {
                     trigger: pinTrigger,
                     start: "top top",
-                    // End = timeline + curtain reveal: ostatnie ~100vh pin trzyma, timeline=1, Block 4 najeżdża (integracja §7B)
-                    end: () => '+=' + SCROLL_TOTAL_PX,
+                    // Pin na pełną wysokość sekcji (wrapper ma height: N vh) — przescrollowanie całej sekcji
+                    end: () => '+=' + (pinTrigger.offsetHeight || window.innerHeight * 7),
                     id: "KINETIC_PIN",
-                    scrub: false,            // progress ustawiany ręcznie w onUpdate (clamp 0..1 podczas curtain zone)
+                    scrub: false,
                     pin: true,
                     anticipatePin: 0,
                     invalidateOnRefresh: true,
@@ -2319,10 +2311,11 @@ import './kinetic-section.css';
                     onLeaveBack: function() { _sectionVisible = false; },
 
                     onUpdate: function(self) {
-                        // Curtain Reveal: progress 0→1 tylko w pierwszych SCROLL_TIMELINE_PX; potem stałe 1
+                        var totalPx = self.end - self.start;
+                        var timelinePx = totalPx * TIMELINE_FRACTION;
                         var scrollPos = self.scroll();
                         var start = self.start;
-                        var progress = (scrollPos - start) / SCROLL_TIMELINE_PX;
+                        var progress = timelinePx > 0 ? (scrollPos - start) / timelinePx : 0;
                         pinnedTl.progress(Math.min(1, Math.max(0, progress)));
                         if (!freezeFinal && pinnedTl.progress() >= FREEZE_ON) {
                             freezeFinal = true;
@@ -2399,13 +2392,14 @@ import './kinetic-section.css';
             var _kineticObserver = null;
 
             // ── GEOMETRIA ──────────────────────────────────────────────────
-            // Snap/grab w px: używamy SCROLL_TIMELINE_PX (bez curtain zone), żeby progress 0→1 = scroll 0→SCROLL_TIMELINE_PX
+            // Snap/grab w px: timeline = pierwsze TIMELINE_FRACTION całego scrolla sekcji
             var _geoCache = { stStart: 0, total: 0, grabStart: 0, snaps: [0, 0, 0], _valid: false };
             var _getSnapGeometry = function() {
                 if (_geoCache._valid) return _geoCache;
                 var st = pinnedTl.scrollTrigger;
-                if (!st || st.start == null) return null;
-                var total = SCROLL_TIMELINE_PX;
+                if (!st || st.start == null || st.end == null) return null;
+                var totalScroll = st.end - st.start;
+                var total = totalScroll * TIMELINE_FRACTION;
                 _geoCache.stStart = st.start;
                 _geoCache.total = total;
                 _geoCache.grabStart = st.start + GRAB_START * total;

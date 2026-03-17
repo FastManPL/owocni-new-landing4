@@ -106,25 +106,17 @@
   z-index: 1;
 }
 
-/* Wrapper dopasowany w JS do #fakty-dom — overlay zawarty w napisie */
-#fakty-section .organic-overlay-wrapper {
+#fakty-section #organic-overlay {
   position: absolute;
   top: 0; left: 0;
-  overflow: hidden;
-  pointer-events: none;
-  z-index: 2;
-}
-#fakty-section .organic-overlay-wrapper canvas {
-  display: block;
+  inset: 0;
   width: 100%;
   height: 100%;
-}
-
-#fakty-section #organic-overlay {
   pointer-events: none;
   mix-blend-mode: screen;
   opacity: 0;
   transition: opacity 0.3s ease;
   will-change: transform;
+  z-index: 2;
 }
 #fakty-section #organic-overlay.active { opacity: 0.68; }
