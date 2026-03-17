@@ -212,59 +212,24 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         }
       }
 
-      // ═══ Oryginał z blok-4-5.stack.html: stWaveVis (trigger sekcja), stWaveTrigger (waveAnchor), stWaveScroll (waveAnchor).
-      // Integracja z Kinetic: gdy jest bridge-pin-end-sentinel używamy go zamiast sekcji/anchoru do WEJŚCIA (start przed odmrożeniem ~100vh).
+      // ═══ Oryginał z blok-4-5.stack.html: tylko #blok-4-5-wave-wrap jako kurtyna, bez portalu ani dodatkowych warstw.
+      // Integracja: gdy jest bridge-pin-end-sentinel używamy go do triggera (start przed odmrożeniem ~100vh).
       var pinEndSentinel = typeof document !== 'undefined' ? document.getElementById('bridge-pin-end-sentinel') : null;
       var waveAnchor = $id('blok-4-5-voidSectionWrapper') || container.querySelector('.text-above-illustration');
 
-      // Visibility: oryginał trigger=container, start='top bottom'. W bridge: trigger=sentinel żeby wave wchodził przed odmrożeniem.
       var visTrigger = pinEndSentinel || container;
-      var curtainPortal: HTMLElement | null = null;
-      var waveWrapOriginalParent: Node | null = null;
-      var waveWrapOriginalNext: Node | null = null;
-      function moveWaveToPortal() {
-        if (!pinEndSentinel || !waveWrap) return;
-        waveWrapOriginalParent = waveWrap.parentNode;
-        waveWrapOriginalNext = waveWrap.nextSibling;
-        curtainPortal = document.createElement('div');
-        curtainPortal.id = 'blok-4-5-wave-curtain-portal';
-        curtainPortal.setAttribute('aria-hidden', 'true');
-        curtainPortal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:20;pointer-events:none;background:transparent;';
-        document.body.appendChild(curtainPortal);
-        curtainPortal.appendChild(waveWrap);
-      }
-      function moveWaveBackToSection() {
-        if (curtainPortal && waveWrap && waveWrapOriginalParent) {
-          waveWrapOriginalParent.insertBefore(waveWrap, waveWrapOriginalNext);
-          curtainPortal.remove();
-          curtainPortal = null;
-        }
-      }
       var stWaveVis = ScrollTrigger.create({
         trigger: visTrigger,
         start: 'top bottom',
         end: 'bottom top',
-        onEnter: function() {
-          (waveWrap as HTMLElement).style.display = '';
-          if (pinEndSentinel) moveWaveToPortal();
-        },
-        onLeave: function() {
-          if (pinEndSentinel) moveWaveBackToSection();
-          (waveWrap as HTMLElement).style.display = 'none';
-        },
-        onEnterBack: function() {
-          (waveWrap as HTMLElement).style.display = '';
-          if (pinEndSentinel) moveWaveToPortal();
-        },
-        onLeaveBack: function() {
-          if (pinEndSentinel) moveWaveBackToSection();
-          (waveWrap as HTMLElement).style.display = 'none';
-        }
+        onEnter: function() { (waveWrap as HTMLElement).style.display = ''; },
+        onLeave: function() { (waveWrap as HTMLElement).style.display = 'none'; },
+        onEnterBack: function() { (waveWrap as HTMLElement).style.display = ''; },
+        onLeaveBack: function() { (waveWrap as HTMLElement).style.display = 'none'; }
       });
       gsapInstances.push(stWaveVis);
       (waveWrap as HTMLElement).style.display = 'none';
 
-      // Trigger OPEN (Kipiel): oryginał trigger=waveAnchor. W bridge: sentinel żeby start przed odmrożeniem.
       var openTrigger = pinEndSentinel || waveAnchor || container;
       var stWaveTrigger = ScrollTrigger.create({
         trigger: openTrigger,
@@ -1222,9 +1187,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     function kill(){
       pause();
       try {
-        var portal = document.getElementById('blok-4-5-wave-curtain-portal');
         var ww = document.getElementById('blok-4-5-wave-wrap');
-        if (portal && ww && portal.contains(ww)) { container.insertBefore(ww, container.firstChild); portal.remove(); }
         if (ww) (ww as HTMLElement).style.display = 'none';
       } catch (e) {}
       cleanups.forEach(function(fn){try{fn();}catch(e){console.error(e);}});

@@ -714,17 +714,8 @@
 #blok-4-5-section .x-icon { font-size: 0.9em; opacity: 0.7; }
 #blok-4-5-section .morph-ghost { position: fixed; pointer-events: none; z-index: 9998; opacity: 0; border-radius: 0; }
 
-/* Wave wrap — jak w blok-4-5.stack.html: position fixed, inset 0, z-index 0, overflow hidden */
+/* Wave wrap — kurtyna jak w blok-4-5.stack.html: position fixed, inset 0, z-index 0, overflow hidden */
 #blok-4-5-section .blok-4-5-wave-wrap {
-    position: fixed;
-    inset: 0;
-    z-index: 0;
-    pointer-events: none;
-    overflow: hidden;
-    background: transparent;
-}
-/* Gdy wave jest w portalu (curtain nad Kinetic) — te same style, żeby zasłaniał cały viewport; tylko wave, bez dodatkowego tła */
-#blok-4-5-wave-curtain-portal #blok-4-5-wave-wrap {
     position: fixed;
     inset: 0;
     z-index: 0;
