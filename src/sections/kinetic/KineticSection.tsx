@@ -2211,18 +2211,16 @@ import './kinetic-section.css';
             const SCROLL_KINETIC = 3526; // Speed Ramp v3: 23 × 153.3 (was 2912)
             
             // ═══════════════════════════════════════════════════════════
-            // BRIDGE MULTIPLIER — kontrola tempa pierwszej fazy
-            // Zmień tę wartość aby przyspieszyć/zwolnić intro particle/rings
-            // 2.5 = szybciej, 3.0 = obecne, 3.5 = wolniej
+            // BRIDGE MULTIPLIER — kontrola tempa pierwszej fazy (intro particle/rings)
+            // Większa wartość = Kinetic „wchodzi” później, więcej scrolla zanim animacje się rozwiną
             // ═══════════════════════════════════════════════════════════
-            const BRIDGE_MULTIPLIER = 2.1;
+            const BRIDGE_MULTIPLIER = 2.7;
             
             // ═══════════════════════════════════════════════════════════
-            // TEXT_START_RATIO — kontrola momentu startu tekstu w bridge
-            // 0.55 = tekst startuje przy 55% bridge (rings na wysokości napisu)
-            // Zwiększ → tekst startuje później, Zmniejsz → wcześniej
+            // TEXT_START_RATIO — kiedy startuje tekst (Block 1); najpierw animacje, potem napisy
+            // Zwiększ → tekst później (więcej czasu na bloby/pierścienie przed tekstem)
             // ═══════════════════════════════════════════════════════════
-            const TEXT_START_RATIO = 0.55;
+            const TEXT_START_RATIO = 0.72;
             
             // ── VIEWPORT MEASUREMENT ──────────────────────────────────────
             // svh = small viewport (z paskiem) → pozycje CSS, bridge I
@@ -2280,8 +2278,9 @@ import './kinetic-section.css';
             // OVERSHOOT_U dodaje dead zone po SNAP3 (230px, viewport-independent).
             const OVERSHOOT_U = 1.5;
             const SCROLL_OVERSHOOT = OVERSHOOT_U * SCROLL_KINETIC / KINETIC_U; // 230px
-            // CURTAIN REVEAL: dodatkowy scroll tak aby Block 4 mógł najeżdżać NAD zamrożoną Kinetic (integracja §7B, §10)
-            const CURTAIN_REVEAL_PX = typeof window !== 'undefined' ? window.innerHeight : svh;
+            // CURTAIN REVEAL: scroll z zamrożoną Kinetic zanim Block 4 najeżdża (integracja §7B)
+            // Większa wartość = Block 4 wjeżdża później, Kinetic w pełni dochodzi do końca
+            const CURTAIN_REVEAL_PX = typeof window !== 'undefined' ? window.innerHeight * 1.9 : svh;
             const TOTAL_U = I + KINETIC_U + OVERSHOOT_U;
             
             // ═══════════════════════════════════════════════════════════
