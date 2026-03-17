@@ -24,6 +24,9 @@ interface ScrollRuntime {
     target: number | string | HTMLElement,
     options?: ScrollToOptions
   ) => void;
+  start: () => void;
+  on: (event: string, handler: (...args: unknown[]) => void) => void;
+  off: (event: string, handler: (...args: unknown[]) => void) => void;
   getLenis: () => Lenis | null;
   isReady: () => boolean;
 }
@@ -302,6 +305,20 @@ function scrollTo(
   });
 }
 
+// === START (wznawia Lenis — np. po snap lock w Kinetic) ===
+function start(): void {
+  lenis?.start();
+}
+
+// === EVENT SUBSCRIPTION (Lenis scroll — dla sekcji np. Kinetic snap) ===
+function on(event: string, handler: (...args: unknown[]) => void): void {
+  lenis?.on(event as 'scroll', handler as (e: unknown) => void);
+}
+
+function off(event: string, handler: (...args: unknown[]) => void): void {
+  lenis?.off(event as 'scroll', handler as (e: unknown) => void);
+}
+
 // === GETTERS ===
 function getLenis(): Lenis | null {
   return lenis;
@@ -320,6 +337,9 @@ export const scrollRuntime: ScrollRuntime = {
   requestRefresh,
   requestRefreshImmediate,
   scrollTo,
+  start,
+  on,
+  off,
   getLenis,
   isReady,
 };
