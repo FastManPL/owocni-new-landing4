@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -154,9 +154,8 @@ function init(container: HTMLElement): { kill: () => void } {
   }
 
   // ── FRAME SEQUENCE ─────────────────────────────────────────
-  // [AUTO-FIX 2] FRAMES_BASE_PATH — integrator podmienia na właściwą ścieżkę
-  // Przykład produkcja: '/sections/fakty/frames/fakty-'
-  const FRAMES_BASE_PATH = 'frames/fakty-';
+  // [AUTO-FIX 2] Obrazki z public/frames → URL /frames/fakty-NN.webp
+  const FRAMES_BASE_PATH = '/frames/fakty-';
   const FRAME_COUNT      = 34;
   const FRAME_EXT        = '.webp';
   const frameURLs        = Array.from({ length: FRAME_COUNT }, (_, i) =>
@@ -816,7 +815,13 @@ function init(container: HTMLElement): { kill: () => void } {
 
   // ── kill ───────────────────────────────────────────────────
   function kill() {
-    isKilled=true;
+    isKilled = true;
+    if (lazyStTimeout !== null) {
+      clearTimeout(lazyStTimeout);
+      lazyStTimeout = null;
+    }
+    lazyStObserver?.disconnect();
+    lazyStObserver = null;
     preloadedImages=[];
     if(orgOverlay){orgOverlay.width=0;orgOverlay.height=0;}
     if(orgOffscreen){orgOffscreen.width=0;orgOffscreen.height=0;}
@@ -840,7 +845,27 @@ function init(container: HTMLElement): { kill: () => void } {
     if(faktyDom)faktyDom.innerHTML='';
   }
 
-  // ── fonts → build ──────────────────────────────────────────
+  // ── lazy ScrollTrigger creation ─────────────────────────────
+  // ST tworzone dopiero gdy sekcja w viewport (IO) lub po 1,2 s (fallback).
+  // Zapobiega złym start/end przy scroll≈0 i przy późniejszym globalnym refreshu (resize).
+  let stCreated = false;
+  let lazyStTimeout: ReturnType<typeof setTimeout> | null = null;
+  let lazyStObserver: IntersectionObserver | null = null;
+  function maybeCreateScrollTriggers() {
+    if (stCreated || isKilled || !container.isConnected || !faktyBlock) return;
+    stCreated = true;
+    if (lazyStTimeout !== null) {
+      clearTimeout(lazyStTimeout);
+      lazyStTimeout = null;
+    }
+    lazyStObserver?.disconnect();
+    lazyStObserver = null;
+    buildPhase1();
+    buildFrameScroll();
+    buildTunnel();
+  }
+
+  // ── fonts → build (bez ST; ST w maybeCreateScrollTriggers) ───
   Promise.all([
     document.fonts.load('900 16px Lexend'),
     document.fonts.load('600 16px Lexend'),
@@ -857,14 +882,17 @@ function init(container: HTMLElement): { kill: () => void } {
     if(isKilled||!container.isConnected)return;
     setupVideoFill();
     applyFrame(0);
-    buildPhase1();
-    buildFrameScroll();
-    buildTunnel();
     preloadRemainingFrames();
-    // Patch I: fonts-ready refresh signal (manifest.refreshSignals)
-    requestAnimationFrame(()=>{
-      scrollRuntime.requestRefresh('fonts-ready-settle');
-    });
+    // Lazy ST: wejście sekcji w viewport albo fallback 1,2 s
+    lazyStObserver = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) maybeCreateScrollTriggers();
+      },
+      { root: null, rootMargin: '0px', threshold: 0 }
+    );
+    lazyStObserver.observe(container);
+    observers.push(lazyStObserver);
+    lazyStTimeout = setTimeout(maybeCreateScrollTriggers, 1200);
     // FIX 3: Force re-apply frame po powrocie do karty
     function onVisibilityChange() {
       if(document.visibilityState==='visible'&&framesReady){
@@ -906,21 +934,8 @@ export default function FaktyEngine() {
     // 2. useGSAP scope — context revert czyszczony przez React
   }, { scope: rootRef });
 
-  // Dynamic import: double rAF refresh po mount (pin/snap wrażliwe)
-  useEffect(() => {
-    scrollRuntime.requestRefresh('dynamic-mounted');
-    let id1 = 0;
-    let id2 = 0;
-    id1 = requestAnimationFrame(() => {
-      id2 = requestAnimationFrame(() => {
-        scrollRuntime.requestRefresh('dynamic-mounted-settle');
-      });
-    });
-    return () => {
-      if (id1) cancelAnimationFrame(id1);
-      if (id2) cancelAnimationFrame(id2);
-    };
-  }, []); // tylko przy pierwszym mount
+  // Sekcja fakty nie wywołuje requestRefresh przy mount — tylko onResize (szerokość).
+  // Zapobiega przeliczaniu ST przy scrollu (np. toolbar → resize → refresh).
 
   return (
     <section id="fakty-section" ref={rootRef}>
