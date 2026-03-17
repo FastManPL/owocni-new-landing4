@@ -511,7 +511,12 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
           var dpr = renderer.getPixelRatio(), margin = Math.min(window.innerWidth * 0.6, 500);
           var sx = Math.max(0, btnRectCache.cx - margin), sy = Math.max(0, btnRectCache.cy - margin * 1.3);
           var sw = Math.min(margin * 2, window.innerWidth - sx), sh = Math.min(margin * 2.6, window.innerHeight - sy);
-          renderer.setScissor(sx * dpr, (window.innerHeight - sy - sh) * dpr, sw * dpr, sh * dpr);
+          if (sw > 0 && sh > 0) {
+            renderer.setScissorTest(true);
+            renderer.setScissor(sx * dpr, (window.innerHeight - sy - sh) * dpr, sw * dpr, sh * dpr);
+          } else {
+            renderer.setScissorTest(false);
+          }
           renderer.setViewport(0, 0, window.innerWidth * dpr, window.innerHeight * dpr);
           renderer.render(scene, camera); lastRenderTime = now;
         }

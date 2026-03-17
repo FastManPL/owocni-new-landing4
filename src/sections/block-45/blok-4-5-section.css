@@ -631,8 +631,8 @@
 #blok-4-5-section #blok-4-5-anchorChar.mana-active { background: linear-gradient(180deg, #252030 0%, #2a2130 40%, #512b2b 70%, #7d3527 100%); -webkit-background-clip: text; background-clip: text; }
 #blok-4-5-section #blok-4-5-iHeatWrapper { position: fixed; pointer-events: none; z-index: 150; overflow: visible; }
 #blok-4-5-section #blok-4-5-iHeatCanvas { position: absolute; top: 0; left: 0; pointer-events: none; }
-#blok-4-5-section .walking-text-container { display: inline-flex; font-family: 'Lexend', sans-serif; font-weight: 700; font-size: 1em; line-height: 1; white-space: pre; margin-left: 0.25em; overflow: visible; perspective: 300px; perspective-origin: 50% 50%; position: relative; will-change: transform; }
-#blok-4-5-section .walking-char { display: inline-block; transform-origin: 50% 100%; position: relative; will-change: transform; backface-visibility: hidden; }
+#blok-4-5-section .walking-text-container { display: inline-flex; font-family: 'Lexend', sans-serif; font-weight: 700; font-size: 1em; line-height: 1; white-space: pre; margin-left: 0.25em; overflow: visible; perspective: 300px; perspective-origin: 50% 50%; position: relative; }
+#blok-4-5-section .walking-char { display: inline-block; transform-origin: 50% 100%; position: relative; backface-visibility: hidden; }
 #blok-4-5-section #blok-4-5-particleCanvas { position: absolute; top: -50px; left: -100px; pointer-events: none; z-index: 1; }
 #blok-4-5-section #blok-4-5-sparksCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
 #blok-4-5-section #blok-4-5-bubble-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; }
@@ -644,10 +644,10 @@
 #blok-4-5-section .mana-bar.complete { background-image: linear-gradient(-45deg, rgba(255,255,255,0.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.15) 75%, transparent 75%), linear-gradient(to right, #298f61, #8cd3b3); animation: blok-4-5-manaStripes 0.9s linear infinite, blok-4-5-manaPulse 0.5s ease-out; }
 @keyframes blok-4-5-manaStripes { from { background-position: 0 0, 0 0; } to { background-position: 20px 0, 0 0; } }
 @keyframes blok-4-5-manaPulse { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.3); } }
-#blok-4-5-section .speech-bubble { position: fixed; left: 0; top: 0; background: white; border: 1px solid rgba(0,0,0,0.1); border-radius: 8px; padding: 4px 8px; font-size: 12px; font-weight: 600; white-space: nowrap; color: #111; font-family: 'Lexend', sans-serif; opacity: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: opacity 0.2s ease; will-change: transform, opacity; }
+#blok-4-5-section .speech-bubble { position: fixed; left: 0; top: 0; background: white; border: 1px solid rgba(0,0,0,0.1); border-radius: 8px; padding: 4px 8px; font-size: 12px; font-weight: 600; white-space: nowrap; color: #111; font-family: 'Lexend', sans-serif; opacity: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: opacity 0.2s ease; }
 #blok-4-5-section .speech-bubble::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 4px solid transparent; border-top-color: white; }
 #blok-4-5-section .speech-bubble.visible { opacity: 1; }
-#blok-4-5-section .thought-bubble { position: fixed; left: 0; top: 0; background: white; border: 1px solid rgba(0,0,0,0.1); border-radius: 20px; padding: 5px 10px; font-size: 11px; font-weight: 600; white-space: nowrap; color: #111; font-family: 'Lexend', sans-serif; opacity: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: opacity 0.25s ease; will-change: transform, opacity; }
+#blok-4-5-section .thought-bubble { position: fixed; left: 0; top: 0; background: white; border: 1px solid rgba(0,0,0,0.1); border-radius: 20px; padding: 5px 10px; font-size: 11px; font-weight: 600; white-space: nowrap; color: #111; font-family: 'Lexend', sans-serif; opacity: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: opacity 0.25s ease; }
 #blok-4-5-section .thought-bubble::before { content: ''; position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); width: 8px; height: 8px; background: white; border: 1px solid rgba(0,0,0,0.1); border-radius: 50%; }
 #blok-4-5-section .thought-bubble::after { content: ''; position: absolute; bottom: -16px; left: 50%; transform: translateX(-50%); width: 5px; height: 5px; background: white; border: 1px solid rgba(0,0,0,0.1); border-radius: 50%; }
 #blok-4-5-section .thought-bubble.visible { opacity: 1; }
@@ -714,10 +714,11 @@
 #blok-4-5-section .x-icon { font-size: 0.9em; opacity: 0.7; }
 #blok-4-5-section .morph-ghost { position: fixed; pointer-events: none; z-index: 9998; opacity: 0; border-radius: 0; }
 
-/* Wave wrap */
+/* Wave wrap — zgodnie ze stackiem: position fixed, pełny viewport, pod treścią */
 #blok-4-5-section .blok-4-5-wave-wrap {
-    position: absolute;
-    top: 0; left: 0; right: 0; bottom: 0;
+    position: fixed;
+    inset: 0;
+    z-index: 0;
     pointer-events: none;
     overflow: hidden;
     background: transparent;
@@ -727,7 +728,7 @@
     width: 100%; height: 100%;
     pointer-events: none; position: absolute; top: 0; left: 0;
     z-index: 1;
-    will-change: contents;
+    /* will-change: contents usunięte — ograniczenie budżetu will-change w dokumencie */
 }
 #blok-4-5-section .blok-4-5-wave-overlay .wave-path:nth-of-type(1) { fill: #f5ede1; }
 #blok-4-5-section .blok-4-5-wave-overlay .wave-path:nth-of-type(2) { fill: #ebe3d1; }

@@ -16,14 +16,9 @@ export function ResourceHints() {
       {/* blok-4-5 — preconnect (perf.preconnectDomains, Three.js CDN) */}
       <link rel="preconnect" href="https://cdn.jsdelivr.net" />
 
-      {/* book-stats — preload HOT (perf.preloadCandidates) */}
-      <link
-        rel="preload"
-        href="/books/Ksiazka-Klatki/frame-001.webp"
-        as="image"
-        type="image/webp"
-      />
+      {/* book-stats — preload tylko Statystyki-stron (użyty wcześniej); frame-001 prefetch (sekcja poniżej foldu, preload = „nie użyty w kilka s”) */}
       <link rel="preload" href="/books/Statystyki-stron.png" as="image" />
+      <link rel="prefetch" href="/books/Ksiazka-Klatki/frame-001.webp" as="image" type="image/webp" />
 
       {/* book-stats — prefetch WARM (użyty w sekcji: video w piętrze obrazów) */}
       <link rel="prefetch" href="/books/banner-konwersja-strony.mp4" as="video" type="video/mp4" />
