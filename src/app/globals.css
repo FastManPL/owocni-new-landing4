@@ -28,6 +28,7 @@ html {
 
   body {
     background-color: #f7f6f4;
+    overflow-x: hidden; /* brak poziomego paska przewijania */
   }
 
   /* Zaznaczenie tekstu — branding Owocni */

@@ -2356,15 +2356,15 @@ import './kinetic-section.css';
                         } else if (freezeFinal && self.progress <= FREEZE_OFF) {
                             freezeFinal = false;
                         }
-                        // v139 FIX: Scroll clamp — gdy freezeFinal, nie pozwól scrollowi
-                        // uciec daleko w dead zone (Lenis inertia z touchInertiaMultiplier:14
-                        // mogłaby przebić 230px bufor i uwolnić pin).
-                        // immediate:true = brak animacji, brak walki z Lenisem.
+                        // v139 FIX: Scroll clamp — gdy freezeFinal, przyciągaj do snap3 tylko gdy
+                        // użytkownik „uciekł" w górę (scroll < _s3). Gdy scroll >= _s3, NIE
+                        // blokuj — pozwól przewinąć w dół do kolejnych sekcji (np. block-45).
                         if (freezeFinal && !_freezeClampBusy) {
                             var _snap3Px = _getSnapGeometry();
                             if (_snap3Px) {
                                 var _s3 = _snap3Px.snaps[2];
-                                if (scrollRuntime.getScroll() > _s3 + 15) {
+                                var _scroll = scrollRuntime.getScroll();
+                                if (_scroll < _s3) {
                                     _freezeClampBusy = true;
                                     scrollRuntime.scrollTo(_s3, { immediate: true, force: true });
                                     requestAnimationFrame(function() { _freezeClampBusy = false; });

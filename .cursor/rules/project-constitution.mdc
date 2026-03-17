@@ -26,6 +26,19 @@ alwaysApply: true
 - `src/sections/[nazwa]/`: `[Nazwa]Section.tsx`, `[nazwa].manifest.ts`, `[nazwa]-section.css`, opcjonalnie `*.config.ts` (Timeline Contract, LOCKED).
 - `src/lib/`: scrollRuntime, moduleLoader, autoTier. `src/hooks/`: useGeometryRefresh. `src/config/`: variants.ts (server-only).
 
+## Sekcje z ScrollTriggerem — unikanie „mignięcia” i złych pozycji (lekcja z sekcji Fakty)
+
+**Problem:** Globalny `resize` w scrollRuntime wywoływał `requestRefresh('resize')` → `ScrollTrigger.refresh(true)` na całej stronie. Na mobile chowanie/pokazywanie paska adresu zmienia wysokość viewportu → resize → refresh → przeliczenie start/end wszystkich ST w złym momencie (np. użytkownik przy górze strony) → „mignięcie” i złe pozycje animacji w sekcjach scrub (np. Fakty). Dodatkowo ST tworzone od razu po załadowaniu (scroll ≈ 0, layout niestabilny) dawały złe start/end od początku.
+
+**Rozwiązanie (stosować przy kolejnych sekcjach z scrub/pinem):**
+
+1. **scrollRuntime.ts:** Przy resize sprawdzać „małą” zmianę tylko wysokości (np. delta ≤ 150 px) — wtedy **nie** wywoływać `requestRefresh('resize')`, żeby toolbar na mobile nie psuł pozycji ST.
+2. **Sekcja (np. Fakty):**
+   - **Lazy creation ST:** ScrollTriggery tworzyć dopiero gdy sekcja wejdzie w viewport (IntersectionObserver) albo po ok. 1,2 s (fallback). Nie tworzyć ST od razu po załadowaniu.
+   - **Brak zbędnego refreshu:** Sekcja nie wywołuje `requestRefresh` przy mount / section-in-view / layout-settle. Jedyny dozwolony refresh z sekcji: przy **zmianie szerokości okna** (onResize), gdy faktycznie zmienia się layout.
+
+Dzięki temu start/end ST liczą się raz, w dobrym momencie, i późniejszy resize (toolbar) nie nadpisuje pozycji.
+
 ## Przed dodaniem sekcji
 Sprawdź manifest (typ A/B, HOT/WARM/COLD, warmup, geometryMutable), Evidence Pack, stabilną geometrię, `isolation: isolate`, passive listeners, idempotencję callbacków ST, Ghost States (`:active` w CSS) na interaktywnych elementach.
 
