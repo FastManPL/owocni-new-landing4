@@ -2353,9 +2353,10 @@ import './kinetic-section.css';
                             var progress = (self.scroll() - start) / scrollTimelinePx;
                             pinnedTl.progress(Math.min(1, Math.max(0, progress)));
                         }
-                        if (!freezeFinal && (inBridge ? pinnedTl.progress() : self.progress()) >= FREEZE_ON) {
+                        var tlProgress = inBridge ? pinnedTl.progress() : self.progress;
+                        if (!freezeFinal && tlProgress >= FREEZE_ON) {
                             freezeFinal = true;
-                        } else if (freezeFinal && (inBridge ? pinnedTl.progress() : self.progress()) <= FREEZE_OFF) {
+                        } else if (freezeFinal && tlProgress <= FREEZE_OFF) {
                             freezeFinal = false;
                         }
                         if (freezeFinal && !_freezeClampBusy) {

@@ -1,19 +1,18 @@
 'use client';
 
 import { useRef } from 'react';
-import { FaktySection } from '@/sections/fakty/FaktySection';
 import { KineticSection } from '@/sections/kinetic/KineticSection';
 import { BridgeProvider } from './BridgeContext';
 
 /**
- * Makro-Sekcja: Fakty + Kinetic w jednym wrapperze z pinem (integracja §1, §7A).
- * Block 4 poza wrapperem — Curtain Reveal (§7B).
+ * Wrapper z pinem tylko dla Kinetic (integracja §7A, §7B).
+ * Fakty jest poza wrapperem, żeby jego ScrollTriggery (w tym #organic-overlay) działały normalnie.
  */
 const BRIDGE_FAKTY_U = 0;
 
 export function BridgeSection() {
   const wrapperRef = useRef<HTMLDivElement>(null);
-  const faktyLayerRef = useRef<HTMLDivElement>(null);
+  const faktyLayerRef = useRef<HTMLDivElement | null>(null);
 
   const bridgeValue = {
     wrapperRef,
@@ -33,18 +32,6 @@ export function BridgeSection() {
           isolation: 'isolate',
         }}
       >
-        <div
-          id="fakty-layer"
-          ref={faktyLayerRef}
-          style={{
-            position: 'absolute',
-            inset: 0,
-            zIndex: 2,
-            background: 'transparent',
-          }}
-        >
-          <FaktySection />
-        </div>
         <div
           id="kinetic-layer"
           style={{
