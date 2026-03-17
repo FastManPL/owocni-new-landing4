@@ -12,6 +12,8 @@
     z-index: 2;
     background: #f7f6f4;
     isolation: isolate; /* FACTORY: B-ISO-01 — stacking context */
+    /* Całość wyżej: wave-wrap ma zachodzić na poprzednią sekcję (kinetic) */
+    margin-top: -8vh;
 }
 
 /* --- Globalne style tekstu --- */

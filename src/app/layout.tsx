@@ -51,6 +51,18 @@ export default function RootLayout({
   return (
     <html lang="pl" className={`${lexend.variable} ${fraunces.variable}`}>
       <head>
+        {/* Import map dla sekcji block-45: Three.js z CDN — addony (RoundedBoxGeometry itd.) używają bare "three" */}
+        <script
+          type="importmap"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify({
+              imports: {
+                three: 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js',
+                'three/addons/': 'https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/',
+              },
+            }),
+          }}
+        />
         {/* 
           === G7: dns-prefetch dla sGTM ===
           Użyj dns-prefetch (nie preconnect!) dla skryptów marketingowych.

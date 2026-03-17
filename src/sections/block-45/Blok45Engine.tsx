@@ -212,14 +212,26 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         }
       }
 
-      var stWaveVis = ScrollTrigger.create({ trigger: container, start: 'top bottom', end: 'bottom top', onEnter: function() { (waveWrap as HTMLElement).style.display = ''; }, onLeave: function() { (waveWrap as HTMLElement).style.display = 'none'; }, onEnterBack: function() { (waveWrap as HTMLElement).style.display = ''; }, onLeaveBack: function() { (waveWrap as HTMLElement).style.display = 'none'; } });
+      var stWaveVis = ScrollTrigger.create({
+        trigger: container,
+        start: 'top bottom',
+        end: 'bottom top',
+        onEnter: function() { (waveWrap as HTMLElement).style.display = ''; },
+        onLeave: function() { (waveWrap as HTMLElement).style.display = 'none'; },
+        onEnterBack: function() { (waveWrap as HTMLElement).style.display = ''; },
+        onLeaveBack: function() { (waveWrap as HTMLElement).style.display = 'none'; }
+      });
       gsapInstances.push(stWaveVis);
-      var waveAnchor = container.querySelector('.text-above-illustration');
-      var stWaveTrigger = ScrollTrigger.create({ trigger: waveAnchor, start: 'top bottom', once: true, onEnter: function() { startKipielOpen(); } });
-      gsapInstances.push(stWaveTrigger);
+      (waveWrap as HTMLElement).style.display = 'none'; // stan początkowy — widoczna dopiero przy wejściu sekcji w viewport
+      // Anchor: voidSectionWrapper („i wychodzą”) lub text-above — zgodnie ze stackiem
+      var waveAnchor = $id('blok-4-5-voidSectionWrapper') || container.querySelector('.text-above-illustration');
+      if (waveAnchor) {
+        var stWaveTrigger = ScrollTrigger.create({ trigger: waveAnchor, start: 'top bottom', onEnter: function() { startKipielOpen(); } });
+        gsapInstances.push(stWaveTrigger);
+      }
       var getTriggerPercent = function() { return window.innerWidth < 600 ? 80 : 75; };
       var stWaveScroll = ScrollTrigger.create({
-        trigger: waveAnchor, start: 'top bottom',
+        trigger: waveAnchor || container, start: 'top bottom',
         end: function() { return 'bottom ' + getTriggerPercent() + '%'; },
         invalidateOnRefresh: true,
         onUpdate: function(self) { handleScroll(self.progress, self.direction); },
