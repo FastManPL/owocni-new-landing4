@@ -22,10 +22,7 @@
       overflow-x: clip;
       margin: 0;
     }
-    /* Kontekst scrolla dla ScrollTrigger. "Scroll przed sekcją" = .preview-spacer-above (zwiększ do 200vh, żeby testować wejście sekcji). */
-    .preview-spacer { height: 40vh; }
-    .preview-spacer-above { height: 40vh; }
-    .preview-spacer-below { height: 40vh; }
+    .preview-spacer { height: 40vh; } /* kontekst scrolla dla ScrollTrigger */
     /* ═══ fakty-section.css — LITERALNA KOPIA, ZERO MODYFIKACJI ═══ */
 /* ════════════════════════════════════════════════════════════
    fakty-section — hardened CSS (P2A output)
@@ -153,7 +150,7 @@
   </style>
 </head>
 <body>
-  <div class="preview-spacer preview-spacer-above"></div>
+  <div class="preview-spacer"></div>
   <section id="fakty-section">
     <div class="title-block" id="fakty-block">
       <canvas id="fakty-tunnel"></canvas>
@@ -161,7 +158,7 @@
       <canvas id="organic-overlay"></canvas>
     </div>
   </section>
-  <div class="preview-spacer preview-spacer-below"></div>
+  <div class="preview-spacer"></div>
   <script>
     gsap.registerPlugin(ScrollTrigger);
     // Shared Core config — odzwierciedla scrollRuntime.ts (produkcja)
@@ -193,7 +190,6 @@
       var cleanups      = [];
       var gsapInstances = [];
       var timerIds      = [];
-      var layoutSettleTimerId = null;
       var observers     = [];
 
       var KERNING_MARGINS = [0, -0.1459, -0.1101, -0.1196, -0.1316];
@@ -214,6 +210,7 @@
       var currentFrame         = -1;
       var playhead             = { frame: 0 };
       var isKilled             = false;
+      var stableViewportHeight = window.innerHeight;
 
       // ── DOM BUILD ──────────────────────────────────────────────
       function buildDOM() {
@@ -304,7 +301,7 @@
       }
 
       // ── FRAME SEQUENCE ─────────────────────────────────────────
-      var FRAMES_BASE_PATH = '/frames/fakty-';
+      var FRAMES_BASE_PATH = 'frames/fakty-';
       var FRAME_COUNT      = 34;
       var FRAME_EXT        = '.webp';
       var frameURLs        = Array.from({ length: FRAME_COUNT }, function(_, i) {
@@ -370,32 +367,29 @@
         if (!row2Word) return;
         setWC([row2Word], 'transform');
         gsap.set(row2Word, { scaleY: 0, transformOrigin: '50% 0%' });
+        var opacityEnd = 54;
+
         buildOrganicST();
 
-        var ST_END = 'center center';
-        var tlRotation = gsap.timeline();
-        tlRotation.to(row1Chars, { ease: 'power1', stagger: 0.07, rotationX: 0, z: 0, duration: 0.42 }, 0.30);
         var st1 = ScrollTrigger.create({
-          trigger: container, start: 'top bottom-=35%', end: ST_END, scrub: true,
-          animation: tlRotation,
+          trigger: row1, start: 'center bottom', end: 'top top+=20%', scrub: true,
+          animation: gsap.to(row1Chars, { ease: 'power1', stagger: 0.07, rotationX: 0, z: 0 }),
           onLeave:     function() { setWC(row1Chars, 'auto'); },
           onEnterBack: function() { setWC(row1Chars, 'transform, opacity'); },
           onLeaveBack: function() { setWC(row1Chars, 'auto'); },
         });
         gsapInstances.push(st1);
 
-        var tlOpacity = gsap.timeline();
-        tlOpacity.to(row1Chars, { opacity: 1, ease: 'power2.in', stagger: 0.07, duration: 0.15 }, 0);
         var st2 = ScrollTrigger.create({
-          trigger: container, start: 'top bottom-=25%', end: ST_END, scrub: true,
-          animation: tlOpacity,
+          trigger: row1, start: 'center bottom', end: 'top top+=' + opacityEnd + '%', scrub: true,
+          animation: gsap.to(row1Chars, { opacity: 1, ease: 'power2.in', stagger: 0.07 }),
         });
         gsapInstances.push(st2);
 
         var tl = gsap.timeline();
-        tl.to(row2Word, { ease: 'power1.inOut', scaleY: 1, duration: 0.30 }, 0.58);
+        tl.to(row2Word, { ease: 'power1.inOut', scaleY: 1, duration: 0.50 }, 0.08);
         var st3 = ScrollTrigger.create({
-          trigger: container, start: 'top bottom-=25%', end: ST_END, scrub: true, animation: tl,
+          trigger: faktyBlock, start: 'center bottom', end: 'top top', scrub: true, animation: tl,
           onEnter:     function() { setWC([row2Word], 'transform'); },
           onLeave:     function() { setWC([row2Word], 'auto'); },
           onEnterBack: function() { setWC([row2Word], 'transform'); },
@@ -739,7 +733,7 @@
         resizeOrgCanvas();
         var tween=gsap.to(orgState,{
           progress:1,ease:'none',
-          scrollTrigger:{ trigger:container, start:'top bottom-=35%', end:'bottom top', scrub:1 }
+          scrollTrigger:{ trigger:faktyBlock, start:'top bottom-=30%', end:'bottom center', scrub:1 }
         });
         orgST=tween.scrollTrigger;
         if(orgST) gsapInstances.push(orgST);
@@ -822,7 +816,7 @@
           tunnelAtlasSource=atlas; tunnelDraw(0);
         }
         tunnelST=ScrollTrigger.create({
-          trigger:container, start:'top bottom-=35%', end:'bottom top', scrub:true,
+          trigger:faktyBlock, start:'top bottom', end:'bottom top', scrub:true,
           onUpdate:function(self){ tunnelDraw(Math.floor(self.progress*T_SPEED*(T_STEPS-1))); }
         });
         gsapInstances.push(tunnelST);
@@ -840,9 +834,15 @@
         var row1=faktyDom.querySelector('.title-row--1');
         if(!row1)return;
         playhead.frame=0;currentFrame=-1;
+        var START_PCT=61;
         var tween=gsap.to(playhead,{frame:FRAME_COUNT-1,snap:'frame',ease:'none'});
         frameST=ScrollTrigger.create({
-          trigger:container, start:'top bottom-=35%', end:'bottom top',
+          trigger:row1, start:'top top+='+START_PCT+'%',
+          end:function(){
+            var ratio=faktyBlock.offsetHeight/stableViewportHeight;
+            var endPct=Math.max(5,Math.round(ratio*45));
+            return 'top top-='+endPct+'%';
+          },
           scrub:true, invalidateOnRefresh:true, animation:tween,
           onEnter:     function(){enableOrganic();},
           onLeave:     function(){pauseOrganic();},
@@ -859,6 +859,7 @@
         var currentInnerWidth=window.innerWidth;
         if(currentInnerWidth===lastInnerWidth)return;
         lastInnerWidth=currentInnerWidth;
+        stableViewportHeight=window.innerHeight;
         if(resizeTimer!==null)clearTimeout(resizeTimer);
         resizeTimer=setTimeout(function(){
           if(isKilled||!container.isConnected)return;
@@ -901,22 +902,6 @@
       function _onVVResize() { _recreateIO(); }
 
       _recreateIO();
-
-      // Odświeżenie ST gdy sekcja wchodzi w viewport — pozycja w dokumencie już ustalona (działa przy dowolnym spacerze)
-      var sectionInViewRefreshed = false;
-      var ioSectionInView = new IntersectionObserver(
-        function(entries){
-          var e=entries[0]; if(!e||!e.isIntersecting)return;
-          if(sectionInViewRefreshed)return;
-          sectionInViewRefreshed=true;
-          scrollRuntime.requestRefresh('section-in-view');
-          ioSectionInView.disconnect();
-        },
-        { rootMargin:'100px 0px', threshold:0 }
-      );
-      ioSectionInView.observe(container);
-      observers.push(ioSectionInView);
-
       if(window.visualViewport){
         window.visualViewport.addEventListener('resize',_onVVResize,{passive:true});
         cleanups.push(function(){
@@ -958,6 +943,7 @@
         document.fonts.load('139 16px Lexend'),
       ]).then(function(){return document.fonts.ready;}).then(function(){
         if(isKilled||!container.isConnected)return;
+        stableViewportHeight=window.innerHeight;
         buildDOM();
         computeAndSetBase();
         lastBlockWidth=faktyBlock.offsetWidth;
@@ -975,12 +961,6 @@
           requestAnimationFrame(function(){
             scrollRuntime.requestRefresh('fonts-ready-settle');
           });
-          // Layout-settle: ST start/end po ustabilizowaniu layoutu (długi spacer, obrazy) — animacja nie startuje za wcześnie
-          layoutSettleTimerId = setTimeout(function(){
-            if(isKilled||!container.isConnected)return;
-            scrollRuntime.requestRefresh('layout-settle');
-          }, 1000);
-          timerIds.push({type:'timeout',id:function(){return layoutSettleTimerId;}});
           // FIX 3: Force re-apply frame po powrocie do karty
           function onVisibilityChange() {
             if(document.visibilityState==='visible'&&framesReady){
