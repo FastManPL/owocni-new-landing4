@@ -2321,11 +2321,11 @@ import './kinetic-section.css';
             FREEZE_ON = KINETIC_SNAPS[2] - 0.001;
             FREEZE_OFF = KINETIC_SNAPS[2] - 0.005;
 
-            // ══════════════════════════════════════════════════════════════
-            // STATE MACHINE v2 — narracyjny kontroler snapa
-            // Zastępuje: ScrollTrigger snap:{}, snapDir, gesture tracking
-            // Jeden właściciel scroll: lenis.scrollTo() — zero konfliktu
-            // ══════════════════════════════════════════════════════════════
+            // _sm i _geoCache PRZED pinnedTl — onRefresh/onUpdate odpalamy w trakcie create/refresh, muszą istnieć (closure).
+            var _sm = { zone: 'bridge', committedIndex: -1, pendingIndex: null, state: 'idle' };
+            var _geoCache = { stStart: 0, total: 0, grabStart: 0, snaps: [0, 0, 0], _valid: false };
+            var _ARM_BUF = IS_TOUCH ? 74 : 50;
+            var _DISARM_BUF = IS_TOUCH ? 48 : 32;
 
             // Długość scrolla na timeline (bez kurtyny). W bridge: end = scrollTimelinePx + 100vh (integracja §7B — Curtain Reveal).
             const scrollTimelinePx = svh * BRIDGE_MULTIPLIER + SCROLL_KINETIC + SCROLL_OVERSHOOT;
@@ -2427,31 +2427,14 @@ import './kinetic-section.css';
             }
 
             // ══════════════════════════════════════════════════════════════
-            // STATE MACHINE v3 — HARD BEATS ONLY
-            // Spec: Bridge=wolny, Kinetic=hard beats, End=hard stop
-            // Jeden wykonawca: lenis.scrollTo(lock:true)
-            // Dwa detektory intencji: Observer + snap1 magnet
-            // Zero idle snap, zero nearest snap, zero autopilotów
+            // STATE MACHINE v3 — HARD BEATS ONLY (_sm już zadeklarowany wyżej)
             // ══════════════════════════════════════════════════════════════
 
-            var _sm = {
-                zone:           'bridge',   // 'bridge' | 'kinetic'
-                committedIndex: -1,         // -1=pre/bridge, 0=SNAP1, 1=SNAP2, 2=SNAP3
-                pendingIndex:   null,
-                state:          'idle'      // 'idle' | 'snapping' | 'cooldown'
-            };
-
-            var _ARM_BUF    = IS_TOUCH ? 74 : 50;   // px po grabStart → wejście do Kinetic
-            var _DISARM_BUF = IS_TOUCH ? 48 : 32;   // px przed grabStart → wyjście do bridge
             var _COOLDOWN_MS = 50;  // lock:true już chroni podczas lotu; cooldown tylko na lądowanie
             var _cooldownTimer = null;
             var _kineticObserver = null;
 
-            // ── GEOMETRIA ──────────────────────────────────────────────────
-            // Oblicza absolutne px snap pointów z ST.start/end
-            // v139 PERF: Pre-allocated geometry cache. Zero alloc in scroll path.
-            // Invalidated by onRefresh (resize/orientationchange).
-            var _geoCache = { stStart: 0, total: 0, grabStart: 0, snaps: [0, 0, 0], _valid: false };
+            // ── GEOMETRIA (_geoCache już wyżej) ────────────────────────────
             var _getSnapGeometry = function() {
                 if (_geoCache._valid) return _geoCache;
                 var st = pinnedTl.scrollTrigger;
