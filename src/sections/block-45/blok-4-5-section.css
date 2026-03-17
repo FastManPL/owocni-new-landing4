@@ -723,6 +723,15 @@
     overflow: hidden;
     background: transparent;
 }
+/* Gdy wave jest w portalu (curtain nad Kinetic) — te same style, żeby zasłaniał cały viewport; tylko wave, bez dodatkowego tła */
+#blok-4-5-wave-curtain-portal #blok-4-5-wave-wrap {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+    background: transparent;
+}
 #blok-4-5-section .blok-4-5-wave-overlay {
     width: 100%; height: 100%;
     pointer-events: none; position: absolute; top: 0; left: 0;

@@ -229,7 +229,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         curtainPortal = document.createElement('div');
         curtainPortal.id = 'blok-4-5-wave-curtain-portal';
         curtainPortal.setAttribute('aria-hidden', 'true');
-        curtainPortal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:20;pointer-events:none;';
+        curtainPortal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:20;pointer-events:none;background:transparent;';
         document.body.appendChild(curtainPortal);
         curtainPortal.appendChild(waveWrap);
       }
