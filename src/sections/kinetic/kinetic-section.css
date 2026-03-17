@@ -138,7 +138,6 @@
 #kinetic-section .blob {
     position: absolute;
     border-radius: 50%;
-    will-change: transform, opacity;
     mix-blend-mode: multiply;
     pointer-events: none;
     /* P0: Static mask replaces dynamic gradient. background-color is flat fill (cheap repaint).
@@ -351,7 +350,6 @@
     background: linear-gradient(90deg, rgba(241, 200, 183, 1), rgba(232, 220, 205, 1));
     border-radius: 4px;
     transform-origin: center center;
-    will-change: transform, opacity;
 }
 
 /* TEKST — z-index:2, przed blaszką, własny kontekst 3D */

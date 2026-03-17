@@ -2535,12 +2535,12 @@
         #hero-section .cta-royal-canvas { width: 16px; height: 16px; background: #000; border-radius: 50%; position: relative; z-index: 3; }
         #hero-section .aura {
             position: absolute; width: 16px; height: 16px; border-radius: 50%;
-            background: #fec708; z-index: 1; will-change: opacity;
+            background: #fec708; z-index: 1;
             animation: hero-aura-core 3s ease-in-out infinite;
         }
         #hero-section .aura::before {
             content: ''; position: absolute; top: -4px; right: -4px; bottom: -4px; left: -4px; inset: -4px; border-radius: 50%;
-            background: #fec708; opacity: 0; will-change: transform, opacity;
+            background: #fec708; opacity: 0;
             animation: hero-aura-ring 3s ease-out infinite; z-index: -1;
         }
         @keyframes hero-aura-core { 0%, 100% { opacity: 0.9; } 50% { opacity: 1; } }
@@ -2549,13 +2549,13 @@
         #hero-section .sonar {
             position: absolute; width: 60px; height: 60px;
             display: flex; justify-content: center; align-items: center;
-            z-index: 2; opacity: 0; will-change: opacity;
+            z-index: 2; opacity: 0;
             animation: hero-sonar-fadein 0.2s ease-out forwards; pointer-events: none;
         }
         #hero-section .sonar::after {
             content: ''; position: absolute; width: 16px; height: 16px;
             border: none; box-shadow: inset 0 0 0 0.5px #ffc800; border-radius: 50%;
-            opacity: 0; will-change: transform, opacity;
+            opacity: 0;
             animation: hero-sonar-ping 2s ease-out 0.2s infinite;
         }
         @keyframes hero-sonar-fadein { 0% { opacity: 0; } 100% { opacity: 1; } }
@@ -2631,7 +2631,7 @@
             pointer-events: none;
         }
         #hero-section .trail-wrap.hw-hint {
-            will-change: transform;
+            /* will-change usunięte — budżet dokumentu */
         }
         #hero-section .trail-block {
             transform-origin: center;
@@ -2644,11 +2644,9 @@
         #hero-section .trail-block.is-photo {
             overflow: hidden;
         }
-        /* GPU layer promotion dla animowanego img */
         #hero-section .trail-block.is-photo img {
-            will-change: transform;
+            /* will-change usunięte — budżet dokumentu */
         }
-        /* Flash overlay — GPU COMPOSITE path */
         #hero-section .trail-flash {
             position: absolute;
             inset: 0;
@@ -2656,7 +2654,6 @@
             opacity: 0;
             pointer-events: none;
             mix-blend-mode: overlay;
-            will-change: opacity;
         }
         #hero-section .trail-block.is-photo .photo-inner {
             position: absolute;

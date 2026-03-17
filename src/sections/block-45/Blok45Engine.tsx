@@ -1018,21 +1018,49 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       }
       if(currentMode==='pull'){var d2=anchorScrollY-lastScrollY;wordOffsetX+=(Math.max(0,anchorOffsetX-Math.max(0,d2)*0.8)-wordOffsetX)*0.12;}
       var targetBlend=currentMode==='pull'?1:0;visualBlend+=(targetBlend-visualBlend)*0.15;if(Math.abs(targetBlend-visualBlend)<0.001)visualBlend=targetBlend;
-      var newTx=wordOffsetX*visualBlend;if(_containerEl)_containerEl.style.transform='translateX('+newTx+'px)';
-      var t=walkTime;
-      for(var i=0;i<chars.length;i++){
-        var cs=charStates[i],drag=DRAG_MULT[i]||0.8,phase=t*drag;
-        var stepY=Math.sin(phase*Math.PI*2)*CONFIG.walkLift,rotZ=Math.cos(phase*Math.PI*2)*5;
-        if(currentMode==='pull'){
-          var pullT=Math.min(1,pullStrength*2);
-          cs.pullRot=cs.pullRot*0.85+(pullT*(i%2===0?-12:12))*0.15;cs.pullSkew=cs.pullSkew*0.85+(pullT*-8)*0.15;cs.pullRotY=cs.pullRotY*0.85+(pullT*(i%2===0?-5:5))*0.15;cs.pullSqueeze=cs.pullSqueeze*0.85+(pullT*0.15)*0.15;cs.elasticY=cs.elasticY*0.85+(elasticActive?pullT*8*Math.sin(elasticTime*20):0)*0.15;
-        }else{cs.pullRot*=0.85;cs.pullSkew*=0.85;cs.pullRotY*=0.85;cs.pullSqueeze*=0.85;cs.elasticY*=0.85;}
-        cs.finalX=cs.pullX||0;cs.finalY=stepY+cs.elasticY;
-        var totalRotZ=rotZ+cs.pullRot,scaleX=1+cs.pullSqueeze,scaleY=1-cs.pullSqueeze*0.5;
-        var pqx=cs.finalX,pqy=cs.finalY,pqrz=totalRotZ,pqry=cs.pullRotY,pqsk=cs.pullSkew;
-        if(pqx===cs.pqx&&pqy===cs.pqy&&pqrz===cs.pqrz&&pqry===cs.pqry&&pqsk===cs.pqsk)continue;
-        cs.pqx=pqx;cs.pqy=pqy;cs.pqrz=pqrz;cs.pqry=pqry;cs.pqsk=pqsk;
-        chars[i].style.transform='translateX('+cs.finalX+'px) translateY('+cs.finalY+'px) rotateZ('+totalRotZ+'deg) rotateY('+cs.pullRotY+'deg) skewX('+cs.pullSkew+'deg) scaleX('+scaleX+') scaleY('+scaleY+')';
+      var newTx=wordOffsetX*visualBlend;
+      if(_containerEl&&Math.abs(newTx-frameCache.containerTransformX)>0.1){
+        frameCache.containerTransformX=newTx;
+        _containerEl.style.transform=(newTx>-0.1&&newTx<0.1)?'translate3d(0,0,0)':'translate3d('+newTx+'px,0,0)';
+      }
+      var len=chars.length,ivb=1-visualBlend;
+      var _checkSettled=!physicsSettled&&pullStrength===0&&!elasticActive&&visualBlend===0;
+      for(var i=0;i<len;i++){
+        var c=chars[i],s=charStates[i],rev=len-1-i,cycle=Math.max(0,walkTime-rev*0.11);
+        var ex=0,ey=0,er=0;
+        if(cycle>0){
+          var phase=cycle%1,idx=Math.floor(cycle);
+          if(phase<0.55){
+            var p=phase/0.55,u=-2*p+2,ease=p<0.5?4*p*p*p:1-u*u*u/2;
+            ex=(idx+ease)*CONFIG.walkStride;
+            var sinP=4*p*(1-p);
+            ey=-sinP*CONFIG.walkLift*(1+(i%2)*0.5);er=sinP*5;
+          }else ex=(idx+1)*CONFIG.walkStride;
+        }
+        if(!physicsSettled){
+          var tr=0,try_=0;
+          if(pullStrength>0){tr=pullStrength*25*(DRAG_MULT[i]||0.8);if(i>=5)try_=(54+((i-5)/3)*48)*pullStrength;}
+          var eff=Math.min(tr,30),spd=Math.max(0.15,0.5-i*0.05);
+          s.pullRot+=Math.max(-spd,Math.min(spd,eff-s.pullRot));
+          s.pullSkew=-s.pullRot*1.5;
+          s.pullX=pullStrength>0?(i===0?3:1.5)*(Math.random()-0.5)*pullStrength:s.pullX*0.8;
+          s.pullRotY+=(try_-s.pullRotY)*0.08;
+          s.pullSqueeze+=(((i>=5?-((i-5)/3)*25:0)*pullStrength)-s.pullSqueeze)*0.08;
+          if(elasticActive){var t=Math.max(0,elasticTime-i*0.03);s.elasticY=Math.sin(t*25)*Math.exp(-t*8)*4*(1-i/len);}else s.elasticY*=0.9;
+          if(_checkSettled&&i===len-1){
+            var allSettled=true;
+            for(var si=0;si<len;si++){var ss=charStates[si];if(Math.abs(ss.pullRot)>0.005||Math.abs(ss.pullRotY)>0.005||Math.abs(ss.pullSqueeze)>0.005||Math.abs(ss.pullX)>0.005||Math.abs(ss.elasticY)>0.005){allSettled=false;break;}}
+            if(allSettled){for(var si=0;si<len;si++){charStates[si].pullRot=charStates[si].pullSkew=0;charStates[si].pullX=charStates[si].pullRotY=0;charStates[si].pullSqueeze=charStates[si].elasticY=0;}physicsSettled=true;}
+          }
+        }
+        var vb=visualBlend;
+        s.finalX=ex*ivb+(s.pullX+s.pullSqueeze)*vb;s.finalY=ey*ivb+s.elasticY;
+        var rz=er*ivb+s.pullRot*vb;
+        var qx=((s.finalX*100)|0)/100,qy=((s.finalY*100)|0)/100,qry=(((s.pullRotY*vb)*2)|0)/2,qrz=((rz*2)|0)/2,qsk=(((s.pullSkew*vb)*2)|0)/2;
+        if(qx!==s.pqx||qy!==s.pqy||qrz!==s.pqrz||qry!==s.pqry||qsk!==s.pqsk){
+          s.pqx=qx;s.pqy=qy;s.pqrz=qrz;s.pqry=qry;s.pqsk=qsk;
+          c.style.transform='translate3d('+qx+'px,'+qy+'px,0) rotateY('+qry+'deg) rotateZ('+qrz+'deg) skewX('+qsk+'deg)';
+        }
       }
       frameCount++;
       if(currentMode==='pull'&&hasStarted&&!isDead){
