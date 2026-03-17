@@ -17,7 +17,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
 
     const cleanups: Array<() => void> = [];
     const gsapInstances: Array<any> = [];
-    const timerIds: Array<{ type: string; id: number }> = [];
+    const timerIds: Array<{ type: string; id: number | ReturnType<typeof setTimeout> }> = [];
     const observers: Array<IntersectionObserver> = [];
 
     var DEBUG_MODE = new URLSearchParams(window.location.search).has('debug') || localStorage.getItem('debug') === '1';
