@@ -8,6 +8,7 @@ import 'lenis/dist/lenis.css';
 import './globals.css';
 
 import { SmoothScrollProvider } from '@/components/SmoothScrollProvider';
+import { DOMErrorBoundary } from '@/components/DOMErrorBoundary';
 import { ResourceHints } from '@/providers/ResourceHints';
 
 // === FONTS (Konstytucja A4) ===
@@ -84,7 +85,9 @@ export default function RootLayout({
       </head>
       <body className="font-brand antialiased bg-canvas">
         <ResourceHints />
-        <SmoothScrollProvider>{children}</SmoothScrollProvider>
+        <DOMErrorBoundary>
+          <SmoothScrollProvider>{children}</SmoothScrollProvider>
+        </DOMErrorBoundary>
       </body>
     </html>
   );
