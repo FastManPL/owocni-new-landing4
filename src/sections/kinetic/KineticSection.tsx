@@ -6,13 +6,15 @@ import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { scrollRuntime } from '@/lib/scrollRuntime';
+import { useBridgeContext } from '@/app/BridgeContext';
 import './kinetic-section.css';
 
 // ⚠️ GSAP-SSR-01: ZAKAZ gsap.registerPlugin() na module top-level.
 // Next.js pre-renderuje Client Components na serwerze — window/document nie istnieją.
 // registerPlugin() WYŁĄCZNIE wewnątrz useGSAP(() => { ... }) jak poniżej.
 
-    function init(container: HTMLElement): { kill: () => void; pause: () => void; resume: () => void; _s: Record<string, unknown> } {
+    function init(container: HTMLElement, opts?: { pinTriggerRef?: { current: HTMLElement | null } }): { kill: () => void; pause: () => void; resume: () => void; _s: Record<string, unknown> } {
+        const pinTrigger = (opts?.pinTriggerRef?.current ?? container) as HTMLElement;
         const $ = (sel: string) => container.querySelector(sel);
         const $$ = (sel: string) => container.querySelectorAll(sel);
         const $id = (id: string) => container.querySelector('#' + id);
@@ -40,11 +42,11 @@ import './kinetic-section.css';
         gsap.registerPlugin(ScrollTrigger);
         // ScrollTrigger.config({ ignoreMobileResize: true }) → Shared Core (scrollRuntime.ts)
 
-        // ── IDEMPOTENT INIT: usuń stare piny tej sekcji ──
+        // ── IDEMPOTENT INIT: usuń stare piny tej sekcji (trigger = container lub wrapper w bridge) ──
         try {
             ScrollTrigger.getAll().forEach(function(st) {
                 if (!st) return;
-                if (st.trigger === container || (st.vars && st.vars.id === "KINETIC_PIN")) {
+                if (st.trigger === container || st.trigger === pinTrigger || (st.vars && st.vars.id === "KINETIC_PIN")) {
                     st.kill(true); // true = usuń pin-spacer
                 }
             });
@@ -2275,11 +2277,11 @@ import './kinetic-section.css';
             // SNAP GATE: bridge = 1:1 scrub, kinetic = directional
             // ============================================
             // v139 FIX: SNAP3 siedział na progress=1.0 (0px od końca pina).
-            // Jeden piksel forward = pin release = sekcja leci do góry.
             // OVERSHOOT_U dodaje dead zone po SNAP3 (230px, viewport-independent).
-            // px_per_unit = SCROLL_KINETIC/KINETIC_U = 153.3 = STAŁE → snap px pozycje BEZ ZMIAN.
             const OVERSHOOT_U = 1.5;
             const SCROLL_OVERSHOOT = OVERSHOOT_U * SCROLL_KINETIC / KINETIC_U; // 230px
+            // CURTAIN REVEAL: dodatkowy scroll tak aby Block 4 mógł najeżdżać NAD zamrożoną Kinetic (integracja §7B, §10)
+            const CURTAIN_REVEAL_PX = typeof window !== 'undefined' ? window.innerHeight : svh;
             const TOTAL_U = I + KINETIC_U + OVERSHOOT_U;
             
             // ═══════════════════════════════════════════════════════════
@@ -2325,40 +2327,39 @@ import './kinetic-section.css';
             // Stan narracyjny zadeklarowany w STATE MACHINE v3 poniżej
             // (var _sm zdefiniowane po stworzeniu pinnedTl)
 
+            // Długość scrolla tylko na timeline (bez strefy curtain reveal)
+            const SCROLL_TIMELINE_PX = svh * BRIDGE_MULTIPLIER + SCROLL_KINETIC + SCROLL_OVERSHOOT;
+            const SCROLL_TOTAL_PX = SCROLL_TIMELINE_PX + CURTAIN_REVEAL_PX;
+
             const pinnedTl = gsap.timeline({
                 scrollTrigger: {
-                    trigger: container,
+                    trigger: pinTrigger,
                     start: "top top",
-                    // Dynamic endPx: re-evaluated on every ScrollTrigger.refresh() (auto on resize)
-                    // Fixes: resize viewport → stale endPx → over-scroll past progress 1.0
-                    end: () => {
-                        return '+=' + (svh * BRIDGE_MULTIPLIER + SCROLL_KINETIC + SCROLL_OVERSHOOT);
-                    },
+                    // End = timeline + curtain reveal: ostatnie ~100vh pin trzyma, timeline=1, Block 4 najeżdża (integracja §7B)
+                    end: () => '+=' + SCROLL_TOTAL_PX,
                     id: "KINETIC_PIN",
-                    scrub: true,              // 1-frame latency; Lenis IS the smoothing layer
+                    scrub: false,            // progress ustawiany ręcznie w onUpdate (clamp 0..1 podczas curtain zone)
                     pin: true,
-                    anticipatePin: 0,         // Lenis eliminates pin flash
+                    anticipatePin: 0,
                     invalidateOnRefresh: true,
                     preventOverlaps: true,
 
-                    // P1: Auto-pause — stop canvas work when section off-screen
                     onEnter: function() { _sectionVisible = true; },
                     onEnterBack: function() { _sectionVisible = true; },
                     onLeave: function() { _sectionVisible = false; },
                     onLeaveBack: function() { _sectionVisible = false; },
 
-                    // snap: {} USUNIĘTE — zastąpione przez state machine + lenis.scrollTo()
-                    // ScrollTrigger pełni tylko rolę: pin + scrub (czyta scroll, nie pisze)
-
                     onUpdate: function(self) {
-                        if (!freezeFinal && self.progress >= FREEZE_ON) {
+                        // Curtain Reveal: progress 0→1 tylko w pierwszych SCROLL_TIMELINE_PX; potem stałe 1
+                        var scrollPos = self.scroll();
+                        var start = self.start;
+                        var progress = (scrollPos - start) / SCROLL_TIMELINE_PX;
+                        pinnedTl.progress(Math.min(1, Math.max(0, progress)));
+                        if (!freezeFinal && pinnedTl.progress() >= FREEZE_ON) {
                             freezeFinal = true;
-                        } else if (freezeFinal && self.progress <= FREEZE_OFF) {
+                        } else if (freezeFinal && pinnedTl.progress() <= FREEZE_OFF) {
                             freezeFinal = false;
                         }
-                        // v139 FIX: Scroll clamp — gdy freezeFinal, przyciągaj do snap3 tylko gdy
-                        // użytkownik „uciekł" w górę (scroll < _s3). Gdy scroll >= _s3, NIE
-                        // blokuj — pozwól przewinąć w dół do kolejnych sekcji (np. block-45).
                         if (freezeFinal && !_freezeClampBusy) {
                             var _snap3Px = _getSnapGeometry();
                             if (_snap3Px) {
@@ -2429,15 +2430,13 @@ import './kinetic-section.css';
             var _kineticObserver = null;
 
             // ── GEOMETRIA ──────────────────────────────────────────────────
-            // Oblicza absolutne px snap pointów z ST.start/end
-            // v139 PERF: Pre-allocated geometry cache. Zero alloc in scroll path.
-            // Invalidated by onRefresh (resize/orientationchange).
+            // Snap/grab w px: używamy SCROLL_TIMELINE_PX (bez curtain zone), żeby progress 0→1 = scroll 0→SCROLL_TIMELINE_PX
             var _geoCache = { stStart: 0, total: 0, grabStart: 0, snaps: [0, 0, 0], _valid: false };
             var _getSnapGeometry = function() {
                 if (_geoCache._valid) return _geoCache;
                 var st = pinnedTl.scrollTrigger;
-                if (!st || st.start == null || st.end == null) return null;
-                var total = st.end - st.start;
+                if (!st || st.start == null) return null;
+                var total = SCROLL_TIMELINE_PX;
                 _geoCache.stStart = st.start;
                 _geoCache.total = total;
                 _geoCache.grabStart = st.start + GRAB_START * total;
@@ -3545,24 +3544,22 @@ import './kinetic-section.css';
 
 export function KineticSection() {
   const rootRef = useRef<HTMLElement | null>(null);
+  const bridge = useBridgeContext();
 
   useGSAP(() => {
     gsap.registerPlugin(ScrollTrigger); // ← TUTAJ, nie na top-level
 
     const el = rootRef.current;
     if (!el) {
-      // DEV: twardy sygnał — null tu oznacza błąd wiring-u ref w JSX
       if (process.env.NODE_ENV !== 'production') {
         throw new Error('[P3] rootRef.current is null — ref not attached to <section>.');
       }
       return;
     }
-    const inst = init(el);
+    const opts = bridge?.wrapperRef ? { pinTriggerRef: bridge.wrapperRef } : undefined;
+    const inst = init(el, opts);
     return () => inst?.kill?.();
-    // scope: useGSAP Context revertuje instancje GSAP z init() automatycznie
-    // inst.kill() revertuje je powtórnie + czyści observers/timers/listeners
-    // Double cleanup nie jest problemem — _killed guard w kill() gwarantuje idempotencję
-  }, { scope: rootRef });
+  }, { scope: rootRef, dependencies: [bridge?.wrapperRef] });
 
   return (
     <section id="kinetic-section" ref={rootRef}>
