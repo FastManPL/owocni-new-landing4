@@ -2493,9 +2493,9 @@ import './kinetic-section.css';
                 // freezeFinal + forward: poza bridge = hard stop. W bridge = scroll do końca pinu (Curtain Reveal → block45).
                 if (freezeFinal && dir > 0) {
                     if (inBridge) {
-                        var st = pinnedTl.scrollTrigger();
+                        var st = pinnedTl.scrollTrigger;
                         var curScroll = scrollRuntime.getScroll();
-                        if (st && curScroll < st.end - 30) {
+                        if (st && typeof st.end === 'number' && curScroll < st.end - 30) {
                             _sm.state = 'snapping';
                             scrollRuntime.scrollTo(st.end, {
                                 duration: 0.9,
