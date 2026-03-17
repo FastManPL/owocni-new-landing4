@@ -80,10 +80,11 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       var zmienicText = $id('blok-4-5-zmienicText');
       if (!ellipseBox) return;
       ellipseBox.querySelectorAll('path').forEach(function(path) {
-        if ((path as SVGPathElement).getTotalLength) {
-          var length = (path as SVGPathElement).getTotalLength();
-          (path as HTMLElement).style.strokeDasharray = String(length);
-          (path as HTMLElement).style.strokeDashoffset = String(length);
+        var el = path as SVGPathElement;
+        if (el.getTotalLength) {
+          var length = el.getTotalLength();
+          el.style.strokeDasharray = String(length);
+          el.style.strokeDashoffset = String(length);
         }
       });
       ellipseBox.classList.add('active');
