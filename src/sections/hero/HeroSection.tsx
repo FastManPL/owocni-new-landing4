@@ -606,7 +606,9 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
     listen(wrapEl, 'click', () => {
         const wave = document.createElement('span');
         wave.classList.add('wave-effect', 'animating');
-        wrapEl.insertBefore(wave, wrapEl.firstChild);
+        const ref = wrapEl.firstChild;
+        if (ref && wrapEl.contains(ref)) wrapEl.insertBefore(wave, ref);
+        else wrapEl.appendChild(wave);
         wave.addEventListener('animationend', () => wave.remove()); // once: dynamic element, self-removes
     });
 });
@@ -1962,7 +1964,9 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
                 const haloCtx = haloCanvas.getContext('2d');
                 if (haloCtx) {
                 haloCanvas.style.cssText = 'position:absolute;top:-100%;left:-100%;width:300%;height:300%;pointer-events:none;z-index:5';
-                haloWrapper.insertBefore(haloCanvas, haloWrapper.firstChild);
+                const ref = haloWrapper.firstChild;
+                if (ref && haloWrapper.contains(ref)) haloWrapper.insertBefore(haloCanvas, ref);
+                else haloWrapper.appendChild(haloCanvas);
                 
                 let hW, hH, hCX, hCY, hBtnW = 0;
                 const H_PROX_X = 400, H_PROX_Y = 180, H_PROX_EXIT_X = 415, H_PROX_EXIT_Y = 195;

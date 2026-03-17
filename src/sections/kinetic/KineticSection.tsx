@@ -109,6 +109,9 @@ import './kinetic-section.css';
             clearTimeout(mobileResizeTimer);
         });
 
+        // Clip-path ROI state (używane w particle IIFE i w kill() — muszą być w scope init)
+        var _clipActive = false, _clipOffCount = 0;
+
         // ============================================
         // ADAPTIVE DPR SYSTEM - dynamiczne skalowanie jakości
         // Start: 0.75, mierzy FPS, adaptuje 0.5-1.5
@@ -370,8 +373,7 @@ import './kinetic-section.css';
         
         // Clip-path ROI (3-fazowe: full → tight → full) — GPU hardware scissor
         var _clipTop = 0, _clipBottom = 0, _clipLeft = 0, _clipRight = 0;
-        var _clipActive = false;
-        var _clipOffCount = 0; // debounce counter dla clip-path OFF
+        // _clipActive, _clipOffCount w scope init() (dla kill() reset)
         var _particleHidden = false; // P1: phase-aware display:none after collapse
         const VISUAL_SCALE_COMPENSATION = 1.41;
 
