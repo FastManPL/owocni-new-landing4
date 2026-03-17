@@ -14,8 +14,10 @@ import './kinetic-section.css';
 // registerPlugin() WYŁĄCZNIE wewnątrz useGSAP(() => { ... }) jak poniżej.
 
     function init(container: HTMLElement, opts?: { pinTriggerRef?: { current: HTMLElement | null } }): { kill: () => void; pause: () => void; resume: () => void; _s: Record<string, unknown> } {
-        const pinTrigger = (opts?.pinTriggerRef?.current ?? container) as HTMLElement;
-        const inBridge = pinTrigger !== container;
+        // W bridge pin MUSI być na wrapperze — inaczej pin-spacer ląduje wewnątrz wrappera (100vh) i nie powiększa dokumentu → Block 4 się nie pojawia (integracja §7B).
+        const wrapperEl = typeof document !== 'undefined' ? document.getElementById('bridge-wrapper') : null;
+        const pinTrigger = (opts?.pinTriggerRef?.current ?? wrapperEl ?? container) as HTMLElement;
+        const inBridge = !!(pinTrigger && (pinTrigger.id === 'bridge-wrapper' || pinTrigger !== container));
         const $ = (sel: string) => container.querySelector(sel);
         const $$ = (sel: string) => container.querySelectorAll(sel);
         const $id = (id: string) => container.querySelector('#' + id);
@@ -2325,16 +2327,17 @@ import './kinetic-section.css';
             // Jeden właściciel scroll: lenis.scrollTo() — zero konfliktu
             // ══════════════════════════════════════════════════════════════
 
-            // Długość scrolla na timeline (bez kurtyny). W bridge: end = scrollTimelinePx + 100vh, progress clamp 0..1
+            // Długość scrolla na timeline (bez kurtyny). W bridge: end = scrollTimelinePx + 100vh (integracja §7B — Curtain Reveal).
             const scrollTimelinePx = svh * BRIDGE_MULTIPLIER + SCROLL_KINETIC + SCROLL_OVERSHOOT;
+            const pinDurationPx = inBridge
+                ? scrollTimelinePx + (typeof window !== 'undefined' ? window.innerHeight : svh)
+                : scrollTimelinePx;
 
             const pinnedTl = gsap.timeline({
                 scrollTrigger: {
                     trigger: pinTrigger,
                     start: "top top",
-                    end: () => inBridge
-                        ? '+=' + (scrollTimelinePx + (typeof window !== 'undefined' ? window.innerHeight : svh))
-                        : '+=' + scrollTimelinePx,
+                    end: '+=' + pinDurationPx,
                     id: "KINETIC_PIN",
                     scrub: inBridge ? false : true,
                     pin: true,
