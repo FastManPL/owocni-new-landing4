@@ -2332,9 +2332,8 @@ import './kinetic-section.css';
                 scrollTrigger: {
                     trigger: pinTrigger,
                     start: "top top",
-                    // inBridge: pełny timeline (scrollTimelinePx) + 1 viewport kurtyny; dopiero potem block45 (Curtain Reveal)
                     end: () => inBridge
-                        ? '+=' + (scrollTimelinePx + (typeof window !== 'undefined' ? window.innerHeight : svh) + 200)
+                        ? '+=' + (scrollTimelinePx + (typeof window !== 'undefined' ? window.innerHeight : svh))
                         : '+=' + scrollTimelinePx,
                     id: "KINETIC_PIN",
                     scrub: inBridge ? false : true,
@@ -2488,9 +2487,26 @@ import './kinetic-section.css';
                 clearTimeout(_idleSnapTimer);   // anuluj ewentualny pending idle
 
                 if (mobileResizeLock) return;
-                // freezeFinal: blokuje forward (hard stop na końcu sekcji)
-                // NIE blokuje backward — z SNAP3 można wrócić do SNAP2
-                if (freezeFinal && dir > 0) return;
+                // freezeFinal + forward: poza bridge = hard stop. W bridge = scroll do końca pinu (Curtain Reveal → block45).
+                if (freezeFinal && dir > 0) {
+                    if (inBridge) {
+                        var st = pinnedTl.scrollTrigger();
+                        var curScroll = scrollRuntime.getScroll();
+                        if (st && curScroll < st.end - 30) {
+                            _sm.state = 'snapping';
+                            scrollRuntime.scrollTo(st.end, {
+                                duration: 0.9,
+                                easing: function(t) { return 1 - Math.pow(1 - t, 2); },
+                                lock: true,
+                                onComplete: function() {
+                                    _sm.state = 'idle';
+                                    _sm.committedIndex = 2;
+                                }
+                            });
+                        }
+                    }
+                    return;
+                }
                 if (_sm.state === 'snapping') return;
                 if (_sm.state === 'cooldown') return;
 
