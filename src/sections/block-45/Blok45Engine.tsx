@@ -116,7 +116,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         var delayPoints = new Float64Array(NUM_POINTS);
         for (var i = 0; i < NUM_POINTS; i++) { delayPoints[i] = (i / (NUM_POINTS - 1)) * DELAY_MAX; }
         var P = new Float64Array(SEG), CP = new Float64Array(SEG), INV = 100 / SEG;
-        for (var i = 0; i < SEG; i++) { P[i] = Math.round((i + 1) * INV * 100) / 100; CP[i] = Math.round((P[i] - INV / 2) * 100) / 100; }
+        for (var i = 0; i < SEG; i++) { var pVal = Math.round((i + 1) * INV * 100) / 100; P[i] = pVal; CP[i] = Math.round((pVal - INV / 2) * 100) / 100; }
         var TPL_PRE: string[] = [], TPL_MID: string[] = [], TPL_POST: string[] = [];
         for (var i = 0; i < SEG; i++) { TPL_PRE[i] = ' C ' + CP[i] + ' '; TPL_MID[i] = ' ' + CP[i] + ' '; TPL_POST[i] = ' ' + P[i] + ' '; }
         var maxTime = 0;
@@ -143,7 +143,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         var delayPoints = new Float64Array(NUM_POINTS);
         for (var i = 0; i < NUM_POINTS; i++) { delayPoints[i] = (sin((i / (NUM_POINTS - 1)) * PI) + 1) / 2 * DELAY_MAX; }
         var P = new Float64Array(SEG), CP = new Float64Array(SEG), INV = 100 / SEG;
-        for (var i = 0; i < SEG; i++) { P[i] = Math.round((i + 1) * INV * 100) / 100; CP[i] = Math.round((P[i] - INV / 2) * 100) / 100; }
+        for (var i = 0; i < SEG; i++) { var pVal = Math.round((i + 1) * INV * 100) / 100; P[i] = pVal; CP[i] = Math.round((pVal - INV / 2) * 100) / 100; }
         var TPL_PRE: string[] = [], TPL_MID: string[] = [], TPL_POST: string[] = [];
         for (var i = 0; i < SEG; i++) { TPL_PRE[i] = ' C ' + CP[i] + ' '; TPL_MID[i] = ' ' + CP[i] + ' '; TPL_POST[i] = ' ' + P[i] + ' '; }
         var maxTime = 0;
