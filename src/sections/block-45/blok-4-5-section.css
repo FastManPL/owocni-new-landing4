@@ -715,7 +715,7 @@
 #blok-4-5-section .x-icon { font-size: 0.9em; opacity: 0.7; }
 #blok-4-5-section .morph-ghost { position: fixed; pointer-events: none; z-index: 9998; opacity: 0; border-radius: 0; }
 
-/* Wave wrap — zgodnie ze stackiem: position fixed, pełny viewport, pod treścią */
+/* Wave wrap — position fixed (wymagane dla curtain reveal Kinetic→Block45), pełny viewport, pod treścią */
 #blok-4-5-section .blok-4-5-wave-wrap {
     position: fixed;
     inset: 0;
