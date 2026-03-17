@@ -8,6 +8,8 @@ import { createContext, useContext, type RefObject } from 'react';
  */
 export type BridgeContextValue = {
   wrapperRef: RefObject<HTMLDivElement | null>;
+  /** Ref do wrappera użytego jako pinSpacer — zapobiega insertBefore przy pinie (React + GSAP). */
+  pinSpacerRef?: RefObject<HTMLDivElement | null>;
   faktyLayerRef: RefObject<HTMLDivElement | null>;
   /** Jednostki timeline na fazę Fakty (yPercent -100). Gdy 0 = brak fazy Fakty. */
   bridgeFaktyU: number;

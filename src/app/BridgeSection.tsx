@@ -12,36 +12,41 @@ const BRIDGE_FAKTY_U = 0;
 
 export function BridgeSection() {
   const wrapperRef = useRef<HTMLDivElement>(null);
+  const pinSpacerRef = useRef<HTMLDivElement>(null);
   const faktyLayerRef = useRef<HTMLDivElement | null>(null);
 
   const bridgeValue = {
     wrapperRef,
+    pinSpacerRef,
     faktyLayerRef,
     bridgeFaktyU: BRIDGE_FAKTY_U,
   };
 
   return (
     <BridgeProvider value={bridgeValue}>
-      <div
-        id="bridge-wrapper"
-        ref={wrapperRef}
-        style={{
-          position: 'relative',
-          overflow: 'hidden',
-          height: '100vh',
-          isolation: 'isolate',
-          zIndex: 10,
-        }}
-      >
+      {/* Własny pinSpacer — GSAP nie wstawia węzła w drzewo, unikamy "insertBefore" (React). */}
+      <div ref={pinSpacerRef} style={{ minHeight: '100vh' }}>
         <div
-          id="kinetic-layer"
+          id="bridge-wrapper"
+          ref={wrapperRef}
           style={{
-            position: 'absolute',
-            inset: 0,
-            zIndex: 1,
+            position: 'relative',
+            overflow: 'hidden',
+            height: '100vh',
+            isolation: 'isolate',
+            zIndex: 10,
           }}
         >
-          <KineticSection />
+          <div
+            id="kinetic-layer"
+            style={{
+              position: 'absolute',
+              inset: 0,
+              zIndex: 1,
+            }}
+          >
+            <KineticSection />
+          </div>
         </div>
       </div>
     </BridgeProvider>

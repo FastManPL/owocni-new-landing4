@@ -13,7 +13,7 @@ import './kinetic-section.css';
 // Next.js pre-renderuje Client Components na serwerze — window/document nie istnieją.
 // registerPlugin() WYŁĄCZNIE wewnątrz useGSAP(() => { ... }) jak poniżej.
 
-    function init(container: HTMLElement, opts?: { pinTriggerRef?: { current: HTMLElement | null } }): { kill: () => void; pause: () => void; resume: () => void; _s: Record<string, unknown> } {
+    function init(container: HTMLElement, opts?: { pinTriggerRef?: { current: HTMLElement | null }; pinSpacerRef?: { current: HTMLElement | null } }): { kill: () => void; pause: () => void; resume: () => void; _s: Record<string, unknown> } {
         // W bridge pin MUSI być na wrapperze — inaczej pin-spacer ląduje wewnątrz wrappera (100vh) i nie powiększa dokumentu → Block 4 się nie pojawia (integracja §7B).
         const wrapperEl = typeof document !== 'undefined' ? document.getElementById('bridge-wrapper') : null;
         const pinTrigger = (opts?.pinTriggerRef?.current ?? wrapperEl ?? container) as HTMLElement;
@@ -2341,6 +2341,7 @@ import './kinetic-section.css';
                     id: "KINETIC_PIN",
                     scrub: inBridge ? false : true,
                     pin: true,
+                    pinSpacer: inBridge ? (opts?.pinSpacerRef?.current ?? undefined) : undefined,
                     anticipatePin: 0,
                     invalidateOnRefresh: true,
                     preventOverlaps: true,
@@ -3576,7 +3577,9 @@ export function KineticSection() {
       }
       return;
     }
-    const opts = bridge?.wrapperRef ? { pinTriggerRef: bridge.wrapperRef } : undefined;
+    const opts = bridge?.wrapperRef
+        ? { pinTriggerRef: bridge.wrapperRef, pinSpacerRef: bridge.pinSpacerRef }
+        : undefined;
     const inst = init(el, opts);
     return () => inst?.kill?.();
   }, { scope: rootRef, dependencies: [bridge?.wrapperRef] });
