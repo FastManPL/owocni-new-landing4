@@ -212,11 +212,11 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         }
       }
 
-      // Curtain: wave wchodzi tuż PRZED odblokowaniem pinu (start: sentinel 200px poniżej góry viewport).
-      // Wave-wrap przenoszony do portalu w body, żeby był nad Kinetic (z-index 20) bez podnoszenia całej sekcji.
+      // Curtain: wave startuje ~100vh przed odblokowaniem (sentinel top = viewport bottom), żeby było przed odmrożeniem.
+      // Wave-wrap w portalu nad Kinetic; po onLeave wraca do sekcji i dalej animuje (Kipiel/open) jak w oryginale.
       var pinEndSentinel = typeof document !== 'undefined' ? document.getElementById('bridge-pin-end-sentinel') : null;
       var waveTriggerEl = pinEndSentinel || container;
-      var waveStart = pinEndSentinel ? 'top top-=200' : 'top bottom';
+      var waveStart = pinEndSentinel ? 'top bottom' : 'top bottom';
       var curtainPortal: HTMLElement | null = null;
       var waveWrapOriginalParent: Node | null = null;
       var waveWrapOriginalNext: Node | null = null;
@@ -248,7 +248,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         },
         onLeave: function() {
           if (pinEndSentinel) moveWaveBackToSection();
-          (waveWrap as HTMLElement).style.display = 'none';
+          // Nie ustawiamy display none — wave zostaje w sekcji i dalej animuje (Kipiel/open), treść się odsłania jak w oryginale.
         },
         onEnterBack: function() {
           (waveWrap as HTMLElement).style.display = '';
