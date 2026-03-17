@@ -29,9 +29,9 @@
     z-index: 1;
 }
 
-/* STREFA 1: Pinowana - dziedziczy z .stage */
+/* STREFA 1: Pinowana — tło przezroczyste dla płynnego przejścia Fakty → Kinetic (integracja). */
 #kinetic-section {
-    background-color: var(--bg-color);
+    background-color: transparent;
 }
 
 /* ============================================

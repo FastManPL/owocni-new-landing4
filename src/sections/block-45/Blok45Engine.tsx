@@ -212,29 +212,51 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         }
       }
 
-      // Curtain: wave wchodzi dokładnie w momencie odblokowania pinu Kinetic (trigger = sentinel na końcu pin spacer).
+      // Curtain: wave wchodzi tuż PRZED odblokowaniem pinu (start: sentinel 200px poniżej góry viewport).
+      // Wave-wrap przenoszony do portalu w body, żeby był nad Kinetic (z-index 20) bez podnoszenia całej sekcji.
       var pinEndSentinel = typeof document !== 'undefined' ? document.getElementById('bridge-pin-end-sentinel') : null;
       var waveTriggerEl = pinEndSentinel || container;
-      var waveStart = pinEndSentinel ? 'top top' : 'top bottom';
+      var waveStart = pinEndSentinel ? 'top top-=200' : 'top bottom';
+      var curtainPortal: HTMLElement | null = null;
+      var waveWrapOriginalParent: Node | null = null;
+      var waveWrapOriginalNext: Node | null = null;
+      function moveWaveToPortal() {
+        if (!pinEndSentinel || !waveWrap) return;
+        waveWrapOriginalParent = waveWrap.parentNode;
+        waveWrapOriginalNext = waveWrap.nextSibling;
+        curtainPortal = document.createElement('div');
+        curtainPortal.id = 'blok-4-5-wave-curtain-portal';
+        curtainPortal.setAttribute('aria-hidden', 'true');
+        curtainPortal.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:20;pointer-events:none;';
+        document.body.appendChild(curtainPortal);
+        curtainPortal.appendChild(waveWrap);
+      }
+      function moveWaveBackToSection() {
+        if (curtainPortal && waveWrap && waveWrapOriginalParent) {
+          waveWrapOriginalParent.insertBefore(waveWrap, waveWrapOriginalNext);
+          curtainPortal.remove();
+          curtainPortal = null;
+        }
+      }
       var stWaveVis = ScrollTrigger.create({
         trigger: waveTriggerEl,
         start: waveStart,
         end: 'bottom top',
         onEnter: function() {
           (waveWrap as HTMLElement).style.display = '';
-          container.classList.add('wave-curtain-active');
+          if (pinEndSentinel) moveWaveToPortal();
         },
         onLeave: function() {
+          if (pinEndSentinel) moveWaveBackToSection();
           (waveWrap as HTMLElement).style.display = 'none';
-          container.classList.remove('wave-curtain-active');
         },
         onEnterBack: function() {
           (waveWrap as HTMLElement).style.display = '';
-          container.classList.add('wave-curtain-active');
+          if (pinEndSentinel) moveWaveToPortal();
         },
         onLeaveBack: function() {
+          if (pinEndSentinel) moveWaveBackToSection();
           (waveWrap as HTMLElement).style.display = 'none';
-          container.classList.remove('wave-curtain-active');
         }
       });
       gsapInstances.push(stWaveVis);
@@ -1192,8 +1214,12 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     function resume(){if(!ticking){if(sectionInView&&!document.hidden)gsap.ticker.add(mainLoop);if(tickIOVisible)gsap.ticker.add(glowTickFn);ticking=true;}if(eyeResumeFn)eyeResumeFn();hfListeners.forEach(function(entry){entry.target.addEventListener(entry.event,entry.fn,entry.options);});}
     function kill(){
       pause();
-      try { container.classList.remove('wave-curtain-active'); } catch (e) {}
-      try { if (waveWrap) (waveWrap as HTMLElement).style.display = 'none'; } catch (e) {}
+      try {
+        var portal = document.getElementById('blok-4-5-wave-curtain-portal');
+        var ww = document.getElementById('blok-4-5-wave-wrap');
+        if (portal && ww && portal.contains(ww)) { container.insertBefore(ww, container.firstChild); portal.remove(); }
+        if (ww) (ww as HTMLElement).style.display = 'none';
+      } catch (e) {}
       cleanups.forEach(function(fn){try{fn();}catch(e){console.error(e);}});
       timerIds.forEach(function(entry){try{if(entry.type==='timeout')clearTimeout(entry.id);else if(entry.type==='interval')clearInterval(entry.id);else if(entry.type==='raf')cancelAnimationFrame(entry.id);else if(entry.type==='idle'&&typeof window.cancelIdleCallback==='function')cancelIdleCallback(entry.id);}catch(e){}});
       observers.forEach(function(obs){obs?.disconnect?.();});

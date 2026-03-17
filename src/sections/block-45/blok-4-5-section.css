@@ -15,11 +15,6 @@
     margin-top: -8vh;
     overflow: visible; /* „i wychodzą” — napis musi móc wychodzić w bok (translateX) */
 }
-/* Curtain: gdy wave zasłania Kinetic w momencie odblokowania pinu — sekcja nad bridge (z-index 10). */
-#blok-4-5-section.wave-curtain-active {
-    z-index: 20;
-}
-
 /* --- Globalne style tekstu --- */
 #blok-4-5-section .line {
     font-size: clamp(1.8rem, 4vw, 3.5rem);
@@ -719,15 +714,17 @@
 #blok-4-5-section .x-icon { font-size: 0.9em; opacity: 0.7; }
 #blok-4-5-section .morph-ghost { position: fixed; pointer-events: none; z-index: 9998; opacity: 0; border-radius: 0; }
 
-/* Wave wrap — position fixed (curtain reveal), pełny viewport; z-index nad treścią sekcji gdy curtain. */
+/* Wave wrap — position fixed top 0, pełny viewport, bez overflow (curtain ma zasłonić cały Kinetic). */
 #blok-4-5-section .blok-4-5-wave-wrap {
     position: fixed;
-    inset: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
     z-index: 10;
     pointer-events: none;
-    overflow: hidden;
+    overflow: visible;
     background: transparent;
-    /* will-change usunięte — ograniczenie budżetu; animacja nadal działa */
 }
 #blok-4-5-section .blok-4-5-wave-overlay {
     width: 100%; height: 100%;
