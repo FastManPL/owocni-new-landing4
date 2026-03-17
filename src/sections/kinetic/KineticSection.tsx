@@ -2332,8 +2332,9 @@ import './kinetic-section.css';
                 scrollTrigger: {
                     trigger: pinTrigger,
                     start: "top top",
+                    // inBridge: pełny timeline (scrollTimelinePx) + 1 viewport kurtyny; dopiero potem block45 (Curtain Reveal)
                     end: () => inBridge
-                        ? '+=' + (scrollTimelinePx + (typeof window !== 'undefined' ? window.innerHeight : svh))
+                        ? '+=' + (scrollTimelinePx + (typeof window !== 'undefined' ? window.innerHeight : svh) + 200)
                         : '+=' + scrollTimelinePx,
                     id: "KINETIC_PIN",
                     scrub: inBridge ? false : true,

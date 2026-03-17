@@ -30,6 +30,7 @@ export function BridgeSection() {
           overflow: 'hidden',
           height: '100vh',
           isolation: 'isolate',
+          zIndex: 10,
         }}
       >
         <div
