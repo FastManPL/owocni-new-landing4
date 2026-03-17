@@ -1,6 +1,8 @@
 import { HeroSection } from "@/sections/hero/HeroSection";
 import { BookStatsSection } from "@/sections/books/BookStatsSection";
 import { FaktySection } from "@/sections/fakty/FaktySection";
+import { KineticSection } from "@/sections/kinetic/KineticSection";
+import { SectionsClient } from "./SectionsClient";
 
 export default function HomePage() {
   return (
@@ -8,13 +10,8 @@ export default function HomePage() {
       <HeroSection />
       <BookStatsSection />
       <FaktySection />
-      {/* Tymczasowy placeholder — usunąć przy dodawaniu kolejnej sekcji */}
-      <section
-        style={{ minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-        aria-hidden="true"
-      >
-        <span style={{ color: 'rgba(0,0,0,0.2)', fontSize: '1rem' }}>tymczasowy placeholder</span>
-      </section>
+      <KineticSection />
+      <SectionsClient />
     </main>
   );
 }

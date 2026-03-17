@@ -1,11 +1,11 @@
 ---
-description: Konstytucja projektu LP — zasady twarde i struktura. Źródło prawdy: CONSTITUTION_v2_5_patched.md. Przy każdej zmianie stosować się do niego.
+description: Konstytucja projektu LP — zasady twarde i struktura. Źródło prawdy: CONSTITUTION_v2_9_patched.md. Przy każdej zmianie stosować się do niego.
 alwaysApply: true
 ---
 
 # Konstytucja projektu LP
 
-**Źródło prawdy:** Plik `CONSTITUTION_v2_5_patched.md` w katalogu głównym projektu. Przy każdej zmianie w tym repozytorium należy się do niego stosować.
+**Źródło prawdy:** Plik `CONSTITUTION_v2_9_patched.md` w katalogu głównym projektu. Przy każdej zmianie w tym repozytorium należy się do niego stosować.
 
 ## Stack i cel
 - **Next.js 16** (App Router), React 19, Tailwind CSS. Turbopack domyślnie; fallback: `next build --webpack`.
@@ -31,4 +31,4 @@ Sprawdź manifest (typ A/B, HOT/WARM/COLD, warmup, geometryMutable), Evidence Pa
 
 **Główny plik stylów:** `src/app/globals.css` — Tailwind directives, `html { font-size: 16px }`, `scrollbar-gutter: stable`, zaznaczenie tekstu (`::selection` / `::-moz-selection` w `@layer base`). Sekcje nie definiują tam nic; globalne utility tylko tam.
 
-**Szczegóły, wyjątki, bramki i checklisty:** zawsze w `CONSTITUTION_v2_5_patched.md`.
+**Szczegóły, wyjątki, bramki i checklisty:** zawsze w `CONSTITUTION_v2_9_patched.md`.

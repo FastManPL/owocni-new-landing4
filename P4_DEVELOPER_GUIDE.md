@@ -222,6 +222,12 @@ Nie w page.tsx — page.tsx jest Server Component."
 | `window.__scroll` w kodzie produkcyjnym | Tylko DEV | Odrzuć |
 | `import dynamic` dla hero | Hero nigdy nie dostaje dynamic import | Odrzuć |
 | Skeleton `'none'` dla sekcji z pinem | CLS + pin jump przy pierwszym scrollu | STOP → Fabryka |
+| `new THREE.WebGLRenderer()` bez `getWebGLProfile()` | Brak profilu = różna jakość renderowania per sekcja, niespójny UX między sekcjami WebGL | Odrzuć — sekcja musi importować `webglBroker` i konsumować wspólny profil (J15, G11.1) |
+| Import map (`<script type="importmap">`) w PREVIEW.html sekcji WebGL | Silent failure na Safari < 16.4 — canvas pusty bez żadnego błędu w konsoli | Odrzuć — wymagaj pełnych URL-i do three.js + komentarz `THREE_VERSION` (PREVIEW-IMPORT-01) |
+| Zmiana `trigger`, `start` lub `end` ScrollTriggera sekcji | Psuje kalibrację animacji — wartości są kontraktem Fabryki (B7.5/POS-ROOT-01) | Odrzuć natychmiast, STOP → Fabryka |
+| „Dorzućmy `requestRefresh()`, to się wyrówna" | Maskuje błąd sekcji zamiast go rozwiązać — kalibracja należy do Fabryki | Odrzuć, wróć do manifestu i evidence P2B |
+
+Dla sekcji z `sensitiveTo: ['geometry-above']` w manifeście NIE próbujesz ręcznie debugować kalibracji przez przestawianie triggerów, offsetów ani przez dopinanie refreshy w providerach. Jeśli INT-04 w evidence P2B jest FAIL lub PENDING — STOP → Fabryka.
 
 ---
 

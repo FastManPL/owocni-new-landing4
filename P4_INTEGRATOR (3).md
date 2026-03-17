@@ -546,6 +546,12 @@ npm run build  → oczekiwane: 0 errors (bramka finalna)
     - pin above + accordion below + refresh
     - scroll przez pinned region bez skoku
 
+## Per sekcja z sensitiveTo niepustym lub refreshSignals niepustym
+[ ] stack.html zawiera spacery above (≥150vh) i below (≥100vh)
+[ ] runtimeChecks.INT-04 = PASS (positioning invariance)
+[ ] Brak ręcznej korekty trigger/start/end w integracji
+[ ] Brak ad-hoc requestRefresh() dodanego przez integratora
+
 ## Resource hints
 [ ] ResourceHintsClient.tsx: 'use client', named exports z react-dom
 [ ] preconnect tylko dla preconnectDomains[] z manifestu
@@ -614,6 +620,22 @@ BEZWZGLĘDNIE ZAKAZANE:
   CPU gating w integracji lub providerach. Dla sekcji z `pin: true` wywołanie
   `disable()` zwalnia pin i powoduje skok sekcji. Gating pętli i mediów należy
   wyłącznie do logiki sekcji (zamknięte w init()). Integrator nie dotyka ST disable/enable.
+- Modyfikacja renderera, canvasa lub lifecycle WebGL sekcji. Integrator NIE zmienia:
+  ustawień renderera (pixelRatio, antialias, powerPreference), canvasOwnership,
+  warmup policy, fallback logic — to jest kontrakt sekcji z manifestu (J15).
+  Jeśli WebGL sekcji nie działa poprawnie → STOP → wraca do Fabryki.
+- Tworzenie globalnego WebGLRenderer współdzielonego między sekcjami. Każda
+  sekcja WebGL ma własny renderer (J15, Konstytucja B1 — izolacja sekcji).
+  Integrator nie "optymalizuje" tego — shared renderer łamie kontrakt izolacji
+  i robi jedną sekcję zakładnikiem lifecycle drugiej.
+- Zmiana `trigger`, `start` lub `end` jakiegokolwiek ScrollTriggera sekcji.
+  Wartości te są częścią kontraktu pozycji sekcji wypracowanego przez Fabrykę
+  (B7.5 — POS-ROOT-01). Nawet „oczywista korekta" (np. `'top bottom'` →
+  `'top center'`) może rozjechać narrację i timing całej sekwencji animacji.
+  Jeśli ST wydaje się źle skalibrowany → STOP → wraca do Fabryki.
+- Dodawanie ad-hoc `requestRefresh()` jako „naprawy" dryfującej sekcji gdy
+  problem wynika z błędnego trigger/start/end lub z niepełnego evidence P2B.
+  Integrator wykonuje manifest 1:1 — nie debugguje kalibracji sekcji.
 
 NOTA — `<img />` w sekcjach po Fabryce:
 Sekcje wygenerowane przez P3 używają `<img />` zamiast `next/image`. To jest świadoma
@@ -707,6 +729,12 @@ npm run build  → oczekiwane: 0 errors (bramka finalna)
 [ ] stack.html harnessu przeszedł testy:
     - pin above + accordion below + refresh
     - scroll przez pinned region bez skoku
+
+## Per sekcja z sensitiveTo niepustym lub refreshSignals niepustym
+[ ] stack.html zawiera spacery above (≥150vh) i below (≥100vh)
+[ ] runtimeChecks.INT-04 = PASS (positioning invariance)
+[ ] Brak ręcznej korekty trigger/start/end w integracji
+[ ] Brak ad-hoc requestRefresh() dodanego przez integratora
 
 ## Resource hints
 [ ] ResourceHintsClient.tsx: 'use client', named exports z react-dom

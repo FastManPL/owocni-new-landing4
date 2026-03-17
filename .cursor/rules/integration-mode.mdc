@@ -1,6 +1,6 @@
 ---
 description: Tryb integracji sekcji LP. Nie edytuj sekcji ani rdzenia scrollu. Źródło prawdy: SECTION_MANIFEST. Stosuj gdy użytkownik pisze że integruje sekcje.
-globs: src/app/page.tsx, src/app/layout.tsx, src/providers/**/*
+globs: src/app/page.tsx, src/app/layout.tsx, src/app/SectionsClient.tsx, src/providers/**/*
 alwaysApply: false
 ---
 
@@ -8,61 +8,128 @@ alwaysApply: false
 
 Gdy użytkownik mówi, że pracujesz w **trybie integracji sekcji** lub wkleja prompt integracyjny — stosuj te zasady. Rola: złożyć gotowe sekcje w stronę. **Nie** modyfikujesz zawartości sekcji ani rdzenia scrollu.
 
+**Źródła prawdy (zachowaj ich zasady):**
+- `CONSTITUTION_v2_9_patched.md` — rdzeń architektury, scroll, assety, DCI, geometria, GSAP, WebGL.
+- `P4_DEVELOPER_GUIDE.md` — dla operatora: co immutable, kolejność sesji, Grep Gates, Console Gate, TypeScript Gate, eskalacja.
+- `P4_INTEGRATOR (3).md` — pełny prompt integracji: Krok 0–6, STOP-y, resource hints, SectionsClient, scope_constraint.
+
+---
+
 ## Immutable — NIGDY nie proponuj zmian
 
 - **`src/sections/**`** — cały katalog. Zero wyjątków. Każdy diff dotykający tych plików = odrzuć i napisz: zmiana wymaga Fabryki.
 - **`src/lib/scrollRuntime.ts`** — rdzeń scrollu.
-- **`src/components/SmoothScrollProvider.tsx`**
+- **`src/components/SmoothScrollProvider.tsx`** (lub równoważny provider scrollu).
 
 Jeśli użytkownik prosi o zmianę „w sekcji” lub „w scrollRuntime” — odpowiedz: **STOP**, to obszar immutable; takie zmiany robi Fabryka / poprawka do Konstytucji.
 
+---
+
 ## Obszar roboczy integracji
 
-- **`src/app/page.tsx`** — wstawianie sekcji (import, kolejność, dynamic import, skeleton, props z `dciProps`).
-- **`src/app/layout.tsx`** — resource hints (preload/prefetch/preconnect) **tylko** to, co jest w SECTION_MANIFEST; jeśli jest ustandaryzowany generator (np. ResourceHints) — używaj tylko tam.
-- **`src/providers/`** — np. hook geometrii `useGeometryRefresh(sectionId)` gdy manifest ma `geometryMutable: true` **i** `geometryRefresh: 'none'`. Hook musi być w pliku z `"use client"`, **nie** w `page.tsx` (Server Component).
+- **`src/app/page.tsx`** — lista sekcji (importy statyczne, kolejność). Server Component — zero hooków, zero `useGeometryRefresh`.
+- **`src/app/SectionsClient.tsx`** — **jedyny** legalny miejsc na `next/dynamic(..., { ssr: false })` i na `useGeometryRefresh(sectionId)`. Tworzysz ten plik jeśli nie istnieje; wszystkie sekcje z `perf.loading.dynamicImport === true` idą tutaj.
+- **`src/app/layout.tsx`** — rejestracja `ResourceHintsClient`; nie wstawiasz tam hintów ręcznie — tylko w `ResourceHintsClient`.
+- **`src/providers/ResourceHintsClient.tsx`** — resource hints wg `perf.resourceHints` z manifestu. Client Component, `'use client'`, **named exports z `react-dom`**: `preconnect`, `preload`, `prefetchDNS`. ZAKAZ: `next/head`, `<link>` w Server Component.
+- **Hook geometrii** — tylko gdy manifest: `geometryMutable: true` **i** `geometryRefresh: 'none'`; w **client boundary** (SectionsClient lub provider), NIGDY w `page.tsx`.
 
-## Jedno źródło prawdy
+---
 
-**SECTION_MANIFEST** każdej sekcji. Jeśli manifest czegoś nie mówi — nie dodawaj. Niezrozumiałe pole → zaproponuj: „Zapytaj Fabrykę”.
+## Jedno źródło prawdy: SECTION_MANIFEST
 
-- Kolejność sekcji, `dynamicImport`, `clientOnly`, `skeleton` → z `perf.loading` (lub odpowiednika w manifeście).
-- Resource hints → tylko z manifestu (preload/prefetch/preconnect per sekcja).
+- **dynamicImport** — jedyne źródło: `perf.loading.dynamicImport`. Ignoruj top-level `dynamicImport`; jeśli tylko on istnieje a `perf.loading` nie — STOP: MANIFEST OUTDATED.
+- Kolejność sekcji, `clientOnly`, `skeleton`, `warmup` → z `perf.loading`.
+- Resource hints → tylko z manifestu (preconnectDomains, preloadCandidates, prefetchDnsDomains, prefetchCandidates). cold = nic nie dodajesz.
 - Props do sekcji → tylko z `dciProps`; zero ekstra.
+- **Skeleton:** `skeleton: 'none'` dla sekcji z pinem/snapem + dynamic import = STOP (CLS + pin jump). Wymagany skeleton z minHeight lub komponent.
 
-## Zakazane (czerwone flagi — nie proponuj, a jeśli użytkownik to wklei, wskaż błąd)
+---
 
-| Zakaz | Powód |
-|-------|--------|
-| Edycja plików w `src/sections/**` | Sekcje są immutable |
-| `ScrollTrigger.refresh()` | Tylko `scrollRuntime.requestRefresh(reason)` |
-| `gsap.registerPlugin()` w layout/page | Zależności są w sekcjach |
-| `useGeometryRefresh` w `page.tsx` | page = Server Component |
-| `content-visibility: auto` na sekcji z ScrollTrigger | Psuje obliczenia ST |
-| Nowe paczki w `package.json` | Tylko po jawnej akceptacji użytkownika |
-| `preconnect` dla sGTM/GA bez manifestu | dns-prefetch, nie preconnect (LCP) |
-| `window.__scroll` poza blokiem DEV | Tylko do debugu |
-| `import dynamic` dla hero | Hero nigdy dynamic |
-| Skeleton brak / `'none'` dla sekcji z pinem | CLS + pin jump → STOP, Fabryka |
+## Przepływ: Plan → Akceptacja → Kod
 
-## Przepływ pracy (sugeruj użytkownikowi)
+1. **Najpierw tylko plan** — „Na podstawie manifestów wygeneruj Integration Plan. Nie generuj jeszcze żadnego kodu.” Zatrzymaj się; nie pisz kodu dopóki operator nie napisze „AKCEPTUJĘ PLAN”.
+2. **Sekcja po sekcji** — „Dodaj tylko sekcję [slug].” Import z `@/sections/[slug]/[Slug]Section`; przy dynamic: w `SectionsClient.tsx` z `ssr: false` gdy `clientOnly: true`; skeleton wg manifestu; props tylko z `dciProps`.
+3. **Resource hints** — osobno, tylko to co w manifeście dla danej sekcji, w `ResourceHintsClient.tsx`.
+4. **Hook geometrii** — tylko gdy manifest: `geometryMutable: true` i `geometryRefresh: 'none'`; w pliku z `'use client'`, nie w page.tsx.
 
-1. **Plan** — „Na podstawie manifestów wygeneruj Integration Plan. Bez kodu.” Użytkownik weryfikuje kolejność, dynamic/skeleton, resource hints.
-2. **Sekcja po sekcji** — „Dodaj tylko sekcję [slug] do page.tsx.” Import z `src/sections/[slug]/[Slug]Section`, props tylko z manifestu, przy dynamic + pin — skeleton z minHeight.
-3. **Resource hints** — osobno, tylko to co w manifeście dla danej sekcji.
-4. **Hook geometrii** — tylko gdy manifest: `geometryMutable: true` i `geometryRefresh: 'none'`; w client boundary (np. provider), nie w page.tsx.
+---
 
-## Po każdej sekcji (przypomnij użytkownikowi)
+## STOP-y przed generowaniem kodu (z P4_INTEGRATOR)
 
-- `npm run dev` → scroll przez nową sekcję, Console: 0 błędów (Errors). Jedna sekcja na commit.
-- Grep gates: brak `ScrollTrigger.refresh(`, brak `window.__scroll` w prod, `git diff --name-only` nie może zawierać `src/sections/`.
+- **Makro-sekcja** (`integrationNotes.isMacroSection === true`) bez pełnego kontraktu (wrapperComponent, timelineContract, phaseSlugs) → STOP → Fabryka.
+- **Body-portal** (`integrationNotes.requiresBodyPortal === true`) bez portalId/zIndexPlan/portalCssLocation → STOP → Fabryka.
+- **dynamicImport + (hasPin lub hasSnap) + skeleton: 'none'** → STOP: brak skeletona = CLS + pin jump.
+- **geometryRefresh: 'none' + dynamicImport** → ryzyko timingu hooka; rekomendacja: geometryRefresh: 'self'. Wątpliwość → STOP → Fabryka.
+- **dciProps** w manifeście a page nie ma skąd pobrać (brak DCI) → STOP: MISSING DCI SOURCE.
+- **Duplikat slug** na stronie → STOP: DUPLICATE SLUG.
+- **Pliki sekcji brak w repo** (`src/sections/[slug]/[Slug]Section.tsx`) → STOP: SECTION FILES MISSING → Fabryka.
+- **SectionsClient.tsx istnieje** z inną zawartością → nie nadpisuj; wskaż gdzie dodać nowe sekcje.
+- **layout.tsx nie był w page_context** przy zmianie Resource Hints → STOP: wklej layout do kontekstu.
+
+---
+
+## Czerwone flagi — odrzucaj bez dyskusji
+
+| Co proponuje LLM | Dlaczego błąd | Reakcja |
+|------------------|---------------|---------|
+| Edycja `src/sections/**` | Sekcje immutable | Odrzuć diff, STOP → Fabryka |
+| `ScrollTrigger.refresh()` | Tylko `scrollRuntime.requestRefresh(reason)` | Odrzuć, przypomnij regułę |
+| `gsap.registerPlugin()` w layout/page/providerach lub na module top-level pliku TSX | Rozmywa zależności / SSR crash (J13) | Odrzuć, STOP → Fabryka |
+| `useGeometryRefresh` w `page.tsx` | Server Component | Odrzuć, wskaż SectionsClient / client boundary |
+| `content-visibility: auto` na sekcji z ST | Psuje obliczenia ScrollTrigger | Odrzuć |
+| Nowe paczki w `package.json` | Wymaga jawnej akceptacji | Zatrzymaj, pytaj |
+| `html { font-size }` w CSS sekcji lub poza globals | Łamie B4.1 (PREVIEW ≠ prod) | Odrzuć, STOP → Fabryka |
+| `next/head` dla hintów | Resource hints tylko przez ResourceHintsClient | Odrzuć |
+| preconnect dla sGTM/GA bez manifestu | dns-prefetch dla marketingu, nie preconnect | Odrzuć |
+| `window.__scroll` w kodzie produkcyjnym | Tylko DEV | Odrzuć |
+| dynamic import dla hero | Hero nigdy dynamic | Odrzuć |
+| Skeleton `'none'` dla sekcji z pinem | CLS + pin jump | STOP → Fabryka |
+| `new THREE.WebGLRenderer()` bez `getWebGLProfile()` (webglBroker) | J15, G11.1 — wspólny profil | Odrzuć |
+| Import map w PREVIEW.html sekcji WebGL | PREVIEW-IMPORT-01 — Safari < 16.4 silent fail | Odrzuć — pełne URL-e do three |
+| Zmiana `trigger` / `start` / `end` ScrollTriggera sekcji | B7.5/POS-ROOT-01 — kontrakt Fabryki | Odrzuć natychmiast, STOP → Fabryka |
+| Ad-hoc `requestRefresh()` jako „naprawa” dryfującej sekcji | Maskuje błąd kalibracji | Odrzuć, wróć do manifestu i evidence |
+| `ScrollTrigger.disable()`/`enable()` w integracji | Gating należy do sekcji | Odrzuć |
+| Modyfikacja WebGL renderera/canvasu/lifecycle sekcji | Kontrakt sekcji (J15) | STOP → Fabryka |
+| Zmiana trigger/start/end | POS-ROOT-01 | Odrzuć, Fabryka |
+
+Dla sekcji z `sensitiveTo: ['geometry-above']`: NIE debuguj kalibracji przez przestawianie triggerów ani dopinanie refreshy. INT-04 FAIL/PENDING → STOP → Fabryka.
+
+---
+
+## Scope: dozwolone vs zakazane (skrót ze scope_constraint)
+
+**DOZWOLONE:** Import sekcji z `src/sections/<slug>/`, wstawienie `<Section />` w page/SectionsClient w kolejności, dynamic import wg `perf.loading.dynamicImport`, przekazanie dciProps wg manifestu, `useGeometryRefresh` wg manifestu w client boundary, resource hints wg manifestu w ResourceHintsClient, warmup wg `perf.loading.warmup` (API moduleLoader z repo).
+
+**BEZWZGLĘDNIE ZAKAZANE:** Edycja `src/sections/**`, `ScrollTrigger.refresh()`, `window.__scroll` w prod, nowe zależności bez akceptacji, `content-visibility: auto` na sekcjach z ST, `html { font-size }` poza globals, `next/head`, modyfikacja scrollRuntime/SmoothScrollProvider, hinty spoza manifestu, zmiana ssr/skeleton poza manifestem, składanie makro-sekcji z dzieci, globalny hub `gsap.registerPlugin()`, zmiana trigger/start/end, ad-hoc requestRefresh jako naprawa, modyfikacja WebGL lifecycle/renderera sekcji.
+
+---
+
+## Weryfikacje (z P4_DEVELOPER_GUIDE)
+
+- **TypeScript Gate:** przed każdym pushem: `npx tsc --noEmit` → 0 errors. Błędy z `src/sections/**` → nie naprawiaj sam, STOP → Fabryka.
+- **Po każdej sekcji:** `npm run dev`, scroll przez sekcję, Console: 0 Errors. Jedna sekcja na commit.
+- **Grep Gates (po sesji):**  
+  `rg "ScrollTrigger\.refresh\(" src -S` → puste  
+  `rg "window\.__scroll" src -S` → puste  
+  `git diff --name-only \| rg "^src/sections/"` → puste  
+  `rg "content-visibility:\s*auto" src -S` → puste
+- **Finalna (Sesja D):** Node 20 (`node --version`), `npx tsc --noEmit`, `npm run lint`, `npm run build`, `npm run start` + ręcznie: scroll bez jittera, 0 Errors, obrazki avif/webp, brak fonts.googleapis.com w prod.
+
+---
+
+## Środowisko przed integracją
+
+- **Node 20** — wymóg. `.nvmrc` z `20` w repo. Build na Node 22/24 = nie uznawaj jako PASS.
+- **globals.css** — musi zawierać `html { font-size: 16px; }` przed pierwszą sekcją.
+- **lenis.css** — w `layout.tsx`: `import "lenis/dist/lenis.css"` (lub `lenis/lenis.css` wg wersji). STOP jeśli projekt ma `html { height: 100% }` / `body { height: 100% }`.
+
+---
 
 ## Eskalacja
 
-- Zmiana wewnątrz sekcji / problem z GSAP/timing/cleanup → **Fabryka**.
-- Problem w scrollRuntime / SmoothScrollProvider → **poprawka do Konstytucji** + review.
-- Wzorzec nieopisany w P4_INTEGRATOR → nie improwizuj, zaproponuj zapytanie do Fabryki.
+- Problem w sekcji (timing, snap, GSAP, cleanup) → **STOP → Fabryka**.
+- Problem w scrollRuntime / SmoothScrollProvider → **poprawka do Konstytucji (Amendment)** + review.
+- Manifest niekompletny lub sprzeczny → **STOP → Fabryka**.
+- Wzorzec nie opisany w P4_INTEGRATOR / P4_DEVELOPER_GUIDE → **nie improwizuj**, zaproponuj zapytanie do Fabryki.
 
-**Dokumenty szczegółowe (źródło prawdy integracji):**
-- **P4_INTEGRATOR (3).md** — pełny prompt integracji (Krok 0–6, STOP-y, resource hints, SectionsClient, scope_constraint). Stosować 1:1 przy integracji sekcji.
-- **P4_DEVELOPER_GUIDE.md** — dla operatora: co immutable, kolejność sesji, Grep Gates, Console Gate, eskalacja. Przy integracji użytkownik wkleja manifesty i aktualny stan page.tsx / layout.tsx / package.json — pracuj wyłącznie na tej podstawie.
+**Dokumenty szczegółowe:** stosować 1:1 przy integracji — **P4_INTEGRATOR (3).md** (Krok 0–6, SectionsClient, ResourceHintsClient, STOP-y), **P4_DEVELOPER_GUIDE.md** (sesje, Grep Gates, Console Gate, TypeScript Gate, Asset Pipeline), **CONSTITUTION_v2_9_patched.md** (rdzeń reguł projektu).

@@ -1,0 +1,112 @@
+SECTION_MANIFEST:
+
+  slug:     'kinetic'
+  type:     'B'
+  requires: ['scrollRuntime', 'gsap', 'ScrollTrigger']
+
+  webgl:    null
+  # 3× canvas 2D (particle-qmark, tunnel, cylinder) — zero WebGL/Three.js
+
+  assets:   []
+  # 0 mediów. 3× <canvas> = elementy programistyczne, nie media assets.
+
+  warmup:   []
+  # Brak HOT/WARM assets do preconnect.
+
+  scrollTriggersCount: 2
+  # 1× pinnedTl z scrollTrigger (KINETIC_PIN — pin:true, scrub)
+  # 1× ScrollTrigger.observe (_kineticObserver — gesture intent detection)
+
+  geometryMutable:  false
+  # Sekcja pinned fullscreen (100lvh), fixed layout, brak zmian wysokości po init.
+
+  geometryRefresh:  'self'
+  # ST-REFRESH-01 (AUTO-FIXED P2A): section-in-view IO + layout-settle timer 1000ms
+  # Oba wywołują scrollRuntime.requestRefresh().
+
+  geometryContract:        'pinned-narrative'
+  syntheticContextAllowed: false
+  entryExitInvariant:      true
+  preserveExistingGuards:  true
+
+  refreshSignals: ['section-in-view', 'layout-settle']
+  # ST-REFRESH-01 scaffold:
+  #   - section-in-view: jednorazowy IO (threshold:0, rootMargin:0px)
+  #   - layout-settle: setTimeout 1000ms po init
+  # Subsystemy (particle, tunnel) mierzą geometrię po document.fonts.ready.then
+  # — ale nie tworzą ST po tym boundary. Refresh handles overall settle.
+
+  export:
+    mode: 'named'
+    name: 'KineticSection'
+
+  slots: []
+  # Brak slotów podmienialnych — tekst hardcoded, canvas programistyczne.
+
+  dciProps: []
+  # Brak dynamicznych treści — cały content hardcoded w HTML markup.
+
+  timelineContract: undefined
+  # Wartości hardcoded (KINETIC_SNAPS obliczone per-init z geometrii).
+
+  specialNotes:
+    breakpoints:          ['599px', '600px', '768px', '769px', '1200px', '2000px']
+    platformGuards:       ['touch (IS_TOUCH via ScrollTrigger.isTouch)', 'document.hidden (tab visibility)']
+    cpuGatingMechanism:   'IO-pause/resume'
+    cpuGatingPath:        1
+    snapSystem:           'state machine v3 + lenis.scrollTo (COMMAND API) — nie ST snap'
+    tickerCount:          '5× gsap.ticker.add (gate, adaptiveDPR, particle, tunnel, cylinder)'
+    canvasCount:          '3× canvas 2D (particle-qmark, tunnel, cylinder) — zero WebGL'
+    bIso01:               'NIE — owner zachowuje blend z tłem. WARNING: brak stacking context (isolation:isolate pominięte). 3× mix-blend-mode (luminosity, multiply, color-burn) celowo mieszają z tłem.'
+
+  integrationNotes:
+    hasPin:                true
+    hasSnap:               true
+    # Snap przez state machine v3 + lenis.scrollTo (nie ST snap property).
+    # Lenis COMMAND API — produkcja wymaga scrollRuntime v6.x abstraction.
+    affectsGeometryBelow:  false
+    # Pin-spacer height stały po init. Sekcja nie zmienia wysokości dynamicznie.
+    sensitiveTo:           []
+    # trigger: container, start: "top top" — viewport-relative.
+    # P1: trigger_root=PASS, offset_model=viewport-relative.
+    # Sekcja NIE jest wrażliwa na geometry-above.
+    testWith:              ['pinned-above', 'accordion', 'height-change-above']
+
+  deliveryRisk: N/A
+  # Brak URL-swap — canvas rendering, nie image-set/frame URL swap.
+
+  perf:
+    dynamicImport:       false
+    # Owner decision: NIE (potwierdzone).
+    isHero:              false
+    gracefulDegradation: false
+    # N/A — 0 mediów.
+    preloadCandidates:   []
+    prefetchCandidates:  []
+    coldCandidates:      []
+    preconnectDomains:   ['fonts.googleapis.com', 'fonts.gstatic.com']
+    # Fonty Lexend — jedyny external domain.
+    containApplied:      false
+    # Pinned fullscreen 100lvh — contain: layout mogłoby zakłócić pin mechanics.
+    warnings:            ['PERF-W2', 'PERF-W6', 'PERF-W7']
+    # PERF-W2: 3× canvas bez HTML width/height (initial 300×150 default, niski priorytet — opacity:0 na starcie)
+    # PERF-W6: 5× gsap.ticker.add (celowa architektura — IIFE isolation per subsystem)
+    # PERF-W7: Google Fonts URL bez explicit &subset=latin-ext (auto-served, low risk)
+
+  scrollRuntimeRecommendations:
+    - 'is-scrolling pointer-events guard (body.is-scrolling section * { pointer-events: none })'
+    # Snap system używa lenis.stop() + lenis.scrollTo() — pointer-events guard
+    # zapobiegnie przypadkowym tapom podczas snap animations.
+
+  runtimeChecks:
+    CLN-01: 'PASS'
+    SM-01:  'PASS'
+    SM-02:  'PASS'
+    INT-01: 'PASS'
+    INT-02: 'PASS'
+    INT-03: 'PASS'
+    INT-04: 'PASS'
+    # INT-04 obowiązkowy: refreshSignals niepuste + sekcja ma ST z semantyką wejścia
+    WGL-01: 'N/A'
+    WGL-02: 'N/A'
+    WGL-03: 'N/A'
