@@ -2410,9 +2410,9 @@ import './kinetic-section.css';
             _s.pinnedTl = pinnedTl;
             gsapInstances.push(pinnedTl);
 
-            // Bridge: miękkie wejście Kinetic — fade-in gdy wrapper wjeżdża od dołu (integracja §3, PRZEJSCIA doc)
+            // Bridge: miękkie wejście Kinetic — fade-in gdy wrapper wjeżdża od dołu (integracja §3, PRZEJSCIA doc).
+            // Nie ustawiamy opacity 0 synchronicznie przy init — tylko z ST (unikamy błędu/crash gdy layout jeszcze nie gotowy).
             if (inBridge && pinTrigger) {
-                gsap.set(container, { opacity: 0 });
                 var stFadeIn = ScrollTrigger.create({
                     trigger: pinTrigger,
                     start: 'top bottom',
@@ -2423,6 +2423,7 @@ import './kinetic-section.css';
                     onEnterBack: function() { gsap.set(container, { opacity: 1 }); }
                 });
                 gsapInstances.push(stFadeIn);
+                gsap.set(container, { opacity: stFadeIn.progress });
             }
 
             // ══════════════════════════════════════════════════════════════

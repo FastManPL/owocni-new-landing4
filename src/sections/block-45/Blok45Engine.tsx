@@ -327,7 +327,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       renderer.setSize(window.innerWidth, window.innerHeight);
       renderer.setPixelRatio(1);
       renderer.setClearColor(0x000000, 0);
-      renderer.setScissorTest(true);
+      renderer.setScissorTest(false);
       starsContainer.appendChild(renderer.domElement);
       var _envMapReady = false, _envMapIdleId = 0;
       function _generateEnvMap() {
@@ -510,12 +510,14 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         for (var i = 0; i < particles.length; i++) { var p = particles[i]; p.update(dt, centerCache, mx, my, ptu, repelRadiusSq, repelRadius, dampDt); if (p.alive) anyAlive = true; }
         if ((window as any)._blok45Debug) (window as any)._blok45Debug.starsActive = anyAlive;
         if (anyAlive && (now - lastRenderTime >= RENDER_INTERVAL)) {
-          var dpr = renderer.getPixelRatio(), margin = Math.min(window.innerWidth * 0.6, 500);
+          var dpr = Math.max(0.5, Math.min(2, renderer.getPixelRatio())), margin = Math.min(window.innerWidth * 0.6, 500);
           var sx = Math.max(0, btnRectCache.cx - margin), sy = Math.max(0, btnRectCache.cy - margin * 1.3);
           var sw = Math.min(margin * 2, window.innerWidth - sx), sh = Math.min(margin * 2.6, window.innerHeight - sy);
+          sw = Math.max(0, sw); sh = Math.max(0, sh);
+          var scissorY = Math.max(0, (window.innerHeight - sy - sh) * dpr);
           if (sw > 0 && sh > 0) {
             renderer.setScissorTest(true);
-            renderer.setScissor(sx * dpr, (window.innerHeight - sy - sh) * dpr, sw * dpr, sh * dpr);
+            renderer.setScissor(Math.floor(sx * dpr), Math.floor(scissorY), Math.max(1, Math.floor(sw * dpr)), Math.max(1, Math.floor(sh * dpr)));
           } else {
             renderer.setScissorTest(false);
           }
