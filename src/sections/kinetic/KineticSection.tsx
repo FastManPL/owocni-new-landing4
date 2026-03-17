@@ -2381,11 +2381,11 @@ import './kinetic-section.css';
                     },
 
                     onRefresh: function() {
-                        // Po refresh (iOS toolbar, orientationchange, resize):
-                        _geoCache._valid = false; // v139 PERF: invalidate cached snap geometry
-                        _sm.state = 'idle';
-                        _sm.pendingIndex = null;
+                        // Po refresh (iOS toolbar, orientationchange, resize). Guard: onRefresh może odpalić zanim _geoCache/_sm są przypisane (kolejność w init).
+                        if (_geoCache) _geoCache._valid = false;
+                        if (_sm) { _sm.state = 'idle'; _sm.pendingIndex = null; }
                         requestAnimationFrame(function() {
+                            if (!_getSnapGeometry || !_sm) return;
                             var g = _getSnapGeometry();
                             if (!g) return;
                             var scroll = scrollRuntime.getScroll();
