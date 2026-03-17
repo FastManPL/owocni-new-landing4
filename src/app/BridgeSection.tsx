@@ -48,6 +48,8 @@ export function BridgeSection() {
             <KineticSection />
           </div>
         </div>
+        {/* Sentinel: gdy jego top = viewport top, scroll = koniec pinu — Block45 uruchamia wave w tym momencie. */}
+        <div id="bridge-pin-end-sentinel" aria-hidden="true" style={{ position: 'relative', height: 0, pointerEvents: 'none' }} />
       </div>
     </BridgeProvider>
   );

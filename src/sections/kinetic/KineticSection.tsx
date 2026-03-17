@@ -45,6 +45,11 @@ import './kinetic-section.css';
         gsap.registerPlugin(ScrollTrigger);
         // ScrollTrigger.config({ ignoreMobileResize: true }) → Shared Core (scrollRuntime.ts)
 
+        // Bridge: od samego początku kontener ma opacity 0 — łagodne wejście tylko przez ST (unikamy „wskakiwania”).
+        if (inBridge && container) {
+            gsap.set(container, { opacity: 0 });
+        }
+
         // ── IDEMPOTENT INIT: usuń stare piny tej sekcji (trigger = container lub wrapper w bridge) ──
         try {
             ScrollTrigger.getAll().forEach(function(st) {
@@ -2411,11 +2416,11 @@ import './kinetic-section.css';
             _s.pinnedTl = pinnedTl;
             gsapInstances.push(pinnedTl);
 
-            // Bridge: płynne wejście Kinetic — długi fade od dołu (integracja §3). Start wcześniej, żeby tło nie wskakiwało.
+            // Bridge: płynne wejście — fade od momentu wejścia wrappera w viewport (top bottom) do top top.
             if (inBridge && pinTrigger) {
                 var stFadeIn = ScrollTrigger.create({
                     trigger: pinTrigger,
-                    start: 'top bottom+=50%',
+                    start: 'top bottom',
                     end: 'top top',
                     scrub: true,
                     onUpdate: function(self) {

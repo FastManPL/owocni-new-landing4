@@ -212,22 +212,37 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         }
       }
 
-      // Wave wrap: position fixed (w CSS), widoczna i Kipiel startują ZANIM sekcja wejdzie — gdy top sekcji jest jeszcze ~25% vh poniżej viewport (curtain, Kinetic nadal zamrożona).
+      // Curtain: wave wchodzi dokładnie w momencie odblokowania pinu Kinetic (trigger = sentinel na końcu pin spacer).
+      var pinEndSentinel = typeof document !== 'undefined' ? document.getElementById('bridge-pin-end-sentinel') : null;
+      var waveTriggerEl = pinEndSentinel || container;
+      var waveStart = pinEndSentinel ? 'top top' : 'top bottom';
       var stWaveVis = ScrollTrigger.create({
-        trigger: container,
-        start: 'top bottom+=25%',
+        trigger: waveTriggerEl,
+        start: waveStart,
         end: 'bottom top',
-        onEnter: function() { (waveWrap as HTMLElement).style.display = ''; },
-        onLeave: function() { (waveWrap as HTMLElement).style.display = 'none'; },
-        onEnterBack: function() { (waveWrap as HTMLElement).style.display = ''; },
-        onLeaveBack: function() { (waveWrap as HTMLElement).style.display = 'none'; }
+        onEnter: function() {
+          (waveWrap as HTMLElement).style.display = '';
+          container.classList.add('wave-curtain-active');
+        },
+        onLeave: function() {
+          (waveWrap as HTMLElement).style.display = 'none';
+          container.classList.remove('wave-curtain-active');
+        },
+        onEnterBack: function() {
+          (waveWrap as HTMLElement).style.display = '';
+          container.classList.add('wave-curtain-active');
+        },
+        onLeaveBack: function() {
+          (waveWrap as HTMLElement).style.display = 'none';
+          container.classList.remove('wave-curtain-active');
+        }
       });
       gsapInstances.push(stWaveVis);
       (waveWrap as HTMLElement).style.display = 'none';
       var waveAnchor = $id('blok-4-5-voidSectionWrapper') || container.querySelector('.text-above-illustration');
       var stWaveTrigger = ScrollTrigger.create({
-        trigger: container,
-        start: 'top bottom+=25%',
+        trigger: waveTriggerEl,
+        start: waveStart,
         onEnter: function() { startKipielOpen(); }
       });
       gsapInstances.push(stWaveTrigger);
@@ -1177,6 +1192,8 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     function resume(){if(!ticking){if(sectionInView&&!document.hidden)gsap.ticker.add(mainLoop);if(tickIOVisible)gsap.ticker.add(glowTickFn);ticking=true;}if(eyeResumeFn)eyeResumeFn();hfListeners.forEach(function(entry){entry.target.addEventListener(entry.event,entry.fn,entry.options);});}
     function kill(){
       pause();
+      try { container.classList.remove('wave-curtain-active'); } catch (e) {}
+      try { if (waveWrap) (waveWrap as HTMLElement).style.display = 'none'; } catch (e) {}
       cleanups.forEach(function(fn){try{fn();}catch(e){console.error(e);}});
       timerIds.forEach(function(entry){try{if(entry.type==='timeout')clearTimeout(entry.id);else if(entry.type==='interval')clearInterval(entry.id);else if(entry.type==='raf')cancelAnimationFrame(entry.id);else if(entry.type==='idle'&&typeof window.cancelIdleCallback==='function')cancelIdleCallback(entry.id);}catch(e){}});
       observers.forEach(function(obs){obs?.disconnect?.();});
