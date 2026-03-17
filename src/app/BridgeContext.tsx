@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useRef, type RefObject } from 'react';
+import { createContext, useContext, type RefObject } from 'react';
 
 /**
  * Kontekst Makro-Sekcji (integracja §7A).
