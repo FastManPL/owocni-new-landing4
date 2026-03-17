@@ -63,6 +63,7 @@ function init(container: HTMLElement): { kill: () => void } {
 
   // ── DOM BUILD ──────────────────────────────────────────────
   function buildDOM() {
+    if (!faktyDom) return;
     faktyDom.innerHTML = '';
     TEXT_ROWS.forEach((rowDef, ri) => {
       const rowSpan = document.createElement('span');
@@ -101,6 +102,7 @@ function init(container: HTMLElement): { kill: () => void } {
   const measureCtx    = measureCanvas.getContext('2d');
 
   function computeAndSetBase() {
+    if (!faktyBlock || !faktyDom) return;
     const targetW = faktyBlock.getBoundingClientRect().width;
     const rows = faktyDom.querySelectorAll<HTMLElement>('.title-row');
     const r1 = rows[0], r2 = rows[1];
@@ -142,6 +144,7 @@ function init(container: HTMLElement): { kill: () => void } {
   }
 
   function measureCharOffsets() {
+    if (!faktyBlock || !faktyDom) return;
     const blockRect = faktyBlock.getBoundingClientRect();
     charOffsets = [];
     faktyDom.querySelectorAll<HTMLElement>('.video-fill').forEach(el => {
@@ -172,7 +175,7 @@ function init(container: HTMLElement): { kill: () => void } {
         else { resolve(); }
       };
       img.onerror = () => resolve();
-      img.src = frameURLs[index];
+      img.src = frameURLs[index] ?? '';
     });
   }
 
@@ -193,10 +196,11 @@ function init(container: HTMLElement): { kill: () => void } {
     currentFrame = index;
     if (!framesReady) return;
     const wrapped = frameURLsWrapped[index];
-    if (wrapped) { faktyDom.style.setProperty('--current-frame-url', wrapped); }
+    if (wrapped && faktyDom) { faktyDom.style.setProperty('--current-frame-url', wrapped); }
   }
 
   function setupVideoFill() {
+    if (!faktyBlock) return;
     const blockW = faktyBlock.getBoundingClientRect().width;
     const frameH = Math.round(blockW * 540 / 960);
     charOffsets.forEach(co => {
@@ -207,6 +211,7 @@ function init(container: HTMLElement): { kill: () => void } {
 
   // ── PHASE 1 ANIMATIONS ─────────────────────────────────────
   function buildPhase1() {
+    if (!faktyDom) return;
     const rows = faktyDom.querySelectorAll<HTMLElement>('.title-row');
     const row1 = rows[0], row2 = rows[1];
     if (!row1 || !row2) return;
@@ -370,11 +375,12 @@ function init(container: HTMLElement): { kill: () => void } {
     const segs: BezierSeg[]=[];
     for(let i=0;i<pts.length-1;i++){
       const p0=pts[Math.max(i-1,0)],p1=pts[i],p2=pts[i+1],p3=pts[Math.min(i+2,pts.length-1)];
+      const x0=p1?.[0]??0,y0=p1?.[1]??0,x1=p2?.[0]??0,y1=p2?.[1]??0,x0p=p0?.[0]??0,y0p=p0?.[1]??0,x3=p3?.[0]??0,y3=p3?.[1]??0;
       segs.push({
-        sx:p1[0],sy:p1[1],
-        c1x:p1[0]+(p2[0]-p0[0])/(6*tension),c1y:p1[1]+(p2[1]-p0[1])/(6*tension),
-        c2x:p2[0]-(p3[0]-p1[0])/(6*tension),c2y:p2[1]-(p3[1]-p1[1])/(6*tension),
-        ex:p2[0],ey:p2[1]
+        sx:x0,sy:y0,
+        c1x:x0+(x1-x0p)/(6*tension),c1y:y0+(y1-y0p)/(6*tension),
+        c2x:x1-(x3-x0)/(6*tension),c2y:y1-(y3-y0)/(6*tension),
+        ex:x1,ey:y1
       });
     }
     return segs;
@@ -385,11 +391,11 @@ function init(container: HTMLElement): { kill: () => void } {
   function bezierSegsFromNodes(nodes: PathNode[], W: number, H: number, yOff: number): BezierSeg[] {
     const segs: BezierSeg[] = [];
     for (let i = 0; i < nodes.length - 1; i++) {
-      const n0 = nodes[i], n1 = nodes[i+1];
-      const ax0 = n0.a[0]*W, ay0 = (n0.a[1]+yOff)*H;
-      const ax1 = n1.a[0]*W, ay1 = (n1.a[1]+yOff)*H;
-      const c1x = (n0.a[0]+n0.ho[0])*W, c1y = (n0.a[1]+n0.ho[1]+yOff)*H;
-      const c2x = (n1.a[0]+n1.hi[0])*W, c2y = (n1.a[1]+n1.hi[1]+yOff)*H;
+      const n0 = nodes[i]!, n1 = nodes[i+1]!;
+      const ax0 = (n0.a[0] ?? 0)*W, ay0 = ((n0.a[1] ?? 0)+yOff)*H;
+      const ax1 = (n1.a[0] ?? 0)*W, ay1 = ((n1.a[1] ?? 0)+yOff)*H;
+      const c1x = ((n0.a[0] ?? 0)+(n0.ho[0] ?? 0))*W, c1y = ((n0.a[1] ?? 0)+(n0.ho[1] ?? 0)+yOff)*H;
+      const c2x = ((n1.a[0] ?? 0)+(n1.hi[0] ?? 0))*W, c2y = ((n1.a[1] ?? 0)+(n1.hi[1] ?? 0)+yOff)*H;
       segs.push({ sx:ax0, sy:ay0, c1x, c1y, c2x, c2y, ex:ax1, ey:ay1 });
     }
     return segs;
@@ -412,13 +418,17 @@ function init(container: HTMLElement): { kill: () => void } {
   }
 
   const _lineHead = { lx:0, ly:0 };
-  function drawOrgLine(ctx: CanvasRenderingContext2D, segs: BezierSeg[], active: number, H: number, W: number, c: OrgConfig, clr: PrecomputedLineColors, strokeGrad: CanvasGradient) {
-    if(active<=0){_lineHead.lx=segs[0].sx;_lineHead.ly=segs[0].sy;return _lineHead;}
-    ctx.beginPath();ctx.moveTo(segs[0].sx,H);ctx.lineTo(segs[0].sx,segs[0].sy);
-    let lx=segs[0].sx,ly=segs[0].sy;
+  function drawOrgLine(ctx: CanvasRenderingContext2D, segs: BezierSeg[], active: number, H: number, _W: number, c: OrgConfig, clr: PrecomputedLineColors, strokeGrad: CanvasGradient) {
+    const s0 = segs[0];
+    if (!s0) return _lineHead;
+    if(active<=0){_lineHead.lx=s0.sx;_lineHead.ly=s0.sy;return _lineHead;}
+    ctx.beginPath();ctx.moveTo(s0.sx,H);ctx.lineTo(s0.sx,s0.sy);
+    let lx=s0.sx,ly=s0.sy;
     for(let i=0;i<segs.length;i++){
       if(i>=active)break;
-      const s=segs[i],sp=Math.min(1,active-i);
+      const s=segs[i];
+      if(!s)continue;
+      const sp=Math.min(1,active-i);
       if(sp>=1){ctx.bezierCurveTo(s.c1x,s.c1y,s.c2x,s.c2y,s.ex,s.ey);lx=s.ex;ly=s.ey;}
       else{const pt=bezierAt(s,sp);ctx.bezierCurveTo(pt.m1x,pt.m1y,pt.mm1x,pt.mm1y,pt.x,pt.y);lx=pt.x;ly=pt.y;}
     }
@@ -426,10 +436,12 @@ function init(container: HTMLElement): { kill: () => void } {
     const ag=ctx.createLinearGradient(0,ly,0,H);
     ag.addColorStop(0,clr.areaTop);ag.addColorStop(c.areaStopMid,clr.areaMid);ag.addColorStop(1,clr.areaEnd);
     ctx.fillStyle=ag;ctx.fill();
-    ctx.beginPath();ctx.moveTo(segs[0].sx,segs[0].sy);
+    ctx.beginPath();ctx.moveTo(s0.sx,s0.sy);
     for(let i=0;i<segs.length;i++){
       if(i>=active)break;
-      const s=segs[i],sp=Math.min(1,active-i);
+      const s=segs[i];
+      if(!s)continue;
+      const sp=Math.min(1,active-i);
       if(sp>=1){ctx.bezierCurveTo(s.c1x,s.c1y,s.c2x,s.c2y,s.ex,s.ey);}
       else{const pt=bezierAt(s,sp);ctx.bezierCurveTo(pt.m1x,pt.m1y,pt.mm1x,pt.mm1y,pt.x,pt.y);}
     }
@@ -449,7 +461,7 @@ function init(container: HTMLElement): { kill: () => void } {
     ctx.save();ctx.lineWidth=2.4*sc;
     for(let i=0;i<2;i++){
       const pR=(t*0.166+i/3)%1;
-      ctx.globalAlpha=0.4*(1-pR)*reveal;ctx.strokeStyle=fc.ringFull[i];
+      ctx.globalAlpha=0.4*(1-pR)*reveal;ctx.strokeStyle=fc.ringFull[i] ?? 'transparent';
       ctx.beginPath();ctx.arc(x,y,pR*72*sc,0,Math.PI*2);ctx.stroke();
     }
     ctx.globalAlpha=1;
@@ -518,7 +530,8 @@ function init(container: HTMLElement): { kill: () => void } {
     orgCachedPSegs=bezierSegsFromNodes(PRIMARY_PATH,drawW,H,yOff);
     const scaledSec: number[][]=[];
     for(let i=0;i<SECONDARY_PATH.length;i++){
-      scaledSec[i]=[SECONDARY_PATH[i][0]*drawW,(SECONDARY_PATH[i][1]+yOff)*H];
+      const pt = SECONDARY_PATH[i];
+      scaledSec[i]=[((pt?.[0] ?? 0)*drawW),((pt?.[1] ?? 0)+yOff)*H];
     }
     orgCachedSSegs=catmullRomSegs(scaledSec,0.45);
     if(orgCtx){
@@ -534,6 +547,7 @@ function init(container: HTMLElement): { kill: () => void } {
 
   let orgRow1Ref: HTMLElement | null=null, orgCachedRatio=0, orgLastInnerW=0;
   function measureOrgRatio() {
+    if (!faktyBlock || !faktyDom) return;
     orgLastInnerW=window.innerWidth;
     if(!orgRow1Ref)orgRow1Ref=faktyDom.querySelector<HTMLElement>('.title-row--1');
     const blockW=faktyBlock.offsetWidth;
@@ -545,7 +559,7 @@ function init(container: HTMLElement): { kill: () => void } {
   let orgCssW=0, orgCssH=0, orgSizeScale=1;
 
   function resizeOrgCanvas() {
-    if(!orgOverlay||!orgCtx)return;
+    if(!orgOverlay||!orgCtx||!faktyBlock)return;
     orgCssW=faktyBlock.offsetWidth;orgCssH=faktyBlock.offsetHeight;
     orgSizeScale=Math.min(1,Math.sqrt(orgCssW/ORG_REF_WIDTH));
     const bW=Math.round(orgCssW*ORG_RENDER_SCALE);
@@ -680,7 +694,7 @@ function init(container: HTMLElement): { kill: () => void } {
         if(alpha<0.15||fontSize<1.5||(fontSize>75&&alpha<0.3))continue;
         ac.globalAlpha=alpha;ac.font='600 '+fontSize+'px Lexend';
         const raw=10+Math.floor(progress*30+lp*5);
-        ac.fillText(tunnelSnapText(raw),ox+TW/2,oy+TH/2);
+        ac.fillText(tunnelSnapText(raw) ?? '',ox+TW/2,oy+TH/2);
       }
       ac.globalAlpha=1;
     }
@@ -713,6 +727,7 @@ function init(container: HTMLElement): { kill: () => void } {
   let frameST: ScrollTrigger | null=null;
   function buildFrameScroll() {
     if(frameST){frameST.kill();frameST=null;}
+    if(!faktyBlock||!faktyDom)return;
     const row1=faktyDom.querySelector<HTMLElement>('.title-row--1');
     if(!row1)return;
     playhead.frame=0;currentFrame=-1;
@@ -744,7 +759,7 @@ function init(container: HTMLElement): { kill: () => void } {
     stableViewportHeight=window.innerHeight;
     if(resizeTimer!==null)clearTimeout(resizeTimer);
     resizeTimer=setTimeout(()=>{
-      if(isKilled||!container.isConnected)return;
+      if(isKilled||!container.isConnected||!faktyBlock)return;
       const currentWidth=faktyBlock.offsetWidth;
       if(currentWidth===lastBlockWidth)return;
       lastBlockWidth=currentWidth;
@@ -784,7 +799,7 @@ function init(container: HTMLElement): { kill: () => void } {
       if(isKilled)return;
       _io?.disconnect();
       _io=new IntersectionObserver(_ioCallback,{rootMargin:_getRootMargin()});
-      _io.observe(faktyBlock);
+      if(faktyBlock)_io.observe(faktyBlock);
       observers.push(_io);
     },50);
   }
@@ -821,8 +836,8 @@ function init(container: HTMLElement): { kill: () => void } {
       try{inst?.revert?.();}catch(e){/* cleanup guard */}
       try{inst?.kill?.();}catch(e){/* cleanup guard */}
     });
-    faktyBlock.classList.remove('ready');
-    faktyDom.innerHTML='';
+    if(faktyBlock)faktyBlock.classList.remove('ready');
+    if(faktyDom)faktyDom.innerHTML='';
   }
 
   // ── fonts → build ──────────────────────────────────────────
@@ -831,7 +846,7 @@ function init(container: HTMLElement): { kill: () => void } {
     document.fonts.load('600 16px Lexend'),
     document.fonts.load('139 16px Lexend'),
   ]).then(()=>document.fonts.ready).then(async()=>{
-    if(isKilled||!container.isConnected)return;
+    if(isKilled||!container.isConnected||!faktyBlock)return;
     stableViewportHeight=window.innerHeight;
     buildDOM();
     computeAndSetBase();
