@@ -2205,28 +2205,12 @@ import './kinetic-section.css';
             }
 
             // ============================================
-            // BRIDGE: Obliczenia dynamiczne
+            // BRIDGE + KINETIC: logika w VIEWPORTACH (nie pikselach)
+            // Cała sekcja Kinetic = N viewportów scrolla; dopiero potem Block 45
             // ============================================
             const KINETIC_U = 23.0;
-            // Więcej px na timeline = Kinetic musi CAŁA przejść zanim progress=1; dopiero potem Block 45
-            const SCROLL_KINETIC = Math.round(3526 * 1.35); // ~4750 px (dłuższy scroll na całą sekcję)
-            
-            // ═══════════════════════════════════════════════════════════
-            // BRIDGE MULTIPLIER — kontrola tempa pierwszej fazy (intro particle/rings)
-            // Większa wartość = Kinetic „wchodzi” później, więcej scrolla zanim animacje się rozwiną
-            // ═══════════════════════════════════════════════════════════
-            const BRIDGE_MULTIPLIER = 2.7;
-            
-            // ═══════════════════════════════════════════════════════════
-            // TEXT_START_RATIO — kiedy startuje tekst (Block 1); najpierw animacje, potem napisy
-            // Zwiększ → tekst później (więcej czasu na bloby/pierścienie przed tekstem)
-            // ═══════════════════════════════════════════════════════════
-            const TEXT_START_RATIO = 0.72;
             
             // ── VIEWPORT MEASUREMENT ──────────────────────────────────────
-            // svh = small viewport (z paskiem) → pozycje CSS, bridge I
-            // lvh = large viewport (bez paska) → stage height, scroll range
-            // Fallback: innerHeight + safety margin dla starszych przeglądarek
             const _svhProbe = document.createElement('div');
             _svhProbe.style.cssText = 'position:fixed;top:0;height:100svh;pointer-events:none;visibility:hidden;';
             document.body.appendChild(_svhProbe);
@@ -2234,18 +2218,11 @@ import './kinetic-section.css';
             _svhProbe.style.height = '100lvh';
             const _lvhRaw = _svhProbe.offsetHeight;
             document.body.removeChild(_svhProbe);
-            
-            // Walidacja: jeśli probe zwrócił 0, browser nie wspiera svh/lvh
             const _supportsViewportUnits = _svhRaw > 0 && _lvhRaw > 0;
             const _fallbackVh = window.visualViewport?.height || window.innerHeight;
-            
             const svh = _supportsViewportUnits ? _svhRaw : _fallbackVh;
             const lvh = _supportsViewportUnits ? _lvhRaw : _fallbackVh;
-            const toolbarDelta = Math.max(0, lvh - svh);
             
-            // ── SVH CSS FALLBACK ──────────────────────────────────────
-            // iOS Safari <15.4: svh nie istnieje → CSS fallback vh = lvh (za duży o ~28px)
-            // Korygujemy inline style używając zmierzonego visualViewport.height ≈ svh
             if (!_supportsViewportUnits && window.innerWidth < 600) {
                 var _svhVal = _fallbackVh;
                 var _blockPos = [
@@ -2255,34 +2232,30 @@ import './kinetic-section.css';
                 ];
                 for (var _bi = 0; _bi < _blockPos.length; _bi++) {
                     var _bEl = $id(_blockPos[_bi].id);
-                    if (_bEl) {
-                        _bEl.style.top = (_blockPos[_bi].px + _blockPos[_bi].pct * _svhVal) + 'px';
-                    }
+                    if (_bEl) _bEl.style.top = (_blockPos[_bi].px + _blockPos[_bi].pct * _svhVal) + 'px';
                 }
             }
             
-            // ── SCROLL RANGE ──────────────────────────────────────────────
-            // Formuła: max_scroll = (stage_height + scroll_range) - viewport_when_scrolling
-            // Wymóg: max_scroll >= scroll_range → stage_height >= viewport_when_scrolling
-            // Gwarancja: stage CSS = 100lvh >= lvh (największy viewport)
-            const vh = svh;
-            const I_BASE = KINETIC_U * (vh / SCROLL_KINETIC);
+            // ═══════════════════════════════════════════════════════════
+            // SCROLL W VIEWPORTACH: cała Kinetic = VIEWPORTS_KINETIC ekranów
+            // Dopiero po przescrollowaniu całej sekcji (progress=1) wjeżdża Block 45
+            // ═══════════════════════════════════════════════════════════
+            const VIEWPORTS_KINETIC = 5;   // ile viewportów scrolla na całą animację Kinetic (bridge + bloki 1–3)
+            const VIEWPORTS_CURTAIN = 1.5; // ile viewportów z zamrożoną Kinetic zanim Block 45 zacznie wjeżdżać
+            const SCROLL_TIMELINE_PX = VIEWPORTS_KINETIC * svh;
+            const CURTAIN_REVEAL_PX = VIEWPORTS_CURTAIN * svh;
+            const SCROLL_TOTAL_PX = SCROLL_TIMELINE_PX + CURTAIN_REVEAL_PX;
+            
+            // Jednostki timeline (TOTAL_U) — proporcje bridge/kinetic zachowane, skala scrolla = viewporty
+            const BRIDGE_MULTIPLIER = 2.7;
+            const TEXT_START_RATIO = 0.72;
+            const SCROLL_KINETIC_REF = 3526; // referencyjne px (do proporcji I_BASE)
+            const I_BASE = KINETIC_U * (svh / SCROLL_KINETIC_REF);
             const I = I_BASE * BRIDGE_MULTIPLIER;
+            const OVERSHOOT_U = 1.5;
+            const TOTAL_U = I + KINETIC_U + OVERSHOOT_U;
             
             _s.bridgeI = I;
-            
-            
-            // ============================================
-            // SNAP GATE: bridge = 1:1 scrub, kinetic = directional
-            // ============================================
-            // v139 FIX: SNAP3 siedział na progress=1.0 (0px od końca pina).
-            // OVERSHOOT_U dodaje dead zone po SNAP3 (230px, viewport-independent).
-            const OVERSHOOT_U = 1.5;
-            const SCROLL_OVERSHOOT = OVERSHOOT_U * SCROLL_KINETIC / KINETIC_U; // 230px
-            // CURTAIN REVEAL: dopiero po pełnym zamrożeniu Kinetic wjeżdża Block 4 (integracja §7B)
-            // Duży bufor = użytkownik widzi całą Kinetic do końca, potem dopiero Block 45 od dołu
-            const CURTAIN_REVEAL_PX = typeof window !== 'undefined' ? window.innerHeight * 3.2 : svh;
-            const TOTAL_U = I + KINETIC_U + OVERSHOOT_U;
             
             // ═══════════════════════════════════════════════════════════
             // OBLICZENIA SNAP - muszą być PRZED pinnedTl (snap callback)
@@ -2326,10 +2299,6 @@ import './kinetic-section.css';
 
             // Stan narracyjny zadeklarowany w STATE MACHINE v3 poniżej
             // (var _sm zdefiniowane po stworzeniu pinnedTl)
-
-            // Długość scrolla tylko na timeline (bez strefy curtain reveal)
-            const SCROLL_TIMELINE_PX = svh * BRIDGE_MULTIPLIER + SCROLL_KINETIC + SCROLL_OVERSHOOT;
-            const SCROLL_TOTAL_PX = SCROLL_TIMELINE_PX + CURTAIN_REVEAL_PX;
 
             const pinnedTl = gsap.timeline({
                 scrollTrigger: {

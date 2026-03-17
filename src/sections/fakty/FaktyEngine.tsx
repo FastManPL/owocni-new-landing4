@@ -557,11 +557,19 @@ function init(container: HTMLElement): { kill: () => void } {
   const ORG_RENDER_SCALE=0.5, ORG_REF_WIDTH=1200;
   let orgCssW=0, orgCssH=0, orgSizeScale=1;
 
+  const orgOverlayWrapper = container.querySelector<HTMLDivElement>('#organic-overlay-wrapper');
   function resizeOrgCanvas() {
-    if(!orgOverlay||!orgCtx||!faktyDom)return;
-    orgCssW=faktyDom.offsetWidth||faktyBlock?.offsetWidth||0;
-    orgCssH=faktyDom.offsetHeight||faktyBlock?.offsetHeight||0;
-    if(orgCssW<=0||orgCssH<=0)return;
+    if(!orgOverlay||!orgCtx||!faktyBlock)return;
+    const wrap = orgOverlayWrapper;
+    if (wrap && faktyDom) {
+      wrap.style.top = faktyDom.offsetTop + 'px';
+      wrap.style.left = faktyDom.offsetLeft + 'px';
+      wrap.style.width = faktyDom.offsetWidth + 'px';
+      wrap.style.height = faktyDom.offsetHeight + 'px';
+    }
+    orgCssW = (faktyDom?.offsetWidth || faktyBlock.offsetWidth) || 0;
+    orgCssH = (faktyDom?.offsetHeight || faktyBlock.offsetHeight) || 0;
+    if (orgCssW <= 0 || orgCssH <= 0) return;
     orgSizeScale=Math.min(1,Math.sqrt(orgCssW/ORG_REF_WIDTH));
     const bW=Math.round(orgCssW*ORG_RENDER_SCALE);
     const bH=Math.round(orgCssH*ORG_RENDER_SCALE);
@@ -943,7 +951,8 @@ export default function FaktyEngine() {
     <section id="fakty-section" ref={rootRef}>
       <div className="title-block" id="fakty-block">
         <canvas id="fakty-tunnel"></canvas>
-        <div className="title-dom" id="fakty-dom">
+        <div className="title-dom" id="fakty-dom"></div>
+        <div id="organic-overlay-wrapper" className="organic-overlay-wrapper">
           <canvas id="organic-overlay"></canvas>
         </div>
       </div>
