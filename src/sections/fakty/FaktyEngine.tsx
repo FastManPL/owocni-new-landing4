@@ -558,8 +558,10 @@ function init(container: HTMLElement): { kill: () => void } {
   let orgCssW=0, orgCssH=0, orgSizeScale=1;
 
   function resizeOrgCanvas() {
-    if(!orgOverlay||!orgCtx||!faktyBlock)return;
-    orgCssW=faktyBlock.offsetWidth;orgCssH=faktyBlock.offsetHeight;
+    if(!orgOverlay||!orgCtx||!faktyDom)return;
+    orgCssW=faktyDom.offsetWidth||faktyBlock?.offsetWidth||0;
+    orgCssH=faktyDom.offsetHeight||faktyBlock?.offsetHeight||0;
+    if(orgCssW<=0||orgCssH<=0)return;
     orgSizeScale=Math.min(1,Math.sqrt(orgCssW/ORG_REF_WIDTH));
     const bW=Math.round(orgCssW*ORG_RENDER_SCALE);
     const bH=Math.round(orgCssH*ORG_RENDER_SCALE);
@@ -941,8 +943,9 @@ export default function FaktyEngine() {
     <section id="fakty-section" ref={rootRef}>
       <div className="title-block" id="fakty-block">
         <canvas id="fakty-tunnel"></canvas>
-        <div className="title-dom" id="fakty-dom"></div>
-        <canvas id="organic-overlay"></canvas>
+        <div className="title-dom" id="fakty-dom">
+          <canvas id="organic-overlay"></canvas>
+        </div>
       </div>
     </section>
   );

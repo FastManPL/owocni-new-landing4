@@ -2207,8 +2207,9 @@ import './kinetic-section.css';
             // ============================================
             // BRIDGE: Obliczenia dynamiczne
             // ============================================
-            const KINETIC_U = 23.0; // Speed Ramp v3: +4U (was 19.0)
-            const SCROLL_KINETIC = 3526; // Speed Ramp v3: 23 × 153.3 (was 2912)
+            const KINETIC_U = 23.0;
+            // Więcej px na timeline = Kinetic musi CAŁA przejść zanim progress=1; dopiero potem Block 45
+            const SCROLL_KINETIC = Math.round(3526 * 1.35); // ~4750 px (dłuższy scroll na całą sekcję)
             
             // ═══════════════════════════════════════════════════════════
             // BRIDGE MULTIPLIER — kontrola tempa pierwszej fazy (intro particle/rings)
@@ -2278,9 +2279,9 @@ import './kinetic-section.css';
             // OVERSHOOT_U dodaje dead zone po SNAP3 (230px, viewport-independent).
             const OVERSHOOT_U = 1.5;
             const SCROLL_OVERSHOOT = OVERSHOOT_U * SCROLL_KINETIC / KINETIC_U; // 230px
-            // CURTAIN REVEAL: scroll z zamrożoną Kinetic zanim Block 4 najeżdża (integracja §7B)
-            // Większa wartość = Block 4 wjeżdża później, Kinetic w pełni dochodzi do końca
-            const CURTAIN_REVEAL_PX = typeof window !== 'undefined' ? window.innerHeight * 1.9 : svh;
+            // CURTAIN REVEAL: dopiero po pełnym zamrożeniu Kinetic wjeżdża Block 4 (integracja §7B)
+            // Duży bufor = użytkownik widzi całą Kinetic do końca, potem dopiero Block 45 od dołu
+            const CURTAIN_REVEAL_PX = typeof window !== 'undefined' ? window.innerHeight * 3.2 : svh;
             const TOTAL_U = I + KINETIC_U + OVERSHOOT_U;
             
             // ═══════════════════════════════════════════════════════════

@@ -104,6 +104,7 @@
 #fakty-section #fakty-dom {
   position: relative;
   z-index: 1;
+  overflow: hidden;  /* organic-overlay zawarty w napisie */
 }
 
 #fakty-section #organic-overlay {
