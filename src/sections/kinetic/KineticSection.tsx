@@ -198,34 +198,36 @@ import './kinetic-section.css';
          * @returns {NodeList} - Lista spanów z literami
          */
         function splitIntoChars(element: HTMLElement) {
-            const nodes = Array.from(element.childNodes);
-            element.innerHTML = '';
-            
-            // DocumentFragment — eliminuje DOM thrashing (1 appendChild zamiast N)
             const fragment = document.createDocumentFragment();
             let globalIndex = 0;
-            
-            nodes.forEach((node) => {
-                const isText = node.nodeType === 3; // Text node
-                const target = isText ? fragment : node.cloneNode(false); // Clone element without children
-                
-                [...node.textContent].forEach((char) => {
+            const text = element.dataset.text;
+            // data-text: element pusty w JSX — unikamy innerHTML='' na węzłach Reacta (insertBefore crash)
+            if (text != null) {
+                [...text].forEach((char) => {
                     const span = document.createElement('span');
                     span.className = 'anim-char';
-                    // v139 PERF: will-change usunięte z domyślnego — dodawane per-blok tylko tam
-                    // gdzie GSAP animuje transform/opacity na INDYWIDUALNYCH charach (Block 2, Block 3 header).
-                    // Block 1: GSAP animuje transform na .line (4 kontenery), color na charach.
-                    // color nie jest właściwością kompozytora → will-change:transform,opacity = 71 zbędnych warstw GPU.
-                    span.textContent = char === ' ' ? '\u00A0' : char; // Zachowaj spacje
-                    span.dataset.index = globalIndex++;
+                    span.textContent = char === ' ' ? '\u00A0' : char;
+                    span.dataset.index = String(globalIndex++);
+                    fragment.appendChild(span);
+                });
+                element.appendChild(fragment);
+                return element.querySelectorAll('.anim-char');
+            }
+            const nodes = Array.from(element.childNodes);
+            element.innerHTML = '';
+            nodes.forEach((node) => {
+                const isText = node.nodeType === 3;
+                const target = isText ? fragment : node.cloneNode(false);
+                [...(node.textContent || '')].forEach((char) => {
+                    const span = document.createElement('span');
+                    span.className = 'anim-char';
+                    span.textContent = char === ' ' ? '\u00A0' : char;
+                    span.dataset.index = String(globalIndex++);
                     target.appendChild(span);
                 });
-                
                 if (!isText) fragment.appendChild(target);
             });
-            
-            element.appendChild(fragment); // Jeden DOM update
-            
+            element.appendChild(fragment);
             return element.querySelectorAll('.anim-char');
         }
         
@@ -3582,23 +3584,23 @@ export function KineticSection() {
 
       <div className="content-wrapper" data-gating-target>
 
-        {/* BLOK 1 */}
+        {/* BLOK 1 — data-text: puste w JSX, splitIntoChars buduje spany bez innerHTML (unika konfliktu z React) */}
         <div className="text-block" id="kinetic-block-1">
-          <div className="line">W internecie</div>
-          <div className="line">jest więcej klientów,</div>
+          <div className="line" data-text="W internecie"></div>
+          <div className="line" data-text="jest więcej klientów,"></div>
           <div style={{ height: '0.72rem' }}></div>
-          <div className="line bold-line line-large">niż Twoja firma jest</div>
-          <div className="line bold-line line-large">w stanie obsłużyć!</div>
+          <div className="line bold-line line-large" data-text="niż Twoja firma jest"></div>
+          <div className="line bold-line line-large" data-text="w stanie obsłużyć!"></div>
         </div>
 
         {/* BLOK 2 */}
         <div className="text-block" id="kinetic-block-2">
-          <div className="line bold-line line-xlarge" id="kinetic-problem-line">W czym problem?</div>
+          <div className="line bold-line line-xlarge" id="kinetic-problem-line" data-text="W czym problem?"></div>
         </div>
 
-        {/* BLOK 3 */}
+        {/* BLOK 3 — small-header z data-text (bez innerHTML), highlight GEMIUS w CSS/animacji */}
         <div className="text-block" id="kinetic-block-3">
-          <div className="small-header">Wg badań <span className="highlight">GEMIUS</span>:</div>
+          <div className="small-header" data-text="Wg badań GEMIUS:"></div>
 
           {/* DESKTOP VERSION */}
           <div className="block-3-desktop">
