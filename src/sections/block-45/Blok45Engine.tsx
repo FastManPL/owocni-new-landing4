@@ -217,15 +217,29 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       var pinEndSentinel = typeof document !== 'undefined' ? document.getElementById('bridge-pin-end-sentinel') : null;
       var waveAnchor = $id('blok-4-5-voidSectionWrapper') || container.querySelector('.text-above-illustration');
 
+      // W stacku trigger = sekcja, więc gdy wjeżdża, wave (fixed) jest nad poprzednią sekcją. U nas bridge ma z-index 10 > sekcja 2,
+      // więc bez podniesienia z-index wave jest niewidoczny. Klasa wave-reveal-active tylko na czas pokazywania wave — żeby fala była nad Kinetic.
       var visTrigger = pinEndSentinel || container;
       var stWaveVis = ScrollTrigger.create({
         trigger: visTrigger,
         start: 'top bottom',
         end: 'bottom top',
-        onEnter: function() { (waveWrap as HTMLElement).style.display = ''; },
-        onLeave: function() { (waveWrap as HTMLElement).style.display = 'none'; },
-        onEnterBack: function() { (waveWrap as HTMLElement).style.display = ''; },
-        onLeaveBack: function() { (waveWrap as HTMLElement).style.display = 'none'; }
+        onEnter: function() {
+          (waveWrap as HTMLElement).style.display = '';
+          container.classList.add('wave-reveal-active');
+        },
+        onLeave: function() {
+          (waveWrap as HTMLElement).style.display = 'none';
+          container.classList.remove('wave-reveal-active');
+        },
+        onEnterBack: function() {
+          (waveWrap as HTMLElement).style.display = '';
+          container.classList.add('wave-reveal-active');
+        },
+        onLeaveBack: function() {
+          (waveWrap as HTMLElement).style.display = 'none';
+          container.classList.remove('wave-reveal-active');
+        }
       });
       gsapInstances.push(stWaveVis);
       (waveWrap as HTMLElement).style.display = 'none';
@@ -1187,6 +1201,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     function kill(){
       pause();
       try {
+        container.classList.remove('wave-reveal-active');
         var ww = document.getElementById('blok-4-5-wave-wrap');
         if (ww) (ww as HTMLElement).style.display = 'none';
       } catch (e) {}

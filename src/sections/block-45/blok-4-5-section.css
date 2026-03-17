@@ -15,6 +15,10 @@
     margin-top: -8vh;
     overflow: visible; /* „i wychodzą” — napis musi móc wychodzić w bok (translateX) */
 }
+/* Tylko gdy wave jest widoczna (kurtyna) — sekcja nad bridge (z-index 10), żeby #blok-4-5-wave-wrap było widać jak w stacku */
+#blok-4-5-section.wave-reveal-active {
+    z-index: 20;
+}
 /* --- Globalne style tekstu --- */
 #blok-4-5-section .line {
     font-size: clamp(1.8rem, 4vw, 3.5rem);
