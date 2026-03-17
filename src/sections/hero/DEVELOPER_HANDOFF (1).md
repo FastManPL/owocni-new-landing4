@@ -23,29 +23,35 @@ npx tsc --noEmit # oczekiwane: 0 errors
 ## Checklisty manualne
 
 ### Import / Structure
+
 - [ ] Import paths poprawne (`@/` aliasy)
 - [ ] CSS importowany w komponencie
-- [ ] scrollRuntime importowany z modułu (nie window.*)
+- [ ] scrollRuntime importowany z modułu (nie window.\*)
 - [ ] lottie importowany z `lottie-web`
 
 ### useGSAP Pattern
+
 - [ ] useGSAP z `{ scope: rootRef }` — wzorzec:
   ```tsx
-  useGSAP(() => {
-    const el = rootRef.current;
-    if (!el) {
-      if (process.env.NODE_ENV !== 'production') {
-        throw new Error('[P3] rootRef.current is null');
+  useGSAP(
+    () => {
+      const el = rootRef.current;
+      if (!el) {
+        if (process.env.NODE_ENV !== "production") {
+          throw new Error("[P3] rootRef.current is null");
+        }
+        return;
       }
-      return;
-    }
-    const inst = heroSectionInit(el);
-    return () => inst?.kill?.();
-  }, { scope: rootRef })
+      const inst = heroSectionInit(el);
+      return () => inst?.kill?.();
+    },
+    { scope: rootRef },
+  );
   ```
 - [ ] Cleanup return w useGSAP
 
 ### P3 Bramki
+
 - [ ] P3-CLEAN-01: kill() ma guard idempotencji (`_killed` flag) — ✅ DODANE
 - [ ] B-LC-RET-01: init() zwraca `{ pause, resume, kill }` we WSZYSTKICH ścieżkach wyjścia
 - [ ] LIB-GLOBAL-01: brak `window.gsap` / `window.lenis` w kodzie komponentu
@@ -60,21 +66,25 @@ npx tsc --noEmit # oczekiwane: 0 errors
   ```
 
 ### CSS Scoping
+
 - [ ] Selektory w hero-section.css zakorzenione w `#hero-section`
 - [ ] Brak globalnych selektorów bez zakorzenienia (wyjątki: `@keyframes`, `@property`)
 
 ### Assets wymagane przed deployem
+
 - [ ] `/public/animations/LOGO_OWOCNI.json` — konwersja z .lottie
 - [ ] `/public/animations/laury-left.json` i `laury-right.json`
 - [ ] `/public/trail/` — zdjęcia trail (AVIF + WebP fallback)
 - [ ] Assets marquee brands
 
 ### React StrictMode Test
+
 - [ ] `npm run dev` → StrictMode montuje komponenty dwukrotnie
 - [ ] Konsola bez błędów po 2× mount/unmount
 - [ ] Brak duplikatów tickerów ani memory leaks
 
 ### GSAP Smoke Test
+
 ```bash
 # Sprawdź że GSAP 3.12.7 jest zainstalowany
 npm ls gsap
@@ -101,20 +111,24 @@ DEVELOPER_HANDOFF.md     # ten plik
 ## Specjalne uwagi
 
 ### PERF-W6 (3 per-frame callbacks)
+
 Sekcja ma 3 tickery (trail.tick, pendulum.update, halo.rAF) + lottie-web internal rAF.
 Każdy gated osobno przez IO — akceptowalne per P2A.
 
 ### PERF-W14 (@keyframes hero-badgeGoogleAspectWarp)
+
 Animuje `width: 48px → 175px` — jednorazowe, forwards fill.
 Rozważyć `transform: scaleX()` w V2 (poza scope P3).
 
 ### HAAT (Hybrydowa Architektura Auto-Skalowania Typografii)
+
 - Faza 1 (server-side): wymaga RSC logic w layout/page
 - Faza 2 (client-side): wymaga `useLayoutEffect` w komponencie content
 - W obecnej wersji: tiery kopiowane z `<html>` data attributes
 - TODO: Zintegrować z Next.js RSC w przyszłej iteracji
 
 ### Lottie Format
+
 - `lottie-web@5.12.2` obsługuje TYLKO JSON
 - `LOGO_OWOCNI.lottie` = DotLottie (ZIP) → wymaga konwersji do `.json`
 - Narzędzie: https://lottiefiles.com/tools lub CLI dotlottie-js
