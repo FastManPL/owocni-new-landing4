@@ -28,7 +28,7 @@ html {
 
   body {
     background-color: #f7f6f4;
-    overflow-x: hidden; /* brak poziomego paska przewijania */
+    /* Bez overflow-x: hidden — sekcja block-45 „i wychodzą” musi móc wyjść w bok (transform: translateX). overflow-x: hidden przycinało napis. */
   }
 
   /* Zaznaczenie tekstu — branding Owocni */

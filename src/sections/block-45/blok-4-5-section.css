@@ -12,8 +12,8 @@
     z-index: 2;
     background: #f7f6f4;
     isolation: isolate; /* FACTORY: B-ISO-01 — stacking context */
-    /* Całość wyżej: wave-wrap ma zachodzić na poprzednią sekcję (kinetic) */
     margin-top: -8vh;
+    overflow: visible; /* „i wychodzą” — napis musi móc wychodzić w bok (translateX) */
 }
 
 /* --- Globalne style tekstu --- */
@@ -59,11 +59,13 @@
     flex-direction: column;
     align-items: center;
     z-index: 5;
+    overflow: visible;
 }
 
 #blok-4-5-section .illustration-container {
     position: relative;
     width: 100%;
+    overflow: visible;
 }
 
 #blok-4-5-section .text-above-illustration {
@@ -131,7 +133,6 @@
     width: 0;
     height: 0;
     pointer-events: none;
-    will-change: transform;
     left: 50%; top: 60%;
 }
 #blok-4-5-section .blok45-pupil {
@@ -217,6 +218,7 @@
     width: 100%;
     text-align: center;
     z-index: 25;
+    overflow: visible;
 }
 
 #blok-4-5-section .text-on-illustration-bottom {
@@ -315,7 +317,6 @@
     transform-origin: center;
     pointer-events: none;
     opacity: 0;
-    will-change: opacity;
 }
 
 #blok-4-5-section .highlight-svg-box.active { opacity: 1; }
@@ -624,9 +625,9 @@
     z-index: 3;
 }
 
-/* --- ANIMACJA "i wychodzą" --- */
-#blok-4-5-section .void-section-wrapper { position: relative; display: flex; flex-direction: column; align-items: center; width: 100%; }
-#blok-4-5-section .void-section { display: flex; justify-content: center; align-items: baseline; width: 100%; padding: 2rem 1px; font-size: clamp(1.6rem, 4vw, 4.6rem); white-space: nowrap; margin: 0; }
+/* --- ANIMACJA "i wychodzą" — overflow: visible żeby napis mógł wychodzić w bok ekranu --- */
+#blok-4-5-section .void-section-wrapper { position: relative; display: flex; flex-direction: column; align-items: center; width: 100%; overflow: visible; }
+#blok-4-5-section .void-section { display: flex; justify-content: center; align-items: baseline; width: 100%; padding: 2rem 1px; font-size: clamp(1.6rem, 4vw, 4.6rem); white-space: nowrap; margin: 0; overflow: visible; }
 #blok-4-5-section #blok-4-5-anchorChar { position: relative; display: inline-block; transition: all 0.3s ease; background: linear-gradient(180deg, #0a0a0a 0%, #0a0a0a 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
 #blok-4-5-section #blok-4-5-anchorChar.mana-active { background: linear-gradient(180deg, #252030 0%, #2a2130 40%, #512b2b 70%, #7d3527 100%); -webkit-background-clip: text; background-clip: text; }
 #blok-4-5-section #blok-4-5-iHeatWrapper { position: fixed; pointer-events: none; z-index: 150; overflow: visible; }
@@ -722,7 +723,7 @@
     pointer-events: none;
     overflow: hidden;
     background: transparent;
-    will-change: transform;
+    /* will-change usunięte — ograniczenie budżetu; animacja nadal działa */
 }
 #blok-4-5-section .blok-4-5-wave-overlay {
     width: 100%; height: 100%;
