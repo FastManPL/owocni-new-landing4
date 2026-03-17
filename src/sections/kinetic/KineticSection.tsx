@@ -2410,6 +2410,21 @@ import './kinetic-section.css';
             _s.pinnedTl = pinnedTl;
             gsapInstances.push(pinnedTl);
 
+            // Bridge: miękkie wejście Kinetic — fade-in gdy wrapper wjeżdża od dołu (integracja §3, PRZEJSCIA doc)
+            if (inBridge && pinTrigger) {
+                gsap.set(container, { opacity: 0 });
+                var stFadeIn = ScrollTrigger.create({
+                    trigger: pinTrigger,
+                    start: 'top bottom',
+                    end: 'top top',
+                    scrub: true,
+                    onUpdate: function(self) { gsap.set(container, { opacity: self.progress }); },
+                    onLeave: function() { gsap.set(container, { opacity: 1 }); },
+                    onEnterBack: function() { gsap.set(container, { opacity: 1 }); }
+                });
+                gsapInstances.push(stFadeIn);
+            }
+
             // ══════════════════════════════════════════════════════════════
             // STATE MACHINE v3 — HARD BEATS ONLY
             // Spec: Bridge=wolny, Kinetic=hard beats, End=hard stop

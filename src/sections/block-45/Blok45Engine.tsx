@@ -223,12 +223,14 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       });
       gsapInstances.push(stWaveVis);
       (waveWrap as HTMLElement).style.display = 'none'; // stan początkowy — widoczna dopiero przy wejściu sekcji w viewport
-      // Anchor: voidSectionWrapper („i wychodzą”) lub text-above — zgodnie ze stackiem
+      // Curtain Reveal: Kipiel startuje gdy CAŁA SEKCJA wchodzi w viewport (top bottom), żeby od razu zasłonić Kinetic — nie czekamy na voidSectionWrapper (integracja §7B).
       var waveAnchor = $id('blok-4-5-voidSectionWrapper') || container.querySelector('.text-above-illustration');
-      if (waveAnchor) {
-        var stWaveTrigger = ScrollTrigger.create({ trigger: waveAnchor, start: 'top bottom', onEnter: function() { startKipielOpen(); } });
-        gsapInstances.push(stWaveTrigger);
-      }
+      var stWaveTrigger = ScrollTrigger.create({
+        trigger: container,
+        start: 'top bottom',
+        onEnter: function() { startKipielOpen(); }
+      });
+      gsapInstances.push(stWaveTrigger);
       var getTriggerPercent = function() { return window.innerWidth < 600 ? 80 : 75; };
       var stWaveScroll = ScrollTrigger.create({
         trigger: waveAnchor || container, start: 'top bottom',
