@@ -5,6 +5,7 @@ import { BridgeSection } from "@/app/BridgeSection";
 import { SectionsClient } from "./SectionsClient";
 import { KalkulatorSection } from "@/sections/kalkulator/KalkulatorSection";
 import { GwarancjaSectionWrapper } from "./GwarancjaSectionWrapper";
+import { CyfroweWzrostySectionWrapper } from "./CyfroweWzrostySectionWrapper";
 
 export default function HomePage() {
   return (
@@ -16,6 +17,7 @@ export default function HomePage() {
       <SectionsClient />
       <KalkulatorSection />
       <GwarancjaSectionWrapper />
+      <CyfroweWzrostySectionWrapper />
     </main>
   );
 }
