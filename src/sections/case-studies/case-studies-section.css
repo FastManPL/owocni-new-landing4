@@ -1,0 +1,15 @@
+/* ═══ Case studies section — root isolation (B9) + typography ═══ */
+#case-studies-section {
+  position: relative;
+  isolation: isolate;
+}
+
+#case-studies-section .font-roboto {
+  font-family: var(--font-brand), system-ui, sans-serif;
+}
+
+#case-studies-section .text-mini {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
