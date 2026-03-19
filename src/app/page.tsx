@@ -3,6 +3,7 @@ import { BookStatsSection } from "@/sections/books/BookStatsSection";
 import { FaktySection } from "@/sections/fakty/FaktySection";
 import { BridgeSection } from "@/app/BridgeSection";
 import { SectionsClient } from "./SectionsClient";
+import { KalkulatorSection } from "@/sections/kalkulator/KalkulatorSection";
 
 export default function HomePage() {
   return (
@@ -12,6 +13,7 @@ export default function HomePage() {
       <FaktySection />
       <BridgeSection />
       <SectionsClient />
+      <KalkulatorSection />
     </main>
   );
 }
