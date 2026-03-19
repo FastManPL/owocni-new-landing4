@@ -150,7 +150,9 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     if (!stageEl) return;
     depthScale = clamp(window.innerWidth / 1200, 0.3, 1.0);
 
-    cachedStageH = stageEl.offsetHeight || window.innerHeight;
+    /* Referencja wysokości z viewportu — animacja niezależna od wysokości stage w DOM (stage może mieć height: auto, bez spacera). */
+    var viewH = (typeof window !== 'undefined' && window.visualViewport) ? window.visualViewport.height : window.innerHeight;
+    cachedStageH = viewH;
     cachedHY   = cachedStageH * HORIZON_RATIO;
     cachedNorm = cachedStageH * 0.5;
 

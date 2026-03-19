@@ -16,13 +16,12 @@
 }
 
 #cyfrowe-wzrosty-section #cyfrowe-wzrosty-stage {
-  /* 85vh zamiast 100vh — mniejszy spacer nad napisem, animacja bez zmian (proporcje HORIZON_RATIO / norm) */
-  height: 85vh;
-  height: 85svh;
+  /* height: auto — bez spacera; animacja używa viewport height w JS (cachedStageH = visualViewport.height). */
+  min-height: 0;
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  padding-bottom: 0vh;
+  padding-bottom: 0;
   perspective: 1500px;
   box-sizing: border-box;
 }
