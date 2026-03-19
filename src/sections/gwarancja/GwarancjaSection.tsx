@@ -128,8 +128,14 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
   const _safariSVGFix = /^((?!chrome|android).)*safari/i.test(navigator.userAgent);
 
   // === CLOCK TICK AUDIO (desktop only) ===
-  const clockAudio = window.matchMedia('(pointer:fine)').matches ? new Audio('Zegar.mp3') : null;
-  if (clockAudio) { clockAudio.loop = true; clockAudio.volume = 0; clockAudio.preload = 'auto'; }
+  // Ścieżka: public/Zegar.mp3 — jeśli plik brak, audio jest wyłączane po błędzie ładowania
+  let clockAudio: HTMLAudioElement | null = window.matchMedia('(pointer:fine)').matches ? new Audio('/Zegar.mp3') : null;
+  if (clockAudio) {
+    clockAudio.loop = true;
+    clockAudio.volume = 0;
+    clockAudio.preload = 'auto';
+    clockAudio.addEventListener('error', () => { clockAudio = null; }, { once: true });
+  }
   let clockFadeTw: gsap.core.Tween | null = null;
   function clockPlay() {
     if (!clockAudio || isMobileDisabled) return;
