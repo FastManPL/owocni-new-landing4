@@ -16,6 +16,8 @@
 }
 
 #cyfrowe-wzrosty-section #cyfrowe-wzrosty-stage {
+  height: 100vh;
+  height: 100svh;
   display: flex;
   align-items: flex-end;
   justify-content: center;
