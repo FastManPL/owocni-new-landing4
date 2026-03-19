@@ -1116,9 +1116,6 @@ export default function CyfroweWzrostyEngine() {
             <svg viewBox="0 0 24 24"><polyline points="9 6 15 12 9 18"></polyline></svg>
           </button>
         </div>
-
-        {/* SPACER */}
-        <div id="cyfrowe-wzrosty-spacer"></div>
       </div>
     </section>
   );

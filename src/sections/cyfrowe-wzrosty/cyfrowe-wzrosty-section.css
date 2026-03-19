@@ -83,10 +83,6 @@
   /* top layer: no special treatment needed, color set to white in JS */
 }
 
-#cyfrowe-wzrosty-section #cyfrowe-wzrosty-spacer {
-  height: 100vh;
-}
-
 @media (max-width: 1199px) {
   #cyfrowe-wzrosty-section #cyfrowe-wzrosty-stage {
     padding-left: 3vw;
