@@ -4,6 +4,7 @@ import { FaktySection } from "@/sections/fakty/FaktySection";
 import { BridgeSection } from "@/app/BridgeSection";
 import { SectionsClient } from "./SectionsClient";
 import { KalkulatorSection } from "@/sections/kalkulator/KalkulatorSection";
+import { GwarancjaSectionWrapper } from "./GwarancjaSectionWrapper";
 
 export default function HomePage() {
   return (
@@ -14,6 +15,7 @@ export default function HomePage() {
       <BridgeSection />
       <SectionsClient />
       <KalkulatorSection />
+      <GwarancjaSectionWrapper />
     </main>
   );
 }

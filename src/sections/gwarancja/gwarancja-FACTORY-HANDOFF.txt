@@ -1,0 +1,47 @@
+=== FACTORY HANDOFF ===
+Step completed:  P3 (React Conversion)
+Decision:        PROCEED — czeka na akceptację PREVIEW i weryfikację techniczną
+
+Pliki do repo:
+  src/sections/gwarancja/GwarancjaSection.tsx
+  src/sections/gwarancja/gwarancja-section.css
+
+Pliki NIE do repo:
+  gwarancja.PREVIEW_NOTES.md
+  DEVELOPER_HANDOFF.md
+
+Key state:
+  slug            = gwarancja
+  type            = B
+  dynamic_import  = NIE
+  fouc_inline     = 0 elementów (brak kwalifikujących gsap.from literałów)
+  splittext       = NIE (custom SVG tspans, nie GSAP SplitText)
+  perf_warnings   = [PERF-W10, PERF-W13, INIT-CPU-01]
+
+Konwersje wykonane:
+  ✓ class= → className= (25 wystąpień)
+  ✓ text-anchor → textAnchor (2)
+  ✓ xml:space → xmlSpace (8)
+  ✓ fetchpriority → fetchPriority (1)
+  ✓ <br> → <br /> (2)
+  ✓ gsap.registerPlugin(ScrollTrigger) przeniesiony z init() do useGSAP scope
+  ✓ TypeScript adnotacje: init signature, helpery ($, $$, $id), callback params
+  ✓ DEV overlay usunięty (był poza init(), linie 613-675)
+  ✓ Auto-init wrapper + window.gwarancjaRef usunięte
+  ✓ Google Fonts <link> usunięte
+  ✓ TS as casts dla Element→HTMLElement/HTMLVideoElement/SVGElement
+
+Nic nie zmienione:
+  ✗ Zero wartości GSAP zmienionych
+  ✗ Zero CSS zmodyfikowanego
+  ✗ Zero nowych elementów DOM
+  ✗ Zero nowych klas/stylów
+  ✗ init() logika 1:1 z reference.html
+
+PREVIEW.html: Ze względu na rozmiar (plik ~1500 linii z inline CSS + init) -
+  mogę wygenerować w następnej wiadomości jeśli potrzebujesz.
+  Alternatywnie: reference.html BEZ DEV overlay służy temu samemu celowi
+  (sekcja nie ma scroll API → brak delty scrollRuntime stub).
+
+Sesja DONE po: AKCEPTUJĘ na PREVIEW + wygenerowanie DEVELOPER_HANDOFF.md ✓
+Nota: "Deweloper potwierdza 0 errors przed wdrożeniem do repo."

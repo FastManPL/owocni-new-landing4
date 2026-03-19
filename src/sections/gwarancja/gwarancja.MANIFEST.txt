@@ -1,0 +1,158 @@
+SECTION_MANIFEST:
+
+  slug:     'gwarancja'
+  type:     'B'
+  requires: ['gsap', 'ScrollTrigger']
+  # Nota: ScrollTrigger wymagany przez gsap.registerPlugin() wewnątrz init()
+  # i przez Stack-Harness FakePinnedAbove. Sekcja sama nie tworzy żadnych ST.
+
+  webgl:    null
+  # isWebGL: false — sekcja używa Canvas 2D (particle effects), nie WebGL/Three.js
+
+  assets:
+    - kind:     'video'
+      src:      'video#gwarancja-layer-top (docelowy src TBD — placeholder: base64 img)'
+      priority: 'HOT'
+      critical: true
+      lcp:      true
+    - kind:     'video'
+      src:      'video#gwarancja-layer-bottom (docelowy src TBD — placeholder: base64 img)'
+      priority: 'WARM'
+      critical: false
+      lcp:      false
+    - kind:     'other'
+      src:      'Zegar.mp3'
+      priority: 'COLD'
+      critical: false
+      lcp:      false
+
+  warmup: []
+  # Brak zewnętrznych CDN domeny dla HOT/WARM assets (base64 → lokalne; docelowy CDN TBD)
+  # P3: uzupełnić warmup gdy znane docelowe URL video
+
+  scrollTriggersCount: 0
+  # Sekcja jest w pełni rAF-based (Typ B). Zero ScrollTrigger.create() w init().
+  # gsap.registerPlugin(ScrollTrigger) wywołany wewnątrz init() — wymagany przez harness.
+
+  geometryMutable: true
+  # Z P2A Key state: true.
+  # Źródło: 120 SVG appendChild w init() + 3 canvas createElement (sharedStarPhases) +
+  # 2 canvas createElement (aCanvas, cCanvas). Operacje wewnątrz positioned/overflow:hidden
+  # kontenerów — nie wpływają na document flow. Jednak P2A ustawił true (konserwatywnie).
+  specialNotes.geometryMutableConfidence: 'low-risk'
+  # Sekcja ma aspect-ratio: 16/9 → wysokość nie zmienia się po init().
+  # affectsGeometryBelow bardzo mało prawdopodobne w praktyce.
+
+  geometryRefresh: 'none'
+  # Sekcja nie wywołuje scrollRuntime.requestRefresh() — brak ST, brak geometryRefresh.
+
+  geometryContract:        'normal'
+  syntheticContextAllowed: true
+  entryExitInvariant:      true
+  preserveExistingGuards:  true
+
+  refreshSignals: []
+  # Brak async boundaries tworzących ST (scrollTriggersCount: 0).
+  # Canvas/SVG tworzone synchronicznie w init() — nie wymagają refreshSignals.
+
+  export:
+    mode: 'named'
+    name: 'GwarancjaSection'
+
+  slots:
+    - id: 'gwarancja-layer-top'
+      allowedTypes: ['placeholder', 'video']
+      currentType:  'placeholder'
+      aspectRatio:  '16/9'
+    - id: 'gwarancja-layer-bottom'
+      allowedTypes: ['placeholder', 'video']
+      currentType:  'placeholder'
+      aspectRatio:  '16/9'
+  slotsCoverage: 'complete'
+
+  dciProps: ['headline', 'sub', 'disclaimer', 'badge-label', 'cta-text', 'pill-text']
+  # headline:    .lens-hero-title innerHTML
+  # sub:         .lens-hero-desc innerHTML
+  # disclaimer:  .lens-hero-disclaimer textContent
+  # badge-label: .lens-pill-badge textContent ('100%')
+  # pill-text:   .lens-pill-txt textContent
+  # cta-text:    .btn-text data-text + textContent
+
+  timelineContract: undefined
+  # Hardcoded wartości animacji — brak configurowalnego timelineContract
+
+  specialNotes:
+    breakpoints:
+      - '600px'   # mobile: ukrywa .lens-layer-bottom, wyłącza kursor/lens
+      - '1200px'  # desktop: .cta-group grid-template-columns zmiana, .cta-logos-below
+      - '1400px'  # SCALE_REF — lensScale normalizacja
+      - '360px', '370px', '390px', '400px', '420px', '450px'  # CTA scale breakpoints
+    platformGuards:
+      - 'Safari (_safariSVGFix)'          # zmienna user-agent SVG fontSize fix
+      - 'iOS (pointer:coarse)'            # clockAudio tylko pointer:fine
+      - 'pointer:fine + hover:hover'      # AUREOLA canvas + hover CTA
+      - 'mobile ≤ 600px (isMobileDisabled)' # wyłącza całą interakcję lens/kursor
+    cpuGatingMechanism: 'IO-pause/resume'
+    cpuGatingPath:    1
+
+  integrationNotes:
+    hasPin:               false
+    hasSnap:              false
+    affectsGeometryBelow: false
+    # Sekcja używa aspect-ratio: 16/9 — wysokość jest zawsze proporcjonalna do szerokości.
+    # Brak dynamicznych zmian height po init(). Brak ryzyka drift triggerów poniżej.
+    sensitiveTo:          []
+    # Brak ST — sekcja nie zależy od scroll geometry. Animacje czysto mousemove + rAF.
+    testWith:             ['accordion', 'header', 'hero-above']
+
+  deliveryRisk: null
+  # Brak URL-swap podczas scrolla. Video play/pause nie podmienia src. Nie dotyczy.
+
+  perf:
+    dynamicImport:       false
+    # MISSING OWNER DECISION — owner_decisions.dynamicImport nie wypełnione.
+    # Domyślnie: false (fail-safe). Sekcja nie jest hero ale może być blisko foldu
+    # na niektórych LP — właściciel powinien podjąć decyzję przed P3.
+    isHero:              false
+    gracefulDegradation: false
+    # Sekcja nie działa bez załadowanych video (oba wymagane wg właściciela).
+    preloadCandidates:   []
+    # video#gwarancja-layer-top (HOT/LCP) — preload wymaga rzeczywistego URL (nie base64).
+    # P3: dodać <link rel="preload" as="video"> gdy znany src.
+    prefetchCandidates:  []
+    # video#gwarancja-layer-bottom (WARM) — prefetch gdy znany src.
+    coldCandidates:      ['Zegar.mp3']
+    preconnectDomains:   []
+    # P3: uzupełnić gdy znane domeny CDN dla video assets.
+    containApplied:      true
+    # B-ISO-01 AUTO-FIX: isolation: isolate + contain: layout style na #gwarancja-section
+    warnings:
+      - 'PERF-W10: translateZ(0) w CSS .cta-button'
+      - 'PERF-W13: static CSS transform + GSAP sets style.transform (normalny wzorzec init)'
+      - 'INIT-CPU-01: WARNING — 120 SVG appendChild w init() + 3 canvas sharedStarPhases'
+
+  scrollRuntimeRecommendations: []
+  # Sekcja nie używa ST — brak potrzeby is-scrolling guard.
+
+  runtimeChecks:
+    CLN-01: 'PASS'
+    SM-01:  'PASS'
+    SM-02:  'PASS'
+    INT-01: 'PASS'
+                         # (sekcja bez ST ale harness wymagany: geometryMutable:true)
+    INT-02: 'PASS'
+    INT-03: 'PASS'
+    INT-04: 'N/A'        # sensitiveTo:[] + refreshSignals:[] + scrollTriggersCount:0
+    WGL-01: 'N/A'        # brak WebGL
+    WGL-02: 'N/A'
+    WGL-03: 'N/A'
+
+  # ─── NOTA: INT-01/02/03 przy braku ST ───────────────────────────────────
+  # Harness jest generowany (geometryMutable:true z P2A).
+  # INT-01/02/03 weryfikują wizualną stabilność sekcji w otoczeniu innych sekcji,
+  # nie tylko stabilność ST triggerów. Nawet bez ST warto upewnić się, że:
+  # - sekcja renderuje się poprawnie po scroll przez FakePinnedAbove (INT-02)
+  # - sekcja działa po zmianie wysokości elementów powyżej (INT-03)
+  # - accordion expand/collapse nie psuje layoutu sekcji (INT-01 wzgl.)
+  # PASS criteria dla sekcji bez ST: brak visual artifacts, lens/cursor działa,
+  # badge animuje się, Factory IO poprawnie pause/resume.

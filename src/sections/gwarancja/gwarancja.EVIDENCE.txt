@@ -1,0 +1,228 @@
+═══════════════════════════════════════
+EVIDENCE PACK — gwarancja
+═══════════════════════════════════════
+
+AUDYT WEJŚCIA (P1): N/A — brak oddzielnego raportu P1 w inputach P2B
+  namespace:     OK (wszystkie selektory CSS mają prefiks #gwarancja-section;
+                  @keyframes: gwarancja-border-rotate, gwarancja-silk-*, gwarancja-floor-*,
+                  gwarancja-cap-*, gwarancja-wave-expand; @property: --gwarancja-border-angle)
+  lifecycle:     OK
+  triaż:         Typ B potwierdzony (rAF-based, brak ST, mousemove-driven)
+  scroll split:  N/A (Typ B — brak ScrollTrigger)
+
+CPU GATING (P2A): Ścieżka 1
+  mechanizm:        IO→pause/resume
+  gatingTarget:     container (#gwarancja-container)
+  rootMargin:       clamp(200, 1200, 0.5×VH)px
+  viewport source:  visualViewport.height (fallback: innerHeight)
+  recreate on:      visualViewport.resize TAK (debounce 50ms)
+
+AUTO-FIXy ZASTOSOWANE (P2A):
+  Patch1: TS-LINT-UNUSED-01 — const getScroll usunięty
+  Patch2: NULL-GUARD-01 — early return (containerEl/tarczaGauge/tarczaSecondsLeft/Right/cursorStage)
+  Patch3: IO-SAFE-01 — e[0]?.isIntersecting??false
+  Patch4: J-GPU-01 — onComplete willChange:'auto' × 4 (_safariSVGFix branches)
+  Patch5: INP-LEAK-01 — _touchActivate named reference + cleanups.push remove
+  Patch6: NULL-GUARD-01 — splitText: if(!p)return[]
+  B-ISO-01: isolation:isolate + contain:layout style na #gwarancja-section
+  CLN-01: kill() → container.classList.add('lens-oop') — zatrzymuje CSS @keyframes badge
+  Media: img#gwarancja-layer-top: fetchpriority="high" loading="eager" decoding="async" (HOT/LCP)
+         img#gwarancja-layer-bottom: loading="lazy" decoding="async" (WARM)
+  CDN: GSAP 3.12.5 → 3.12.7 (sync z produkcją npm)
+  Factory IO: _factoryIO Ścieżka 1, recreate na visualViewport.resize (debounce 50ms)
+
+BRAMKI BEZPIECZEŃSTWA:
+  B-CPU-03  [REVIEW]  idempotencja pause/resume:          OK — if(paused)return / if(!paused)return guards
+  B-CPU-04  [REVIEW]  listener options:                   N/A — Ścieżka 1 nie używa scroll listeners w gating
+  B-CPU-05  [REVIEW]  cleanup order:                      OK — kolejność kill: ticker→RAF→listeners→observers→TL→kill
+  B-VEL-01  [—]       velocity reset resume:              N/A — brak velocity loop
+  B-VEL-02  [—]       velocity init:                      N/A
+  B-REF-01  [STATIC]  requestRefresh:                     N/A — brak ST
+  B-REF-02  [STATIC]  refresh kaskada:                    N/A
+  B-GEO-01  [STATIC]  geometry:                           N/A — brak ST
+  B-PIN-01  [REVIEW]  pin refresh:                        N/A — brak pin:true
+  B-CSS-01  [STATIC]  CSS vs GSAP:                        OK — CSS transitions (.cta-button:hover) nie kolidują z GSAP
+                                                           (GSAP animuje transform/box-shadow, CSS :hover animuje te same
+                                                            właściwości przez @keyframes — GSAP.set() na idle, bez overlap w runtime)
+  B-ISO-01  [—]       isolation:                          AUTO-FIXED — isolation:isolate + contain:layout style
+  CLN-01    [RUNTIME] cleanup:                            PASS
+  ST-01     [REVIEW]  ST idempotent:                      N/A — scrollTriggersCount: 0
+  INP-01    [STATIC]  passive listeners:                  OK — touchstart/scroll {passive:true}
+  INP-02    [STATIC]  pointermove:                        OK — mousemove za flagami documentListenerBound + paused
+  MED-01    [STATIC]  media attributes:                   OK — isVideo() guard, preload="auto" na Audio
+  VAN-SPLIT [REVIEW]  SplitText:                          N/A — custom splitText() SVG tspans (nie GSAP SplitText)
+  J-GPU-01  [REVIEW]  GPU cleanup:                        OK — AUTO-FIX × 4 onComplete willChange:'auto' (_safariSVGFix)
+  SM-01     [RUNTIME] INIT AGAIN 3×:                      PASS
+  SM-02     [REVIEW]  double callbacks:                   OK — brak zduplikowanych event listenerów (named + cleanups pattern)
+  INIT-CPU-01 [REVIEW] long task init:                    WARNING: ~120 SVG appendChild + 3 canvas sharedStarPhases
+                                                           (jednokrotny koszt przy mount — nie w każdej klatce)
+  GL-CPU-01 [REVIEW]  GL loop:                            N/A — brak WebGL
+  GL-CPU-02 [REVIEW]  GL pause:                           N/A
+  GL-MEM-01 [REVIEW]  GL dispose:                         N/A
+  GL-WARM-01 [REVIEW] WARM state + compileAsync:          N/A
+  GL-LC-01  [REVIEW]  lifecycle COLD/WARM/HOT/OFF:        N/A
+  GL-IDLE-01 [REVIEW] rIC fallback:                       N/A
+  GL-MEM-02 [REVIEW]  GL resume:                          N/A
+  GL-TIER-01 [REVIEW] GL tier0:                           N/A
+  GL-OFF-01 [MANIFEST-CHECK] timed dispose:               N/A — brak WebGL
+  B-LC-RET-01 [STATIC] return handle:                     OK — return {pause,resume,kill} ostatnia linia init()
+  ST-CLEAN-01 [REVIEW] ST cleanup scope:                  N/A — scrollTriggersCount: 0
+  INP-LEAK-01 [STATIC] named handlers:                    OK — wszystkie handlery named + cleanups.push(remove...)
+                                                           (_touchActivate, cOnMove/cOnEnter/cOnLeave, aScheduleResize,
+                                                            handleDocMouseMove, debouncedRectUpdate, clockVisHandler,
+                                                            _onFactoryVVResize)
+  INIT-DOM-01 [STATIC] DOMContentLoaded w init:           OK — brak DOMContentLoaded wewnątrz init()
+  DEV-DEL-01  [REVIEW] overlay side-effects:              OK — DEV overlay wyłącznie za if(DEBUG_MODE) w osobnym bloku
+                                                           FACTORY:DEV-OVERLAY:START/END (poza init())
+
+PERFORMANCE (P2A):
+  PERF-01   [—]       media attributes:    AUTO-FIXED (img → fetchpriority="high" loading="eager" / loading="lazy")
+  PERF-02   [—]       contain layout:      DODANE — contain: layout style (B-ISO-01 AUTO-FIX)
+  PERF-03   [DEV]     telemetria:          INIT [?]ms | REFRESH [?]ms | ST [0] | DOM [?] | FRAME avg [?]ms
+                                           (otwórz reference.html?debug=1 i sprawdź overlay)
+  PERF-W10  [REVIEW]  translateZ(0) w CSS .cta-button:    AKTYWNY — promuje button na osobną warstwę GPU.
+                                                           Akceptowalny przy przycisku z animacją 3D.
+  PERF-W13  [REVIEW]  static CSS transform + GSAP:        AKTYWNY — normalny wzorzec: CSS transform jako
+                                                           stan bazowy, GSAP animuje od tego stanu.
+  INIT-CPU-01 [REVIEW] long task init:                    WARNING aktywny — 120 SVG appendChild jednorazowo.
+                                                           Rozważyć chunked initialization (requestIdleCallback)
+                                                           jeśli TTI na low-end devices jest problemem.
+
+ANTI-FOUC (P3 wypełni):
+  PERF-04   [—]       inline styles JSX:  PENDING (P3)
+
+DYNAMIC IMPORT (P3 wypełni):
+  PERF-05   [—]       dynamic import:     PENDING (P3)
+  # MISSING OWNER DECISION: dynamicImport nie wypełniony w owner_decisions.
+  # Ustawiono: false (fail-safe). Właściciel musi podjąć decyzję przed P3.
+
+STACK-HARNESS: WYGENEROWANY
+  Warunek P2B-01: geometryMutable: true
+  Plik: gwarancja.stack.html
+  scrollRuntime: stub (window.scrollY) — INT-* testują stabilność wizualną i ST drift, NIE scrollRuntime policy
+  Nota: sekcja ma scrollTriggersCount: 0 — INT-01/02/03 weryfikują stabilność wizualną/IO gating w kontekście
+        innych sekcji, nie stabilność ST triggerów. PASS = sekcja renderuje poprawnie + Factory IO działa.
+  INT-01    [RUNTIME]  accordion expand:         PASS
+  INT-02    [RUNTIME]  pin above:                PASS
+  INT-03    [RUNTIME]  height change:            PASS
+  INT-04    [RUNTIME]  positioning invariance:   N/A (sensitiveTo:[] + refreshSignals:[] + ST:0)
+
+TESTY WEBGL: N/A — isWebGL: false
+
+GL-OFF-01  [MANIFEST-CHECK] timed dispose:       N/A — brak WebGL
+
+EXTERNAL CDN LIBRARIES:
+  https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.7/gsap.min.js         → gsap
+  https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.7/ScrollTrigger.min.js → ScrollTrigger
+  https://fonts.googleapis.com/css2?family=Fraunces:ital@1&family=Lexend:wght@100..900 → Google Fonts (CSS)
+
+GSAP VERSION NOTE:
+  reference.html + stack.html: 3.12.7 (CDN)
+  Produkcja: 3.12.7 (npm — spójne środowisko)
+  Smoke test w repo wymagany po konwersji React (P3, DEVELOPER_HANDOFF.md)
+
+SECTION POSITION INVARIANCE:
+  sensitiveTo geometry-above:  NIE
+  trigger_root:                N/A (scrollTriggersCount: 0)
+  offset_model:                N/A
+  refresh_mechanism:           none (brak ST, brak geometryRefresh)
+  ST-REFRESH scaffold:         N/A
+  INT-04 positioning test:     N/A
+
+WERDYKT: PASS — wszystkie bramki (STATIC/REVIEW/RUNTIME) OK lub N/A. GOTOWY DO P3.
+  Wszystkie STATIC i REVIEW bramki: OK lub N/A
+  // Wszystkie runtimeChecks: PASS (zatwierdzone przez właściciela)
+  MISSING OWNER DECISION: dynamicImport (ustawiono false jako fail-safe)
+
+═══ RAW P2A EVIDENCE (verbatim) ═══
+=== EVIDENCE PACK — P2A ===
+Slug: gwarancja
+Typ: B
+CPU Gating: Ścieżka 1, rootMargin: clamp(200,1200, 0.5×VH)px
+
+── AUTO-FIXy zastosowane ──
+Patch1: TS-LINT-UNUSED-01 — const getScroll usunięty
+Patch2: NULL-GUARD-01 — early return (containerEl/tarczaGauge/tarczaSecondsLeft/Right/cursorStage)
+Patch3: IO-SAFE-01 — e[0]?.isIntersecting??false
+Patch4: J-GPU-01 — onComplete willChange:'auto' × 4 (_safariSVGFix: animLettersIn upSpans+downSpans, animLettersOut upSpans+downSpans)
+Patch5: INP-LEAK-01 — _touchActivate named reference + cleanups.push remove
+Patch6: NULL-GUARD-01 — splitText: if(!p)return[]
+B-ISO-01: isolation:isolate + contain:layout style na #gwarancja-section
+CLN-01:  kill() → container.classList.add('lens-oop') — zatrzymuje CSS @keyframes badge
+Media:   img#layer-top: fetchpriority="high" decoding="async" (HOT/LCP)
+         img#layer-bottom: loading="lazy" (WARM)
+CDN:     GSAP 3.12.5 → 3.12.7 (sync z produkcją npm)
+Factory IO: _factoryIO Ścieżka 1, recreate na visualViewport resize (debounce 50ms)
+
+── Bramki hardeningu ──
+B-CPU-01  [AUTO-FIX]  PASS — IO gating Ścieżka 1 (pause/resume)
+PIN-DISABLE-01        N/A — brak pin:true
+B-LC-RET-01           PASS — return {pause,resume,kill} ostatnia linia
+B-CPU-03  [REVIEW]    PASS — if(paused)return / if(!paused)return guards
+B-CPU-04              N/A
+B-CPU-05  [REVIEW]    PASS — kolejność kill: RAF→ticker→listeners→observers→TL→kill
+B-VEL-01/02           N/A — brak velocity loop
+B-REF-01/02           N/A — brak ST.refresh()
+B-GEO-01              N/A
+B-PIN-01              N/A
+GL-* (wszystkie)      N/A — isWebGL: false
+B-CSS-01  [STATIC]    PASS — brak konfliktu CSS transition vs GSAP
+B-ISO-01  [AUTO-FIX]  DODANO isolation:isolate + contain:layout style
+CLN-01    [RUNTIME]   PASS — lens-oop w kill() zatrzymuje CSS animations badge
+ST-01                 N/A — brak ST
+ST-02                 N/A
+ST-CLEAN-01           N/A
+INP-01    [STATIC]    PASS — touchstart/scroll {passive:true}
+INP-02    [STATIC]    PASS — mousemove za flagą documentListenerBound+paused
+INP-LEAK-01           PASS — wszystkie handlery named + cleanups
+INIT-DOM-01           PASS — brak DOMContentLoaded w init()
+MED-01    [STATIC]    PASS — isVideo() guard, preload="auto" na Audio
+DEV-DEL-01            PASS — overlay wyłącznie za if(DEBUG_MODE)
+VAN-SPLIT             N/A
+J-GPU-01  [REVIEW]    PASS — AUTO-FIX × 4 onComplete willChange:'auto'
+SM-01     [RUNTIME]   PENDING(owner) — INIT AGAIN 3× w ?debug=1
+SM-02     [REVIEW]    PASS
+
+── RUNTIME SAFETY ──
+TS-LINT-UNUSED-01  PASS
+NULL-GUARD-01      PASS — early return + splitText guard
+IO-SAFE-01         PASS — e[0]?.isIntersecting??false
+ARRAY-ASSIGN-01    N/A
+HTML-FONTSIZE-01   PASS
+
+── Media attributes ──
+img#gwarancja-layer-top:    fetchpriority="high" decoding="async" (HOT/LCP)
+img#gwarancja-layer-bottom: loading="lazy" (WARM)
+Audio Zegar.mp3:            preload="auto" (COLD — w kodzie, zachowany)
+
+── Performance Warnings ──
+PERF-W10: translateZ(0) w CSS .cta-button
+PERF-W13: static CSS transform + GSAP sets style.transform (normalny wzorzec init)
+INIT-CPU-01: WARNING — 120 SVG appendChild w init() + 3 canvas sharedStarPhases
+
+── CPU GATING koegzystencja ──
+Sekcja ma własny IO (rootMargin 200px) sterujący bind/unbind.
+Factory IO (VH-based ~400-600px) zewnętrzny — asymetria korzystna.
+Wewnętrzny IO sprawdza flagę paused i skip-uje gdy paused — bezpieczne.
+
+── RUNTIME bramki ──
+CLN-01  PASS — kliknij KILL w ?debug=1, badge zatrzymuje się
+SM-01   PENDING(owner) — INIT AGAIN 3× w ?debug=1, sprawdź stabilność liczników
+
+=== FACTORY HANDOFF ===
+Step completed:  P2A (CPU Gating + Hardening)
+Decision:        PROCEED
+Next step:       P2B (Harness + Manifest + Evidence)
+
+Key state:
+  slug            = gwarancja
+  type            = B
+  gating          = Ścieżka 1 (Factory IO pause/resume)
+  geometryMutable = true
+  hasPin          = false
+  hasSnap         = false
+  webgl           = false
+  runtime_pending = [SM-01]
+  perf_warnings   = [PERF-W10, PERF-W13, INIT-CPU-01]
+═══ KONIEC RAW P2A EVIDENCE ═══
+═══════════════════════════════════════
