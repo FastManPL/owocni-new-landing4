@@ -167,34 +167,35 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
   const smoothBounce=(p: number)=>{if(p<0.7){const t=p/0.7;return t*t*(3-2*t)*1.08;}else if(p<0.85){const t=(p-0.7)/0.15;return 1.08-t*t*(3-2*t)*0.08;}return 1;};
 
   function splitText(pid: string,txt: string,fw: number){const p=$id(pid);if(!p)return[];p.textContent='';const s: SVGTSpanElement[]=[];txt.split('').forEach((c: string)=>{const t=document.createElementNS("http://www.w3.org/2000/svg","tspan");t.textContent=c;t.style.opacity='0';t.style.fontWeight=String(fw);p.appendChild(t);s.push(t);});return s;}
-  function resetSpans(spans: SVGTSpanElement[]){for(let i=0;i<spans.length;i++){spans[i].style.opacity='0';spans[i].style.fontSize='';}}
+  function resetSpans(spans: SVGTSpanElement[]){for(let i=0;i<spans.length;i++){const el=spans[i];if(el){el.style.opacity='0';el.style.fontSize='';}}}
   // Pre-create tspans once — reused on every hover
   upSpans=splitText('gwarancja-tp-up','Precyzja wewnątrz',200);
   downSpans=splitText('gwarancja-tp-down','Elegancja na zewnątrz',200);
 
   let secDotsCreated=false;
+  const _tarczaLeft = tarczaSecondsLeft!, _tarczaRight = tarczaSecondsRight!;
   function createSecDots(){
-    if(secDotsCreated){for(let i=0;i<cLeftDots.length;i++){cLeftDots[i].setAttribute("opacity","0");cRightDots[i].setAttribute("opacity","0");}return;}
+    if(secDotsCreated){for(let i=0;i<cLeftDots.length;i++){const cl=cLeftDots[i],cr=cRightDots[i];if(cl)cl.setAttribute("opacity","0");if(cr)cr.setAttribute("opacity","0");}return;}
     cLeftDots=[];cRightDots=[];
-    for(let i=0;i<secCfg.dots;i++){const l=document.createElementNS("http://www.w3.org/2000/svg","circle");l.setAttribute("fill","#111111");l.setAttribute("opacity","0");tarczaSecondsLeft.appendChild(l);cLeftDots.push(l);
-    const r=document.createElementNS("http://www.w3.org/2000/svg","circle");r.setAttribute("fill","#111111");r.setAttribute("opacity","0");tarczaSecondsRight.appendChild(r);cRightDots.push(r);}
+    for(let i=0;i<secCfg.dots;i++){const l=document.createElementNS("http://www.w3.org/2000/svg","circle");l.setAttribute("fill","#111111");l.setAttribute("opacity","0");_tarczaLeft.appendChild(l);cLeftDots.push(l);
+    const r=document.createElementNS("http://www.w3.org/2000/svg","circle");r.setAttribute("fill","#111111");r.setAttribute("opacity","0");_tarczaRight.appendChild(r);cRightDots.push(r);}
     secDotsCreated=true;}
 
   function animSec(ts: number){if(!secActive&&!secOutro)return;
     const el=ts-(secStart ?? 0);const{cx,cy,r,dots,arc,maxS,minS,maxO,minO,steps,speed,intro}=secCfg;
     const vt=Math.min(1,el/(speed*intro));let op=1;
-    if(secOutro){const oe=ts-(secOutroStart ?? 0);const lp=Math.min(1,oe/secOutroDur);op=1-(1-Math.pow(1-lp,3));if(op<=0){secOutro=false;secFrame=null;for(let i=0;i<cLeftDots.length;i++){cLeftDots[i].setAttribute("opacity","0");cRightDots[i].setAttribute("opacity","0");}return;}}
+    if(secOutro){const oe=ts-(secOutroStart ?? 0);const lp=Math.min(1,oe/secOutroDur);op=1-(1-Math.pow(1-lp,3));if(op<=0){secOutro=false;secFrame=null;for(let i=0;i<cLeftDots.length;i++){const cl=cLeftDots[i],cr=cRightDots[i];if(cl)cl.setAttribute("opacity","0");if(cr)cr.setAttribute("opacity","0");}return;}}
     const sd=speed/steps;const cs=Math.floor(el/sd);const sp=(el%sd)/sd;const esp=smoothBounce(sp);const cp=((cs%steps)+esp)/steps;const ha=arc/2;
     for(let i=0;i<dots;i++){const bp=(i+0.5)/dots;const dp=(bp+cp)%1;const la=(180+ha-(dp*arc))*DEG2RAD;const ra=(-ha+(dp*arc))*DEG2RAD;const d=Math.abs(dp-0.5)*2;const e=1-Math.pow(d,1.5);
       let sz=minS+(maxS-minS)*e;let o=minO+(maxO-minO)*e;if(dp>vt){o=0;sz=minS;}if(secOutro){sz*=op;o*=op;}o*=secState.opacity;sz*=secState.scale;const sr=r*secState.scale;
-      const ld=cLeftDots[i];const rd=cRightDots[i];ld.cx.baseVal.value=cx+sr*Math.cos(la);ld.cy.baseVal.value=cy+sr*Math.sin(la);ld.r.baseVal.value=sz;ld.setAttribute("opacity",String(o));
-      rd.cx.baseVal.value=cx+sr*Math.cos(ra);rd.cy.baseVal.value=cy+sr*Math.sin(ra);rd.r.baseVal.value=sz;rd.setAttribute("opacity",String(o));}
+      const ld=cLeftDots[i],rd=cRightDots[i];if(ld){ld.cx.baseVal.value=cx+sr*Math.cos(la);ld.cy.baseVal.value=cy+sr*Math.sin(la);ld.r.baseVal.value=sz;ld.setAttribute("opacity",String(o));}
+      if(rd){rd.cx.baseVal.value=cx+sr*Math.cos(ra);rd.cy.baseVal.value=cy+sr*Math.sin(ra);rd.r.baseVal.value=sz;rd.setAttribute("opacity",String(o));}}
     secFrame=requestAnimationFrame(animSec);}
 
   function startSec(){createSecDots();secStart=performance.now();secActive=true;secOutro=false;if(secFrame)cancelAnimationFrame(secFrame);secFrame=requestAnimationFrame(animSec);}
   function stopSec(){secActive=false;secOutro=true;secOutroStart=performance.now();}
   function resetSec(){secActive=false;secOutro=false;if(secFrame){cancelAnimationFrame(secFrame);secFrame=null;}
-    for(let i=0;i<cLeftDots.length;i++){cLeftDots[i].setAttribute("opacity","0");cRightDots[i].setAttribute("opacity","0");}}
+    for(let i=0;i<cLeftDots.length;i++){const cl=cLeftDots[i],cr=cRightDots[i];if(cl)cl.setAttribute("opacity","0");if(cr)cr.setAttribute("opacity","0");}}
 
   // Pause/resume hook — seconds RAF
   let _wasSecActive = false, _wasSecOutro = false;
@@ -212,7 +213,7 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
       if(gs.tiltIdle>12&&!gs.isRet&&(Math.abs(gs.tiltX)>0.8||Math.abs(gs.tiltY)>0.8)){gs.isRet=true;retTween=gsap.to(gs,{tiltX:0,tiltY:0,duration:0.5,ease:"power2.out",onComplete:()=>{gs.isRet=false;retTween=null;}});}}
   }
 
-  function updateRipple(){if(giState.scale<0.01)return;ripplePhase+=RIPPLE_INC;for(let i=0;i<lineData.length;i++){const d=lineData[i];const w=Math.sin(ripplePhase*2+d.phaseK)*0.5;const fl=Math.max(4,d.baseLength+w*4);const x2=GC+(GR-fl)*d.cosA,y2=GC+(GR-fl)*d.sinA;if(Math.abs(x2-d.lastX2)>EPS||Math.abs(y2-d.lastY2)>EPS){lineElements[i].x2.baseVal.value=x2;lineElements[i].y2.baseVal.value=y2;d.lastX2=x2;d.lastY2=y2;}}}
+  function updateRipple(){if(giState.scale<0.01)return;ripplePhase+=RIPPLE_INC;for(let i=0;i<lineData.length;i++){const d=lineData[i],le=lineElements[i];if(!d||!le)continue;const w=Math.sin(ripplePhase*2+d.phaseK)*0.5;const fl=Math.max(4,d.baseLength+w*4);const x2=GC+(GR-fl)*d.cosA,y2=GC+(GR-fl)*d.sinA;if(Math.abs(x2-d.lastX2)>EPS||Math.abs(y2-d.lastY2)>EPS){le.x2.baseVal.value=x2;le.y2.baseVal.value=y2;d.lastX2=x2;d.lastY2=y2;}}}
 
   function startTxtIdle(){if(isTxtIdle)return;isTxtIdle=true;if(txtIdleTw)txtIdleTw.kill();txtIdleTw=gsap.to(txtState,{...TXT_IDLE,duration:1,ease:"power2.out"});gsapInstances.push(gsap.to(secState,{...SEC_IDLE,duration:1,ease:"power2.out"}));
     gsapInstances.push(gsap.to(maskState,{alpha:0.0,duration:1,ease:'power2.out',overwrite:'auto'}));targetAlpha=0.0;
@@ -441,8 +442,10 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
       ctx.beginPath();
       for (let i=0;i<STAR_PTS;i++){
           const r=(i&1)===0?oR:iR;
-          if(i===0) ctx.moveTo(starCos[i]*r,starSin[i]*r);
-          else ctx.lineTo(starCos[i]*r,starSin[i]*r);
+          const sc=starCos[i],ss=starSin[i];
+          if(sc == null || ss == null) continue;
+          if(i===0) ctx.moveTo(sc*r,ss*r);
+          else ctx.lineTo(sc*r,ss*r);
       }
       ctx.closePath(); ctx.fill();
       return c;
@@ -530,16 +533,17 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
             // Select nearest twinkle phase sprite (0→compact, 1→medium, 2→expanded)
             const phase = tw < 0.25 ? 0 : tw < 0.75 ? 1 : 2;
             const drawR = this.size * 2;
-            aCtx.drawImage(sharedStarPhases[phase], -drawR, -drawR, drawR * 2, drawR * 2);
+            const starSprite = sharedStarPhases[phase];
+            if (starSprite) aCtx.drawImage(starSprite, -drawR, -drawR, drawR * 2, drawR * 2);
             // White center dot — life alpha only (no twinkle), more stable anchor
             aCtx.globalAlpha = this.life;
-            aCtx.drawImage(sharedDotSprite, -drawR, -drawR, drawR * 2, drawR * 2);
+            if (sharedDotSprite) aCtx.drawImage(sharedDotSprite, -drawR, -drawR, drawR * 2, drawR * 2);
           }
         }
 
         const aParticles: HaloParticle[] = []; for (let i = 0; i < 50; i++) aParticles.push(new HaloParticle());
 
-        function aCheckAllFaded() { for (let i = 0; i < aParticles.length; i++) if (aParticles[i].masterAlpha > 0.01) return false; return true; }
+        function aCheckAllFaded() { for (let i = 0; i < aParticles.length; i++) { const ap = aParticles[i]; if (ap && ap.masterAlpha > 0.01) return false; } return true; }
         const A_FRAME_MS = 1000 / 30; // 30fps throttle
         let aLastPaint = 0;
         function aAnimate(ts: number) {
@@ -548,7 +552,7 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
           const dpr = window.devicePixelRatio || 1;
           aCtx.setTransform(dpr, 0, 0, dpr, 0, 0); aCtx.clearRect(0, 0, aWidth, aHeight);
           aCtx.globalCompositeOperation = 'lighter';
-          for (let i = 0; i < aParticles.length; i++) { aParticles[i].update(); aParticles[i].draw(dpr); }
+          for (let i = 0; i < aParticles.length; i++) { const ap = aParticles[i]; if (ap) { ap.update(); ap.draw(dpr); } }
           if (!aShouldBeActive() && aCheckAllFaded()) { aIsAnimating = false; aAnimationId = null; return; }
           aAnimationId = requestAnimationFrame(aAnimate);
         }
@@ -678,10 +682,11 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
             // Select nearest twinkle phase sprite
             const phase = tw < 0.25 ? 0 : tw < 0.75 ? 1 : 2;
             const drawR = this.size * 2;
-            cCtx.drawImage(sharedStarPhases[phase], -drawR, -drawR, drawR * 2, drawR * 2);
+            const starSprite = sharedStarPhases[phase];
+            if (starSprite) cCtx.drawImage(starSprite, -drawR, -drawR, drawR * 2, drawR * 2);
             // White center dot — life alpha only
             cCtx.globalAlpha = this.life;
-            cCtx.drawImage(sharedDotSprite, -drawR, -drawR, drawR * 2, drawR * 2);
+            if (sharedDotSprite) cCtx.drawImage(sharedDotSprite, -drawR, -drawR, drawR * 2, drawR * 2);
           }
         }
 
@@ -714,7 +719,7 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
           cLastMouseX2 = cMouseX; cLastMouseY2 = cMouseY;
           cCtx.setTransform(cDpr, 0, 0, cDpr, 0, 0); cCtx.clearRect(0, 0, 500, 300);
           if (cIsHovering) { let rate = cSpawnRate; if (cIdleTime > 0) rate = cSpawnRate * (1 + 1.5 * Math.min(cIdleTime / 3, 1)); if (ts - cLastSpawn > rate) { cCreateParticle(); cLastSpawn = ts; } }
-          for (let i = 0; i < C_MAX_PARTICLES; i++) { const p = cParticles[i]; if (p === null) continue; if (p.update()) p.draw(); else { cReleaseParticle(p); cParticles[i] = null; cActiveCount--; } }
+          for (let i = 0; i < C_MAX_PARTICLES; i++) { const p = cParticles[i]; if (p == null) continue; if (p.update()) p.draw(); else { cReleaseParticle(p); cParticles[i] = null; cActiveCount--; } }
           if (!cIsHovering && cActiveCount === 0) { cIsAnimating = false; cAnimationId = null; return; }
           cAnimationId = requestAnimationFrame(cAnimate);
         }
