@@ -116,17 +116,17 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
   function startPunch(ci: number) {
     for (var o = 0; o < PUNCH_FALLOFF.length; o++) {
       var s = PUNCH_FALLOFF[o] ?? 0;
-      if (ci - o >= 0) punch[ci - o] = Math.max(punch[ci - o], s);
-      if (o > 0 && ci + o < WORD_LEN) punch[ci + o] = Math.max(punch[ci + o], s);
+      if (ci - o >= 0) punch[ci - o] = Math.max(punch[ci - o] ?? 0, s);
+      if (o > 0 && ci + o < WORD_LEN) punch[ci + o] = Math.max(punch[ci + o] ?? 0, s);
     }
     for (var j = 0; j < WORD_LEN; j++) {
-      if (punch[j] > 0) vel[j] += 0.8 * punch[j];
+      if ((punch[j] ?? 0) > 0) vel[j] = (vel[j] ?? 0) + 0.8 * (punch[j] ?? 0);
     }
   }
 
   function endPunch() {
     for (var j = 0; j < WORD_LEN; j++) {
-      if (punch[j] > 0) vel[j] *= 0.1;
+      if ((punch[j] ?? 0) > 0) vel[j] = (vel[j] ?? 0) * 0.1;
     }
     punch.fill(0);
   }
@@ -147,6 +147,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
   var cachedLetterBaseTop = new Float64Array(WORD_LEN);
 
   function cacheGeometry() {
+    if (!stageEl) return;
     depthScale = clamp(window.innerWidth / 1200, 0.3, 1.0);
 
     cachedStageH = stageEl.offsetHeight || window.innerHeight;
@@ -158,7 +159,9 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     cachedStageBottom = stageRect.bottom + scroll;
 
     for (var ci = 0; ci < WORD_LEN; ci++) {
-      var rect = letterEls[ci].getBoundingClientRect();
+      var el = letterEls[ci];
+      if (!el) continue;
+      var rect = el.getBoundingClientRect();
       cachedLetterCx[ci]      = rect.left + rect.width * 0.5;
       cachedLetterBaseCy[ci]  = rect.top  + rect.height * 0.5 + scroll;
       cachedLetterBaseTop[ci] = rect.top  + scroll;
@@ -175,7 +178,9 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     // Tiles reveal trigger
     var viewH = (window.visualViewport ? window.visualViewport.height : window.innerHeight);
     if (tiles.length && !tilesRevealed) {
-      var firstTileRect = tiles[0].getBoundingClientRect();
+      var firstTile = tiles[0];
+      if (!firstTile) return;
+      var firstTileRect = firstTile.getBoundingClientRect();
       var tileMidInContent = firstTileRect.top + scroll + firstTileRect.height * 0.5;
       cachedTilesRevealScroll = Math.max(0, tileMidInContent - viewH);
     }
@@ -200,29 +205,29 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
 
     var wrap = document.createElement('div');
     wrap.className = 'letter-wrap';
-    wrap.dataset.idx = String(ci);
+    wrap.setAttribute('data-idx', String(ci));
     wrap.style.cursor = 'pointer';
 
     var sizer = document.createElement('span');
     sizer.className = 'letter-sizer';
-    sizer.textContent = ch;
+    sizer.textContent = ch ?? '';
     wrap.appendChild(sizer);
 
     var lc = document.createElement('div');
     lc.className = 'layers-container';
 
     var arr: HTMLDivElement[] = [];
-    var layerCount = LAYERS_PER_LETTER[ci];
-    var lConfigs = LETTER_LAYER_CONFIGS[ci];
+    var layerCount = LAYERS_PER_LETTER[ci] ?? 0;
+    var lConfigs = LETTER_LAYER_CONFIGS[ci] ?? [];
     for (var li = 0; li < layerCount; li++) {
       var layer = document.createElement('div');
       layer.className = li === layerCount - 1 ? 'layer layer-top' : 'layer';
-      layer.textContent = ch;
+      layer.textContent = ch ?? '';
 
       var cfg = lConfigs[li];
-      if (cfg.isTop) {
+      if (cfg?.isTop) {
         layer.style.color = 'rgb(255,255,255)';
-      } else {
+      } else if (cfg) {
         layer.style.color = 'rgb(' +
           (247 + cfg.deltaR + 0.5 | 0) + ',' +
           (246 + cfg.deltaG + 0.5 | 0) + ',' +
@@ -263,6 +268,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
   function tilesRecalcGeometry() {
     if (!tilesTrackEl || !tiles.length) return;
     var firstTile = tiles[0];
+    if (!firstTile) return;
     var tileW     = firstTile.offsetWidth;
     var gapRaw = (getComputedStyle(container).getPropertyValue('--gap') || '').trim();
     var gapVal: number;
@@ -506,20 +512,24 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
 
     var tl = gsap.timeline({ paused: true });
 
-    tl.fromTo(stageLabel,
-      { scale: 1.3, color: 'rgba(0,0,0,0.18)' },
-      { scale: 5, color: 'rgba(0,0,0,0.05)', duration: 0.6, ease: 'power4.out' }, 0);
+    if (stageLabel) {
+      tl.fromTo(stageLabel,
+        { scale: 1.3, color: 'rgba(0,0,0,0.18)' },
+        { scale: 5, color: 'rgba(0,0,0,0.05)', duration: 0.6, ease: 'power4.out' }, 0);
+    }
 
     for (var i = 0; i < els.length; i++) {
-      tl.fromTo(els[i],
+      var el = els[i];
+      if (!el) continue;
+      tl.fromTo(el,
         { y: -18, opacity: 0 },
         { y: 0, opacity: 1, duration: 0.55, ease: 'back.out(2.5)' },
         0.01 + i * 0.03);
     }
 
-    tl.to(heading,
+    if (heading) tl.to(heading,
       { scale: 1.06, y: 10, duration: 0.6, ease: 'power4.out', transformOrigin: 'left top' }, 0);
-    tl.to(body,
+    if (body) tl.to(body,
       { scale: 1.04, y: 8, duration: 0.6, ease: 'power4.out', transformOrigin: 'left top' }, 0.04);
 
     tilesHoverTLs[tileIdx] = tl;
@@ -638,10 +648,12 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
   cleanups.push(function() { window.removeEventListener('resize', onResize); });
 
   // LENIS SCROLL → wake section tick
-  if (scrollRuntime.lenis) {
-    scrollRuntime.lenis.on('scroll', wakeUp);
+  var lenisInst = scrollRuntime.getLenis();
+  if (lenisInst) {
+    lenisInst.on('scroll', wakeUp);
     cleanups.push(function() {
-      if (scrollRuntime.lenis) scrollRuntime.lenis.off('scroll', wakeUp);
+      var l = scrollRuntime.getLenis();
+      if (l) l.off('scroll', wakeUp);
     });
   }
 
@@ -692,7 +704,9 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
   var touchStartY = 0;
 
   function onTouchStart(e: TouchEvent) {
-    touchStartY = e.touches[0].clientY;
+    var t0 = e.touches?.[0];
+    if (!t0) return;
+    touchStartY = t0.clientY;
     var idx = findIdx(e.target);
     if (idx >= 0) {
       touchMode = 'punch';
@@ -707,7 +721,9 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
 
   function onTouchMove(e: TouchEvent) {
     if (touchMode === 'punch') {
-      var y = e.touches[0].clientY;
+      var t0 = e.touches?.[0];
+      if (!t0) return;
+      var y = t0.clientY;
       if (Math.abs(touchStartY - y) > 10) {
         endPunch();
         touchMode = 'none';
@@ -781,15 +797,15 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     var hY   = cachedHY;
     var norm = cachedNorm;
 
-    for (var c = 0; c < WORD_LEN; c++) prevD[c] = curDepth[c];
+    for (var c = 0; c < WORD_LEN; c++) prevD[c] = curDepth[c] ?? 0;
 
     var anyLetterActive = false;
 
     for (var ci = 0; ci < WORD_LEN; ci++) {
 
-      var cx      = cachedLetterCx[ci];
-      var cy      = cachedLetterBaseCy[ci] - scroll;
-      var rectTop = cachedLetterBaseTop[ci] - scroll;
+      var cx      = cachedLetterCx[ci] ?? 0;
+      var cy      = (cachedLetterBaseCy[ci] ?? 0) - scroll;
+      var rectTop = (cachedLetterBaseTop[ci] ?? 0) - scroll;
 
       var dY = cy - hY;
       var rY = clamp(dY / norm, -MAX_TILT, MAX_TILT);
@@ -802,7 +818,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       var anim = rY < ANIMATION_THRESHOLD;
       var tilt = anim ? (rY - ANIMATION_THRESHOLD) * gate : 0;
 
-      var mbl = WZROST_BASE_DEPTHS[ci];
+      var mbl = WZROST_BASE_DEPTHS[ci] ?? 0;
       var lbd = anim ? mbl * sp * gate : 0;
 
       var mc = 0;
@@ -815,22 +831,23 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         mc = mi * (MAX_DEPTH - lbd) * gate;
       }
 
-      var chain = (ci < WORD_LEN - 1 ? prevD[ci + 1] : 0) * CHAIN_COUPLING * gate;
+      var chain = (ci < WORD_LEN - 1 ? (prevD[ci + 1] ?? 0) : 0) * CHAIN_COUPLING * gate;
       var ft = clamp(lbd + mc + chain, 0, MAX_DEPTH);
 
-      if (punch[ci] > 0) {
-        ft = MAX_DEPTH * punch[ci] > ft ? MAX_DEPTH * punch[ci] : ft;
+      if ((punch[ci] ?? 0) > 0) {
+        var pv = punch[ci] ?? 0;
+        ft = MAX_DEPTH * pv > ft ? MAX_DEPTH * pv : ft;
       }
 
       tgtDepth[ci] = ft;
 
-      var isPunched = punch[ci] > 0;
+      var isPunched = (punch[ci] ?? 0) > 0;
       var stiff = isPunched ? 0.12 : STIFFNESS;
       var damp  = isPunched ? 0.78 : DAMPING;
 
-      var force = (ft - curDepth[ci]) * stiff;
-      var nv = (vel[ci] + force) * damp;
-      var nc = curDepth[ci] + nv;
+      var force = (ft - (curDepth[ci] ?? 0)) * stiff;
+      var nv = ((vel[ci] ?? 0) + force) * damp;
+      var nc = (curDepth[ci] ?? 0) + nv;
 
       if (nc < 0) { nc = 0; nv = -nv * 0.5; }
       if (nc > MAX_DEPTH + 0.5) { nv -= (nc - (MAX_DEPTH + 0.5)) * 0.15; }
@@ -838,15 +855,15 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       vel[ci] = nv;
       curDepth[ci] = nc;
 
-      if (nv > SETTLE_VEL_EPS || nv < -SETTLE_VEL_EPS || punch[ci] > 0) {
+      if (nv > SETTLE_VEL_EPS || nv < -SETTLE_VEL_EPS || (punch[ci] ?? 0) > 0) {
         anyLetterActive = true;
       }
 
       var vd = nc * depthScale;
       var currentTilt = tilt;
 
-      var vdDelta   = vd - lastVd[ci];
-      var tiltDelta = currentTilt - lastTilt[ci];
+      var vdDelta   = vd - (lastVd[ci] ?? -1);
+      var tiltDelta = currentTilt - (lastTilt[ci] ?? -999);
       if (vdDelta < 0) vdDelta = -vdDelta;
       if (tiltDelta < 0) tiltDelta = -tiltDelta;
 
@@ -858,18 +875,21 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       lastTilt[ci] = currentTilt;
 
       var lays = layerEls[ci];
-      var lConfigs = LETTER_LAYER_CONFIGS[ci];
-      var lCount = LAYERS_PER_LETTER[ci];
+      var lConfigs = LETTER_LAYER_CONFIGS[ci] ?? [];
+      var lCount = LAYERS_PER_LETTER[ci] ?? 0;
 
       var activeMovement = (vdDelta > THROTTLE_VD_THRESHOLD);
       var nearFlat = (vd < 0.5);
       var halfCount = lCount >> 1;
       var startLi = (isThrottleFrame && !activeMovement && !nearFlat) ? halfCount : 0;
 
+      if (!lays) continue;
       for (var li = startLi; li < lCount; li++) {
         var cfg = lConfigs[li];
+        if (!cfg) continue;
         var z = cfg.isTop ? (cfg.zMul * vd > 0.1 ? cfg.zMul * vd : 0.1) : cfg.zMul * vd;
-        lays[li].style.transform = 'translate3d(0,' + (currentTilt * z * PERSPECTIVE_STRENGTH) + 'px,' + z + 'px)';
+        var layEl = lays[li];
+        if (layEl) layEl.style.transform = 'translate3d(0,' + (currentTilt * z * PERSPECTIVE_STRENGTH) + 'px,' + z + 'px)';
       }
     }
 
@@ -891,13 +911,13 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     if (ticking) return;
     ticking = true;
     settledFrames = 0;
-    if (tickFn) gsap.ticker.add(tickFn);
+    if (tickFn != null) gsap.ticker.add(tickFn);
   }
 
   function pause() {
     if (!ticking) return;
     ticking = false;
-    if (tickFn) gsap.ticker.remove(tickFn);
+    if (tickFn != null) gsap.ticker.remove(tickFn);
   }
 
   function kill() {
@@ -907,12 +927,16 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     pause();
 
     for (var i = 0; i < cleanups.length; i++) {
-      try { cleanups[i](); } catch(e) { /* noop */ }
+      var cb = cleanups[i];
+      if (cb) try { cb(); } catch(e) { /* noop */ }
     }
     cleanups.length = 0;
 
     for (var j = 0; j < timerIds.length; j++) {
-      try { clearTimeout(timerIds[j]); clearInterval(timerIds[j]); cancelAnimationFrame(timerIds[j]); } catch(e) { /* noop */ }
+      var tid = timerIds[j];
+      if (tid != null) {
+        try { clearTimeout(tid); clearInterval(tid); cancelAnimationFrame(tid); } catch(e) { /* noop */ }
+      }
     }
     timerIds.length = 0;
     if (tilesScrollRafId !== null) {
@@ -921,7 +945,8 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     }
 
     for (var k = 0; k < observers.length; k++) {
-      try { observers[k].disconnect(); } catch(e) { /* noop */ }
+      var obs = observers[k];
+      if (obs) try { obs.disconnect(); } catch(e) { /* noop */ }
     }
     observers.length = 0;
 
@@ -934,8 +959,10 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     }
 
     for (var m = 0; m < gsapInstances.length; m++) {
-      try { if (gsapInstances[m].revert) gsapInstances[m].revert(); } catch(e) { /* noop */ }
-      try { if (gsapInstances[m].kill) gsapInstances[m].kill(); } catch(e) { /* noop */ }
+      var inst = gsapInstances[m];
+      if (!inst) continue;
+      try { if (typeof inst.revert === 'function') inst.revert(); } catch(e) { /* noop */ }
+      try { if (typeof inst.kill === 'function') inst.kill(); } catch(e) { /* noop */ }
     }
     gsapInstances.length = 0;
 
