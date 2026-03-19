@@ -21,7 +21,6 @@ import './cyfrowe-wzrosty-section.css';
 // ═══════════════════════════════════════════════════════════════
 function init(container: HTMLElement): { pause: () => void; resume: () => void; kill: () => void } {
 
-  var $ = function(sel: string) { return container.querySelector<HTMLElement>(sel); };
   var $$ = function(sel: string) { return container.querySelectorAll<HTMLElement>(sel); };
   var $id = function(id: string) { return container.querySelector<HTMLElement>('#' + id); };
 
