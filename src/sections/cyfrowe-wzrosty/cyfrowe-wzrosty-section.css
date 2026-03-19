@@ -16,8 +16,9 @@
 }
 
 #cyfrowe-wzrosty-section #cyfrowe-wzrosty-stage {
-  height: 100vh;
-  height: 100svh;
+  /* 85vh zamiast 100vh — mniejszy spacer nad napisem, animacja bez zmian (proporcje HORIZON_RATIO / norm) */
+  height: 85vh;
+  height: 85svh;
   display: flex;
   align-items: flex-end;
   justify-content: center;
