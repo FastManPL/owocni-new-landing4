@@ -445,7 +445,7 @@ export function CaseStudiesSection() {
       {/* KSIĘGOWOŚĆ */}
       <div
         data-case-tile="1"
-        className="flex justify-center gap-4 sm:gap-8 lg:gap-[10rem] h-auto lg:h-[45rem] bg-[#E7E6E8] -mt-[0.125rem] py-8 lg:py-0 px-4"
+        className="flex justify-center gap-4 sm:gap-8 lg:gap-[10rem] h-auto lg:h-[45rem] -mt-[0.125rem] py-8 lg:py-0 px-4"
       >
         <div className="flex border-4 sm:border-8 lg:border-[2.1875rem] w-full max-w-[90rem] lg:w-[80rem] rounded-2xl lg:rounded-[2rem] bg-[#fff] h-auto lg:h-[40rem] border-[#FFFFFF] relative">
           <div
@@ -643,7 +643,7 @@ export function CaseStudiesSection() {
       {/* USŁUGI IT & AI */}
       <div
         data-case-tile="2"
-        className="flex justify-center gap-4 sm:gap-8 lg:gap-[10rem] h-auto lg:h-[45rem] bg-[#E7E6E8] -mt-[0.125rem] py-8 lg:py-0 px-4"
+        className="flex justify-center gap-4 sm:gap-8 lg:gap-[10rem] h-auto lg:h-[45rem] -mt-[0.125rem] py-8 lg:py-0 px-4"
       >
         <div className="flex border-4 sm:border-8 lg:border-[2.1875rem] w-full max-w-[90rem] lg:w-[80rem] rounded-2xl lg:rounded-[2rem] bg-[#fff] h-auto lg:h-[40rem] border-[#FFFFFF] relative">
           <div
@@ -939,7 +939,7 @@ export function CaseStudiesSection() {
       {/* MEDIA */}
       <div
         data-case-tile="3"
-        className="flex justify-center gap-4 sm:gap-8 lg:gap-[10rem] h-auto lg:h-[45rem] bg-[#E7E6E8] -mt-[0.125rem] py-8 lg:py-0 px-4 overflow-visible"
+        className="flex justify-center gap-4 sm:gap-8 lg:gap-[10rem] h-auto lg:h-[45rem] -mt-[0.125rem] py-8 lg:py-0 px-4 overflow-visible"
       >
         <div className="flex border-4 sm:border-8 lg:border-[2.1875rem] w-full max-w-[90rem] lg:w-[80rem] rounded-2xl lg:rounded-[2rem] bg-[#fff] h-auto lg:h-[40rem] border-[#FFFFFF] relative overflow-visible">
           <div

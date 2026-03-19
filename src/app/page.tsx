@@ -18,8 +18,8 @@ export default function HomePage() {
       <SectionsClient />
       <KalkulatorSection />
       <GwarancjaSectionWrapper />
-      <CaseStudiesSection />
       <CyfroweWzrostySectionWrapper />
+      <CaseStudiesSection />
     </main>
   );
 }
