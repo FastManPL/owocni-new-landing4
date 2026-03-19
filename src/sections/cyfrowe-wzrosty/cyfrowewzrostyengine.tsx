@@ -115,7 +115,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
 
   function startPunch(ci: number) {
     for (var o = 0; o < PUNCH_FALLOFF.length; o++) {
-      var s = PUNCH_FALLOFF[o];
+      var s = PUNCH_FALLOFF[o] ?? 0;
       if (ci - o >= 0) punch[ci - o] = Math.max(punch[ci - o], s);
       if (o > 0 && ci + o < WORD_LEN) punch[ci + o] = Math.max(punch[ci + o], s);
     }
