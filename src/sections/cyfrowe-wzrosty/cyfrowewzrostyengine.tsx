@@ -69,7 +69,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
   // PRECOMPUTE LAYER CONFIGS
   var LETTER_LAYER_CONFIGS: Array<Array<{ isTop: boolean; deltaR: number; deltaG: number; deltaB: number; zMul: number }>> = [];
   for (var lci = 0; lci < WORD_LEN; lci++) {
-    var count = LAYERS_PER_LETTER[lci];
+    var count = LAYERS_PER_LETTER[lci] ?? 0;
     var configs: Array<{ isTop: boolean; deltaR: number; deltaG: number; deltaB: number; zMul: number }> = [];
     for (var i = 0; i < count; i++) {
       var n = (i + 1) / count;
