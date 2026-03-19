@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import gsap from 'gsap';
 
 // ============================================
 // MODUŁ-LEVEL OPTIMIZATIONS
@@ -18,48 +19,7 @@ function formatNumber(num) {
   return PL_NUMBER_FORMATTER.format(num);
 }
 
-// Google Fonts Lexend
-if (typeof document !== 'undefined') {
-  const fontLink = document.createElement('link');
-  fontLink.href = 'https://fonts.googleapis.com/css2?family=Lexend:wght@100;200;300;400;500;600;700;800;900&display=swap';
-  fontLink.rel = 'stylesheet';
-  if (!document.querySelector('link[href*="Lexend"]')) {
-    document.head.appendChild(fontLink);
-  }
-}
-
-// ============================================
-// GSAP LOADER
-// ============================================
-let gsapLoaded = false;
-let gsapLoadPromise = null;
-
-function loadGSAP() {
-  if (gsapLoaded && window.gsap) return Promise.resolve(window.gsap);
-  if (gsapLoadPromise) return gsapLoadPromise;
-  
-  gsapLoadPromise = new Promise((resolve, reject) => {
-    if (window.gsap) {
-      gsapLoaded = true;
-      resolve(window.gsap);
-      return;
-    }
-    
-    const script = document.createElement('script');
-    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js';
-    script.onload = () => {
-      gsapLoaded = true;
-      resolve(window.gsap);
-    };
-    script.onerror = (err) => {
-      gsapLoadPromise = null;
-      reject(err);
-    };
-    document.head.appendChild(script);
-  });
-  
-  return gsapLoadPromise;
-}
+// Font Lexend i GSAP — z layoutu / npm (brak powielania)
 
 // ============================================
 // SPRING SOLVER
@@ -1103,20 +1063,20 @@ function AnimatedNumberGSAP({ value, accentColor, fontSize }) {
     if (initializedRef.current) return;
     initializedRef.current = true;
 
-    loadGSAP().then((gsap) => {
-      if (containerRef.current && !engineRef.current) {
+    if (containerRef.current && !engineRef.current) {
+      try {
         engineRef.current = createCounterEngine(containerRef.current, gsap, {
           accentColor,
           fontSize
         });
         setReady(true);
+      } catch (e) {
+        if (containerRef.current) {
+          containerRef.current.textContent = formatPL(value);
+          containerRef.current.style.cssText = `font-size:${fontSize};font-weight:600;color:#141414;font-family:var(--font-brand),sans-serif`;
+        }
       }
-    }).catch(() => {
-      if (containerRef.current) {
-        containerRef.current.textContent = formatPL(value);
-        containerRef.current.style.cssText = `font-size:${fontSize};font-weight:600;color:#141414;font-family:'Lexend',sans-serif`;
-      }
-    });
+    }
 
     return () => {
       if (engineRef.current) {
@@ -1141,18 +1101,20 @@ function AnimatedNumberGSAP({ value, accentColor, fontSize }) {
 
     engineRef.current.destroy();
     engineRef.current = null;
-    loadGSAP().then((gsap) => {
-      if (cancelled || !containerRef.current) return;
-      engineRef.current = createCounterEngine(containerRef.current, gsap, {
-        accentColor,
-        fontSize
-      });
-      engineRef.current.setValue(value);
-    }).catch(() => {
-      if (cancelled || !containerRef.current) return;
-      containerRef.current.textContent = formatPL(value);
-      containerRef.current.style.cssText = `font-size:${fontSize};font-weight:600;color:#141414;font-family:'Lexend',sans-serif`;
-    });
+    if (!cancelled && containerRef.current) {
+      try {
+        engineRef.current = createCounterEngine(containerRef.current, gsap, {
+          accentColor,
+          fontSize
+        });
+        engineRef.current.setValue(value);
+      } catch (e) {
+        if (!cancelled && containerRef.current) {
+          containerRef.current.textContent = formatPL(value);
+          containerRef.current.style.cssText = `font-size:${fontSize};font-weight:600;color:#141414;font-family:var(--font-brand),sans-serif`;
+        }
+      }
+    }
 
     return () => { cancelled = true; };
   }, [accentColor, fontSize, ready, value]);
@@ -1961,21 +1923,20 @@ export default function ConversionCalculator() {
   // Semi-transparent front lets back show through — must use visibility: hidden/visible as hard block
   const handleFlip = useCallback(() => {
     if (isAnimatingRef.current || !cardRef.current || !bannerRef.current || !backRef.current) return;
-    if (!window.gsap) return;
-    
+
     isAnimatingRef.current = true;
     rootRef.current?.classList.add('kalkulator-flip-animating');
     document.documentElement.style.overflowX = 'hidden';
-    
+
     const isMobileView = window.innerWidth < 1200;
     const rotAxis = isMobileView ? 'rotateY' : 'rotateX';
     const startRotation = isFlippedRef.current ? 180 : 0;
     const endRotation = isFlippedRef.current ? 0 : 180;
-    
+
     const state = { rotation: startRotation };
-    
+
     flipTweenRef.current?.kill();
-    flipTweenRef.current = window.gsap.to(state, {
+    flipTweenRef.current = gsap.to(state, {
       rotation: endRotation,
       duration: 2.5,
       ease: "elastic.out(1, 0.4)",
