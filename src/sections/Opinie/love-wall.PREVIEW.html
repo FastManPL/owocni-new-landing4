@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<!-- ⚠️ PREVIEW ONLY — NIE WKLEJAJ DO REPO -->
+<!-- Źródło prawdy: LoveWallSection.tsx + love-wall-section.css -->
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>love-wall — PREVIEW</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&family=Fraunces:ital,opsz,wght@1,9..144,100..900&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.7/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.7/ScrollTrigger.min.js"></script>
+  <style>
+    html { font-size: 16px; }
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; font-family: 'Lexend', system-ui, sans-serif; -webkit-font-smoothing: antialiased; }
+    .preview-spacer { height: 40vh; display: flex; align-items: center; justify-content: center; color: #aaa; font-size: 1.2rem; letter-spacing: 0.05em; }
+    /* ═══ love-wall-section.css — LITERALNA KOPIA ═══ */
+/* ============================================================
+   SECTION CSS: love-wall — velocity cards (RENAMED + NAMESPACED)
+   ============================================================ */
+#love-wall-section{--card-width:498px;--card-height:280px;--card-gap:32px;--card-padding:36px 45px 22px 45px;--card-radius:1.25rem;--card-bg:#f7f6f4;--section-bg:#f7f6f4;--star-gold:#f5c518;--text-primary:#222;--text-gray:#434343;--border-dark:#D0CEC8;--row-padding-block:60px;--row-padding-left:16px}
+#love-wall-section{position:relative;padding:80px 0;border-top:1px solid #d1d5db;overflow:visible;margin-bottom:128px;background-color:var(--section-bg);isolation:isolate;contain:style}
+#love-wall-section .rows-wrapper{display:flex;flex-direction:column;overflow:visible;position:relative}
+@media(min-width:1700px){#love-wall-section .rows-wrapper{max-width:2500px;margin-left:auto;margin-right:auto}}
+/* Edge fade: overlay divs instead of mask-image.
+   Overlays COVER edges but DON'T CLIP — content underneath lives and breathes.
+   Base fade width = EXACT same as original mask: min(20.5%, 349px). */
+#love-wall-section .row-fade{position:absolute;top:-9999px;bottom:-9999px;width:min(20.5%,349px);z-index:50;pointer-events:none}
+#love-wall-section .row-fade--l{left:0;background:linear-gradient(to right,rgba(247,246,244,1),rgba(247,246,244,0))}
+#love-wall-section .row-fade--r{right:0;background:linear-gradient(to left,rgba(247,246,244,1),rgba(247,246,244,0))}
+/* Widescreen: rows-wrapper is max-width:2500px centered → gap to viewport edge. Extend row-clip overlays to cover it. Mount-slot excluded — logo stays full width. */
+@media(min-width:1700px){
+  #love-wall-section .row-clip > .row-fade--l{left:calc(-50vw + 50%);width:calc(min(20.5%,349px) + max(0px,50vw - 50%));background:linear-gradient(to right,rgba(247,246,244,1) calc(100% - min(20.5%,349px)),rgba(247,246,244,0))}
+  #love-wall-section .row-clip > .row-fade--r{right:calc(-50vw + 50%);width:calc(min(20.5%,349px) + max(0px,50vw - 50%));background:linear-gradient(to left,rgba(247,246,244,1) calc(100% - min(20.5%,349px)),rgba(247,246,244,0))}
+}
+#love-wall-section .rows-wrapper > .row-clip:not(:last-child){margin-bottom:48px}
+#love-wall-section .row-clip{overflow:clip;overflow-clip-margin:600px;position:relative;z-index:1}
+#love-wall-section .mount-slot{position:relative;overflow:visible;z-index:10;width:100%;padding-top:0;padding-bottom:0;pointer-events:none}
+@media(min-width:1700px){#love-wall-section .mount-slot{overflow-x:clip}}
+#love-wall-section .row-viewport{--row-skew:0deg;--row-scale:1;width:100%;overflow:hidden;overflow:clip;overflow-clip-margin:600px;padding-top:var(--row-padding-block);padding-bottom:var(--row-padding-block);padding-left:var(--row-padding-left);perspective:700px}
+#love-wall-section .row-mover{display:flex;width:max-content;will-change:transform;transform:translate3d(0,0,0);transform-style:preserve-3d}
+#love-wall-section .card-shell{flex-shrink:0;position:relative;z-index:1;margin-right:var(--card-gap);transform:translateZ(0) skewX(var(--row-skew,0deg)) scaleX(var(--row-scale,1));transform-style:preserve-3d;transform-origin:center center;transition:z-index 0s 0.3s}
+#love-wall-section .card-shell::before{content:none}
+#love-wall-section .card-shell.is-active::before{content:'';position:absolute;top:50%;left:50%;width:1024px;height:653px;border-radius:50%;background:radial-gradient(ellipse at center,rgba(255,192,0,0.34) 0%,transparent 70%);transform:translate(calc(-50% - 100px),calc(-50% - 45px)) translateZ(-200px) scale(0);pointer-events:none;opacity:0;will-change:transform,opacity;animation:love-wall-spotlight-in 0.9s cubic-bezier(0.2,0,0.2,1) forwards}
+@keyframes love-wall-spotlight-in{to{transform:translate(calc(-50% - 100px),calc(-50% - 45px)) translateZ(-200px) scale(1);opacity:1}}
+#love-wall-section .card-shell.is-active{z-index:20;transition:z-index 0s 0s}
+#love-wall-section .card-tilt{--tilt-y:0deg;--tilt-x:0deg;--lift-z:0px;--lift-y:0px;--card-scale:1;transform-style:preserve-3d;transform:rotateX(var(--tilt-x)) rotateY(var(--tilt-y)) translateZ(var(--lift-z)) translateY(var(--lift-y)) scale(var(--card-scale));transform-origin:center bottom;will-change:auto;transition:transform 0.6s cubic-bezier(0.2,0,0.2,1)}
+#love-wall-section .card{--gradient-x:20%;--gradient-scale:1;--text-x:0px;width:var(--card-width);height:var(--card-height);background:var(--card-bg);border-radius:var(--card-radius);padding:var(--card-padding);display:flex;flex-direction:column;justify-content:flex-start;position:relative;cursor:pointer;overflow:hidden;backface-visibility:hidden;isolation:isolate;z-index:0;transition:background-color 0.3s cubic-bezier(0.4,0,0.2,1),opacity 0.6s cubic-bezier(0.2,0,0.2,1)}
+#love-wall-section .card::before{content:'';position:absolute;top:0;right:0;bottom:0;left:0;border-radius:inherit;background:radial-gradient(ellipse calc(480px * var(--gradient-scale,1)) calc(165px * var(--gradient-scale,1)) at var(--gradient-x,30%) 0%,rgba(255,255,255,0.70) 0%,rgba(255,255,255,0.40) 45%,rgba(255,255,255,0.15) 70%,transparent 100%);opacity:0;transition:opacity 0.4s ease;pointer-events:none;z-index:1}
+#love-wall-section .card::after{display:none}
+#love-wall-section .card__rating{display:flex;align-items:center;position:relative;z-index:2;top:-7px;transform:scale(1.38);transform-origin:left top}
+#love-wall-section .card__rating-number{font-family:'Lexend',sans-serif;font-size:20px;font-weight:700;color:var(--text-primary)}
+#love-wall-section .card__stars{display:flex;margin-left:0.5rem;perspective:800px}
+#love-wall-section .card__star + .card__star{margin-left:2px}
+#love-wall-section .card__star{width:20px;height:20px;fill:var(--star-gold)}
+#love-wall-section .card__quote{font-family:'Lexend',sans-serif;font-size:1.375rem;line-height:1.4;font-weight:400;margin-top:15px;margin-bottom:8px;color:var(--text-gray);position:relative;z-index:2;backface-visibility:hidden;transform:translateZ(0.01px) translateX(var(--text-x));transform-origin:left center;transition:color 0.8s cubic-bezier(0,0,0.2,1),transform 0.25s ease-out}
+#love-wall-section .card__quote--lexend-200{font-family:'Lexend',sans-serif;font-weight:200}
+#love-wall-section .card__quote--lexend-400{font-family:'Lexend',sans-serif;font-weight:400}
+#love-wall-section .card__quote--lexend-600{font-family:'Lexend',sans-serif;font-weight:600}
+#love-wall-section .card__quote--lexend-800{font-family:'Lexend',sans-serif;font-weight:800}
+#love-wall-section .card__quote--fraunces{font-family:'Fraunces',serif;font-style:italic;font-weight:400}
+#love-wall-section .card__quote--arial{font-family:Arial,sans-serif}
+#love-wall-section .card__quote--georgia{font-family:Georgia,serif}
+#love-wall-section .card__quote--courier{font-family:'Courier New',monospace}
+#love-wall-section .card__quote--size-large{font-size:1.79rem}
+#love-wall-section .card__quote--size-small{font-size:0.96rem}
+#love-wall-section .card__quote--size-xl{font-size:2.2rem;line-height:1.2}
+#love-wall-section .card__quote--size-xl-90{font-size:1.98rem;line-height:1.2}
+#love-wall-section .card__quote--size-90{font-size:1.24rem}
+#love-wall-section .card__quote--size-xs{font-size:0.99rem}
+#love-wall-section .card__author{display:flex;align-items:center;margin-top:auto;padding-top:12px;border-top:1px solid var(--border-dark);position:relative;top:6px;z-index:2}
+#love-wall-section .card__avatar{width:27px;height:27px;border-radius:50%;object-fit:cover;background:linear-gradient(135deg,#C8C5BE 0%,#D8D5CE 100%)}
+#love-wall-section .card__name{font-family:'Lexend',sans-serif;font-size:0.9375rem;font-weight:500;color:var(--text-gray);margin-left:0.75rem}
+#love-wall-section .card__expand-btn{display:none;margin-left:auto}
+@media(max-width:500px){#love-wall-section .card__expand-btn{display:flex;align-items:center;justify-content:center;width:29px;height:29px;padding:0;margin:-4px -4px -4px auto;border-radius:50%;border:1px solid var(--border-dark);background:var(--card-bg);color:var(--text-gray);font-size:20px;font-weight:300;line-height:1;cursor:pointer;transition:all 0.2s ease;flex-shrink:0;-webkit-tap-highlight-color:transparent;position:relative;overflow:visible}#love-wall-section .card__expand-btn::after{content:"";position:absolute;top:-7.5px;right:-7.5px;bottom:-7.5px;left:-7.5px}#love-wall-section .card__expand-btn:active{background:var(--text-gray);color:var(--card-bg);transform:scale(0.95)}#love-wall-section .card-shell.is-expanded .card__expand-btn{display:none}}
+@media(hover:hover){#love-wall-section .card__expand-btn{display:flex;align-items:center;justify-content:center;width:27px;height:27px;padding:0 0 2px 0;margin:-4px -4px -4px auto;border-radius:50%;border:1px solid var(--border-dark);background:var(--card-bg);color:var(--text-gray);font-family:'Lexend',sans-serif;font-size:18px;font-weight:300;line-height:1;cursor:pointer;flex-shrink:0;opacity:1;transition:opacity 0.15s ease-out;pointer-events:none}#love-wall-section .card-shell.is-active .card__expand-btn{opacity:0}}
+@media(hover:hover){#love-wall-section .row-viewport.is-hovering .card-shell:not(.is-active) .card-tilt{--lift-z:-15px;--card-scale:0.88}#love-wall-section .row-viewport.is-hovering .card-shell:not(.is-active) .card{opacity:0.12}#love-wall-section .row-viewport.is-hovering .card-shell.is-active{transform:translateZ(0) skewX(0deg) scaleX(1)}#love-wall-section .row-viewport.is-hovering .card-shell.is-active .card-tilt{--tilt-x:6deg;--lift-z:40px;--lift-y:14px;--card-scale:1.15;will-change:transform;transition:transform 0.8s cubic-bezier(0,0,0.2,1)}#love-wall-section .row-viewport.is-hovering .card-shell.is-active .card::before{opacity:1}#love-wall-section .row-viewport.is-hovering .card-shell.is-active .card{opacity:1;transition:opacity 0.4s ease-out}#love-wall-section .row-viewport.is-hovering .card-shell.is-active .card__quote{color:var(--text-primary);transform:translateZ(0.01px) scale(1.03) translateX(var(--text-x))}}
+@keyframes love-wall-star-flip-pop{0%{transform:rotateY(0deg);fill:#ffc602}20%{transform:rotateY(90deg);fill:#ffc602}21%{fill:#bfbfbf}40%{transform:rotateY(180deg);fill:#bfbfbf}55%{transform:rotateY(180deg) scale(1);fill:#bfbfbf}70%{transform:rotateY(180deg) scale(1.4);fill:#fff}85%{transform:rotateY(180deg) scale(1.1);fill:#ffc602}100%{transform:rotateY(180deg) scale(1.1);fill:#ffc602}}
+@media(hover:hover){#love-wall-section .row-viewport.is-hovering .card-shell.is-active .card__star{animation:love-wall-star-flip-pop 1.2s cubic-bezier(0.4,0,0.2,1) forwards}#love-wall-section .row-viewport.is-hovering .card-shell.is-active .card__star:nth-child(1){animation-delay:0s}#love-wall-section .row-viewport.is-hovering .card-shell.is-active .card__star:nth-child(2){animation-delay:0.05s}#love-wall-section .row-viewport.is-hovering .card-shell.is-active .card__star:nth-child(3){animation-delay:0.1s}#love-wall-section .row-viewport.is-hovering .card-shell.is-active .card__star:nth-child(4){animation-delay:0.15s}#love-wall-section .row-viewport.is-hovering .card-shell.is-active .card__star:nth-child(5){animation-delay:0.2s}}
+#love-wall-section .card-shell.is-expanded .card__star{animation:love-wall-star-flip-pop 1.2s cubic-bezier(0.4,0,0.2,1) forwards}
+#love-wall-section .card-shell.is-expanded .card__star:nth-child(1){animation-delay:0s}
+#love-wall-section .card-shell.is-expanded .card__star:nth-child(2){animation-delay:0.05s}
+#love-wall-section .card-shell.is-expanded .card__star:nth-child(3){animation-delay:0.1s}
+#love-wall-section .card-shell.is-expanded .card__star:nth-child(4){animation-delay:0.15s}
+#love-wall-section .card-shell.is-expanded .card__star:nth-child(5){animation-delay:0.2s}
+#love-wall-section .card-shell.is-expanded .card__quote{color:var(--text-primary)}
+#love-wall-section .card-shell.is-expanded .card::before{opacity:1}
+#love-wall-section .card-shell.is-expanded .card-tilt{--card-scale:1.35;--lift-y:-20px;--lift-z:30px}
+#love-wall-section .card-shell.is-expanded{z-index:100}
+/* Mobile expand: hide adjacent cards with fade (card has transition:opacity 0.6s); remove gradient mask */
+#love-wall-section .row-viewport.has-expanded .card-shell:not(.is-expanded) .card{opacity:0;pointer-events:none}
+#love-wall-section .row-viewport.has-expanded .card-shell:not(.is-expanded) .card-shell::before{display:none}
+#love-wall-section .row-clip.is-row-expanded{overflow:visible}
+#love-wall-section .row-viewport.is-hovering{overflow:visible}
+#love-wall-section .row-clip:has(.row-viewport.is-hovering){overflow:visible}
+/* Hover: overflow:visible so scaled active card isn't clipped.
+   Overlay stays at full width — no narrowing needed (overlays don't clip vertically like masks did). */
+/* Mobile expand: identical overflow release + hide fades entirely */
+#love-wall-section .row-viewport.has-expanded{overflow:visible}
+#love-wall-section .row-clip:has(.row-viewport.has-expanded){overflow:visible}
+#love-wall-section .row-clip.is-row-expanded > .row-fade{display:none}
+/* Firefox fallback: overflow-clip-margin not supported — use overflow:visible on hover only */
+@supports not (overflow-clip-margin: 1px) {
+  #love-wall-section .row-clip { overflow: visible; }
+  #love-wall-section .row-viewport { overflow: visible; }
+  #love-wall-section .rows-wrapper { overflow: clip; }
+}
+#love-wall-section .debug-panel{position:fixed;top:16px;right:16px;background:rgba(0,0,0,0.85);color:#00ff88;font-family:monospace;font-size:12px;padding:10px 14px;border-radius:8px;z-index:99999;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border:1px solid rgba(0,255,136,0.3);box-shadow:0 4px 12px rgba(0,0,0,0.3);min-width:200px;display:none}
+body.debug-mode #love-wall-section .debug-panel{display:block}
+#love-wall-section .debug-panel__title{font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:rgba(255,255,255,0.5);margin-bottom:6px}
+#love-wall-section .debug-panel__value{font-size:16px;font-weight:600}
+@media(max-width:768px){
+  #love-wall-section{--card-width:340px;--card-height:260px;--card-padding:24px;--card-gap:24px;--row-padding-block:40px;--row-padding-left:16px}
+  #love-wall-section .card__quote{font-size:1.25rem}
+  #love-wall-section .card__quote--mobile-sm{font-size:1.05rem}
+  #love-wall-section .card__quote--mobile-md{font-size:0.95rem}
+  #love-wall-section .card__quote--mobile-lg{font-size:0.85rem}
+}
+@media(max-width:500px){
+  /* Direct clamp per property — no calc(length/length) dependency
+     Formula: clamp(X×0.64, X/500×100vw, X) */
+  #love-wall-section{--card-width:clamp(217.6px,68vw,340px);--card-height:clamp(166.4px,52vw,260px);--card-gap:clamp(15.36px,4.8vw,24px);--card-padding:clamp(15.36px,4.8vw,24px);--row-padding-block:clamp(25.6px,8vw,40px);--row-padding-left:clamp(10.24px,3.2vw,16px)}
+  #love-wall-section .card__quote{font-size:clamp(0.8rem,4vw,1.25rem);margin-top:5px}
+  #love-wall-section .card__quote--mobile-sm{font-size:clamp(0.672rem,3.36vw,1.05rem)}
+  #love-wall-section .card__quote--mobile-md{font-size:clamp(0.608rem,3.04vw,0.95rem)}
+  #love-wall-section .card__quote--mobile-lg{font-size:clamp(0.544rem,2.72vw,0.85rem)}
+  #love-wall-section .card__rating-number{font-size:clamp(17.92px,5.6vw,28px)}
+  #love-wall-section .card__name{font-size:clamp(0.6rem,3vw,0.9375rem)}
+  #love-wall-section .card__star{width:clamp(17.92px,5.6vw,28px);height:clamp(17.92px,5.6vw,28px)}
+  #love-wall-section .card__avatar{width:clamp(17.28px,5.4vw,27px);height:clamp(17.28px,5.4vw,27px)}
+  #love-wall-section .card-shell.is-active::before{width:717px;height:457px}
+  /* Mobile containment: rows-wrapper clips horizontal only — prevents iOS elastic scroll.
+     overflow-x:clip does NOT coerce overflow-y (unlike hidden) → translateY offsets on rows stay visible.
+     Does NOT create scroll container → GSAP ScrollTrigger unaffected. */
+  #love-wall-section .rows-wrapper{overflow-x:clip}
+  #love-wall-section .row-clip{overflow-clip-margin:200px}
+  #love-wall-section .row-viewport{overflow-clip-margin:200px;touch-action:pan-y}
+  /* Mobile: narrower fade (8%/60px) to not eat into card visible area on ≤375px */
+  #love-wall-section .row-fade,
+  #love-wall-section .mount-slot > .row-fade{width:min(8%,60px)}
+  /* PERF FIX 1: Flat layers on idle cards.
+     translateZ(0)+preserve-3d on 40 card-shells = ~80 GPU layers.
+     On mobile: idle skew=0, scale=1, so translateZ(0) skewX(0) scaleX(1) ≡ none visually.
+     Restore full transform only on active/expanded cards that need 3D tilt. */
+  #love-wall-section .card-shell{transform:none;transform-style:flat}
+  #love-wall-section .card-shell.is-active,
+  #love-wall-section .card-shell.is-expanded{transform:translateZ(0) skewX(var(--row-skew,0deg)) scaleX(var(--row-scale,1));transform-style:preserve-3d}
+  #love-wall-section .row-mover{transform-style:flat}
+  /* PERF FIX 2: Move perspective from viewport (affects all 20 children) to card-tilt (only active).
+     Eliminates per-frame reprojection of ~38 idle cards. */
+  #love-wall-section .row-viewport{perspective:none}
+  #love-wall-section .card-tilt{perspective:700px}
+}
+@media(prefers-reduced-motion:reduce){
+  #love-wall-section .row-mover{will-change:auto}
+  #love-wall-section .card-tilt,#love-wall-section .card,#love-wall-section .card::before,#love-wall-section .card::after,#love-wall-section .card__quote,#love-wall-section .card__star{transition:none!important;animation:none!important}
+  #love-wall-section .row-viewport.is-hovering .card-shell:not(.is-active) .card-tilt{--lift-z:0;--card-scale:1}
+  #love-wall-section .row-viewport.is-hovering .card-shell:not(.is-active) .card{opacity:0.4}
+  #love-wall-section .row-viewport.is-hovering .card-shell.is-active .card-tilt{--tilt-x:0deg;--lift-z:0;--lift-y:-4px;--card-scale:1}
+}
+
+/* ============================================================
+   SECTION CSS: love-wall — logo / kinetic typography (RENAMED + NAMESPACED)
+   ============================================================ */
+#love-wall-section #love-wall-logo-section * { margin: 0; padding: 0; box-sizing: border-box; }
+#love-wall-section #love-wall-logo-section {
+  display: block; width: 100%; position: relative;
+  --vw-cap: 1.1vw;
+}
+@media (min-width: 1400px) {
+  #love-wall-section #love-wall-logo-section { --vw-cap: 15.4px; }
+}
+#love-wall-section #love-wall-logo-section .love-wall-logo-inner {
+  height: var(--vt-h, 100vh); width: 100%; position: relative;
+  background: transparent; overflow: clip; overflow-clip-margin: 600px; display: flex;
+  font-family: 'Lexend', system-ui, sans-serif; color: #1a1a1a;
+  -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+}
+#love-wall-section #love-wall-logo-section .track { position: absolute; top: 50%; left: 0; display: flex; align-items: center; white-space: nowrap; will-change: transform; padding-left: 5vw; }
+#love-wall-section #love-wall-logo-section .word { display: inline-flex; margin-right: 8vw; line-height: 1; }
+#love-wall-section #love-wall-logo-section .char { display: inline-block; white-space: pre; backface-visibility: hidden; transform: translateZ(0); opacity: 0; }
+#love-wall-section #love-wall-logo-section .char-wrapper { display: inline-block; overflow: hidden; vertical-align: bottom; padding-top: 0.15em; margin-top: -0.15em; }
+#love-wall-section #love-wall-logo-section .word[data-effect="rotate-3d-scale"] { overflow: visible !important; }
+#love-wall-section #love-wall-logo-section .debris-pool { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+#love-wall-section #love-wall-logo-section .debris { position: absolute; width: clamp(3px, calc(0.714 * var(--vw-cap)), 10px); height: clamp(3px, calc(0.714 * var(--vw-cap)), 10px); background: #1a1a1a; border-radius: 2px; opacity: 0; pointer-events: none; z-index: 10; }
+#love-wall-section #love-wall-logo-section .spark { position: absolute; width: 3px; height: clamp(3px, calc(1.43 * var(--vw-cap)), 20px); background: #1a1a1a; border-radius: 1px; opacity: 0; pointer-events: none; z-index: -1; }
+#love-wall-section #love-wall-logo-section .spark.plus { width: clamp(3px, calc(1.43 * var(--vw-cap)), 20px); height: clamp(3px, calc(1.43 * var(--vw-cap)), 20px); background: transparent; }
+#love-wall-section #love-wall-logo-section .spark.plus::before, #love-wall-section #love-wall-logo-section .spark.plus::after { content: ''; position: absolute; background: #1a1a1a; border-radius: 1px; }
+#love-wall-section #love-wall-logo-section .spark.plus::before { width: 3px; height: 100%; left: 50%; transform: translateX(-50%); }
+#love-wall-section #love-wall-logo-section .spark.plus::after { width: 100%; height: 3px; top: 50%; transform: translateY(-50%); }
+@media (prefers-reduced-motion: reduce) {
+  #love-wall-section #love-wall-logo-section .char { opacity: 1 !important; transform: none !important; filter: none !important; text-shadow: none !important; }
+  #love-wall-section #love-wall-logo-section .char-wrapper { overflow: visible !important; }
+  #love-wall-section #love-wall-logo-section .track { transition: transform 0.3s linear; }
+  #love-wall-section #love-wall-logo-section .word { opacity: 1 !important; }
+}
+@media (max-width: 1399px) {
+  #love-wall-section #love-wall-logo-section .polecamy-stack .word:nth-child(1) { opacity: 0.25 !important; }
+  #love-wall-section #love-wall-logo-section .polecamy-stack .word:nth-child(2) { opacity: 0.3 !important; -webkit-text-stroke: 0 !important; color: #000 !important; }
+  #love-wall-section #love-wall-logo-section .polecamy-stack .word:nth-child(3) { opacity: 0.15 !important; }
+}
+
+/* ============================================================
+   INTEGRATION OVERRIDES — direct breakpoints (no interpolation)
+   Measured: 375px, 550px, 730px, desktop, large desktop
+   ============================================================ */
+
+#love-wall-section #love-wall-logo-section { --vt-h: 340px; }
+
+/* Transform bindings (always active) */
+#love-wall-section .rows-wrapper > .row-clip:first-child { transform: translateY(var(--row1-offset, 0px)); }
+#love-wall-section .rows-wrapper > .row-clip:last-child { transform: translateY(var(--row3-offset, 0px)); }
+#love-wall-section .mount-slot { transform: translateY(var(--logo-offset, 0px)); margin-top: -150px; margin-bottom: -150px; }
+
+/* Desktop 769–1399px */
+#love-wall-section { --row1-offset: -140px; --logo-offset: 0px; --row3-offset: 85px; }
+
+/* Large desktop ≥1400px (measured 2855px) */
+@media (min-width: 1400px) {
+  #love-wall-section { --row1-offset: -140px; --logo-offset: 0px; --row3-offset: 161px; }
+}
+
+/* Tablet 501–768px (measured 766px) */
+@media (max-width: 768px) {
+  #love-wall-section { --row1-offset: -120px; --logo-offset: 22px; --row3-offset: 195px; --row-padding-block: 40px; }
+  #love-wall-section .mount-slot { margin-top: -250px; margin-bottom: -250px; }
+}
+
+/* Mobile ≤500px (measured 430px) */
+@media (max-width: 500px) {
+  #love-wall-section { --row1-offset: -106px; --logo-offset: 12px; --row3-offset: 193px; --row-padding-block: 26px; }
+  #love-wall-section .mount-slot { margin-top: -250px; margin-bottom: -250px; }
+}
+/* ── HARDENING: graceful degradation ── */
+#love-wall-section .card__avatar.load-failed{opacity:0}
+    /* ═══ KONIEC CSS SEKCJI ═══ */
+  </style>
+</head>
+<body>
+  <div class="preview-spacer">↓ SCROLL DOWN ↓</div>
+
+  <section id="love-wall-section">
+    <div class="debug-panel" id="love-wall-debugPanel">
+      <div class="debug-panel__title">Resolution</div>
+      <div class="debug-panel__value" id="love-wall-debugResolution">— × —</div>
+      <div class="debug-panel__title" style="margin-top:8px">Lenis Velocity</div>
+      <div class="debug-panel__value" id="love-wall-debugVelocity">—</div>
+      <div class="debug-panel__title" style="margin-top:8px">Source</div>
+      <div class="debug-panel__value" id="love-wall-debugSource">—</div>
+    </div>
+    <div class="rows-wrapper" id="love-wall-rows-wrapper">
+      <div class="row-clip">
+        <div class="row-viewport" id="love-wall-row1-viewport">
+          <div class="row-mover" id="love-wall-row1-mover"></div>
+        </div>
+        <div class="row-fade row-fade--l"></div><div class="row-fade row-fade--r"></div>
+      </div>
+      <div id="love-wall-mount-embed" class="mount-slot">
+        <div id="love-wall-logo-section">
+          <div class="love-wall-logo-inner">
+            <div class="track" id="love-wall-logo-track-a" style="transform: translateY(-50%)">
+              <div class="polecamy-stack" style="position:relative;display:inline-block">
+                <div class="word" data-effect="fluid-tension" data-trigger-point="0.675" data-time-scale="0.8" data-min-duration="3" style="font-family:'Lexend',sans-serif;font-weight:600;-webkit-text-stroke:clamp(0.2px,0.0893vw,1.25px) #000;color:transparent;font-size:calc(10 * var(--vw-cap));position:relative;z-index:1;opacity:0.4">POLECAMY</div>
+                <div class="word" data-effect="fluid-tension" data-trigger-point="0.675" data-time-scale="0.8" data-min-duration="3" style="font-family:'Lexend',sans-serif;font-weight:600;-webkit-text-stroke:clamp(0.2px,0.0893vw,1.25px) #000;color:transparent;font-size:calc(10 * var(--vw-cap));position:absolute;left:0;top:0;transform:translate(0.2%,-2%);z-index:2;opacity:0.6">POLECAMY</div>
+                <div class="word" data-effect="fluid-tension" data-trigger-point="0.675" data-time-scale="0.8" data-min-duration="3" style="font-family:'Lexend',sans-serif;font-weight:600;-webkit-text-stroke:clamp(0.2px,0.0893vw,1.25px) #000;color:transparent;font-size:calc(10 * var(--vw-cap));position:absolute;left:0;top:0;transform:translate(0.4%,-4%);z-index:3;opacity:0.8">POLECAMY</div>
+              </div>
+              <div class="word" data-effect="anchor" data-time-scale="0.55" data-trigger-point="0.675" style="font-family:'Lexend',sans-serif;font-weight:900;font-size:calc(12.15 * var(--vw-cap));color:#000">WZÓR</div>
+              <div class="word" data-effect="optical-bloom" data-trigger-point="0.625" data-time-scale="0.6" style="font-family:'Fraunces',serif;font-style:italic;font-size:calc(14 * var(--vw-cap));color:#000">10na10</div>
+              <div class="word" data-effect="velocity-skew" data-trigger-point="0.70" style="font-family:'Lexend',sans-serif;font-weight:900;font-size:calc(8 * var(--vw-cap));color:#333;text-transform:uppercase">Ekspres</div>
+              <div class="word" data-effect="rotate-3d-scale" data-needs-3d="true" style="font-family:'Lexend',sans-serif;font-weight:900;color:#1a1a1a;font-size:calc(16.5 * var(--vw-cap))">WOW</div>
+              <div class="word" data-effect="prism-cut" data-time-scale="0.75" style="font-family:'Lexend',sans-serif;font-weight:400;font-size:calc(6.6 * var(--vw-cap));letter-spacing:-0.05em;color:#1a1a1a">Niezawodni</div>
+              <div class="word" data-effect="zipper" data-min-duration="2" data-trigger-point="0.625" data-time-scale="0.448" style="font-family:'Fraunces',serif;font-size:calc(12 * var(--vw-cap));color:#1a1a1a">Elegancja</div>
+              <div class="word" data-effect="growth" data-trigger-point="0.70" data-time-scale="0.49" style="font-family:'Fraunces',serif;font-weight:700;font-style:italic;font-size:calc(12 * var(--vw-cap));color:#555;margin-top:calc(-2.4 * var(--vw-cap))">Wrócę!</div>
+            </div>
+            <div class="track" id="love-wall-logo-track-b" style="transform: translateY(-50%)">
+              <div class="polecamy-stack" style="position:relative;display:inline-block">
+                <div class="word" data-effect="fluid-tension" data-trigger-point="0.675" data-time-scale="0.8" data-min-duration="3" style="font-family:'Lexend',sans-serif;font-weight:600;-webkit-text-stroke:clamp(0.2px,0.0893vw,1.25px) #000;color:transparent;font-size:calc(10 * var(--vw-cap));position:relative;z-index:1;opacity:0.4">POLECAMY</div>
+                <div class="word" data-effect="fluid-tension" data-trigger-point="0.675" data-time-scale="0.8" data-min-duration="3" style="font-family:'Lexend',sans-serif;font-weight:600;-webkit-text-stroke:clamp(0.2px,0.0893vw,1.25px) #000;color:transparent;font-size:calc(10 * var(--vw-cap));position:absolute;left:0;top:0;transform:translate(0.2%,-2%);z-index:2;opacity:0.6">POLECAMY</div>
+                <div class="word" data-effect="fluid-tension" data-trigger-point="0.675" data-time-scale="0.8" data-min-duration="3" style="font-family:'Lexend',sans-serif;font-weight:600;-webkit-text-stroke:clamp(0.2px,0.0893vw,1.25px) #000;color:transparent;font-size:calc(10 * var(--vw-cap));position:absolute;left:0;top:0;transform:translate(0.4%,-4%);z-index:3;opacity:0.8">POLECAMY</div>
+              </div>
+              <div class="word" data-effect="anchor" data-time-scale="0.55" data-trigger-point="0.675" style="font-family:'Lexend',sans-serif;font-weight:900;font-size:calc(12.15 * var(--vw-cap));color:#000">WZÓR</div>
+              <div class="word" data-effect="optical-bloom" data-trigger-point="0.625" data-time-scale="0.6" style="font-family:'Fraunces',serif;font-style:italic;font-size:calc(14 * var(--vw-cap));color:#000">10na10</div>
+              <div class="word" data-effect="velocity-skew" data-trigger-point="0.70" style="font-family:'Lexend',sans-serif;font-weight:900;font-size:calc(8 * var(--vw-cap));color:#333;text-transform:uppercase">Ekspres</div>
+              <div class="word" data-effect="rotate-3d-scale" data-needs-3d="true" style="font-family:'Lexend',sans-serif;font-weight:900;color:#1a1a1a;font-size:calc(16.5 * var(--vw-cap))">WOW</div>
+              <div class="word" data-effect="prism-cut" data-time-scale="0.75" style="font-family:'Lexend',sans-serif;font-weight:400;font-size:calc(6.6 * var(--vw-cap));letter-spacing:-0.05em;color:#1a1a1a">Niezawodni</div>
+              <div class="word" data-effect="zipper" data-min-duration="2" data-trigger-point="0.625" data-time-scale="0.448" style="font-family:'Fraunces',serif;font-size:calc(12 * var(--vw-cap));color:#1a1a1a">Elegancja</div>
+              <div class="word" data-effect="growth" data-trigger-point="0.70" data-time-scale="0.49" style="font-family:'Fraunces',serif;font-weight:700;font-style:italic;font-size:calc(12 * var(--vw-cap));color:#555;margin-top:calc(-2.4 * var(--vw-cap))">Wrócę!</div>
+            </div>
+          </div>
+        </div>
+        <div class="row-fade row-fade--l"></div><div class="row-fade row-fade--r"></div>
+      </div>
+      <div class="row-clip">
+        <div class="row-viewport" id="love-wall-row2-viewport">
+          <div class="row-mover" id="love-wall-row2-mover"></div>
+        </div>
+        <div class="row-fade row-fade--l"></div><div class="row-fade row-fade--r"></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="preview-spacer">↑ SCROLL UP ↑</div>
+
+  <script>
+    gsap.registerPlugin(ScrollTrigger);
+    ScrollTrigger.config({ ignoreMobileResize: true });
+    // GSAP_PLUGINS_USED = [] — brak dodatkowych pluginów
+
+    var _previewRefreshTimer = null;
+    var scrollRuntime = {
+      getScroll:    function() { return window.lenis ? window.lenis.scroll : window.scrollY; },
+      getRawScroll: function() { return window.lenis ? window.lenis.targetScroll : window.scrollY; },
+      requestRefresh: function(reason) {
+        clearTimeout(_previewRefreshTimer);
+        _previewRefreshTimer = setTimeout(function() { ScrollTrigger.refresh(true); }, 120);
+      }
+    };
+
+    // ═══ loveWallLogoInit — identyczny z LoveWallSection.tsx (bez typów TS) ═══
+    function loveWallLogoInit(container) {
+      var $id = function(id) { return container.querySelector('#' + id); };
+      var $$ = function(sel) { return container.querySelectorAll(sel); };
+      var cleanups = [], gsapInstances = [], timerIds = [], observers = [];
+      var tickFn = null, ticking = false, hfListeners = [];
+      var CFG = { CULL_MARGIN:1000, BASE_SPEED:1.17, MAX_SPEED_CAP:14, LERP:0.18, SCROLL_FACTOR:2.1, VELOCITY_SMOOTHING:0.03, VELOCITY_CLAMP:17 };
+      var SHADOW_HIDDEN = '0 0 2px currentColor, 0 0 4px currentColor, 0 0 8px currentColor, 0 0 16px currentColor, 0 0 32px currentColor, 0 0 48px currentColor, 0 0 64px currentColor, 0 0 80px currentColor';
+      var SHADOW_VISIBLE = '0 0 0px transparent, 0 0 0px transparent, 0 0 0px transparent, 0 0 0px transparent, 0 0 0px transparent, 0 0 0px transparent, 0 0 0px transparent, 0 0 0px transparent';
+      var BlurStrategy = {
+        tier:'high', thresholds:{high:Infinity,mid:8,low:4,minimal:0}, stats:{real:0,fallback:0},
+        init:function(){ var c=navigator.hardwareConcurrency||4, r=window.matchMedia('(prefers-reduced-motion:reduce)').matches, m=window.innerWidth<=768||window.matchMedia('(pointer:coarse)').matches; if(r)this.tier='minimal'; else if(c<=2||m)this.tier='low'; },
+        getMode:function(n){ var u=n<=this.thresholds[this.tier]; u?this.stats.real++:this.stats.fallback++; return u?'real':'fallback'; }
+      };
+      var DebrisSystem = {
+        pools: new WeakMap(),
+        initPool: function(wordEl) {
+          if(this.pools.has(wordEl))return;
+          var poolEl=document.createElement('div'); poolEl.className='debris-pool'; wordEl.appendChild(poolEl);
+          var h=wordEl.offsetHeight||100;
+          var pool={particles:[],sparks:[],triggered:false,masterTween:null,poolEl:poolEl,allItems:null,totalDuration:0};
+          for(var i=0;i<24;i++){
+            var el=document.createElement('div'); el.className='debris';
+            var isCircle=i%2===0, doesStrobe=isCircle&&(i%4===0);
+            if(isCircle)el.style.borderRadius='50%';
+            var sx; if(i<=2)sx=20+Math.random()*15; else if(i>=21)sx=35+Math.random()*30; else if(i>=18&&i<=20)sx=55+Math.random()*17; else if(i>=15&&i<=17)sx=22+Math.random()*16; else{var mid=i-3;sx=28+(mid/11)*44+(Math.random()-0.5)*12;}
+            el.style.left=sx+'%'; el.style.top='50%'; poolEl.appendChild(el);
+            var pm=(i>=6&&i<=11)?1.6+Math.random()*0.5:1.2+Math.random()*0.6;
+            var ss=1.0,es=1.0; if(i===0||i===8||i===16){ss=2.0;es=0.3;}else if(i===4||i===12||i===20){ss=0.3;es=2.0;}
+            pool.particles.push({el:el,peakY:-h*pm,fallY:h*(0.2+Math.random()*0.15),rot:Math.random()*360,delay:i*0.065,ss:ss,es:es,doesStrobe:doesStrobe,dur:3.2,peakT:0.32,fadeIn:0.12,fadeOut:0.88,isSpark:false});
+          }
+          for(var i=0;i<8;i++){
+            var el=document.createElement('div'); el.className=i%2===0?'spark plus':'spark';
+            el.style.left=(20+Math.random()*52)+'%'; el.style.top='50%'; poolEl.appendChild(el);
+            pool.sparks.push({el:el,peakY:-h*(1.8+Math.random()*0.8),fallY:h*(0.15+Math.random()*0.1),rot:180+Math.random()*360,delay:(i*3*0.065)+0.03,ss:0.6+Math.random()*0.8,es:0.4+Math.random()*0.6,dur:2.8,peakT:0.28,fadeIn:0.1,fadeOut:0.85,isSpark:true});
+          }
+          var all=pool.particles.concat(pool.sparks), maxD=0, maxDur=0;
+          for(var i=0;i<all.length;i++){if(all[i].delay>maxD)maxD=all[i].delay;if(all[i].dur>maxDur)maxDur=all[i].dur;}
+          pool.allItems=all; pool.totalDuration=maxDur+maxD; this.pools.set(wordEl,pool);
+        },
+        _updateParticle:function(p,gt,vps,td){
+          var lt=Math.max(0,(gt*td)-p.delay)/p.dur; if(lt<=0||lt>1){if(lt>1)p.el.style.opacity='0';return;}
+          var t=lt,py=p.peakY*vps,fy=p.fallY*vps,y;
+          if(t<=p.peakT){var n=t/p.peakT;y=py*(1-Math.pow(1-n,2.5));}else{var n=(t-p.peakT)/(1-p.peakT);y=py+(fy-py)*Math.pow(n,2.2);}
+          var op; if(t<p.fadeIn)op=t/p.fadeIn; else if(t>p.fadeOut)op=1-(t-p.fadeOut)/(1-p.fadeOut); else op=1;
+          var rot=p.isSpark?p.rot*t:p.rot*0.4*t, sc=Math.max(0.5,p.ss+(p.es-p.ss)*t), sop=0.6+Math.min(sc,2)*0.2;
+          if(p.doesStrobe&&t>p.fadeIn&&t<p.fadeOut){var str=0.5+0.5*Math.sin(t*30*Math.PI*2);sop*=(0.4+str*0.6);}
+          p.el.style.transform='translateY('+y+'px) rotate('+rot+'deg) scale('+sc+')'; p.el.style.opacity=Math.max(0,op*sop);
+        },
+        trigger:function(wordEl){
+          var pool=this.pools.get(wordEl); if(!pool||pool.triggered)return; pool.triggered=true;
+          var vps=Math.max(0.3,Math.min(1,window.innerWidth/1400)), all=pool.allItems, td=pool.totalDuration;
+          if(!all)return; if(pool.masterTween){pool.masterTween.kill();}
+          for(var i=0;i<all.length;i++){all[i].el.style.willChange='transform,opacity';all[i].el.style.transform='translateY(0) rotate(0deg) scale('+all[i].ss+')';all[i].el.style.opacity='0';}
+          var self=this;
+          var tw=gsap.to({prog:0},{prog:1,duration:td,ease:'none',
+            onUpdate:function(){var gt=this.targets()[0].prog;for(var i=0;i<all.length;i++)self._updateParticle(all[i],gt,vps,td);},
+            onComplete:function(){pool.masterTween=null;for(var i=0;i<all.length;i++)all[i].el.style.willChange='';}
+          }); pool.masterTween=tw; gsapInstances.push(tw);
+        },
+        reset:function(wordEl){
+          var pool=this.pools.get(wordEl); if(!pool)return; pool.triggered=false;
+          if(pool.masterTween){pool.masterTween.kill();pool.masterTween=null;}
+          var items=pool.allItems; if(!items)return;
+          for(var i=0;i<items.length;i++){items[i].el.style.willChange='';items[i].el.style.transform='translateY(0) rotate(0deg) scale('+items[i].ss+')';items[i].el.style.opacity='0';}
+        }
+      };
+      var EFFECTS = {
+        'optical-bloom':{blurModes:new WeakMap(),getMode:function(c){if(this.blurModes.has(c.wordEl))return this.blurModes.get(c.wordEl);var m=BlurStrategy.getMode(c.wordEl.querySelectorAll('.char').length);this.blurModes.set(c.wordEl,m);return m;},setHidden:function(c){var m=this.getMode(c);if(m==='real')gsap.set(c.el,{scale:2.5,filter:'blur(15px)',opacity:0,transformOrigin:'center center'});else gsap.set(c.el,{scale:2.5,opacity:0,textShadow:SHADOW_HIDDEN,transformOrigin:'center center'});},animate:function(c,s){var m=this.getMode(c);if(m==='real')gsap.to(c.el,{scale:1,filter:'blur(0px)',opacity:1,duration:1.8/s,ease:'power2.inOut',delay:c.idx*0.12/s});else gsap.to(c.el,{scale:1,opacity:1,textShadow:SHADOW_VISIBLE,duration:1.8/s,ease:'power2.inOut',delay:c.idx*0.12/s});}},
+        'zipper':{setHidden:function(c){var b=150*Math.min(1,window.innerWidth/1400);gsap.set(c.el,{y:c.idx%2===0?-b:b,opacity:0});},animate:function(c,s){gsap.to(c.el,{y:0,opacity:1,duration:1.4/s,ease:'elastic.out(1,0.6)',delay:c.idx*0.045/s});}},
+        'velocity-skew':{setHidden:function(c){gsap.set(c.el,{x:200,skewX:-45,opacity:0,scale:0.8});},animate:function(c,s){gsap.to(c.el,{x:0,skewX:0,opacity:1,scale:1,duration:1.6/s,ease:'power4.out',delay:c.idx*0.1/s});}},
+        'fluid-tension':{setHidden:function(c){gsap.set(c.el,{scaleY:0,scaleX:1.5,opacity:0,transformOrigin:'bottom center'});},animate:function(c,s){gsap.to(c.el,{scaleY:1,scaleX:1,opacity:1,duration:1.8/s,ease:'elastic.out(1,0.3)',delay:c.idx*0.08/s+c.animDelay});}},
+        'prism-cut':{needsWrapper:true,setHidden:function(c){gsap.set(c.el,{yPercent:110,scale:1.1,opacity:0});},animate:function(c,s){gsap.to(c.el,{yPercent:0,scale:1,opacity:1,duration:1.4/s,ease:'circ.out',delay:c.idx*0.1/s});}},
+        'anchor':{setHidden:function(c){gsap.set(c.el,{y:'-0.5em',scaleY:1.25,scaleX:0.88,opacity:0,transformOrigin:'center bottom'});},animate:function(c,s){gsap.to(c.el,{y:'0.08em',scaleY:0.92,scaleX:1.06,opacity:1,duration:0.7/s,ease:'power2.in',delay:c.idx*0.11/s,onComplete:function(){gsap.to(c.el,{y:0,scaleY:1,scaleX:1,duration:0.9/s,ease:'power2.out'});}});}},
+        'growth':{setHidden:function(c){gsap.set(c.el,{y:'0.35em',scaleY:0.3,scaleX:1.25,opacity:0,transformOrigin:'center bottom'});},animate:function(c,s){gsap.to(c.el,{y:'-0.07em',scaleY:1.12,scaleX:0.94,opacity:1,duration:0.7/s,ease:'power2.out',delay:c.idx*0.1/s,onComplete:function(){gsap.to(c.el,{y:0,scaleY:1,scaleX:1,duration:0.5/s,ease:'power1.inOut'});}});}},
+        'rotate-3d-scale':{type:'continuous',setHidden:function(c){c.el.style.opacity='0';c.el.style.transform='perspective(800px) translateZ(0px) rotateY(90deg) scale(0.5)';if(c.idx===1)DebrisSystem.reset(c.wordEl);},update:function(c,dist,da){var abs=Math.abs(dist);c.el.style.transform='perspective(800px) translateZ('+(-abs*150)+'px) rotateY('+(dist*70)+'deg) scale('+(1+(1-abs)*0.4)+')';c.el.style.opacity=Math.max(0.1,1-abs*0.4);if(c.idx===1&&abs<0.4&&da){DebrisSystem.trigger(c.wordEl);return true;}return false;}}
+      };
+      var trackAEl=$id('love-wall-logo-track-a'), trackBEl=$id('love-wall-logo-track-b');
+      if(!trackAEl||!trackBEl)return{pause:function(){},resume:function(){},kill:function(){}};
+      var setTrackAX=gsap.quickSetter(trackAEl,'x','px'), setTrackBX=gsap.quickSetter(trackBEl,'x','px');
+      gsap.set(trackAEl,{yPercent:-50,z:0}); gsap.set(trackBEl,{yPercent:-50,z:0});
+      var state={vpW:0,trW:0,baseX:0,targX:0,offA:0,offB:0,lastY:0,vel:0,rawVel:0,active:true,frame:0,baseSpeed:1.17};
+      var wordsA=[],wordsB=[];
+      function bakeWords(trackEl){
+        var words=[];
+        trackEl.querySelectorAll('.word').forEach(function(wEl){
+          var txt=wEl.textContent.trim(), effName=wEl.dataset.effect, eff=EFFECTS[effName];
+          var needsWrap=eff&&eff.needsWrapper&&BlurStrategy.tier!=='minimal';
+          var ts=parseFloat(wEl.dataset.timeScale||1), minDur=wEl.dataset.minDuration?parseFloat(wEl.dataset.minDuration):null;
+          var tp=parseFloat(wEl.dataset.triggerPoint||0.75), td=parseFloat(wEl.dataset.triggerDelay||0), ad=parseFloat(wEl.dataset.animationDelay||0);
+          var msf=minDur?(1.5/minDur):Infinity, ic=eff&&eff.type==='continuous';
+          wEl.innerHTML=''; wEl.style.width='auto';
+          if(wEl.dataset.needs3d==='true'){wEl.style.transformStyle='preserve-3d';wEl.style.perspective='1000px';}
+          if(effName==='rotate-3d-scale')wEl.style.position='relative';
+          var chars=[];
+          txt.split('').forEach(function(ch,i){
+            var span=document.createElement('span'); span.className='char'; span.textContent=ch===' '?'\u00A0':ch;
+            if(needsWrap){var w=document.createElement('span');w.className='char-wrapper';w.appendChild(span);wEl.appendChild(w);}
+            else wEl.appendChild(span);
+            chars.push({el:span,idx:i,animDelay:ad,lastDist:undefined,ctx:{el:span,idx:i,wordEl:wEl,animDelay:ad}});
+          });
+          words.push({el:wEl,chars:chars,x:0,w:0,charStep:0,state:0,eff:eff,effName:effName,triggerX:0,trigPoint:tp,timeScale:ts,maxSpeedFactor:msf,trigDelay:td,isContinuous:ic});
+        });
+        return words;
+      }
+      function updateWords(words,tp,dba){
+        var vpW=state.vpW, dt=false;
+        for(var i=0;i<words.length;i++){
+          var w=words[i],sx=tp+w.x,sx2=sx+w.w;
+          if(sx>vpW+CFG.CULL_MARGIN)break;
+          if(sx2<-CFG.CULL_MARGIN){if(w.state!==0){w.state=0;resetWordChars(w);}continue;}
+          if(w.isContinuous){if(sx<vpW&&sx2>0){for(var j=0;j<w.chars.length;j++){var c=w.chars[j],cx=sx+w.charStep*(j+0.5),dist=(cx-vpW/2)/(vpW/2);if(c.lastDist===undefined||Math.abs(dist-c.lastDist)>=0.01){var can=dba&&!dt,did=w.eff.update(c.ctx,dist,can);if(did)dt=true;c.lastDist=dist;}}w.state=2;}continue;}
+          if(w.state===0&&sx<w.triggerX&&sx2>0){
+            w.state=1;var rs=1+(Math.min(state.vel,30)*0.1),sp=Math.min(Math.max(1,rs),w.maxSpeedFactor)*w.timeScale;
+            var aw=(function(ww,s){return function(){for(var j=0;j<ww.chars.length;j++){var ch=ww.chars[j];gsap.killTweensOf(ch.el);if(ww.eff&&ww.eff.setHidden)ww.eff.setHidden(ch.ctx);if(ww.eff&&ww.eff.animate)ww.eff.animate(ch.ctx,s);}};})(w,sp);
+            if(w.trigDelay>0){var dc=gsap.delayedCall(w.trigDelay,aw);gsapInstances.push(dc);}else aw();
+          }
+          if(sx>vpW+50&&w.state!==0){w.state=0;resetWordChars(w);}
+        }
+        return dt;
+      }
+      function resetWordChars(word){for(var j=0;j<word.chars.length;j++){var c=word.chars[j];gsap.killTweensOf(c.el);c.lastDist=undefined;if(word.eff&&word.eff.setHidden)word.eff.setHidden(c.ctx);}}
+      function resetTrackWords(words){for(var i=0;i<words.length;i++){var w=words[i];w.state=0;for(var j=0;j<w.chars.length;j++){gsap.killTweensOf(w.chars[j].el);w.chars[j].lastDist=undefined;if(w.eff&&w.eff.setHidden)w.eff.setHidden(w.chars[j].ctx);}}}
+      var computeTriggerX=function(vpW,tp){if(vpW>=1400){return vpW-1400*(1-tp);}else if(vpW<=700){return vpW;}else{var t=(vpW-700)/700;return vpW-(1-tp)*1400*t;}};
+      var computeBaseSpeed=function(vpW){if(vpW>=1400)return 1.17;else if(vpW>=700)return 0.84+((vpW-700)/700)*0.33;else if(vpW>=350)return 0.70+((vpW-350)/350)*0.14;else return 0.63+(Math.max(0,(vpW-240)/110))*0.07;};
+      var update=function(){
+        if(!state.active||state.trW<=0)return;
+        var dt=gsap.ticker.deltaRatio(60); state.frame++;
+        var sy=scrollRuntime.getRawScroll(), sd=Math.abs(sy-state.lastY); state.lastY=sy;
+        if(window.__smoothedVelocity!==undefined){state.rawVel=Math.abs(window.__smoothedVelocity)/50;state.vel=state.rawVel;}
+        else{state.rawVel=sd*1.2;state.vel=state.vel*(1-CFG.VELOCITY_SMOOTHING)+state.rawVel*CFG.VELOCITY_SMOOTHING;}
+        state.vel=Math.min(state.vel,CFG.VELOCITY_CLAMP);
+        var fd=Math.pow(state.vel,0.75)*CFG.SCROLL_FACTOR; if(fd>CFG.MAX_SPEED_CAP)fd=CFG.MAX_SPEED_CAP;
+        state.targX-=(state.baseSpeed+fd)*dt;
+        state.baseX+=(state.targX-state.baseX)*(1-Math.pow(1-CFG.LERP,dt));
+        if(state.baseX+state.offA+state.trW<-CFG.CULL_MARGIN){state.offA=state.offB+state.trW;resetTrackWords(wordsA);}
+        if(state.baseX+state.offB+state.trW<-CFG.CULL_MARGIN){state.offB=state.offA+state.trW;resetTrackWords(wordsB);}
+        var pA=state.baseX+state.offA, pB=state.baseX+state.offB;
+        setTrackAX(pA); setTrackBX(pB);
+        var db=true;
+        if(pA+state.trW>-CFG.CULL_MARGIN&&pA<state.vpW+CFG.CULL_MARGIN){var tr=updateWords(wordsA,pA,db);if(tr)db=false;}
+        if(pB+state.trW>-CFG.CULL_MARGIN&&pB<state.vpW+CFG.CULL_MARGIN)updateWords(wordsB,pB,db);
+      };
+      tickFn=update;
+      var updateLayout=function(){
+        var nw=container.offsetWidth||window.innerWidth; if(nw===state.vpW&&state.trW>0)return;
+        state.vpW=nw; state.baseSpeed=computeBaseSpeed(nw); var old=state.trW;
+        var rA=trackAEl.getBoundingClientRect();
+        if(rA.width>0){state.trW=rA.width;for(var i=0;i<wordsA.length;i++){var w=wordsA[i],r=w.el.getBoundingClientRect();w.x=r.left-rA.left;w.w=r.width;w.charStep=w.chars.length>0?w.w/w.chars.length:0;w.triggerX=computeTriggerX(state.vpW,w.trigPoint);}}
+        var rB=trackBEl.getBoundingClientRect();
+        if(rB.width>0){for(var i=0;i<wordsB.length;i++){var w=wordsB[i],r=w.el.getBoundingClientRect();w.x=r.left-rB.left;w.w=r.width;w.charStep=w.chars.length>0?w.w/w.chars.length:0;w.triggerX=computeTriggerX(state.vpW,w.trigPoint);}}
+        if(state.trW>0&&old>0&&state.trW!==old){if(state.offA<=state.offB)state.offB=state.offA+state.trW;else state.offA=state.offB+state.trW;resetTrackWords(wordsA);resetTrackWords(wordsB);}
+        var rl=function(words){for(var i=0;i<words.length;i++){var w=words[i];if(w.state===0&&w.eff&&w.eff.setHidden)for(var j=0;j<w.chars.length;j++)w.eff.setHidden(w.chars[j].ctx);}};
+        rl(wordsA);rl(wordsB);
+      };
+      window.addEventListener('resize',updateLayout); cleanups.push(function(){window.removeEventListener('resize',updateLayout);});
+      var visH=function(){if(document.hidden){state.active=false;if(ticking){gsap.ticker.remove(tickFn);ticking=false;}}else{state.active=true;state.lastY=scrollRuntime.getRawScroll();var r=container.getBoundingClientRect();if(r.top<window.innerHeight&&r.bottom>0){if(!ticking){gsap.ticker.add(tickFn);ticking=true;}}}};
+      document.addEventListener('visibilitychange',visH); cleanups.push(function(){document.removeEventListener('visibilitychange',visH);});
+      BlurStrategy.init(); state.vpW=container.offsetWidth||window.innerWidth;
+      wordsA=bakeWords(trackAEl); wordsB=bakeWords(trackBEl); updateLayout();
+      state.offA=0; state.offB=state.trW;
+      container.querySelectorAll('.word[data-effect="rotate-3d-scale"]').forEach(function(el){DebrisSystem.initPool(el);});
+      var io=new IntersectionObserver(function(entries){var e=entries[0];if(!e)return;state.active=e.isIntersecting;if(e.isIntersecting){state.lastY=scrollRuntime.getRawScroll();if(!ticking){gsap.ticker.add(tickFn);ticking=true;}}else{if(ticking){gsap.ticker.remove(tickFn);ticking=false;}}},{threshold:0.1});
+      io.observe(container); observers.push(io);
+      state.lastY=scrollRuntime.getRawScroll();
+      var ir=container.getBoundingClientRect();
+      if(ir.top<window.innerHeight&&ir.bottom>0){state.active=true;gsap.ticker.add(tickFn);ticking=true;}
+      function pause(){if(ticking){gsap.ticker.remove(tickFn);ticking=false;}for(var i=0;i<hfListeners.length;i++){var h=hfListeners[i];h.target.removeEventListener(h.event,h.fn,h.options);}}
+      function resume(){state.lastY=scrollRuntime.getRawScroll();if(!ticking){gsap.ticker.add(tickFn);ticking=true;}for(var i=0;i<hfListeners.length;i++){var h=hfListeners[i];h.target.addEventListener(h.event,h.fn,h.options);}}
+      function kill(){pause();for(var i=0;i<cleanups.length;i++){try{cleanups[i]();}catch(e){}}for(var i=0;i<observers.length;i++){try{observers[i].disconnect();}catch(e){}}for(var i=0;i<timerIds.length;i++){if(timerIds[i]){try{clearTimeout(timerIds[i]);}catch(e){}try{cancelAnimationFrame(timerIds[i]);}catch(e){}}}for(var i=0;i<gsapInstances.length;i++){try{if(gsapInstances[i]&&gsapInstances[i].revert)gsapInstances[i].revert();if(gsapInstances[i]&&gsapInstances[i].kill)gsapInstances[i].kill();}catch(e){}}state.active=false;}
+      return{pause:pause,resume:resume,kill:kill};
+    }
+
+    // ═══ loveWallVelocityInit — identyczny z LoveWallSection.tsx (bez typów TS) ═══
+    function loveWallVelocityInit(container) {
+      var $id=function(id){return container.querySelector('#'+id);};
+      var cleanups=[],gsapInstances=[],timerIds=[],observers=[];
+      var tickFn=null,ticking=false,hfListeners=[];
+      function addHfListener(t,type,fn,opt){t.addEventListener(type,fn,opt);hfListeners.push({target:t,type:type,fn:fn,options:opt});}
+      function addCleanup(t,type,fn,opt){t.addEventListener(type,fn,opt);cleanups.push(function(){t.removeEventListener(type,fn,opt);});}
+      var reviewsRow1=[
+        {text:"Wybitny profesjonalizm i dbałość o szczegóły i pełne zaangażowanie w uzyskanie efektu.",author:"Paweł Śledziński",fontClass:"card__quote--lexend-600 card__quote--size-90",avatar:"https://i.pravatar.cc/88?img=11"},
+        {text:"Tutaj widać element twórczy. Kreacja stworzona przez Owocnych w końcu spełniła moje wymagania. Polecam.",author:"Tytus Rogalewski",fontClass:"card__quote--fraunces",avatar:"https://i.pravatar.cc/88?img=12"},
+        {text:"Jako trener sprzedaży i biznesu, często muszę delegować zadania. Co można powiedzieć o owocnych? To najlepsze miejsce w które możesz trafić.",author:"Patryk Jasiński",fontClass:"card__quote--lexend-200 card__quote--mobile-md",avatar:"https://i.pravatar.cc/88?img=13"},
+        {text:"Zespół potrafił wykonać projekt lepiej niż było to w moich wyobrażeniach. Dziękuję :) Polecam!!!",author:"A. Osiej",fontClass:"card__quote--lexend-400",avatar:"https://i.pravatar.cc/88?img=14"},
+        {text:"Ci ludzie naprawdę znają się na swojej pracy! Jesteśmy zachwycone efektem końcowym projektu, jak i życzliwym podejściem całego zespołu.",author:"Małgorzata Rokicka",fontClass:"card__quote--lexend-200 card__quote--mobile-md",avatar:"https://i.pravatar.cc/88?img=15"},
+        {text:"Ta firma dba o to, aby nie tylko poznać potrzeby klienta, ale również je zrozumieć. Zdecydowanie polecam.",author:"Maciej Nowak",fontClass:"card__quote--arial",avatar:"https://i.pravatar.cc/88?img=16"},
+        {text:"Owocni to profesjonalna firma i jak każda popełnia błędy - ale ich wyróżnia to, że potrafią je poprawić. Dzięki i do zobaczenia!",author:"Konrad Kardacz",fontClass:"card__quote--lexend-600 card__quote--mobile-sm",avatar:"https://i.pravatar.cc/88?img=17"},
+        {text:"Warto zainwestować swoje pieniądze w tak rzetelnej firmie. Dziękuję za współpracę!",author:"Maciej Śl",fontClass:"card__quote--lexend-800",avatar:"https://i.pravatar.cc/88?img=18"},
+        {text:"Pomimo że dzieli nas cała Polska, kontakt był bardzo dobry.",author:"Mateusz Weredyński",fontClass:"card__quote--lexend-800 card__quote--size-xl-90",avatar:"https://i.pravatar.cc/88?img=19"},
+        {text:"Analiza potrzeb i dużo pomysłów – nie ma tu przypadkowych działań. Pozdrawiam szczególnie Panią Karolinę. Polecam! \uD83D\uDE0A",author:"Ula Jóźwik",fontClass:"card__quote--lexend-200 card__quote--mobile-sm",avatar:"https://i.pravatar.cc/88?img=20"}
+      ];
+      var reviewsRow2=[
+        {text:"Serdecznie Wam wszystkim dziękuję za zaangażowanie i cierpliwość! Dobra robota - świetny projekt. Pełen profesjonalizm!",author:"Arletta Szczurek",fontClass:"card__quote--fraunces card__quote--mobile-sm",avatar:"https://i.pravatar.cc/88?img=21"},
+        {text:"Wszystko na świetnym poziomie: obsługa klienta, która urzeka profesjonalizmem, szybkość reakcji, wsłuchiwanie się w potrzeby.",author:"Anna Kopanczyk",fontClass:"card__quote--lexend-400 card__quote--mobile-md",avatar:"https://i.pravatar.cc/88?img=22"},
+        {text:"Świetna firma, świetni ludzie. Współpraca przebiegała rewelacyjnie i szybko. Efekt końcowy świetny. Polecam!",author:"Piotr Orzeł",fontClass:"card__quote--lexend-600 card__quote--mobile-sm",avatar:"https://i.pravatar.cc/88?img=23"},
+        {text:"Chciałbym gorąco polecić cały zespół owocnych w szczególności Panią Adriannę i Marcjannę które od początku współpracy dbają o nasz projekt.",author:"Maciej Szukała",fontClass:"card__quote--lexend-200 card__quote--mobile-md",avatar:"https://i.pravatar.cc/88?img=24"},
+        {text:"Współpraca bardzo OWOCNA :) dużo cierpliwości..., kreatywności i rzetelnego podejścia. Z wielką przyjemnością polecam współpracę!",author:"Beata Glinka",fontClass:"card__quote--georgia card__quote--mobile-md",avatar:"https://i.pravatar.cc/88?img=25"},
+        {text:"Już od pierwszego kontaktu czułem, że to właśnie ta firma. Polecam wszystkim, którzy chcą dobrze zainwestować w marketing swojej firmy.",author:"Wojciech Urbanowicz",fontClass:"card__quote--courier card__quote--size-xs card__quote--mobile-lg",avatar:"https://i.pravatar.cc/88?img=26"},
+        {text:"Współpraca w pełni mnie usatysfakcjonowała, szczególnie pomysłowość i dobry kontakt z klientem. Polecam!!!",author:"Kinga Mizerska",fontClass:"card__quote--arial card__quote--mobile-sm",avatar:"https://i.pravatar.cc/88?img=27"},
+        {text:"Stworzony projekt wyszedł super. Polecam na 100%.",author:"Bartosz Siwek",fontClass:"card__quote--lexend-800 card__quote--size-xl",avatar:"https://i.pravatar.cc/88?img=28"},
+        {text:"Obsługa jest bardzo miła. Odpowiadają cierpliwie na każde pytanie. Jestem w 100% zadowolona ze strony",author:"Jzdoo",fontClass:"card__quote--courier card__quote--mobile-sm",avatar:"https://i.pravatar.cc/88?img=29"},
+        {text:"Polecam Agencję Owocni z całego serca. Fenomenalna jakość usług w dobrej cenie.",author:"Wojciech Musiał",fontClass:"card__quote--lexend-800",avatar:"https://i.pravatar.cc/88?img=30"}
+      ];
+      function createCard(r,i){
+        return '<div class="card-shell" data-index="'+i+'"><div class="card-tilt"><article class="card"><div class="card__rating"><span class="card__rating-number">5.0</span><div class="card__stars">'+
+          '<svg class="card__star" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>'.repeat(5)+
+          '</div></div><p class="card__quote '+(r.fontClass||'')+'">\u201C'+r.text+'\u201D</p><div class="card__author"><img class="card__avatar" loading="eager" decoding="async" width="27" height="27" src="'+r.avatar+'" onerror="this.classList.add(\'load-failed\');this.onerror=null;" alt="'+r.author+'"><span class="card__name">'+r.author+'</span><button class="card__expand-btn" aria-label="Powiększ opinię">+</button></div></article></div></div>';
+      }
+      var REPEATS=2;
+      var rep1=Array.from({length:REPEATS},function(){return reviewsRow1;}).flat();
+      var rep2=Array.from({length:REPEATS},function(){return reviewsRow2;}).flat();
+      var row1Mover=$id('love-wall-row1-mover'),row2Mover=$id('love-wall-row2-mover');
+      var row1Viewport=$id('love-wall-row1-viewport'),row2Viewport=$id('love-wall-row2-viewport');
+      if(!row1Mover||!row2Mover||!row1Viewport||!row2Viewport)return{pause:function(){},resume:function(){},kill:function(){}};
+      row1Mover.innerHTML=rep1.map(function(r,i){return createCard(r,i);}).join('');
+      row2Mover.innerHTML=rep2.map(function(r,i){return createCard(r,i);}).join('');
+      var resizeTimeout=null;
+      function onResizeMeasure(){if(resizeTimeout)clearTimeout(resizeTimeout);if(expandedState.shell)collapseExpandedCard();resizeTimeout=setTimeout(function(){measureSeam();scrollRuntime.requestRefresh('st-refresh');},250);timerIds.push(resizeTimeout);}
+      addCleanup(window,'resize',onResizeMeasure,{passive:true});
+      var CONFIG={dtCap:2.0,softResumeDuration:0.6,softResumeEase:'expo.out',maxTiltY:6,gradientStart:30,gradientRange:25,gradientScaleMax:1.15,textDriftMultiplier:0.4,
+        row1:{baseSpeed:0.084,motion:{friction:0.94,inputDecay:0.22,velocityClamp:6000,saturation:800,boostFactor:0.0028,deadzone:40,riseClamp:1260},physics:{friction:0.97,inputDecay:0.25,velocityClamp:9000,saturation:2500,skewDivider:200,scaleDivider:15000,smooth:0.03,deadzone:40,riseClamp:1540}},
+        row2:{baseSpeed:0.118,motion:{friction:0.96,inputDecay:0.22,velocityClamp:6000,saturation:800,boostFactor:0.0028,deadzone:40,riseClamp:1260},physics:{friction:0.96,inputDecay:0.25,velocityClamp:9000,saturation:2500,skewDivider:200,scaleDivider:15000,smooth:0.15,deadzone:40,riseClamp:1540}}};
+      var state={tickerEnabled:false,lastScrollY:scrollRuntime.getRawScroll(),
+        row1:{x:0,paused:false,speedScale:{current:1},activeShell:null,hoverSuppressed:false,motionVelocity:0,motionVelocityInput:0,physicsVelocity:0,physicsVelocityInput:0,skew:0,scale:1,lastAppliedSkew:0,lastAppliedScale:1,scrollDeltaAccum:0,stableScrollTime:0},
+        row2:{x:0,paused:false,speedScale:{current:1},activeShell:null,hoverSuppressed:false,motionVelocity:0,motionVelocityInput:0,physicsVelocity:0,physicsVelocityInput:0,skew:0,scale:1,lastAppliedSkew:0,lastAppliedScale:1,scrollDeltaAccum:0,stableScrollTime:0}};
+      var SEG1=0,SEG2=0,PPP1=0,PPP2=0;
+      function measureSeam(){
+        var p1=reviewsRow1.length,s1=row1Mover.querySelectorAll('.card-shell');
+        if(s1&&s1.length>p1){var sg=s1[p1].offsetLeft-s1[0].offsetLeft,w=row1Mover.scrollWidth;if(sg>0&&w>0){SEG1=sg;PPP1=w/100;}}
+        var p2=reviewsRow2.length,s2=row2Mover.querySelectorAll('.card-shell');
+        if(s2&&s2.length>p2){var sg=s2[p2].offsetLeft-s2[0].offsetLeft,w=row2Mover.scrollWidth;if(sg>0&&w>0){SEG2=sg;PPP2=w/100;}}
+      }
+      measureSeam();
+      var setRow1X=gsap.quickSetter(row1Mover,'x','px'),setRow2X=gsap.quickSetter(row2Mover,'x','px');
+      var setRow1Skew=gsap.quickSetter(row1Viewport,'--row-skew'),setRow1Scale=gsap.quickSetter(row1Viewport,'--row-scale');
+      var setRow2Skew=gsap.quickSetter(row2Viewport,'--row-skew'),setRow2Scale=gsap.quickSetter(row2Viewport,'--row-scale');
+      var prefersRM=window.matchMedia('(prefers-reduced-motion:reduce)').matches;
+      var canHover=window.matchMedia('(hover:hover)').matches;
+      function fastTanh(x){return x/(1+Math.abs(x));}
+      var VE=0.1,PE=0.001,lastR1X=null,lastR2X=null;
+      function updateRowPhysics(rs,cfg,vs,dt){
+        var mc=cfg.motion,pc=cfg.physics;
+        var vmi=vs<(mc.deadzone||0)?0:vs, vpi=vs<(pc.deadzone||0)?0:vs;
+        rs.motionVelocityInput=Math.min(mc.velocityClamp,vmi); rs.physicsVelocityInput=Math.min(pc.velocityClamp,vpi);
+        rs.motionVelocity*=Math.pow(mc.friction,dt);
+        if(vmi>rs.motionVelocity)rs.motionVelocity=Math.min(vmi,rs.motionVelocity+(mc.riseClamp||1e9)*dt);
+        rs.motionVelocityInput*=Math.pow(mc.inputDecay,dt);
+        if(rs.motionVelocity<VE)rs.motionVelocity=0;
+        var vme=mc.saturation*fastTanh(rs.motionVelocity/mc.saturation), mb=vme*mc.boostFactor;
+        rs.physicsVelocity*=Math.pow(pc.friction,dt);
+        if(vpi>rs.physicsVelocity)rs.physicsVelocity=Math.min(vpi,rs.physicsVelocity+(pc.riseClamp||1e9)*dt);
+        rs.physicsVelocityInput*=Math.pow(pc.inputDecay,dt);
+        if(rs.physicsVelocity<VE)rs.physicsVelocity=0;
+        var vpe=pc.saturation*fastTanh(rs.physicsVelocity/pc.saturation);
+        var tsk=Math.max(-15,Math.min(15,-(vpe/pc.skewDivider))), tsc=Math.max(1,Math.min(1.15,1+(vpe/pc.scaleDivider)));
+        var al=1-Math.pow(1-pc.smooth,dt);
+        if(Math.abs(tsk-rs.skew)>PE)rs.skew+=(tsk-rs.skew)*al;
+        if(Math.abs(tsc-rs.scale)>PE)rs.scale+=(tsc-rs.scale)*al;
+        return mb;
+      }
+      function tick(time,deltaTime){
+        var y=scrollRuntime.getRawScroll(),dy=y-(state.lastScrollY||0); state.lastScrollY=y;
+        var dtMs=deltaTime||0,dtSec=dtMs>0?dtMs/1000:0,absDy=Math.abs(dy);
+        var vs=window.__smoothedVelocity!==undefined?window.__smoothedVelocity:(absDy<2||dtSec<=0?0:absDy/dtSec);
+        var dt=Math.min(dtMs/16.66,CONFIG.dtCap);
+        if(state.row1.activeShell&&absDy>0){state.row1.scrollDeltaAccum+=absDy;if(state.row1.scrollDeltaAccum>=4)clearRowFocus(state.row1,row1Viewport);}
+        if(state.row2.activeShell&&absDy>0){state.row2.scrollDeltaAccum+=absDy;if(state.row2.scrollDeltaAccum>=4)clearRowFocus(state.row2,row2Viewport);}
+        if(absDy<0.5){state.row1.stableScrollTime+=dtMs;state.row2.stableScrollTime+=dtMs;}
+        else{state.row1.stableScrollTime=0;state.row2.stableScrollTime=0;}
+        var mb1=0;
+        if(!state.row1.paused){mb1=updateRowPhysics(state.row1,CONFIG.row1,vs,dt);var sk=Math.abs(state.row1.skew-state.row1.lastAppliedSkew)>0.05,sc=Math.abs(state.row1.scale-state.row1.lastAppliedScale)>0.002;if(sk||sc){setRow1Skew(state.row1.skew.toFixed(2)+'deg');setRow1Scale(state.row1.scale.toFixed(3));state.row1.lastAppliedSkew=state.row1.skew;state.row1.lastAppliedScale=state.row1.scale;}var ts=(CONFIG.row1.baseSpeed+mb1)*dt,dp=0.05*ts*state.row1.speedScale.current,dx=dp*(PPP1||0);state.row1.x-=dx;if(SEG1>0)while(state.row1.x<=-SEG1)state.row1.x+=SEG1;}
+        var mb2=0;
+        if(!state.row2.paused){mb2=updateRowPhysics(state.row2,CONFIG.row2,vs,dt);var sk=Math.abs(state.row2.skew-state.row2.lastAppliedSkew)>0.05,sc=Math.abs(state.row2.scale-state.row2.lastAppliedScale)>0.002;if(sk||sc){setRow2Skew(state.row2.skew.toFixed(2)+'deg');setRow2Scale(state.row2.scale.toFixed(3));state.row2.lastAppliedSkew=state.row2.skew;state.row2.lastAppliedScale=state.row2.scale;}var ts=(CONFIG.row2.baseSpeed+mb2)*dt,dp=0.05*ts*state.row2.speedScale.current,dx=dp*(PPP2||0);state.row2.x-=dx;if(SEG2>0)while(state.row2.x<=-SEG2)state.row2.x+=SEG2;}
+        if(state.row1.x!==lastR1X){setRow1X(state.row1.x);lastR1X=state.row1.x;}
+        if(state.row2.x!==lastR2X){setRow2X(state.row2.x);lastR2X=state.row2.x;}
+      }
+      function startTicker(){if(!state.tickerEnabled){state.tickerEnabled=true;ticking=true;gsap.ticker.add(tickFn);}}
+      function stopTicker(){if(state.tickerEnabled){state.tickerEnabled=false;ticking=false;gsap.ticker.remove(tickFn);}}
+      function clearRowFocus(rs,vp){
+        if(expandedState.shell&&expandedState.rowState===rs)collapseExpandedCard();
+        var had=rs.activeShell;
+        if(had){var at=had.querySelector('.card-tilt');if(at){at.style.removeProperty('--lift-z');at.style.removeProperty('--card-scale');at.style.removeProperty('--lift-y');at.style.removeProperty('--tilt-x');at.style.removeProperty('--tilt-y');}var ac=had.querySelector('.card');if(ac)ac.style.removeProperty('opacity');had.classList.remove('is-active');rs.activeShell=null;}
+        vp.classList.remove('is-hovering'); rs.paused=false; rs.scrollDeltaAccum=0; rs.hoverSuppressed=false;
+        var setSkew=vp===row1Viewport?setRow1Skew:setRow2Skew, setScale=vp===row1Viewport?setRow1Scale:setRow2Scale;
+        gsap.killTweensOf(rs); gsap.killTweensOf(rs.speedScale);
+        var ta=gsap.to(rs,{skew:0,scale:1,physicsVelocity:0,duration:CONFIG.softResumeDuration,ease:CONFIG.softResumeEase,onUpdate:function(){setSkew(rs.skew.toFixed(2)+'deg');setScale(rs.scale.toFixed(3));rs.lastAppliedSkew=rs.skew;rs.lastAppliedScale=rs.scale;},onComplete:function(){rs.physicsVelocityInput=0;}});
+        gsapInstances.push(ta);
+        var tb=gsap.to(rs.speedScale,{current:1,duration:CONFIG.softResumeDuration,ease:CONFIG.softResumeEase,overwrite:true});
+        gsapInstances.push(tb);
+      }
+      function resetAllOnScroll(){clearRowFocus(state.row1,row1Viewport);clearRowFocus(state.row2,row2Viewport);}
+      if(!prefersRM){
+        var stInstance=ScrollTrigger.create({trigger:container,start:'top bottom',end:'bottom top',onEnter:function(){startTicker();attachHfListeners();},onEnterBack:function(){startTicker();attachHfListeners();},onLeave:function(){resetAllOnScroll();stopTicker();detachHfListeners();},onLeaveBack:function(){resetAllOnScroll();stopTicker();detachHfListeners();}});
+        gsapInstances.push(stInstance);
+      }
+      var hfAttached=false;
+      function attachHfListeners(){if(hfAttached)return;hfAttached=true;for(var i=0;i<hfListeners.length;i++){var h=hfListeners[i];h.target.addEventListener(h.type,h.fn,h.options);}}
+      function detachHfListeners(){if(!hfAttached)return;hfAttached=false;for(var i=0;i<hfListeners.length;i++){var h=hfListeners[i];h.target.removeEventListener(h.type,h.fn,h.options);}}
+      if(canHover&&!prefersRM){
+        var tiltState=new WeakMap(),lastPMT=null,lastPMS=null;
+        function resetTilt(shell){var c=tiltState.get(shell),card=(c&&c.cardEl)||shell.querySelector('.card'),te=(c&&c.tiltEl)||shell.querySelector('.card-tilt');if(te){te.style.setProperty('--tilt-y','0deg');te.style.removeProperty('--tilt-x');}if(card){card.style.setProperty('--gradient-x',CONFIG.gradientStart+'%');card.style.setProperty('--gradient-scale','1');card.style.setProperty('--text-x','0px');}}
+        function updateTilt(shell){var s=tiltState.get(shell);if(!s)return;s.raf=0;var card=s.cardEl,te=s.tiltEl;if(!card||!te)return;var relX=(s.clientX-s.bounds.centerX)/(s.bounds.width/2),x=Math.max(-1,Math.min(1,relX));te.style.setProperty('--tilt-y',(x*CONFIG.maxTiltY)+'deg');card.style.setProperty('--gradient-x',(CONFIG.gradientStart-(x*CONFIG.gradientRange))+'%');card.style.setProperty('--gradient-scale',''+(1+(Math.abs(x)*(CONFIG.gradientScaleMax-1))));card.style.setProperty('--text-x',(x*CONFIG.maxTiltY*CONFIG.textDriftMultiplier)+'px');}
+        function setActiveShell(vp,rs,shell,cx){if(rs.activeShell&&rs.activeShell!==shell){rs.activeShell.classList.remove('is-active');var p=tiltState.get(rs.activeShell);if(p&&p.raf){cancelAnimationFrame(p.raf);}resetTilt(rs.activeShell);}rs.activeShell=shell;shell.classList.add('is-active');vp.classList.add('is-hovering');var rect=shell.getBoundingClientRect();tiltState.set(shell,{clientX:cx,raf:0,bounds:{width:rect.width,centerX:rect.left+rect.width/2},cardEl:shell.querySelector('.card'),tiltEl:shell.querySelector('.card-tilt')});var s=tiltState.get(shell);if(s&&!s.raf){var rid=requestAnimationFrame(function(){updateTilt(shell);});s.raf=rid;timerIds.push(rid);}}
+        function setupRowHover(vp,rs){
+          function onPE(){if(rs.hoverSuppressed)return;rs.scrollDeltaAccum=0;}
+          function onPM(e){var shell;if(e.target===lastPMT){shell=lastPMS;}else{shell=e.target.closest('.card-shell');lastPMT=e.target;lastPMS=shell;}
+            if(rs.hoverSuppressed&&shell)return;
+            if(!shell){if(rs.hoverSuppressed)rs.hoverSuppressed=false;if(rs.activeShell){rs.activeShell.classList.remove('is-active');var s=tiltState.get(rs.activeShell);if(s&&s.raf)cancelAnimationFrame(s.raf);resetTilt(rs.activeShell);rs.activeShell=null;}vp.classList.remove('is-hovering');if(rs.paused){rs.paused=false;gsap.killTweensOf(rs);var t1=gsap.to(rs.speedScale,{current:1,duration:CONFIG.softResumeDuration,ease:CONFIG.softResumeEase,overwrite:true});gsapInstances.push(t1);var ss=vp===row1Viewport?setRow1Skew:setRow2Skew,sc=vp===row1Viewport?setRow1Scale:setRow2Scale;var t2=gsap.to(rs,{skew:0,scale:1,duration:CONFIG.softResumeDuration,ease:CONFIG.softResumeEase,onUpdate:function(){ss(rs.skew.toFixed(2)+'deg');sc(rs.scale.toFixed(3));rs.lastAppliedSkew=rs.skew;rs.lastAppliedScale=rs.scale;}});gsapInstances.push(t2);}return;}
+            vp.classList.add('is-hovering');
+            if(!rs.activeShell||rs.activeShell!==shell){setActiveShell(vp,rs,shell,e.clientX);}
+            else{var s=tiltState.get(shell);if(!s||s.clientX===e.clientX)return;s.clientX=e.clientX;if(!s.raf){var rid=requestAnimationFrame(function(){updateTilt(shell);});s.raf=rid;timerIds.push(rid);}}
+            if(!rs.paused){rs.paused=true;gsap.killTweensOf(rs.speedScale);gsap.killTweensOf(rs);var cur=rs.speedScale.current,bd=Math.max(0.3,Math.min(0.8,cur*0.6));var t3=gsap.to(rs.speedScale,{current:0,duration:bd,ease:'power3.out',overwrite:true});gsapInstances.push(t3);var ss=vp===row1Viewport?setRow1Skew:setRow2Skew,sc=vp===row1Viewport?setRow1Scale:setRow2Scale;var t4=gsap.to(rs,{skew:0,scale:1,duration:bd*1.2,ease:'power2.out',onUpdate:function(){ss(rs.skew.toFixed(2)+'deg');sc(rs.scale.toFixed(3));rs.lastAppliedSkew=rs.skew;rs.lastAppliedScale=rs.scale;}});gsapInstances.push(t4);}}
+          function onPL(){rs.hoverSuppressed=false;lastPMT=null;lastPMS=null;clearRowFocus(rs,vp);}
+          addCleanup(vp,'pointerenter',onPE,undefined);addHfListener(vp,'pointermove',onPM,undefined);addCleanup(vp,'pointerleave',onPL,undefined);
+        }
+        setupRowHover(row1Viewport,state.row1); setupRowHover(row2Viewport,state.row2);
+      }
+      if(!canHover&&!prefersRM){
+        function deactivateRow(rs,vp){if(rs.activeShell){rs.activeShell.classList.remove('is-active');rs.activeShell=null;}vp.classList.remove('is-hovering');rs.paused=false;var tw=gsap.to(rs.speedScale,{current:1,duration:CONFIG.softResumeDuration,ease:CONFIG.softResumeEase,overwrite:true});gsapInstances.push(tw);}
+        function activateCard(vp,rs,shell){if(rs.activeShell&&rs.activeShell!==shell)rs.activeShell.classList.remove('is-active');rs.paused=true;gsap.killTweensOf(rs.speedScale);rs.speedScale.current=0;rs.activeShell=shell;shell.classList.add('is-active');vp.classList.add('is-hovering');}
+        function setupTapToggle(vp,rs){function onPD(e){if(isMobileExpandMode())return;var shell=e.target.closest('.card-shell');if(shell&&shell!==rs.activeShell){activateCard(vp,rs,shell);return;}if(rs.activeShell)deactivateRow(rs,vp);}addCleanup(vp,'pointerdown',onPD,undefined);}
+        setupTapToggle(row1Viewport,state.row1); setupTapToggle(row2Viewport,state.row2);
+      }
+      var MB=500,TT=10;
+      var expandedState={shell:null,viewport:null,rowState:null,rowId:null,activePointerId:null,pointerStart:null,wasDrag:false,suppressNextClick:false};
+      var swipe={tracking:false,dragging:false,decided:false,pointerId:null,startX:0,startY:0,lastX:0,viewport:null,rowState:null,rowId:null,samples:[]};
+      function isMobileExpandMode(){return window.innerWidth<MB;}
+      function freezeRow(rs,vp){rs.paused=true;gsap.killTweensOf(rs.speedScale);rs.speedScale.current=0;rs.skew=0;rs.scale=1;rs.physicsVelocity=0;rs.physicsVelocityInput=0;var ss=vp===row1Viewport?setRow1Skew:setRow2Skew,sc=vp===row1Viewport?setRow1Scale:setRow2Scale;ss('0deg');sc('1');}
+      function unfreezeRow(rs){rs.paused=false;var tw=gsap.to(rs.speedScale,{current:1,duration:CONFIG.softResumeDuration,ease:CONFIG.softResumeEase});gsapInstances.push(tw);}
+      var gyro={permission:'pending',listening:false,active:false,rafId:null,currentTiltY:0,currentTiltX:0,rawGamma:0,rawBeta:0,neutralBeta:70,tiltEl:null,cardEl:null};
+      function gyroOnOrientation(e){if(e.gamma!==null)gyro.rawGamma=e.gamma;if(e.beta!==null)gyro.rawBeta=e.beta;}
+      function gyroStartListening(){if(gyro.listening)return;gyro.listening=true;window.addEventListener('deviceorientation',gyroOnOrientation,{passive:true});cleanups.push(function(){window.removeEventListener('deviceorientation',gyroOnOrientation);});}
+      function gyroRequestPermission(cb){if(typeof DeviceOrientationEvent!=='undefined'&&typeof DeviceOrientationEvent.requestPermission==='function'){DeviceOrientationEvent.requestPermission().then(function(r){gyro.permission=r==='granted'?'granted':'denied';if(gyro.permission==='granted')gyroStartListening();cb(gyro.permission);}).catch(function(){gyro.permission='denied';cb('denied');});}else if('DeviceOrientationEvent' in window){gyro.permission='granted';gyroStartListening();cb('granted');}else{gyro.permission='unavailable';cb('unavailable');}}
+      function gyroUpdate(){if(!gyro.active||!gyro.tiltEl)return;var gc=Math.max(-45,Math.min(45,gyro.rawGamma)),ty=(gc/45)*8,bd=gyro.rawBeta-gyro.neutralBeta,bc=Math.max(-30,Math.min(30,bd)),tx=(bc/30)*5;gyro.currentTiltY+=(ty-gyro.currentTiltY)*0.12;gyro.currentTiltX+=(tx-gyro.currentTiltX)*0.12;gyro.tiltEl.style.setProperty('--tilt-y',gyro.currentTiltY.toFixed(2)+'deg');gyro.tiltEl.style.setProperty('--tilt-x',gyro.currentTiltX.toFixed(2)+'deg');if(gyro.cardEl){var x=gyro.currentTiltY/8;gyro.cardEl.style.setProperty('--gradient-x',(CONFIG.gradientStart-(x*CONFIG.gradientRange))+'%');gyro.cardEl.style.setProperty('--gradient-scale',''+(1+(Math.abs(x)*(CONFIG.gradientScaleMax-1))));}gyro.rafId=requestAnimationFrame(gyroUpdate);}
+      function gyroActivate(shell){if(gyro.permission!=='granted')return;var te=shell.querySelector('.card-tilt'),ce=shell.querySelector('.card');if(!te)return;gyro.tiltEl=te;gyro.cardEl=ce;gyro.neutralBeta=gyro.rawBeta||70;gyro.currentTiltY=0;gyro.currentTiltX=0;gyro.active=true;te.style.transition='none';te.style.willChange='transform';gyroUpdate();}
+      function gyroDeactivate(){gyro.active=false;if(gyro.rafId){cancelAnimationFrame(gyro.rafId);gyro.rafId=null;}if(gyro.tiltEl){gyro.tiltEl.style.setProperty('--tilt-y','0deg');gyro.tiltEl.style.setProperty('--tilt-x','0deg');gyro.tiltEl.style.removeProperty('transition');gyro.tiltEl.style.removeProperty('will-change');}if(gyro.cardEl){gyro.cardEl.style.setProperty('--gradient-x',CONFIG.gradientStart+'%');gyro.cardEl.style.setProperty('--gradient-scale','1');}gyro.tiltEl=null;gyro.cardEl=null;}
+      function getOffsetToCenter(shell){var r=shell.getBoundingClientRect();return window.innerWidth/2-(r.left+r.width/2);}
+      function centerCard(shell,rs,segPx,setRX,onDone){if(segPx<=0){if(onDone)onDone();return;}var off=getOffsetToCenter(shell),sx=rs.x,a={progress:0};var tw=gsap.to(a,{progress:1,duration:0.45,ease:'power2.out',onUpdate:function(){rs.x=sx+(off*a.progress);while(rs.x<=-segPx)rs.x+=segPx;while(rs.x>0)rs.x-=segPx;setRX(rs.x);},onComplete:onDone});gsapInstances.push(tw);}
+      function expandCardMobile(shell,vp,rs,rowId){if(expandedState.shell)collapseExpandedCard();expandedState.shell=shell;expandedState.viewport=vp;expandedState.rowState=rs;expandedState.rowId=rowId;freezeRow(rs,vp);if(rs.activeShell&&rs.activeShell!==shell)rs.activeShell.classList.remove('is-active');rs.activeShell=shell;shell.classList.add('is-active','is-expanded');vp.classList.add('has-expanded');var rc=vp.parentElement;if(rc){rc.style.position='relative';rc.style.zIndex='10';rc.classList.add('is-row-expanded');}var segPx=rowId==='row1'?SEG1:SEG2,setRX=rowId==='row1'?setRow1X:setRow2X;centerCard(shell,rs,segPx,setRX,function(){var gt=setTimeout(function(){if(expandedState.shell===shell)gyroActivate(shell);},250);timerIds.push(gt);});}
+      function collapseExpandedCard(){if(!expandedState.shell)return;gyroDeactivate();var shell=expandedState.shell,vp=expandedState.viewport,rs=expandedState.rowState;expandedState.shell=null;expandedState.viewport=null;expandedState.rowState=null;expandedState.rowId=null;expandedState.activePointerId=null;expandedState.pointerStart=null;expandedState.wasDrag=false;shell.classList.remove('is-expanded','is-active');if(!vp)return;vp.classList.remove('has-expanded');var rc=vp.parentElement;if(rc){rc.style.position='';rc.style.zIndex='';rc.classList.remove('is-row-expanded');}if(rs)rs.activeShell=null;if(rs)unfreezeRow(rs);}
+      function onTapOutside(e){if(!expandedState.shell)return;if(!e.target.closest('.card-shell'))collapseExpandedCard();}
+      addCleanup(document,'pointerup',onTapOutside,undefined);
+      function handleRowPD(e,vp,rs,rowId){if(!isMobileExpandMode())return;var shell=e.target.closest('.card-shell');if(!shell){if(expandedState.shell)collapseExpandedCard();return;}if(shell===expandedState.shell){if(e.isPrimary){expandedState.activePointerId=e.pointerId;expandedState.pointerStart={x:e.clientX,y:e.clientY};expandedState.wasDrag=false;}return;}if(!e.isPrimary)return;swipe.tracking=true;swipe.dragging=false;swipe.decided=false;swipe.pointerId=e.pointerId;swipe.startX=e.clientX;swipe.startY=e.clientY;swipe.lastX=e.clientX;swipe.viewport=vp;swipe.rowState=rs;swipe.rowId=rowId;swipe.samples=[{x:e.clientX,t:Date.now()}];}
+      function handleRowClick(e,vp,rs,rowId){if(!isMobileExpandMode())return;if(expandedState.suppressNextClick){expandedState.suppressNextClick=false;return;}var shell=e.target.closest('.card-shell');if(!shell||shell===expandedState.shell)return;if(expandedState.shell)collapseExpandedCard();if(gyro.permission==='pending')gyroRequestPermission(function(s){if(s==='granted'&&expandedState.shell)gyroActivate(expandedState.shell);});expandCardMobile(shell,vp,rs,rowId);}
+      function onR1PD(e){handleRowPD(e,row1Viewport,state.row1,'row1');}function onR2PD(e){handleRowPD(e,row2Viewport,state.row2,'row2');}
+      function onR1C(e){handleRowClick(e,row1Viewport,state.row1,'row1');}function onR2C(e){handleRowClick(e,row2Viewport,state.row2,'row2');}
+      row1Viewport.addEventListener('pointerdown',onR1PD,{capture:true});cleanups.push(function(){row1Viewport.removeEventListener('pointerdown',onR1PD,{capture:true});});
+      row2Viewport.addEventListener('pointerdown',onR2PD,{capture:true});cleanups.push(function(){row2Viewport.removeEventListener('pointerdown',onR2PD,{capture:true});});
+      row1Viewport.addEventListener('click',onR1C,{capture:true});cleanups.push(function(){row1Viewport.removeEventListener('click',onR1C,{capture:true});});
+      row2Viewport.addEventListener('click',onR2C,{capture:true});cleanups.push(function(){row2Viewport.removeEventListener('click',onR2C,{capture:true});});
+      function onDocPM(e){
+        if(!expandedState.shell||!expandedState.pointerStart||e.pointerId!==expandedState.activePointerId){}
+        else{var dx=Math.abs(e.clientX-expandedState.pointerStart.x),dy=Math.abs(e.clientY-expandedState.pointerStart.y);if(dx>TT||dy>TT){expandedState.wasDrag=true;expandedState.activePointerId=null;expandedState.pointerStart=null;expandedState.suppressNextClick=true;collapseExpandedCard();}return;}
+        if(!swipe.tracking||e.pointerId!==swipe.pointerId)return;
+        if(swipe.decided&&!swipe.dragging)return;
+        var sdx=e.clientX-swipe.startX,sdy=e.clientY-swipe.startY,adx=Math.abs(sdx),ady=Math.abs(sdy);
+        if(!swipe.decided){if(ady>adx&&ady>8){swipe.decided=true;swipe.tracking=false;return;}if(adx>8){swipe.decided=true;swipe.dragging=true;if(expandedState.shell){expandedState.suppressNextClick=true;collapseExpandedCard();}if(swipe.rowState&&swipe.viewport)freezeRow(swipe.rowState,swipe.viewport);}else return;}
+        var mv=e.clientX-swipe.lastX,rs=swipe.rowState;if(!rs)return;
+        var sp=swipe.rowId==='row1'?SEG1:SEG2,sr=swipe.rowId==='row1'?setRow1X:setRow2X;
+        rs.x+=mv;if(sp>0){while(rs.x<=-sp)rs.x+=sp;while(rs.x>0)rs.x-=sp;}sr(rs.x);
+        swipe.lastX=e.clientX;swipe.samples.push({x:e.clientX,t:Date.now()});if(swipe.samples.length>5)swipe.samples.shift();
+      }
+      addCleanup(document,'pointermove',onDocPM,{passive:true});
+      function onDocPU(e){
+        if(expandedState.shell&&expandedState.pointerStart&&e.pointerId===expandedState.activePointerId){var wat=!expandedState.wasDrag;expandedState.activePointerId=null;expandedState.pointerStart=null;expandedState.wasDrag=false;if(wat){expandedState.suppressNextClick=true;collapseExpandedCard();}return;}
+        if(!swipe.tracking||e.pointerId!==swipe.pointerId)return;
+        var wd=swipe.dragging,crs=swipe.rowState,cri=swipe.rowId;swipe.tracking=false;swipe.pointerId=null;
+        if(wd&&crs){var s=swipe.samples,vx=0;if(s.length>=2){var dt=(s[s.length-1].t-s[0].t)/1000;if(dt>0.01)vx=(s[s.length-1].x-s[0].x)/dt;}vx=Math.max(-2500,Math.min(2500,vx));if(Math.abs(vx)>60){var sp=cri==='row1'?SEG1:SEG2,sr=cri==='row1'?setRow1X:setRow2X,mom={v:vx};var tw=gsap.to(mom,{v:0,duration:Math.min(1.0,Math.abs(vx)/2000),ease:'power2.out',onUpdate:function(){crs.x+=mom.v*0.016;if(sp>0){while(crs.x<=-sp)crs.x+=sp;while(crs.x>0)crs.x-=sp;}sr(crs.x);},onComplete:function(){unfreezeRow(crs);}});gsapInstances.push(tw);}else unfreezeRow(crs);expandedState.suppressNextClick=true;}
+      }
+      addCleanup(document,'pointerup',onDocPU,undefined);
+      function onDocPC(e){if(e.pointerId===expandedState.activePointerId){expandedState.activePointerId=null;expandedState.pointerStart=null;expandedState.wasDrag=false;}if(swipe.tracking&&e.pointerId===swipe.pointerId){if(swipe.dragging&&swipe.rowState)unfreezeRow(swipe.rowState);swipe.tracking=false;swipe.pointerId=null;}}
+      addCleanup(document,'pointercancel',onDocPC,undefined);
+      function onLoad(){measureSeam();scrollRuntime.requestRefresh('st-refresh');}
+      addCleanup(window,'load',onLoad,{once:true});
+      var wtr=false;
+      function onVC(){if(document.hidden){wtr=state.tickerEnabled;if(state.tickerEnabled)stopTicker();}else{if(wtr){clearRowFocus(state.row1,row1Viewport);clearRowFocus(state.row2,row2Viewport);state.row1.speedScale.current=1;state.row2.speedScale.current=1;state.row1.motionVelocity=0;state.row1.physicsVelocity=0;state.row1.skew=0;state.row1.scale=1;state.row2.motionVelocity=0;state.row2.physicsVelocity=0;state.row2.skew=0;state.row2.scale=1;state.lastScrollY=scrollRuntime.getRawScroll();lastR1X=null;lastR2X=null;setRow1Skew('0deg');setRow1Scale('1');setRow2Skew('0deg');setRow2Scale('1');var tid=setTimeout(function(){startTicker();},300);timerIds.push(tid);}}}
+      addCleanup(document,'visibilitychange',onVC,undefined);
+      tickFn=tick; hfAttached=true;
+      function pause(){if(ticking){gsap.ticker.remove(tickFn);ticking=false;}state.tickerEnabled=false;detachHfListeners();}
+      function resume(){state.lastScrollY=scrollRuntime.getRawScroll();if(tickFn&&!ticking){gsap.ticker.add(tickFn);ticking=true;state.tickerEnabled=true;}attachHfListeners();}
+      function kill(){pause();gyroDeactivate();cleanups.forEach(function(fn){try{fn();}catch(e){}});timerIds.forEach(function(id){if(id){try{clearTimeout(id);}catch(e){}try{clearInterval(id);}catch(e){}try{cancelAnimationFrame(id);}catch(e){}}});observers.forEach(function(o){if(o&&o.disconnect)o.disconnect();});gsapInstances.forEach(function(i){try{if(i&&i.revert)i.revert();}catch(e){}try{if(i&&i.kill)i.kill();}catch(e){}});}
+      return{pause:pause,resume:resume,kill:kill};
+    }
+
+    // ═══ loveWallInit — wrapper ═══
+    function loveWallInit(container) {
+      var logoEl=container.querySelector('#love-wall-logo-section');
+      var logoInstance=logoEl?loveWallLogoInit(logoEl):{pause:function(){},resume:function(){},kill:function(){}};
+      var velocityInstance=loveWallVelocityInit(container);
+      var _paused=false,_killed=false;
+      var _io=null,_stIo=null,_ioDebounce=null,_settleTimer=null;
+      function _getVH(){return(window.visualViewport?window.visualViewport.height:window.innerHeight)||800;}
+      function _computeRootMargin(){var raw=Math.round(0.5*_getVH()),c=Math.min(1200,Math.max(200,raw));return c+'px 0px '+c+'px 0px';}
+      function _ioCallback(entries){var e=entries[0];if(!e)return;if(e.isIntersecting){if(_paused&&!_killed){_paused=false;resume();}}else{if(!_paused&&!_killed){_paused=true;pause();}}}
+      function _createIO(){if(_killed)return;if(_io)_io.disconnect();_io=new IntersectionObserver(_ioCallback,{rootMargin:_computeRootMargin()});_io.observe(container);}
+      function _onVVResize(){clearTimeout(_ioDebounce);_ioDebounce=setTimeout(function(){if(!_killed)_createIO();},50);}
+      function _onResizeIO(){_onVVResize();}
+      _createIO();
+      if(window.visualViewport)window.visualViewport.addEventListener('resize',_onVVResize,{passive:true});
+      window.addEventListener('resize',_onResizeIO,{passive:true});
+      _stIo=new IntersectionObserver(function(entries){var e=entries[0];if(!e||!e.isIntersecting)return;scrollRuntime.requestRefresh('section-in-view');if(_stIo){_stIo.disconnect();_stIo=null;}},{threshold:0,rootMargin:'0px'});
+      _stIo.observe(container);
+      _settleTimer=setTimeout(function(){scrollRuntime.requestRefresh('layout-settle');},1000);
+      function pause(){velocityInstance.pause();logoInstance.pause();}
+      function resume(){logoInstance.resume();velocityInstance.resume();}
+      function kill(){if(_killed)return;_killed=true;if(_io){_io.disconnect();_io=null;}if(_stIo){_stIo.disconnect();_stIo=null;}clearTimeout(_ioDebounce);clearTimeout(_settleTimer);if(window.visualViewport)window.visualViewport.removeEventListener('resize',_onVVResize);window.removeEventListener('resize',_onResizeIO);velocityInstance.kill();logoInstance.kill();}
+      return{pause:pause,resume:resume,kill:kill};
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      var el = document.getElementById('love-wall-section');
+      if (!el) throw new Error('[PREVIEW] Missing #love-wall-section');
+      window.loveWallPreview = loveWallInit(el);
+    });
+  </script>
+
+</body>
+</html>

@@ -1,0 +1,218 @@
+/* ============================================================
+   SECTION CSS: love-wall — velocity cards (RENAMED + NAMESPACED)
+   ============================================================ */
+#love-wall-section{--card-width:498px;--card-height:280px;--card-gap:32px;--card-padding:36px 45px 22px 45px;--card-radius:1.25rem;--card-bg:#f7f6f4;--section-bg:#f7f6f4;--star-gold:#f5c518;--text-primary:#222;--text-gray:#434343;--border-dark:#D0CEC8;--row-padding-block:60px;--row-padding-left:16px}
+#love-wall-section{position:relative;padding:80px 0;border-top:1px solid #d1d5db;overflow:visible;margin-bottom:128px;background-color:var(--section-bg);isolation:isolate;contain:style}
+#love-wall-section .rows-wrapper{display:flex;flex-direction:column;overflow:visible;position:relative}
+@media(min-width:1700px){#love-wall-section .rows-wrapper{max-width:2500px;margin-left:auto;margin-right:auto}}
+/* Edge fade: overlay divs instead of mask-image.
+   Overlays COVER edges but DON'T CLIP — content underneath lives and breathes.
+   Base fade width = EXACT same as original mask: min(20.5%, 349px). */
+#love-wall-section .row-fade{position:absolute;top:-9999px;bottom:-9999px;width:min(20.5%,349px);z-index:50;pointer-events:none}
+#love-wall-section .row-fade--l{left:0;background:linear-gradient(to right,rgba(247,246,244,1),rgba(247,246,244,0))}
+#love-wall-section .row-fade--r{right:0;background:linear-gradient(to left,rgba(247,246,244,1),rgba(247,246,244,0))}
+/* Widescreen: rows-wrapper is max-width:2500px centered → gap to viewport edge. Extend row-clip overlays to cover it. Mount-slot excluded — logo stays full width. */
+@media(min-width:1700px){
+  #love-wall-section .row-clip > .row-fade--l{left:calc(-50vw + 50%);width:calc(min(20.5%,349px) + max(0px,50vw - 50%));background:linear-gradient(to right,rgba(247,246,244,1) calc(100% - min(20.5%,349px)),rgba(247,246,244,0))}
+  #love-wall-section .row-clip > .row-fade--r{right:calc(-50vw + 50%);width:calc(min(20.5%,349px) + max(0px,50vw - 50%));background:linear-gradient(to left,rgba(247,246,244,1) calc(100% - min(20.5%,349px)),rgba(247,246,244,0))}
+}
+#love-wall-section .rows-wrapper > .row-clip:not(:last-child){margin-bottom:48px}
+#love-wall-section .row-clip{overflow:clip;overflow-clip-margin:600px;position:relative;z-index:1}
+#love-wall-section .mount-slot{position:relative;overflow:visible;z-index:10;width:100%;padding-top:0;padding-bottom:0;pointer-events:none}
+@media(min-width:1700px){#love-wall-section .mount-slot{overflow-x:clip}}
+#love-wall-section .row-viewport{--row-skew:0deg;--row-scale:1;width:100%;overflow:hidden;overflow:clip;overflow-clip-margin:600px;padding-top:var(--row-padding-block);padding-bottom:var(--row-padding-block);padding-left:var(--row-padding-left);perspective:700px}
+#love-wall-section .row-mover{display:flex;width:max-content;will-change:transform;transform:translate3d(0,0,0);transform-style:preserve-3d}
+#love-wall-section .card-shell{flex-shrink:0;position:relative;z-index:1;margin-right:var(--card-gap);transform:translateZ(0) skewX(var(--row-skew,0deg)) scaleX(var(--row-scale,1));transform-style:preserve-3d;transform-origin:center center;transition:z-index 0s 0.3s}
+#love-wall-section .card-shell::before{content:none}
+#love-wall-section .card-shell.is-active::before{content:'';position:absolute;top:50%;left:50%;width:1024px;height:653px;border-radius:50%;background:radial-gradient(ellipse at center,rgba(255,192,0,0.34) 0%,transparent 70%);transform:translate(calc(-50% - 100px),calc(-50% - 45px)) translateZ(-200px) scale(0);pointer-events:none;opacity:0;will-change:transform,opacity;animation:love-wall-spotlight-in 0.9s cubic-bezier(0.2,0,0.2,1) forwards}
+@keyframes love-wall-spotlight-in{to{transform:translate(calc(-50% - 100px),calc(-50% - 45px)) translateZ(-200px) scale(1);opacity:1}}
+#love-wall-section .card-shell.is-active{z-index:20;transition:z-index 0s 0s}
+#love-wall-section .card-tilt{--tilt-y:0deg;--tilt-x:0deg;--lift-z:0px;--lift-y:0px;--card-scale:1;transform-style:preserve-3d;transform:rotateX(var(--tilt-x)) rotateY(var(--tilt-y)) translateZ(var(--lift-z)) translateY(var(--lift-y)) scale(var(--card-scale));transform-origin:center bottom;will-change:auto;transition:transform 0.6s cubic-bezier(0.2,0,0.2,1)}
+#love-wall-section .card{--gradient-x:20%;--gradient-scale:1;--text-x:0px;width:var(--card-width);height:var(--card-height);background:var(--card-bg);border-radius:var(--card-radius);padding:var(--card-padding);display:flex;flex-direction:column;justify-content:flex-start;position:relative;cursor:pointer;overflow:hidden;backface-visibility:hidden;isolation:isolate;z-index:0;transition:background-color 0.3s cubic-bezier(0.4,0,0.2,1),opacity 0.6s cubic-bezier(0.2,0,0.2,1)}
+#love-wall-section .card::before{content:'';position:absolute;top:0;right:0;bottom:0;left:0;border-radius:inherit;background:radial-gradient(ellipse calc(480px * var(--gradient-scale,1)) calc(165px * var(--gradient-scale,1)) at var(--gradient-x,30%) 0%,rgba(255,255,255,0.70) 0%,rgba(255,255,255,0.40) 45%,rgba(255,255,255,0.15) 70%,transparent 100%);opacity:0;transition:opacity 0.4s ease;pointer-events:none;z-index:1}
+#love-wall-section .card::after{display:none}
+#love-wall-section .card__rating{display:flex;align-items:center;position:relative;z-index:2;top:-7px;transform:scale(1.38);transform-origin:left top}
+#love-wall-section .card__rating-number{font-family:'Lexend',sans-serif;font-size:20px;font-weight:700;color:var(--text-primary)}
+#love-wall-section .card__stars{display:flex;margin-left:0.5rem;perspective:800px}
+#love-wall-section .card__star + .card__star{margin-left:2px}
+#love-wall-section .card__star{width:20px;height:20px;fill:var(--star-gold)}
+#love-wall-section .card__quote{font-family:'Lexend',sans-serif;font-size:1.375rem;line-height:1.4;font-weight:400;margin-top:15px;margin-bottom:8px;color:var(--text-gray);position:relative;z-index:2;backface-visibility:hidden;transform:translateZ(0.01px) translateX(var(--text-x));transform-origin:left center;transition:color 0.8s cubic-bezier(0,0,0.2,1),transform 0.25s ease-out}
+#love-wall-section .card__quote--lexend-200{font-family:'Lexend',sans-serif;font-weight:200}
+#love-wall-section .card__quote--lexend-400{font-family:'Lexend',sans-serif;font-weight:400}
+#love-wall-section .card__quote--lexend-600{font-family:'Lexend',sans-serif;font-weight:600}
+#love-wall-section .card__quote--lexend-800{font-family:'Lexend',sans-serif;font-weight:800}
+#love-wall-section .card__quote--fraunces{font-family:'Fraunces',serif;font-style:italic;font-weight:400}
+#love-wall-section .card__quote--arial{font-family:Arial,sans-serif}
+#love-wall-section .card__quote--georgia{font-family:Georgia,serif}
+#love-wall-section .card__quote--courier{font-family:'Courier New',monospace}
+#love-wall-section .card__quote--size-large{font-size:1.79rem}
+#love-wall-section .card__quote--size-small{font-size:0.96rem}
+#love-wall-section .card__quote--size-xl{font-size:2.2rem;line-height:1.2}
+#love-wall-section .card__quote--size-xl-90{font-size:1.98rem;line-height:1.2}
+#love-wall-section .card__quote--size-90{font-size:1.24rem}
+#love-wall-section .card__quote--size-xs{font-size:0.99rem}
+#love-wall-section .card__author{display:flex;align-items:center;margin-top:auto;padding-top:12px;border-top:1px solid var(--border-dark);position:relative;top:6px;z-index:2}
+#love-wall-section .card__avatar{width:27px;height:27px;border-radius:50%;object-fit:cover;background:linear-gradient(135deg,#C8C5BE 0%,#D8D5CE 100%)}
+#love-wall-section .card__name{font-family:'Lexend',sans-serif;font-size:0.9375rem;font-weight:500;color:var(--text-gray);margin-left:0.75rem}
+#love-wall-section .card__expand-btn{display:none;margin-left:auto}
+@media(max-width:500px){#love-wall-section .card__expand-btn{display:flex;align-items:center;justify-content:center;width:29px;height:29px;padding:0;margin:-4px -4px -4px auto;border-radius:50%;border:1px solid var(--border-dark);background:var(--card-bg);color:var(--text-gray);font-size:20px;font-weight:300;line-height:1;cursor:pointer;transition:all 0.2s ease;flex-shrink:0;-webkit-tap-highlight-color:transparent;position:relative;overflow:visible}#love-wall-section .card__expand-btn::after{content:"";position:absolute;top:-7.5px;right:-7.5px;bottom:-7.5px;left:-7.5px}#love-wall-section .card__expand-btn:active{background:var(--text-gray);color:var(--card-bg);transform:scale(0.95)}#love-wall-section .card-shell.is-expanded .card__expand-btn{display:none}}
+@media(hover:hover){#love-wall-section .card__expand-btn{display:flex;align-items:center;justify-content:center;width:27px;height:27px;padding:0 0 2px 0;margin:-4px -4px -4px auto;border-radius:50%;border:1px solid var(--border-dark);background:var(--card-bg);color:var(--text-gray);font-family:'Lexend',sans-serif;font-size:18px;font-weight:300;line-height:1;cursor:pointer;flex-shrink:0;opacity:1;transition:opacity 0.15s ease-out;pointer-events:none}#love-wall-section .card-shell.is-active .card__expand-btn{opacity:0}}
+@media(hover:hover){#love-wall-section .row-viewport.is-hovering .card-shell:not(.is-active) .card-tilt{--lift-z:-15px;--card-scale:0.88}#love-wall-section .row-viewport.is-hovering .card-shell:not(.is-active) .card{opacity:0.12}#love-wall-section .row-viewport.is-hovering .card-shell.is-active{transform:translateZ(0) skewX(0deg) scaleX(1)}#love-wall-section .row-viewport.is-hovering .card-shell.is-active .card-tilt{--tilt-x:6deg;--lift-z:40px;--lift-y:14px;--card-scale:1.15;will-change:transform;transition:transform 0.8s cubic-bezier(0,0,0.2,1)}#love-wall-section .row-viewport.is-hovering .card-shell.is-active .card::before{opacity:1}#love-wall-section .row-viewport.is-hovering .card-shell.is-active .card{opacity:1;transition:opacity 0.4s ease-out}#love-wall-section .row-viewport.is-hovering .card-shell.is-active .card__quote{color:var(--text-primary);transform:translateZ(0.01px) scale(1.03) translateX(var(--text-x))}}
+@keyframes love-wall-star-flip-pop{0%{transform:rotateY(0deg);fill:#ffc602}20%{transform:rotateY(90deg);fill:#ffc602}21%{fill:#bfbfbf}40%{transform:rotateY(180deg);fill:#bfbfbf}55%{transform:rotateY(180deg) scale(1);fill:#bfbfbf}70%{transform:rotateY(180deg) scale(1.4);fill:#fff}85%{transform:rotateY(180deg) scale(1.1);fill:#ffc602}100%{transform:rotateY(180deg) scale(1.1);fill:#ffc602}}
+@media(hover:hover){#love-wall-section .row-viewport.is-hovering .card-shell.is-active .card__star{animation:love-wall-star-flip-pop 1.2s cubic-bezier(0.4,0,0.2,1) forwards}#love-wall-section .row-viewport.is-hovering .card-shell.is-active .card__star:nth-child(1){animation-delay:0s}#love-wall-section .row-viewport.is-hovering .card-shell.is-active .card__star:nth-child(2){animation-delay:0.05s}#love-wall-section .row-viewport.is-hovering .card-shell.is-active .card__star:nth-child(3){animation-delay:0.1s}#love-wall-section .row-viewport.is-hovering .card-shell.is-active .card__star:nth-child(4){animation-delay:0.15s}#love-wall-section .row-viewport.is-hovering .card-shell.is-active .card__star:nth-child(5){animation-delay:0.2s}}
+#love-wall-section .card-shell.is-expanded .card__star{animation:love-wall-star-flip-pop 1.2s cubic-bezier(0.4,0,0.2,1) forwards}
+#love-wall-section .card-shell.is-expanded .card__star:nth-child(1){animation-delay:0s}
+#love-wall-section .card-shell.is-expanded .card__star:nth-child(2){animation-delay:0.05s}
+#love-wall-section .card-shell.is-expanded .card__star:nth-child(3){animation-delay:0.1s}
+#love-wall-section .card-shell.is-expanded .card__star:nth-child(4){animation-delay:0.15s}
+#love-wall-section .card-shell.is-expanded .card__star:nth-child(5){animation-delay:0.2s}
+#love-wall-section .card-shell.is-expanded .card__quote{color:var(--text-primary)}
+#love-wall-section .card-shell.is-expanded .card::before{opacity:1}
+#love-wall-section .card-shell.is-expanded .card-tilt{--card-scale:1.35;--lift-y:-20px;--lift-z:30px}
+#love-wall-section .card-shell.is-expanded{z-index:100}
+/* Mobile expand: hide adjacent cards with fade (card has transition:opacity 0.6s); remove gradient mask */
+#love-wall-section .row-viewport.has-expanded .card-shell:not(.is-expanded) .card{opacity:0;pointer-events:none}
+#love-wall-section .row-viewport.has-expanded .card-shell:not(.is-expanded) .card-shell::before{display:none}
+#love-wall-section .row-clip.is-row-expanded{overflow:visible}
+#love-wall-section .row-viewport.is-hovering{overflow:visible}
+#love-wall-section .row-clip:has(.row-viewport.is-hovering){overflow:visible}
+/* Hover: overflow:visible so scaled active card isn't clipped.
+   Overlay stays at full width — no narrowing needed (overlays don't clip vertically like masks did). */
+/* Mobile expand: identical overflow release + hide fades entirely */
+#love-wall-section .row-viewport.has-expanded{overflow:visible}
+#love-wall-section .row-clip:has(.row-viewport.has-expanded){overflow:visible}
+#love-wall-section .row-clip.is-row-expanded > .row-fade{display:none}
+/* Firefox fallback: overflow-clip-margin not supported — use overflow:visible on hover only */
+@supports not (overflow-clip-margin: 1px) {
+  #love-wall-section .row-clip { overflow: visible; }
+  #love-wall-section .row-viewport { overflow: visible; }
+  #love-wall-section .rows-wrapper { overflow: clip; }
+}
+#love-wall-section .debug-panel{position:fixed;top:16px;right:16px;background:rgba(0,0,0,0.85);color:#00ff88;font-family:monospace;font-size:12px;padding:10px 14px;border-radius:8px;z-index:99999;-webkit-backdrop-filter:blur(8px);backdrop-filter:blur(8px);border:1px solid rgba(0,255,136,0.3);box-shadow:0 4px 12px rgba(0,0,0,0.3);min-width:200px;display:none}
+body.debug-mode #love-wall-section .debug-panel{display:block}
+#love-wall-section .debug-panel__title{font-size:10px;text-transform:uppercase;letter-spacing:0.1em;color:rgba(255,255,255,0.5);margin-bottom:6px}
+#love-wall-section .debug-panel__value{font-size:16px;font-weight:600}
+@media(max-width:768px){
+  #love-wall-section{--card-width:340px;--card-height:260px;--card-padding:24px;--card-gap:24px;--row-padding-block:40px;--row-padding-left:16px}
+  #love-wall-section .card__quote{font-size:1.25rem}
+  #love-wall-section .card__quote--mobile-sm{font-size:1.05rem}
+  #love-wall-section .card__quote--mobile-md{font-size:0.95rem}
+  #love-wall-section .card__quote--mobile-lg{font-size:0.85rem}
+}
+@media(max-width:500px){
+  /* Direct clamp per property — no calc(length/length) dependency
+     Formula: clamp(X×0.64, X/500×100vw, X) */
+  #love-wall-section{--card-width:clamp(217.6px,68vw,340px);--card-height:clamp(166.4px,52vw,260px);--card-gap:clamp(15.36px,4.8vw,24px);--card-padding:clamp(15.36px,4.8vw,24px);--row-padding-block:clamp(25.6px,8vw,40px);--row-padding-left:clamp(10.24px,3.2vw,16px)}
+  #love-wall-section .card__quote{font-size:clamp(0.8rem,4vw,1.25rem);margin-top:5px}
+  #love-wall-section .card__quote--mobile-sm{font-size:clamp(0.672rem,3.36vw,1.05rem)}
+  #love-wall-section .card__quote--mobile-md{font-size:clamp(0.608rem,3.04vw,0.95rem)}
+  #love-wall-section .card__quote--mobile-lg{font-size:clamp(0.544rem,2.72vw,0.85rem)}
+  #love-wall-section .card__rating-number{font-size:clamp(17.92px,5.6vw,28px)}
+  #love-wall-section .card__name{font-size:clamp(0.6rem,3vw,0.9375rem)}
+  #love-wall-section .card__star{width:clamp(17.92px,5.6vw,28px);height:clamp(17.92px,5.6vw,28px)}
+  #love-wall-section .card__avatar{width:clamp(17.28px,5.4vw,27px);height:clamp(17.28px,5.4vw,27px)}
+  #love-wall-section .card-shell.is-active::before{width:717px;height:457px}
+  /* Mobile containment: rows-wrapper clips horizontal only — prevents iOS elastic scroll.
+     overflow-x:clip does NOT coerce overflow-y (unlike hidden) → translateY offsets on rows stay visible.
+     Does NOT create scroll container → GSAP ScrollTrigger unaffected. */
+  #love-wall-section .rows-wrapper{overflow-x:clip}
+  #love-wall-section .row-clip{overflow-clip-margin:200px}
+  #love-wall-section .row-viewport{overflow-clip-margin:200px;touch-action:pan-y}
+  /* Mobile: narrower fade (8%/60px) to not eat into card visible area on ≤375px */
+  #love-wall-section .row-fade,
+  #love-wall-section .mount-slot > .row-fade{width:min(8%,60px)}
+  /* PERF FIX 1: Flat layers on idle cards.
+     translateZ(0)+preserve-3d on 40 card-shells = ~80 GPU layers.
+     On mobile: idle skew=0, scale=1, so translateZ(0) skewX(0) scaleX(1) ≡ none visually.
+     Restore full transform only on active/expanded cards that need 3D tilt. */
+  #love-wall-section .card-shell{transform:none;transform-style:flat}
+  #love-wall-section .card-shell.is-active,
+  #love-wall-section .card-shell.is-expanded{transform:translateZ(0) skewX(var(--row-skew,0deg)) scaleX(var(--row-scale,1));transform-style:preserve-3d}
+  #love-wall-section .row-mover{transform-style:flat}
+  /* PERF FIX 2: Move perspective from viewport (affects all 20 children) to card-tilt (only active).
+     Eliminates per-frame reprojection of ~38 idle cards. */
+  #love-wall-section .row-viewport{perspective:none}
+  #love-wall-section .card-tilt{perspective:700px}
+}
+@media(prefers-reduced-motion:reduce){
+  #love-wall-section .row-mover{will-change:auto}
+  #love-wall-section .card-tilt,#love-wall-section .card,#love-wall-section .card::before,#love-wall-section .card::after,#love-wall-section .card__quote,#love-wall-section .card__star{transition:none!important;animation:none!important}
+  #love-wall-section .row-viewport.is-hovering .card-shell:not(.is-active) .card-tilt{--lift-z:0;--card-scale:1}
+  #love-wall-section .row-viewport.is-hovering .card-shell:not(.is-active) .card{opacity:0.4}
+  #love-wall-section .row-viewport.is-hovering .card-shell.is-active .card-tilt{--tilt-x:0deg;--lift-z:0;--lift-y:-4px;--card-scale:1}
+}
+
+/* ============================================================
+   SECTION CSS: love-wall — logo / kinetic typography (RENAMED + NAMESPACED)
+   ============================================================ */
+#love-wall-section #love-wall-logo-section * { margin: 0; padding: 0; box-sizing: border-box; }
+#love-wall-section #love-wall-logo-section {
+  display: block; width: 100%; position: relative;
+  --vw-cap: 1.1vw;
+}
+@media (min-width: 1400px) {
+  #love-wall-section #love-wall-logo-section { --vw-cap: 15.4px; }
+}
+#love-wall-section #love-wall-logo-section .love-wall-logo-inner {
+  height: var(--vt-h, 100vh); width: 100%; position: relative;
+  background: transparent; overflow: clip; overflow-clip-margin: 600px; display: flex;
+  font-family: 'Lexend', system-ui, sans-serif; color: #1a1a1a;
+  -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale;
+}
+#love-wall-section #love-wall-logo-section .track { position: absolute; top: 50%; left: 0; display: flex; align-items: center; white-space: nowrap; will-change: transform; padding-left: 5vw; }
+#love-wall-section #love-wall-logo-section .word { display: inline-flex; margin-right: 8vw; line-height: 1; }
+#love-wall-section #love-wall-logo-section .char { display: inline-block; white-space: pre; backface-visibility: hidden; transform: translateZ(0); opacity: 0; }
+#love-wall-section #love-wall-logo-section .char-wrapper { display: inline-block; overflow: hidden; vertical-align: bottom; padding-top: 0.15em; margin-top: -0.15em; }
+#love-wall-section #love-wall-logo-section .word[data-effect="rotate-3d-scale"] { overflow: visible !important; }
+#love-wall-section #love-wall-logo-section .debris-pool { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
+#love-wall-section #love-wall-logo-section .debris { position: absolute; width: clamp(3px, calc(0.714 * var(--vw-cap)), 10px); height: clamp(3px, calc(0.714 * var(--vw-cap)), 10px); background: #1a1a1a; border-radius: 2px; opacity: 0; pointer-events: none; z-index: 10; }
+#love-wall-section #love-wall-logo-section .spark { position: absolute; width: 3px; height: clamp(3px, calc(1.43 * var(--vw-cap)), 20px); background: #1a1a1a; border-radius: 1px; opacity: 0; pointer-events: none; z-index: -1; }
+#love-wall-section #love-wall-logo-section .spark.plus { width: clamp(3px, calc(1.43 * var(--vw-cap)), 20px); height: clamp(3px, calc(1.43 * var(--vw-cap)), 20px); background: transparent; }
+#love-wall-section #love-wall-logo-section .spark.plus::before, #love-wall-section #love-wall-logo-section .spark.plus::after { content: ''; position: absolute; background: #1a1a1a; border-radius: 1px; }
+#love-wall-section #love-wall-logo-section .spark.plus::before { width: 3px; height: 100%; left: 50%; transform: translateX(-50%); }
+#love-wall-section #love-wall-logo-section .spark.plus::after { width: 100%; height: 3px; top: 50%; transform: translateY(-50%); }
+@media (prefers-reduced-motion: reduce) {
+  #love-wall-section #love-wall-logo-section .char { opacity: 1 !important; transform: none !important; filter: none !important; text-shadow: none !important; }
+  #love-wall-section #love-wall-logo-section .char-wrapper { overflow: visible !important; }
+  #love-wall-section #love-wall-logo-section .track { transition: transform 0.3s linear; }
+  #love-wall-section #love-wall-logo-section .word { opacity: 1 !important; }
+}
+@media (max-width: 1399px) {
+  #love-wall-section #love-wall-logo-section .polecamy-stack .word:nth-child(1) { opacity: 0.25 !important; }
+  #love-wall-section #love-wall-logo-section .polecamy-stack .word:nth-child(2) { opacity: 0.3 !important; -webkit-text-stroke: 0 !important; color: #000 !important; }
+  #love-wall-section #love-wall-logo-section .polecamy-stack .word:nth-child(3) { opacity: 0.15 !important; }
+}
+
+/* ============================================================
+   INTEGRATION OVERRIDES — direct breakpoints (no interpolation)
+   Measured: 375px, 550px, 730px, desktop, large desktop
+   ============================================================ */
+
+#love-wall-section #love-wall-logo-section { --vt-h: 340px; }
+
+/* Transform bindings (always active) */
+#love-wall-section .rows-wrapper > .row-clip:first-child { transform: translateY(var(--row1-offset, 0px)); }
+#love-wall-section .rows-wrapper > .row-clip:last-child { transform: translateY(var(--row3-offset, 0px)); }
+#love-wall-section .mount-slot { transform: translateY(var(--logo-offset, 0px)); margin-top: -150px; margin-bottom: -150px; }
+
+/* Desktop 769–1399px */
+#love-wall-section { --row1-offset: -140px; --logo-offset: 0px; --row3-offset: 85px; }
+
+/* Large desktop ≥1400px (measured 2855px) */
+@media (min-width: 1400px) {
+  #love-wall-section { --row1-offset: -140px; --logo-offset: 0px; --row3-offset: 161px; }
+}
+
+/* Tablet 501–768px (measured 766px) */
+@media (max-width: 768px) {
+  #love-wall-section { --row1-offset: -120px; --logo-offset: 22px; --row3-offset: 195px; --row-padding-block: 40px; }
+  #love-wall-section .mount-slot { margin-top: -250px; margin-bottom: -250px; }
+}
+
+/* Mobile ≤500px (measured 430px) */
+@media (max-width: 500px) {
+  #love-wall-section { --row1-offset: -106px; --logo-offset: 12px; --row3-offset: 193px; --row-padding-block: 26px; }
+  #love-wall-section .mount-slot { margin-top: -250px; margin-bottom: -250px; }
+}
+/* ── HARDENING: graceful degradation ── */
+#love-wall-section .card__avatar.load-failed{opacity:0}

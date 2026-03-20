@@ -1,0 +1,70 @@
+=== FINAL SECTION_MANIFEST — love-wall ===
+
+  slug:     'love-wall'
+  type:     'B'
+  requires: ['scrollRuntime', 'gsap', 'ScrollTrigger']
+
+  webgl:    null
+
+  assets:
+    - kind: 'img', src: 'pravatar.cc/88 avatars (20×, 27×27px)', priority: 'HOT', critical: true, lcp: false
+
+  scrollTriggersCount: 1
+
+  geometryMutable: false
+  geometryRefresh: 'self'
+  geometryContract: 'normal'
+  syntheticContextAllowed: true
+  entryExitInvariant: false
+  preserveExistingGuards: true
+  refreshSignals: ['section-in-view', 'layout-settle']
+
+  export: { mode: 'named', name: 'LoveWallSection' }
+  slots: []
+  dciProps: []
+  timelineContract: undefined
+  deliveryRisk: null
+
+  specialNotes:
+    breakpoints: ['500px', '768px', '1400px', '1700px']
+    platformGuards: ['reduced-motion', 'iOS-gyro-permission', 'hover-capability']
+    cpuGatingMechanism: 'IO-pause/resume'
+    cpuGatingPath: 1
+
+  integrationNotes:
+    hasPin: false
+    hasSnap: false
+    affectsGeometryBelow: false
+    sensitiveTo: []
+    testWith: ['faq', 'accordion']
+
+  perf:
+    loading:
+      dynamicImport: false
+      clientOnly: false
+      skeleton: 'none'
+      warmup: []
+    resourceHints:
+      preconnectDomains: ['https://i.pravatar.cc']
+      preloadCandidates: []
+      prefetchDnsDomains: []
+      prefetchCandidates: []
+      coldCandidates: []
+    isHero: false
+    gracefulDegradation: true
+    containApplied: true
+    warnings: ['PERF-W6']
+
+  scrollRuntimeRecommendations: []
+
+  runtimeChecks:
+    CLN-01: 'PASS'
+    SM-01:  'PASS'
+    SM-02:  'PASS'
+    INT-01: 'PASS'
+    INT-02: 'PASS'
+    INT-03: 'PASS'
+    INT-04: 'PASS'
+    WGL-01: 'N/A'
+    WGL-02: 'N/A'
+    WGL-03: 'N/A'

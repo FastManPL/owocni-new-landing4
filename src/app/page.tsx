@@ -5,6 +5,7 @@ import { BridgeSection } from "@/app/BridgeSection";
 import { SectionsClient } from "./SectionsClient";
 import { KalkulatorSection } from "@/sections/kalkulator/KalkulatorSection";
 import { GwarancjaSectionWrapper } from "./GwarancjaSectionWrapper";
+import { LoveWallSection } from "@/sections/Opinie/LoveWallSection";
 import { CyfroweWzrostySectionWrapper } from "./CyfroweWzrostySectionWrapper";
 import { CaseStudiesSection } from "@/sections/case-studies/CaseStudiesSection";
 
@@ -18,6 +19,7 @@ export default function HomePage() {
       <SectionsClient />
       <KalkulatorSection />
       <GwarancjaSectionWrapper />
+      <LoveWallSection />
       <CyfroweWzrostySectionWrapper />
       <CaseStudiesSection />
     </main>
