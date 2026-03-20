@@ -8,7 +8,7 @@
 /* Edge fade: overlay divs instead of mask-image.
    Overlays COVER edges but DON'T CLIP — content underneath lives and breathes.
    Base fade width = EXACT same as original mask: min(20.5%, 349px). */
-#love-wall-section .row-fade{position:absolute;top:-9999px;bottom:-9999px;width:min(20.5%,349px);z-index:50;pointer-events:none}
+#love-wall-section .row-fade{position:absolute;top:0;bottom:0;width:min(20.5%,349px);z-index:50;pointer-events:none}
 #love-wall-section .row-fade--l{left:0;background:linear-gradient(to right,rgba(247,246,244,1),rgba(247,246,244,0))}
 #love-wall-section .row-fade--r{right:0;background:linear-gradient(to left,rgba(247,246,244,1),rgba(247,246,244,0))}
 /* Widescreen: rows-wrapper is max-width:2500px centered → gap to viewport edge. Extend row-clip overlays to cover it. Mount-slot excluded — logo stays full width. */
