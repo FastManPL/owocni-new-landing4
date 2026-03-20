@@ -519,7 +519,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         wakeThreeLoop();
       }
       var clock = new THREE.Timer();
-      clock.connect();
+      clock.connect(document);
       var viewportHalfHeight = camera.position.z * Math.tan(camera.fov * Math.PI / 360);
       var RENDER_INTERVAL = 15, lastRenderTime = 0;
       function animate(now: number) {
