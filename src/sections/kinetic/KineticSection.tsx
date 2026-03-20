@@ -9,6 +9,10 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
 import { useBridgeContext } from '@/app/BridgeContext';
 import './kinetic-section.css';
 
+// Runtime safety in minified strict-mode builds.
+var _clipActive = false;
+var _clipOffCount = 0;
+
 // ⚠️ GSAP-SSR-01: ZAKAZ gsap.registerPlugin() na module top-level.
 // Next.js pre-renderuje Client Components na serwerze — window/document nie istnieją.
 // registerPlugin() WYŁĄCZNIE wewnątrz useGSAP(() => { ... }) jak poniżej.
