@@ -1,0 +1,102 @@
+SECTION_MANIFEST — FINAL (P3-ready):
+
+  slug:     'kinetic'
+  type:     'B'
+  requires: ['scrollRuntime', 'gsap', 'ScrollTrigger']
+
+  webgl:    null
+
+  assets:
+    - kind:     'canvas'
+      src:      'kinetic-particle-qmark-canvas (Canvas 2D — programowy)'
+      priority: 'HOT'
+      critical: true
+      lcp:      false
+    - kind:     'canvas'
+      src:      'kinetic-cylinder-canvas (Canvas 2D — programowy)'
+      priority: 'HOT'
+      critical: true
+      lcp:      false
+    - kind:     'canvas'
+      src:      'kinetic-tunnel-canvas (Canvas 2D — programowy)'
+      priority: 'HOT'
+      critical: true
+      lcp:      false
+    - kind:     'canvas'
+      src:      'kinetic-blob-canvas (Canvas 2D — programowy)'
+      priority: 'HOT'
+      critical: true
+      lcp:      false
+
+  warmup: []
+
+  scrollTriggersCount: 2
+
+  geometryMutable:    false
+  geometryRefresh:    'self'
+
+  geometryContract:        'pinned-narrative'
+  syntheticContextAllowed: false
+  entryExitInvariant:      true
+  preserveExistingGuards:  true
+
+  refreshSignals: ['resize-width-only']
+
+  export:
+    mode: 'default'
+    name: 'KineticSection'
+
+  slots: []
+
+  dciProps: []
+
+  timelineContract: undefined
+
+  specialNotes:
+    breakpoints:          ['599px', '768px', '1200px', '2000px', '900px (max-height)']
+    platformGuards:       ['IS_TOUCH', 'freezeFinal (iOS toolbar)', 'mobileResizeLock',
+                           'document.hidden (canvas guard)', 'visualViewport']
+    cpuGatingMechanism:   'IO-pause/resume'
+    cpuGatingPath:        1
+    pinDisableSafe:       true
+    internalGating:       '_sectionVisible flag (ST onEnter/onLeave)'
+    coexistence:          'Factory IO ~460px + ST-native 0px — bezpieczne'
+    deadCode:             'palette3 — write-only, bezpieczne do usunięcia'
+    perf_W6_note:         '6× gsap.ticker — intencjonalne, dirty check + 30fps gate'
+    perf_W7_note:         'Polskie znaki + Lexend — weryfikacja latin-ext OK (testy PASS)'
+    perf_W13_note:        '.blob CSS transform nadpisywany przez GSAP przy first touch'
+
+  integrationNotes:
+    hasPin:               true
+    hasSnap:              false
+    affectsGeometryBelow: true
+    sensitiveTo:          ['geometry-above']
+    testWith:             ['fake-pinned-above', 'accordion', 'header-sticky']
+
+  deliveryRisk: null
+
+  perf:
+    dynamicImport:       false
+    isHero:              false
+    gracefulDegradation: false
+    preloadCandidates:   []
+    prefetchCandidates:  []
+    coldCandidates:      []
+    preconnectDomains:   ['fonts.googleapis.com', 'fonts.gstatic.com']
+    containApplied:      false
+    warnings:            ['PERF-W6', 'PERF-W7', 'PERF-W13']
+
+  scrollRuntimeRecommendations:
+    - 'is-scrolling pointer-events guard: body.is-scrolling #kinetic-section * { pointer-events: none }'
+
+  runtimeChecks:
+    CLN-01: 'PASS'
+    SM-01:  'PASS'
+    SM-02:  'PASS'
+    INT-01: 'PASS'
+    INT-02: 'PASS'
+    INT-03: 'PASS'
+    INT-04: 'PASS'
+    WGL-01: 'N/A'
+    WGL-02: 'N/A'
+    WGL-03: 'N/A'

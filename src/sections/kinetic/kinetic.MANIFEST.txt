@@ -21,20 +21,15 @@ SECTION_MANIFEST:
   # Sekcja pinned fullscreen (100lvh), fixed layout, brak zmian wysokości po init.
 
   geometryRefresh:  'self'
-  # ST-REFRESH-01 (AUTO-FIXED P2A): section-in-view IO + layout-settle timer 1000ms
-  # Oba wywołują scrollRuntime.requestRefresh().
+  # Refresh wyłącznie po zmianie szerokości layoutu (resize-width-only).
 
   geometryContract:        'pinned-narrative'
   syntheticContextAllowed: false
   entryExitInvariant:      true
   preserveExistingGuards:  true
 
-  refreshSignals: ['section-in-view', 'layout-settle']
-  # ST-REFRESH-01 scaffold:
-  #   - section-in-view: jednorazowy IO (threshold:0, rootMargin:0px)
-  #   - layout-settle: setTimeout 1000ms po init
-  # Subsystemy (particle, tunnel) mierzą geometrię po document.fonts.ready.then
-  # — ale nie tworzą ST po tym boundary. Refresh handles overall settle.
+  refreshSignals: ['resize-width-only']
+  # Brak refresh na mount/section-in-view/layout-settle dla sekcji scrub/pin.
 
   export:
     mode: 'named'

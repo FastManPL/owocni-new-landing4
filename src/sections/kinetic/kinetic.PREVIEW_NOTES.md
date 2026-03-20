@@ -1,37 +1,53 @@
 # kinetic — PREVIEW NOTES
 
 ## Różnice względem KineticSection.tsx (delta — nie błędy)
+
 | Co | W TSX | W PREVIEW |
 |----|-------|-----------|
-| DEV overlay | brak (usunięty w P2A) | brak (identycznie) |
-| scrollRuntime | `@/lib/scrollRuntime` v6.x (Lenis) | stub: deleguje do window.lenis (identyczny interfejs) |
-| Lenis | aktywny (przez scrollRuntime v6.x) | aktywny (bezpośrednio — snap system wymaga Lenis) |
+| DEV overlay | brak (usunięty w P3) | brak (identycznie) |
+| scrollRuntime | `@/lib/scrollRuntime` (Lenis) | stub: `window.lenis?.scroll ?? window.scrollY` + debounce 120ms |
+| Lenis | aktywny (przez scrollRuntime) | aktywny przez CDN shell — snap machine działa |
 | StrictMode | aktywny (podwójny mount) | brak — nie wykryje nieidempotentnego kill() |
 | SSR / next/font | aktywny | brak — fonty z Google CDN |
-| next/image | N/A (brak obrazów) | N/A |
+| next/image | zoptymalizowane | zwykły `<img>` (sekcja nie ma img) |
 | GSAP pluginy | importowane przez npm | ładowane przez CDN |
-| scrollRuntime v6.x | npm moduł (scrollTo/on/off/start) | stub delegujący do window.lenis |
+| TS adnotacje | present (: string, : HTMLElement, itp.) | usunięte (vanilla JS w script) |
+| palette3 | usunięta (dead code) | usunięta (identycznie) |
+| DEBUG_MODE | usunięty (dead code po overlay removal) | usunięty (identycznie) |
 
-Akceptacja PREVIEW = akceptacja artefaktu TSX. PREVIEW nie testuje reference.html.
+## Ograniczenia PREVIEW (Typ B)
 
-## Co preview gwarantuje
-- Identyczna logika GSAP (timing, easing, snap, physics) — ten sam init(container)
+PREVIEW używa Lenis przez CDN shell — snap machine (`scrollTo`, `scrollOn`, `scrollOff`)
+powinien działać poprawnie. Jeśli snap nie działa → sprawdź console na błędy Lenis.
+
+Pełna weryfikacja physics (velocity, momentum) wymaga `npm run dev` z Lenis z NPM.
+
+## Co PREVIEW gwarantuje
+
+- Identyczna logika GSAP (timing, easing, scrub, snap, physics) — ten sam init(container)
 - Identyczny CSS (literalna kopia kinetic-section.css)
-- Identyczna struktura DOM
-- Snap system działa (Lenis aktywny z scrollTo/on/off/start)
+- Identyczna struktura DOM (HTML 1:1 z JSX, class= zamiast className=)
+- scrollRuntime stub z debounce 120ms — spójność z produkcją
 
-## Czy preview jest 1:1?
-PEŁNY — animacje i layout behawioralnie identyczne z artefaktem TSX.
-Snap system działa identycznie (PREVIEW ma Lenis, produkcja ma scrollRuntime v6.x delegujący do Lenis).
-Jedyna różnica: PREVIEW stub deleguje bezpośrednio do window.lenis, produkcja przez scrollRuntime abstraction layer.
+## Czy PREVIEW jest 1:1?
+
+OGRANICZONY:
+- Snap machine wymaga Lenis — Lenis załadowany przez CDN shell, snap powinien działać
+- `scrollRuntime.getScroll()` w PREVIEW = `window.lenis?.scroll ?? window.scrollY`
+- StrictMode (podwójny mount) nieaktywny — weryfikacja przez `npm run dev`
+- Pełna weryfikacja Typ B: `npm run dev` po wdrożeniu do repo
 
 ## Minimalny standard akceptacji
-- [ ] Layout bez FOUC / braków CSS
-- [ ] Animacje i timingi zgodne "na oko" z reference.html
-- [ ] Snap system działa (scroll forward → SNAP1 → SNAP2 → SNAP3, backward działa)
-- [ ] 3× canvas renderuje poprawnie (particle "?/!", tunnel rings, cylinder "98%")
-- [ ] Blob animacje i kolor transitions działają
-- [ ] Nigdy plate/text/glow pojawia się w Block 3
+
+- [ ] Cząsteczki (`!` i `?`) renderują się poprawnie
+- [ ] Cylinder (liczby) renderuje się poprawnie
+- [ ] Tunnel rings widoczne w fazie bridge
+- [ ] Bloby animują się płynnie
+- [ ] Snap do SNAP1 / SNAP2 / SNAP3 działa
+- [ ] Tekst Block 1, 2, 3 pojawia się we właściwych momentach
+- [ ] "nigdy" — blaszka + glow animuje się poprawnie
+- [ ] Brak FOUC (elementy ukryte przez CSS .text-block { opacity:0; visibility:hidden })
 
 ## Akcja
+
 **AKCEPTUJĘ** lub **ODRZUCAM [powód]**
