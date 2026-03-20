@@ -397,16 +397,30 @@ function init(container) {
             if(this._hoverTimelines){for(var h=0;h<this._hoverTimelines.length;h++){if(this._hoverTimelines[h])this._hoverTimelines[h].kill();}}
             if(this._hoverListeners){for(var hl=0;hl<this._hoverListeners.length;hl++){var li=this._hoverListeners[hl];if(li.type==='pointermove')li.el.removeEventListener('pointermove',li.enter);else if(li.type==='pointerleave')li.el.removeEventListener('pointerleave',li.leave);else{li.el.removeEventListener('mouseenter',li.enter);li.el.removeEventListener('mouseleave',li.leave);}}}
             this._hoverTimelines=[]; this._hoverListeners=[]; this._cardStyleIdx=[];
-            var _svgCache=new Array(base); for(var si=0;si<base;si++) _svgCache[si]=generateJellyfishSVG(si);
-            /* Pre-encode SVGs as data URI for background-image (zero child DOM nodes) */
+            var PEOPLE_MEDIA = [
+                '/assets/people/adam.jpg',
+                '/assets/people/iwona.jpg',
+                '/assets/people/jakub.jpg',
+                '/assets/people/mariusz.mp4',
+                '/assets/people/kinga.jpg',
+                '/assets/people/marta.jpg',
+                '/assets/people/paulina.jpg'
+            ];
+            /* Per-card media: 1 asset (image/video) per base card. */
             var _bgCache=new Array(base);
-            for(var bi=0;bi<base;bi++) _bgCache[bi]='url("data:image/svg+xml,'+encodeURIComponent(_svgCache[bi])+'")';
+            for(var bi=0;bi<base;bi++){
+                var mediaPath=PEOPLE_MEDIA[bi%PEOPLE_MEDIA.length];
+                var posterPath=(mediaPath&&mediaPath.toLowerCase().endsWith('.mp4'))
+                    ? PEOPLE_MEDIA[0]
+                    : mediaPath;
+                _bgCache[bi]='url("'+posterPath+'")';
+            }
             /* VIDEO CARD CONFIG: which baseIdx is video, src, poster */
             var VIDEO_CARD={
                 baseIdx: 3,
-                src: '',            /* preview loop (set when ready) */
-                fullSrc: 'https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/720/Big_Buck_Bunny_720_10s_1MB.mp4',        /* TEST — replace with real showreel */
-                poster: _bgCache[3] /* falls back to SVG placeholder */
+                src: '/assets/people/mariusz.mp4',
+                fullSrc: '/assets/people/mariusz.mp4',
+                poster: _bgCache[3]
             };
             this._videoBaseIdx=VIDEO_CARD.baseIdx;
             for(var i=0;i<total;i++){

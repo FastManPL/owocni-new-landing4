@@ -518,10 +518,12 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         for (var j = 0; j < toAdd; j++) { var i = available[j]; var baseDelay = (j / toAdd) * 0.15; state.particles[i].spawn(baseDelay + Math.random() * 0.05, isManual); }
         wakeThreeLoop();
       }
-      var clock = new THREE.Clock();
+      var clock = new THREE.Timer();
+      clock.connect();
       var viewportHalfHeight = camera.position.z * Math.tan(camera.fov * Math.PI / 360);
       var RENDER_INTERVAL = 15, lastRenderTime = 0;
       function animate(now: number) {
+        clock.update();
         var dt = Math.min(clock.getDelta(), 0.1), dampDt = Math.pow(0.85, dt * 60);
         while (starsState.triggerAuto > 0) { starsState.triggerAuto--; triggerBatch(false); }
         while (starsState.triggerManual > 0) { starsState.triggerManual--; triggerBatch(true); }

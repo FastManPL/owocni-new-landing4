@@ -136,7 +136,6 @@
     border-radius: var(--banner-radius) var(--banner-radius) 0 0;
     pointer-events: none;
     opacity: 0;
-    will-change: opacity;
     transition: opacity 0.8s cubic-bezier(0.25, 0.1, 0.25, 1);
     background:
       /* OPTIMIZED: 4 gradients (was 12) — avg ΔE 0.78 (invisible) */
@@ -429,7 +428,6 @@
     place-self: center;
     transform-style: preserve-3d;
     transform: translateZ(var(--camera-dist)) translateY(calc(var(--pos-y-user) + var(--pos-y-auto))) scale(var(--zoom)) rotateX(var(--tilt)) rotateY(0deg);
-    will-change: transform;
 }
 
 #onas-section .card {
@@ -441,7 +439,7 @@
     position: relative; overflow: hidden;
     transform: rotateY(calc(var(--i) * var(--ba))) rotateX(var(--card-xtilt));
     box-shadow: 0 0 2em rgba(0,0,0,0.4);
-    will-change: transform; contain: layout style paint;
+    contain: layout style paint;
     transition: none;
 }
 @supports not (aspect-ratio: 1 / 1) {
