@@ -79,6 +79,17 @@ function init(
         // Lifecycle hooks — wrapper can call these to activate/hibernate KINETIC
         _s.activate = function() { _sectionVisible = true; };
         _s.hibernate = function() { _sectionVisible = false; };
+        _s.showLayer = function() {
+            container.style.visibility = 'visible';
+            container.style.opacity = '1';
+            container.style.pointerEvents = '';
+        };
+        _s.hideLayer = function() {
+            // Po wyjściu z pina warstwa Kinetic nie może "mignąć" nad kolejną sekcją.
+            container.style.visibility = 'hidden';
+            container.style.opacity = '0';
+            container.style.pointerEvents = 'none';
+        };
         
         // Gate ticker — MUSI być dodany jako PIERWSZY (GSAP wywołuje w kolejności dodania)
         const _tickSectionGate = function() {
@@ -2288,10 +2299,10 @@ function init(
                     preventOverlaps: true,
 
                     // P1: Auto-pause — stop canvas work when section off-screen
-                    onEnter: function() { _s.activate(); },
-                    onEnterBack: function() { _s.activate(); },
-                    onLeave: function() { _s.hibernate(); },
-                    onLeaveBack: function() { _s.hibernate(); },
+                    onEnter: function() { _s.activate(); _s.showLayer(); },
+                    onEnterBack: function() { _s.activate(); _s.showLayer(); },
+                    onLeave: function() { _s.hibernate(); _s.hideLayer(); },
+                    onLeaveBack: function() { _s.hibernate(); _s.hideLayer(); },
 
                     // snap: {} USUNIĘTE — zastąpione przez state machine + lenis.scrollTo()
                     // ScrollTrigger pełni tylko rolę: pin + scrub (czyta scroll, nie pisze)
