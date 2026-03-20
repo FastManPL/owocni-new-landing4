@@ -36,10 +36,7 @@
             z-index: 1;
         }
 
-        /* STREFA 1: Pinowana - dziedziczy z .stage */
-        #kinetic-section {
-            background-color: var(--bg-color);
-        }
+        /* STREFA 1: Pinowana - tło kontrolowane przez warstwy animacji */
 
         /* ============================================
            FAZA 1.2 + 1.3: Style blobów
