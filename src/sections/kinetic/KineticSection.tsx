@@ -6,6 +6,7 @@ import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { scrollRuntime } from '@/lib/scrollRuntime';
+import { useBridgeContext } from '@/app/BridgeContext';
 import './kinetic-section.css';
 
 // ⚠️ GSAP-SSR-01: ZAKAZ gsap.registerPlugin() na module top-level.
@@ -19,7 +20,16 @@ import './kinetic-section.css';
 // scrollRuntime: getScroll() → scrollRuntime.getScroll() (Lenis abstrahowany).
 // scrollTo/scrollOn/scrollOff: window.lenis Lenis-specific API zachowane.
 // ─────────────────────────────────────────────────────────────────────────────
-function init(container: HTMLElement): { kill: () => void; pause: () => void; resume: () => void } {
+function init(
+    container: HTMLElement,
+    opts?: {
+        pinTriggerRef?: { current: HTMLElement | null };
+        pinSpacerRef?: { current: HTMLElement | null };
+    }
+): { kill: () => void; pause: () => void; resume: () => void } {
+        // W integracji bridge pin musi być liczony na wrapperze (nie na warstwie absolute).
+        const wrapperEl = typeof document !== 'undefined' ? document.getElementById('bridge-wrapper') : null;
+        const pinTrigger = (opts?.pinTriggerRef?.current ?? wrapperEl ?? container) as HTMLElement;
         const $ = (sel: string) => container.querySelector(sel);
         const $$ = (sel: string) => container.querySelectorAll(sel);
         const $id = (id: string) => container.querySelector('#' + id);
@@ -52,7 +62,7 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
         try {
             ScrollTrigger.getAll().forEach(function(st) {
                 if (!st) return;
-                if (st.trigger === container || (st.vars && st.vars.id === "KINETIC_PIN")) {
+                if (st.trigger === container || st.trigger === pinTrigger || (st.vars && st.vars.id === "KINETIC_PIN")) {
                     st.kill(true); // true = usuń pin-spacer
                 }
             });
@@ -2262,7 +2272,7 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
 
             const pinnedTl = gsap.timeline({
                 scrollTrigger: {
-                    trigger: container,
+                    trigger: pinTrigger,
                     start: "top top",
                     // Dynamic endPx: re-evaluated on every ScrollTrigger.refresh() (auto on resize)
                     // Fixes: resize viewport → stale endPx → over-scroll past progress 1.0
@@ -2272,6 +2282,7 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
                     id: "KINETIC_PIN",
                     scrub: true,              // 1-frame latency; Lenis IS the smoothing layer
                     pin: true,
+                    pinSpacer: opts?.pinSpacerRef?.current ?? undefined,
                     anticipatePin: 0,         // Lenis eliminates pin flash
                     invalidateOnRefresh: true,
                     preventOverlaps: true,
@@ -3645,6 +3656,7 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
 // ─────────────────────────────────────────────────────────────────────────────
 export default function KineticSection() {
   const rootRef = useRef<HTMLElement | null>(null);
+  const bridge = useBridgeContext();
 
   useGSAP(() => {
     // GSAP-SSR-01: registerPlugin WEWNĄTRZ useGSAP — nie na module top-level
@@ -3657,7 +3669,10 @@ export default function KineticSection() {
       }
       return;
     }
-    const inst = init(el);
+    const inst = init(el, {
+      pinTriggerRef: bridge?.wrapperRef,
+      pinSpacerRef: bridge?.pinSpacerRef,
+    });
     return () => inst?.kill?.();
     // useGSAP { scope: rootRef }: Context automatycznie revertuje instancje GSAP z init().
     // inst.kill() revertuje je powtórnie + czyści observers/timers/listeners.
