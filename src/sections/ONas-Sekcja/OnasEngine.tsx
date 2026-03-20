@@ -2405,8 +2405,20 @@ export default function OnasEngine() {
       if (!has) el.classList.add('no-flex-gap');
     })();
 
+    const revealFailSafeId = window.setTimeout(() => {
+      const sceneEl = el.querySelector('#onas-scene');
+      const pressEl = el.querySelector('.onas-press');
+      const textBlockEl = el.querySelector('.onas-text-block');
+      if (sceneEl && sceneEl instanceof HTMLElement) sceneEl.style.visibility = 'visible';
+      if (pressEl && pressEl instanceof HTMLElement) pressEl.style.visibility = 'visible';
+      if (textBlockEl && textBlockEl instanceof HTMLElement) textBlockEl.style.visibility = 'visible';
+    }, 1200);
+
     const inst = factoryInit(el);
-    return () => inst?.kill?.();
+    return () => {
+      clearTimeout(revealFailSafeId);
+      inst?.kill?.();
+    };
   }, { scope: rootRef });
 
   return (
