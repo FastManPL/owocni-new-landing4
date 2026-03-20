@@ -297,11 +297,11 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
   let lmCx=-999,lmCy=-999,lmR=-999,lmA=-999,lmNone=false;
   function renderMask(){if(paused||!maskWrap||!isContainerVisible)return;
     if(!hasEnteredOnce || (maskState.radius < 0.5 && maskState.alpha < 0.01)){
-      if(!lmNone){(maskWrap as HTMLElement).style.webkitMaskImage='none';(maskWrap as HTMLElement).style.maskImage='none';lmNone=true;}return;}
+      if(!lmNone){(maskWrap as HTMLElement).style.webkitMaskImage='radial-gradient(circle at 50% 50%, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 1px)';(maskWrap as HTMLElement).style.maskImage='radial-gradient(circle at 50% 50%, rgba(0,0,0,0) 0px, rgba(0,0,0,0) 1px)';lmNone=true;}return;}
     const cx=maskPos.x,cy=maskPos.y,r=maskState.radius,a=maskState.alpha;
     if(Math.abs(cx-lmCx)<0.5&&Math.abs(cy-lmCy)<0.5&&Math.abs(r-lmR)<0.1&&Math.abs(a-lmA)<0.005)return;
     lmCx=cx;lmCy=cy;lmR=r;lmA=a;lmNone=false;
-    const g=`radial-gradient(circle at ${cx}px ${cy}px,rgba(0,0,0,${a}) 0px,rgba(0,0,0,${a}) ${r}px,black ${r+scaledFeather}px)`;
+    const g=`radial-gradient(circle at ${cx}px ${cy}px,rgba(0,0,0,${a}) 0px,rgba(0,0,0,${a}) ${r}px,rgba(0,0,0,0) ${r+scaledFeather}px)`;
     (maskWrap as HTMLElement).style.webkitMaskImage=g;(maskWrap as HTMLElement).style.maskImage=g;
     }
   gsap.ticker.add(renderMask);cleanups.push(()=>gsap.ticker.remove(renderMask));
