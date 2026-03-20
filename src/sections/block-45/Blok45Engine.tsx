@@ -591,12 +591,11 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
 
     function loadThreeDeps() {
       if (!_threeDepsPromise) {
-        var BASE = 'https://cdn.jsdelivr.net/npm/three@0.160.0';
         _threeDepsPromise = Promise.all([
-          import(/* webpackIgnore: true */ BASE + '/build/three.module.js'),
-          import(/* webpackIgnore: true */ BASE + '/examples/jsm/geometries/RoundedBoxGeometry.js'),
-          import(/* webpackIgnore: true */ BASE + '/examples/jsm/environments/RoomEnvironment.js'),
-          import(/* webpackIgnore: true */ BASE + '/examples/jsm/utils/BufferGeometryUtils.js')
+          import('three'),
+          import('three/examples/jsm/geometries/RoundedBoxGeometry.js'),
+          import('three/examples/jsm/environments/RoomEnvironment.js'),
+          import('three/examples/jsm/utils/BufferGeometryUtils.js')
         ]);
       }
       return _threeDepsPromise;
