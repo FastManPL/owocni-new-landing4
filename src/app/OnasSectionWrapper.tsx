@@ -1,6 +1,8 @@
 'use client';
 
 import dynamic from 'next/dynamic';
+import { useEffect } from 'react';
+import { runWarmupPolicy } from '@/lib/moduleLoader';
 
 const OnasSection = dynamic(
   () =>
@@ -19,5 +21,14 @@ const OnasSection = dynamic(
 );
 
 export function OnasSectionWrapper() {
+  useEffect(() => {
+    runWarmupPolicy([
+      {
+        import: () => import('three'),
+        policy: 'idle',
+      },
+    ]);
+  }, []);
+
   return <OnasSection />;
 }
