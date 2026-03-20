@@ -1,0 +1,3512 @@
+<!DOCTYPE html>
+<!-- PREVIEW ONLY — NIE WKLEJAJ DO REPO -->
+<!-- Zrodlo prawdy: OnasSection.tsx + OnasEngine.tsx + onas-section.css -->
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>onas — PREVIEW (P3)</title>
+
+  <!-- CDN: GSAP 3.12.7 (pinned) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.7/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.7/Draggable.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.7/ScrollTrigger.min.js"></script>
+  <!-- CDN: imagesLoaded 4.x -->
+  <script src="https://unpkg.com/imagesloaded@4/imagesloaded.pkgd.min.js"></script>
+
+  <!-- Three.js 0.160.0: es-module-shims + importmap
+       JSM addons importuja 'three' bare specifier wewnetrznie — wymaga importmap.
+       es-module-shims polyfilluje Safari <16.4. -->
+  <script async src="https://ga.jspm.io/npm:es-module-shims@1.8.0/dist/es-module-shims.js"></script>
+  <script type="importmap">
+  {
+    "imports": {
+      "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+      "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+    }
+  }
+  </script>
+  <script type="module">
+    import * as THREE from 'three';
+    import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+    import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+    import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+    import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+    import { SVGLoader } from 'three/addons/loaders/SVGLoader.js';
+    import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
+    window.THREE = THREE;
+    window.EffectComposer = EffectComposer;
+    window.RenderPass = RenderPass;
+    window.UnrealBloomPass = UnrealBloomPass;
+    window.RoomEnvironment = RoomEnvironment;
+    window.SVGLoader = SVGLoader;
+    window.BufferGeometryUtils = BufferGeometryUtils;
+    window._threeReady = true;
+    window.dispatchEvent(new Event('three-ready'));
+  </script>
+
+  <!-- Fonts (PREVIEW only) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&family=Fraunces:ital,opsz,wght@1,9..144,100..900&display=swap" rel="stylesheet">
+
+  <style>
+    *, *::before, *::after { margin:0; padding:0; box-sizing:border-box; }
+    html { overflow-x: clip; font-size: 16px; /* zamrozona baza = globals.css */ }
+    html, body { margin:0; padding:0; background:#f7f6f4; font-family:'Lexend',system-ui,sans-serif; }
+    .preview-spacer { height:150vh; background:repeating-linear-gradient(0deg,#eee,#eee 1px,#f5f5f5 1px,#f5f5f5 40px); display:flex; align-items:center; justify-content:center; color:#bbb; font-size:1.5rem; letter-spacing:.1em; }
+    /* === onas-section.css — LITERALNA KOPIA, ZERO MODYFIKACJI === */
+/* CSS BLOCK 1 — #onas-section #onas-capitan (P2A: no changes) */
+  #onas-section #onas-capitan {
+    --banner-color: #171717;
+    --bg-color: #f7f6f4;
+    --banner-width: clamp(62.5rem, 88vw, 110rem);
+    --banner-radius: 1.5rem;
+    --banner-curve-height: clamp(30px, calc(8.3vw - 2.66px), 72px);
+    --vignette-top: linear-gradient(180deg,
+      rgba(0,0,0,0.55) 0%,
+      rgba(0,0,0,0.35) 12%,
+      rgba(0,0,0,0.18) 25%,
+      rgba(0,0,0,0.07) 35%,
+      transparent 44%);
+    width: calc(100% - 2rem);
+    max-width: var(--banner-width);
+    margin-left: auto;
+    margin-right: auto;
+    position: relative;
+    z-index: 10; /* FIX P2: Capitan NAD karuzelą */
+    background: var(--banner-color);
+    border-radius: var(--banner-radius) var(--banner-radius) 0 0;
+  }
+
+  /* ── Top vignette: black → transparent over top ~42% ── */
+  #onas-section #onas-capitan::before {
+    content: '';
+    position: absolute;
+    top: 0; right: 0; bottom: 0; left: 0;
+    z-index: 0;
+    border-radius: var(--banner-radius) var(--banner-radius) 0 0;
+    pointer-events: none;
+    background: var(--vignette-top);
+  }
+
+  #onas-section #onas-capitan .banner__curve {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: calc(-1 * var(--banner-curve-height));
+    height: calc(var(--banner-curve-height) + 2px);
+    background:
+      linear-gradient(180deg,
+        var(--banner-color) 0%,
+        var(--banner-color) 25%,
+        #111 55%,
+        #0a0a0a 75%,
+        #050505 90%,
+        #000 100%);
+    border-radius: 0 0 50% 50% / 0 0 100% 100%;
+    z-index: 1;
+    transition: background 0.8s cubic-bezier(0.25, 0.1, 0.25, 1);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: calc(var(--banner-curve-height) * 0.28);
+  }
+
+  #onas-section #onas-capitan.fog-visible .banner__curve {
+    background:
+      radial-gradient(ellipse 55% 90% at 50% 0%, rgba(127,116,107,0.18) 0%, rgba(66,52,44,0.10) 30%, rgba(66,52,44,0.04) 55%, transparent 80%),
+      radial-gradient(ellipse 25% 80% at 20% 0%, rgba(127,116,107,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 20% 70% at 80% 0%, rgba(66,52,44,0.07) 0%, transparent 55%),
+      linear-gradient(180deg,
+        var(--banner-color) 0%,
+        var(--banner-color) 25%,
+        #111 55%,
+        #0a0a0a 75%,
+        #050505 90%,
+        #000 100%);
+  }
+
+  #onas-section #onas-capitan .curve-btn {
+    background: none;
+    border: none;
+    color: #7f746b;
+    font-family: 'Lexend', sans-serif;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    white-space: nowrap;
+    padding: 0;
+    font-size: clamp(0.55rem, calc(2.2vw - 0.3px), 1.25rem);
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6em;
+  }
+
+  #onas-section #onas-capitan .curve-btn:hover { opacity: 1; }
+
+  #onas-section #onas-capitan .curve-btn::after {
+    content: '';
+    display: inline-block;
+    width: 0.55em;
+    height: 0.55em;
+    border-right: 1.5px solid #7f746b;
+    border-bottom: 1.5px solid #7f746b;
+    transform: rotate(45deg);
+    margin-top: -0.15em;
+    transition: transform 0.3s ease;
+  }
+
+  #onas-section #onas-capitan .curve-btn:hover::after {
+    transform: rotate(45deg) translate(0.1em, 0.1em);
+  }
+
+  #onas-section #onas-capitan .curve-btn.is-active::after {
+    transform: rotate(-135deg);
+    margin-top: 0.15em;
+  }
+
+  #onas-section #onas-capitan .curve-btn.is-active {
+    opacity: 0.5;
+  }
+
+  #onas-section #onas-capitan .banner__mesh-top {
+    position: absolute;
+    top: 0; right: 0; bottom: 0; left: 0;
+    z-index: 0;
+    border-radius: var(--banner-radius) var(--banner-radius) 0 0;
+    pointer-events: none;
+    background:
+      linear-gradient(180deg, rgba(80,80,80,0.11) 0%, rgba(80,80,80,0.06) 4%, rgba(80,80,80,0.02) 9%, transparent 16%),
+      linear-gradient(180deg, rgba(66,52,44,0.035) 0%, rgba(66,52,44,0.015) 5%, transparent 12%),
+      radial-gradient(ellipse 70% 12% at 35% 0%, rgba(80,80,80,0.07) 0%, rgba(80,80,80,0.025) 50%, transparent 80%),
+      radial-gradient(ellipse 35% 10% at 78% 1%, rgba(80,80,80,0.05) 0%, transparent 70%),
+      radial-gradient(ellipse 20% 14% at 8% 2%, rgba(127,116,107,0.04) 0%, transparent 65%);
+  }
+
+  #onas-section #onas-capitan .banner__mesh-fog {
+    position: absolute;
+    top: 0; right: 0; bottom: 0; left: 0;
+    z-index: 0;
+    border-radius: var(--banner-radius) var(--banner-radius) 0 0;
+    pointer-events: none;
+    opacity: 0;
+    will-change: opacity;
+    transition: opacity 0.8s cubic-bezier(0.25, 0.1, 0.25, 1);
+    background:
+      /* OPTIMIZED: 4 gradients (was 12) — avg ΔE 0.78 (invisible) */
+      radial-gradient(ellipse 62% 44% at 50% 96%,
+        rgba(115,105,97,0.40) 2%, rgba(108,98,90,0.19) 28%,
+        rgba(98,88,80,0.12) 62%, rgba(85,75,68,0.03) 94%,
+        transparent 100%),
+      radial-gradient(ellipse 200% 100% at 74% 133%,
+        rgba(82,72,64,0.34) 32%, rgba(76,66,58,0.23) 40%,
+        rgba(70,60,54,0.07) 57%, rgba(60,52,46,0.05) 82%,
+        rgba(0,0,0,0.02) 96%),
+      radial-gradient(ellipse 86% 60% at 49% 62%,
+        rgba(35,32,30,0.02) 10%, rgba(48,42,38,0.13) 34%,
+        rgba(60,52,46,0.01) 58%, rgba(66,52,44,0.02) 81%,
+        rgba(0,0,0,0.02) 100%),
+      radial-gradient(ellipse 54% 91% at 10% 101%,
+        rgba(120,110,100,0.18) 0%, rgba(110,100,92,0.04) 40%,
+        rgba(95,85,78,0.02) 84%, transparent 100%);
+  }
+
+  #onas-section #onas-capitan.fog-visible .banner__mesh-fog {
+    opacity: 1;
+    animation: onas-capitan-fog-breathe 6s ease-in-out infinite;
+  }
+
+  @keyframes onas-capitan-fog-breathe {
+    0%, 100% { opacity: 0.3; }
+    50%      { opacity: 1; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #onas-section #onas-capitan.fog-visible .banner__mesh-fog {
+      animation: none;
+      opacity: 1;
+    }
+  }
+
+  #onas-section #onas-capitan .banner__content {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    aspect-ratio: 1600 / 500;
+    display: flex;
+    align-items: stretch;
+    padding: clamp(1.33rem, calc(3.6vw - 1.76px), 3.85rem)
+             clamp(1.33rem, calc(3.6vw - 1.76px), 3.85rem)
+             0
+             clamp(1.33rem, calc(3.6vw - 1.76px), 3.85rem);
+    gap: clamp(1.33rem, calc(3.6vw - 1.76px), 3.85rem);
+  }
+
+  #onas-section #onas-capitan .banner__left {
+    flex: 0 0 35%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+
+  #onas-section #onas-capitan .banner__logo {
+    width: 100%;
+    height: auto;
+    max-height: 100%;
+    display: block;
+  }
+
+  #onas-section #onas-capitan .banner__divider {
+    width: 1px;
+    flex-shrink: 0;
+    background: rgba(255,255,255,0.12);
+    margin-bottom: 15%;
+  }
+
+  #onas-section #onas-capitan .banner__right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: clamp(0.48rem, calc(1.29vw - 0.63px), 1.375rem);
+  }
+
+  #onas-section #onas-capitan .banner__heading {
+    font-weight: 500;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    color: #cec2b0;
+    font-size: clamp(1.33rem, calc(3.6vw - 1.76px), 3.85rem);
+  }
+
+  #onas-section #onas-capitan .banner__body {
+    font-weight: 300;
+    line-height: 1.55;
+    color: #cec2b0;
+    font-size: clamp(1rem, calc(1.70vw - 0.83px), 1.815rem);
+  }
+
+  #onas-section #onas-capitan .banner__expand {
+    position: relative;
+    z-index: 1;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.6s cubic-bezier(0.25, 0.1, 0.25, 1),
+                padding 0.6s cubic-bezier(0.25, 0.1, 0.25, 1);
+    padding: 0 clamp(1.33rem, calc(3.6vw - 1.76px), 3.85rem);
+  }
+
+  #onas-section #onas-capitan.is-expanded .banner__expand {
+    max-height: 600px;
+    padding: clamp(1.33rem, calc(3.6vw - 1.76px), 3.85rem);
+    padding-top: clamp(1.33rem, calc(3.6vw - 1.76px), 3.85rem);
+  }
+
+  #onas-section #onas-capitan .banner__expand-text {
+    font-weight: 300;
+    line-height: 1.55;
+    color: rgba(255,255,255,0.6);
+    font-size: clamp(1rem, calc(1.70vw - 0.83px), 1.815rem);
+  }
+
+  #onas-section #onas-capitan .banner__expand-text p {
+    margin-bottom: clamp(0.48rem, calc(1.29vw - 0.63px), 1.375rem);
+  }
+
+  #onas-section #onas-capitan .banner__expand-text p:last-child {
+    margin-bottom: 0;
+  }
+
+  #onas-section #onas-capitan .banner__link.is-active {
+    color: rgba(255,255,255,0.5);
+  }
+
+  /* ── Badge reveal: animated @property for radial mask ── */
+  @property --onas-badge-reveal {
+    syntax: '<percentage>';
+    initial-value: 0%;
+    inherits: false;
+  }
+
+  #onas-section #onas-capitan .banner__badge {
+    position: absolute;
+    z-index: 2;
+    width: 25.9%;
+    aspect-ratio: 1;
+    left: 11.5%;
+    top: 0;
+    pointer-events: auto;
+
+    /* ── Initial hidden: mask hides everything ──
+       IMPORTANT: Badge reveal triggers via IntersectionObserver
+       when #onas-section #onas-capitan crosses 30% visibility threshold.
+       Class .badge-revealed is added once (one-shot) by JS.
+       See: badgeRevealIO in capitan module init(). ── */
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(0deg) scale(0.7);
+    --onas-badge-reveal: 0%;
+    -webkit-mask-image: radial-gradient(circle at 50% 50%,
+      black 0%,
+      black var(--onas-badge-reveal),
+      transparent calc(var(--onas-badge-reveal) + 10%),
+      transparent 100%
+    );
+    mask-image: radial-gradient(circle at 50% 50%,
+      black 0%,
+      black var(--onas-badge-reveal),
+      transparent calc(var(--onas-badge-reveal) + 10%),
+      transparent 100%
+    );
+  }
+  @supports not (aspect-ratio: 1) {
+    /* Badge square fallback handled by JS in positionBadge() —
+       padding-bottom trick breaks canvas children (height: 0) */
+  }
+
+  #onas-section #onas-capitan.badge-revealed .banner__badge {
+    animation: onas-capitan-badge-reveal 1.43s cubic-bezier(0.25, 1, 0.5, 1) 0.1s forwards;
+  }
+
+  @keyframes onas-capitan-badge-reveal {
+    0%   { opacity: 0; --onas-badge-reveal: 0%; transform: translate(-50%, -50%) rotate(0deg) scale(0.7); }
+    8%   { opacity: 1; }
+    100% { opacity: 1; --onas-badge-reveal: 72%; transform: translate(-50%, -50%) rotate(0deg) scale(1); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #onas-section #onas-capitan.badge-revealed .banner__badge {
+      animation: onas-capitan-badge-reveal-reduced 0.6s ease forwards;
+    }
+    @keyframes onas-capitan-badge-reveal-reduced {
+      from { opacity: 0; --onas-badge-reveal: 72%; transform: translate(-50%, -50%) rotate(0deg); }
+      to   { opacity: 1; --onas-badge-reveal: 72%; transform: translate(-50%, -50%) rotate(0deg); }
+    }
+  }
+
+  #onas-section #onas-capitan .banner__badge canvas {
+    display: block;
+    position: absolute;
+    top: 0; left: 0;
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  #onas-section #onas-capitan .banner__badge #onas-capitan-canvas-bloom {
+    mix-blend-mode: screen;
+    pointer-events: none;
+    filter: blur(3px);
+    -webkit-filter: blur(3px);
+    -webkit-mask-image: radial-gradient(circle at center, black 0%, black 20%, rgba(0,0,0,0.6) 30%, rgba(0,0,0,0.2) 40%, transparent 50%);
+    mask-image: radial-gradient(circle at center, black 0%, black 20%, rgba(0,0,0,0.6) 30%, rgba(0,0,0,0.2) 40%, transparent 50%);
+  }
+
+  @media (max-width: 600px) {
+    #onas-section .onas-headline .br-headline { display: none; }
+    #onas-section #onas-capitan { aspect-ratio: auto; min-height: 75vw; }
+    #onas-section #onas-capitan .banner__content { flex-direction: column; padding: 5vw 5vw 4vw; gap: 2.5vw; aspect-ratio: auto; }
+    #onas-section #onas-capitan .banner__left { flex: 0 0 auto; margin-bottom: 1vw; }
+    #onas-section #onas-capitan .banner__divider { width: 100%; height: 1px; margin-bottom: 0; }
+    #onas-section #onas-capitan .banner__right { flex: 1; }
+    #onas-section #onas-capitan .banner__logo { max-width: 42vw; }
+    #onas-section #onas-capitan .banner__heading { font-size: 5vw; margin-top: 0; }
+    #onas-section #onas-capitan .banner__body,
+    #onas-section #onas-capitan .banner__expand-text { font-size: 3vw; }
+    #onas-section #onas-capitan .banner__badge { width: 69.3%; left: 78%; top: calc(21.5% - 10px); }
+  }
+
+  @media (min-width: 601px) and (max-width: 720px) {
+    #onas-section #onas-capitan .banner__content { aspect-ratio: auto; padding-bottom: clamp(2rem, 6vw, 3.5rem); }
+  }
+
+/* CSS BLOCK 2 — #onas-section (P2A: +isolation:isolate, +graceful degradation) */
+#onas-section {
+    isolation: isolate;
+    --perspective: 65rem;
+    --card-width: 17.5rem;
+    --radius-mult: 1.13;
+    --tilt: 26deg;
+    --zoom: 2;
+    --card-xtilt: 0deg;
+    --camera-dist: 0px;
+    --z-sign: -1;
+    /* ── join-gap: pure CSS, zero CLS (no JS write needed) ── */
+    --join-gap: max(-236px, calc(112px - 38vh));
+    --pos-y-user: -500px;
+    --pos-y-auto: 0px;
+    --press-y: 0px;
+    --logo-gap: 0px;
+}
+/* ── join-gap: desktop overrides ── */
+@media (min-width: 656px) {
+    #onas-section { --join-gap: clamp(-236px, calc(19.4vw - 363px), 100px); }
+}
+@media (min-width: 1520px) {
+    #onas-section { --join-gap: clamp(-236px, calc(21.8vw - 400px), 100px); }
+}
+
+/* ── Anti-flash: hide until JS calculates positions (J7 pattern) ── */
+/* visibility:hidden reserves space in layout = zero CLS.
+   JS reveals after first updateGalleryResponsive() run. */
+#onas-section #onas-scene,
+#onas-section .onas-press,
+#onas-section .onas-text-block {
+    visibility: hidden;
+}
+/* ── Text block: single transform for sep + headline + subtitle ── */
+#onas-section .onas-text-block {
+    transform: translateY(var(--press-y));
+}
+
+#onas-section .carousel-section {
+    height: 100vh;
+    height: 100svh;
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+    cursor: grab;
+}
+
+#onas-section .carousel-section:active { cursor: grabbing; }
+
+#onas-section .scene,
+#onas-section .a3d { display: grid; }
+#onas-section .scene {
+    overflow: hidden;
+    perspective: var(--perspective);
+    -webkit-mask: linear-gradient(90deg, #0000, red var(--mask-start, 15%) var(--mask-end, 85%), #0000);
+    mask: linear-gradient(90deg, #0000, red var(--mask-start, 15%) var(--mask-end, 85%), #0000);
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 1;
+    touch-action: pan-y;
+}
+#onas-section .a3d {
+    place-self: center;
+    transform-style: preserve-3d;
+    transform: translateZ(var(--camera-dist)) translateY(calc(var(--pos-y-user) + var(--pos-y-auto))) scale(var(--zoom)) rotateX(var(--tilt)) rotateY(0deg);
+    will-change: transform;
+}
+
+#onas-section .card {
+    --w: var(--card-width);
+    --ba: calc(1turn / var(--n));
+    grid-area: 1 / 1; width: var(--w); aspect-ratio: 258 / 344;
+    border-radius: var(--card-radius, 1.5rem); backface-visibility: hidden;
+    transform-origin: center top; cursor: pointer;
+    position: relative; overflow: hidden;
+    transform: rotateY(calc(var(--i) * var(--ba))) rotateX(var(--card-xtilt));
+    box-shadow: 0 0 2em rgba(0,0,0,0.4);
+    will-change: transform; contain: layout style paint;
+    transition: none;
+}
+@supports not (aspect-ratio: 1 / 1) {
+    #onas-section .card { height: calc(var(--w) * 1.3333); }
+}
+#onas-section .card::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0; bottom: 0; left: 0;
+    background: rgba(0,0,0,0.3);
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: var(--overlay-opacity, 1);
+    z-index: 10;
+}
+#onas-section .card.glow-active {
+    transition: box-shadow 0.15s ease-out;
+}
+#onas-section .is-dragging .card,
+#onas-section .is-dragging .card.glow-active {
+    transition: none !important;
+}
+#onas-section .card {
+    display: grid;
+}
+#onas-section .card__wrap,
+#onas-section .card > .card__layer {
+    grid-area: 1 / 1 / 2 / 2;
+    width: 100%; height: 100%;
+    border-radius: inherit;
+    transform-origin: 50% 50%;
+}
+#onas-section .card__wrap {
+    overflow: hidden;
+}
+#onas-section .card__layer {
+    width: 100%; height: 100%;
+    border-radius: inherit;
+    transform-origin: 50% 50%;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+#onas-section .card__layer svg { width: 100%; height: 100%; display: block; }
+#onas-section .card__layer img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* VIDEO CARD */
+#onas-section .card--video > video {
+    position: absolute; top: 0; right: 0; bottom: 0; left: 0;
+    width: 100%; height: 100%;
+    object-fit: cover; display: block;
+    border-radius: inherit;
+    opacity: 0; /* hidden until loaded, poster bg visible underneath */
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+    z-index: 1;
+}
+#onas-section .card--video > video.is-playing {
+    opacity: 1; /* video loaded + playing → show over poster */
+}
+#onas-section .card--video .play-btn {
+    position: absolute;
+    bottom: 6%; right: 6%;
+    width: 22%; height: auto; aspect-ratio: 1;
+    z-index: 15;
+    pointer-events: none;
+    /* Slide-in: start offset left + hidden, reveal triggers entrance */
+    opacity: 0;
+    transform: translateX(-15px);
+    transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.5s ease;
+}
+#onas-section .card--video.reveal-done .play-btn {
+    opacity: 1;
+    transform: translateX(0);
+}
+#onas-section .card--video .play-btn svg {
+    width: 100% !important; height: 100% !important;
+}
+/* ── VIDEO POPUP (centered, 80% viewport) ── */
+#onas-section #onas-video-popup {
+    position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 100000;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0);
+    visibility: hidden;
+    pointer-events: none;
+    transition: background 0.4s ease, visibility 0.4s ease;
+}
+#onas-section #onas-video-popup.is-open {
+    visibility: visible;
+    pointer-events: auto;
+    background: rgba(0,0,0,0.85);
+}
+#onas-section #onas-video-popup .popup-panel {
+    position: relative;
+    width: min(96vw, 1150px);
+    max-height: 90vh;
+    max-height: 90svh;
+    background: linear-gradient(180deg, #1a1816 0%, #141210 100%);
+    border-radius: 1.2rem;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 80px rgba(0,0,0,0.6);
+    transform: translateY(40px) scale(0.96);
+    opacity: 0;
+    transition: transform 0.45s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.35s ease;
+}
+#onas-section #onas-video-popup.is-open .popup-panel {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+}
+/* Close X — yellow circle, right side */
+#onas-section #onas-video-popup .popup-close {
+    position: absolute; top: 1rem; right: 1rem;
+    width: 48px; height: 48px;
+    background: #f5c518;
+    border: none;
+    border-radius: 50%; cursor: pointer;
+    color: #1a1816; font-size: 24px; font-weight: 700;
+    line-height: 48px; text-align: center;
+    z-index: 5;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+#onas-section #onas-video-popup .popup-close:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 24px rgba(0,0,0,0.5);
+}
+/* Video — top part */
+#onas-section #onas-video-popup .popup-video-wrap {
+    position: relative;
+    width: 100%;
+    padding-top: 56.25%; /* 9/16 fallback for Safari < 15 */
+    aspect-ratio: 16 / 9;
+    background: #000;
+    flex-shrink: 0;
+}
+@supports (aspect-ratio: 16 / 9) {
+    #onas-section #onas-video-popup .popup-video-wrap { padding-top: 0; }
+}
+#onas-section #onas-video-popup video {
+    width: 100%; height: 100%;
+    object-fit: contain;
+    display: block;
+}
+@supports not (aspect-ratio: 16 / 9) {
+    #onas-section #onas-video-popup video { position: absolute; top: 0; left: 0; }
+}
+/* Content — bottom part */
+#onas-section #onas-video-popup .popup-content {
+    padding: clamp(1.2rem, 3.5vw, 2.2rem) clamp(1.5rem, 4vw, 2.5rem);
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    overflow-y: auto;
+}
+#onas-section #onas-video-popup .popup-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font: 600 11px/1 'Lexend', sans-serif;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(206,194,176,0.6);
+}
+#onas-section #onas-video-popup .popup-tag::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #c53c0a;
+}
+#onas-section #onas-video-popup .popup-title {
+    font: 300 clamp(1.1rem, 2.5vw, 1.5rem)/1.3 'Lexend', sans-serif;
+    color: #f0ece6;
+    margin: 0;
+}
+#onas-section #onas-video-popup .popup-title b { font-weight: 600; }
+/* CTA button */
+#onas-section #onas-video-popup .popup-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 1rem 2rem;
+    border-radius: 999px;
+    background: #ffc600;
+    color: #1a1816;
+    font: 600 clamp(0.95rem, 1.8vw, 1.15rem)/1 'Lexend', sans-serif;
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 20px rgba(255,198,0,0.3);
+}
+#onas-section #onas-video-popup .popup-cta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 30px rgba(255,198,0,0.45);
+}
+/* Close text button — same size as CTA */
+#onas-section #onas-video-popup .popup-close-text {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem 2rem;
+    border-radius: 999px;
+    background: transparent;
+    border: 1px solid rgba(206,194,176,0.2);
+    color: rgba(206,194,176,0.5);
+    font: 400 clamp(0.95rem, 1.8vw, 1.15rem)/1 'Lexend', sans-serif;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+}
+#onas-section #onas-video-popup .popup-close-text:hover {
+    border-color: rgba(206,194,176,0.4);
+    color: rgba(206,194,176,0.8);
+}
+#onas-section #onas-video-popup .popup-buttons {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 2.5rem;
+    flex-wrap: wrap;
+}
+/* Mobile */
+@media (max-width: 600px) {
+    #onas-section #onas-video-popup .popup-panel {
+        width: 94vw;
+        max-height: 92vh;
+        border-radius: 1rem;
+    }
+}
+
+#onas-section .onas-press {
+    /* === Identical outer box as #onas-section #onas-capitan === */
+    width: calc(100% - 2rem);
+    max-width: clamp(62.5rem, 88vw, 110rem);
+    margin-left: auto;
+    margin-right: auto;
+    box-sizing: border-box;
+    /* === Internal padding matches banner__content left/right === */
+    padding: clamp(1rem, 2vw, 2rem) clamp(1.33rem, calc(3.6vw - 1.76px), 3.85rem);
+    /* === Desktop: side by side === */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(1.5rem, 3vw, 3.5rem);
+    /* === Position via CSS vars (automat + debug offset) === */
+    transform: translateY(var(--press-y));
+    margin-bottom: var(--logo-gap);
+}
+#onas-section .onas-press__text {
+    flex: none;
+    font-size: clamp(0.7rem, 1.15vw, 1.1rem);
+    line-height: 1.45;
+    color: rgba(80,70,60,0.7);
+    font-weight: 300;
+}
+#onas-section .onas-press__text p { margin: 0; }
+#onas-section .onas-press__text .br-desktop { display: inline; }
+#onas-section .onas-headline .br-desktop { display: inline; }
+#onas-section .onas-subtitle .br-desktop { display: inline; }
+#onas-section .onas-press__text .br-mobile { display: none; }
+#onas-section .onas-press__logos {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: clamp(1rem, 3vw, 3rem);
+}
+#onas-section .onas-press__logo {
+    height: auto;
+    width: auto;
+    max-height: clamp(2.2rem, 4.5vw, 5.5rem);
+    opacity: 0.55;
+}
+@media (max-width: 1200px) {
+    #onas-section .onas-press {
+        flex-direction: column;
+        align-items: center;
+        gap: clamp(0.5rem, 1vw, 1rem);
+    }
+    #onas-section .onas-press__text { text-align: center; }
+    #onas-section .onas-press__text .br-desktop { display: none; }
+    #onas-section .onas-press__text .br-mobile { display: inline; }
+    #onas-section .onas-press__logos { justify-content: center; flex-wrap: wrap; }
+}
+@media (max-width: 600px) {
+    #onas-section .onas-headline .br-headline { display: none; }
+    #onas-section .onas-headline .br-desktop { display: none; }
+    #onas-section .onas-subtitle .br-desktop { display: none; }
+    #onas-section .onas-press {
+        padding-left: 5vw;
+        padding-right: 5vw;
+    }
+    #onas-section .onas-press__logo { max-height: none; max-width: 40%; }
+}
+
+#onas-section .onas-headline {
+    font-size: clamp(1.6rem, 4vw, 4.6rem);
+    font-weight: 300;
+    line-height: 1.15;
+    text-align: center;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+    max-width: 54ch;
+}
+@media (max-width: 370px) {
+    #onas-section .onas-headline { line-height: 1.35; }
+}
+@media (min-width: 371px) and (max-width: 600px) {
+    #onas-section .onas-headline { line-height: 1.3; }
+}
+#onas-section .onas-headline__sep {
+    display: block;
+    width: 100%;
+    max-width: 48rem;
+    height: 2px;
+    margin: 0.8em auto 0;
+    background: linear-gradient(to bottom,
+        rgba(58, 46, 30, 0.15) 0%, rgba(58, 46, 30, 0.15) 50%,
+        rgba(255, 255, 255, 0.6) 50%, rgba(255, 255, 255, 0.6) 100%
+    );
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 20%, #000 80%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 20%, #000 80%, transparent);
+    -webkit-text-fill-color: initial;
+    -webkit-background-clip: initial;
+    background-clip: initial;
+    transform: translateZ(0);
+    pointer-events: none;
+}
+/* ── TOP SEPARATOR WITH BADGE ── */
+@property --onas-border-angle {
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+}
+#onas-section .onas-sep-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 48rem;
+    margin: 0 auto 2.2em;
+}
+#onas-section .onas-sep-wrap .onas-headline__sep {
+    position: absolute;
+    top: 50%;
+    left: 0; right: 0;
+    margin: 0;
+    transform: translateY(-50%);
+}
+/* Lens pill — scoped to onas */
+#onas-section .lens-pill-wrapper {
+    position: relative;
+    display: inline-flex;
+    z-index: 3;
+}
+#onas-section .lens-pill {
+    position: relative;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 14px 4px 6px;
+    border-radius: 999px;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.9) 0%, #f7f6f4 100%);
+    border: none;
+    text-decoration: none;
+    cursor: default;
+}
+#onas-section .lens-pill-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 16px;
+    padding: 0 8px;
+    border-radius: 999px;
+    color: #fff;
+    font-family: 'Lexend', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    line-height: 1;
+    background: linear-gradient(160deg, rgba(255,150,80,1) 0%, rgba(230,80,20,1) 50%, rgba(180,50,5,1) 100%);
+    text-shadow: 0 -1px 0 rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.2);
+}
+#onas-section .lens-pill-txt {
+    display: inline-flex;
+    align-items: center;
+    height: 16px;
+    font-family: 'Lexend', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1;
+    white-space: nowrap;
+    color: transparent;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.85) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+#onas-section .lens-pill-conic {
+    position: absolute;
+    top: -1px; right: -1px; bottom: -1px; left: -1px;
+    border-radius: 999px;
+    padding: 1px;
+    background: conic-gradient(from var(--onas-border-angle, 0deg), transparent 0%, transparent 70%, rgba(254,199,8,0.5) 85%, rgba(255,122,24,0.5) 95%, transparent 100%);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    animation: onas-border-rotate 5.6s linear infinite;
+    z-index: 1;
+    pointer-events: none;
+}
+#onas-section .lens-pill-glow {
+    position: absolute;
+    top: -1px; right: -1px; bottom: -1px; left: -1px;
+    border-radius: 999px;
+    background: conic-gradient(from var(--onas-border-angle, 0deg), transparent 0%, transparent 70%, rgba(254,199,8,0.5) 85%, rgba(255,122,24,0.5) 95%, transparent 100%);
+    filter: blur(15px);
+    opacity: 0.6;
+    animation: onas-border-rotate 5.6s linear infinite;
+    z-index: 0;
+    pointer-events: none;
+}
+@keyframes onas-border-rotate {
+    0%   { --onas-border-angle: 0deg; }
+    100% { --onas-border-angle: 360deg; }
+}
+@supports not (background: conic-gradient(from var(--onas-border-angle, 0deg), red, blue)) {
+    #onas-section .lens-pill { border: 1px solid rgba(0,0,0,.09); }
+    #onas-section .lens-pill-conic, #onas-section .lens-pill-glow { display: none; }
+}
+/* Pause conic animation when text block is hidden */
+#onas-section .onas-text-block[style*="hidden"] .lens-pill-conic,
+#onas-section .onas-text-block[style*="hidden"] .lens-pill-glow {
+    animation-play-state: paused;
+}
+#onas-section .onas-subtitle {
+    color: rgba(80,70,60,0.7);
+    font-size: clamp(0.78rem, 1.96vw, 2.25rem);
+    font-weight: 200;
+    line-height: 1.45;
+    text-align: center;
+    margin: clamp(0.8rem, 2vw, 2rem) auto 0;
+    padding: 0 1.5rem;
+    max-width: 100%;
+    text-wrap: balance;
+}
+#onas-section .onas-subtitle b {
+    font-weight: 600;
+}
+#onas-section .card:not(.is-hovered) > .hover-layer { visibility: hidden; }
+#onas-section .card--video.is-front,
+#onas-section .card--video.is-hovered { cursor: pointer !important; }
+
+#onas-section #onas-carousel {
+  margin-top: var(--join-gap);
+}
+/* ── Flex gap fallback (Safari 13-14.0) ── */
+#onas-section.no-flex-gap #onas-capitan .banner__content > * + * {
+    margin-left: clamp(1.33rem, calc(3.6vw - 1.76px), 3.85rem);
+}
+#onas-section.no-flex-gap #onas-capitan .banner__right > * + * {
+    margin-top: clamp(0.48rem, calc(1.29vw - 0.63px), 1.375rem);
+}
+#onas-section.no-flex-gap .onas-press > * + * {
+    margin-top: clamp(0.5rem, 1vw, 1rem);
+}
+#onas-section.no-flex-gap .onas-press__logos > * + * {
+    margin-left: clamp(1rem, 3vw, 3rem);
+}
+#onas-section.no-flex-gap #onas-video-popup .popup-content > * + * {
+    margin-top: 1.2rem;
+}
+#onas-section.no-flex-gap #onas-video-popup .popup-buttons > * + * {
+    margin-left: 2.5rem;
+}
+@media (max-width: 600px) {
+    #onas-section.no-flex-gap #onas-capitan .banner__content > * + * {
+        margin-left: 0;
+        margin-top: 2.5vw;
+    }
+}
+/* ── Graceful degradation: latent fallback ── */
+#onas-section .onas-press__logo.load-failed {
+    opacity: 0.15;
+    filter: grayscale(1);
+}
+
+
+    /* === KONIEC CSS SEKCJI === */
+  </style>
+</head>
+<body>
+  <div class="preview-spacer">scroll down to onas-section</div>
+
+<div id="onas-section">
+
+  <!-- ====== CAPITAN (1:1 z Rating.txt) ====== -->
+  <div class="banner fog-visible" id="onas-capitan">
+    <div class="banner__mesh-top"></div>
+    <div class="banner__mesh-fog"></div>
+
+    <div class="banner__badge" id="onas-capitan-badgeWrapper">
+      <svg id="onas-capitan-badge-svg" xmlns="http://www.w3.org/2000/svg" style="display:none" viewBox="0 0 339 323">
+        <path d="m37.6 15.6-.1 1.5-.2 1-.4.5-.5.2H26.2v31.9l-.2.5c-.1.2-.3.3-.7.4l-1.3.2-2 .1-2-.1-1.3-.2-.7-.4a.8.8 0 0 1-.2-.5V18.8H7.9a.8.8 0 0 1-.5-.2l-.3-.5-.2-1-.1-1.5.1-1.5.2-1 .3-.5.5-.2h28.4l.5.2.4.5.2 1c.2.3.2.8.2 1.5zm39.1 15.9c0 3.3-.4 6.2-1.2 8.8-.9 2.6-2.1 4.8-3.7 6.6a16.4 16.4 0 0 1-6.1 4.1c-2.4 1-5.2 1.4-8.3 1.4-3.1 0-5.9-.4-8.2-1.2-2.4-.8-4.2-2.1-5.9-3.7a16.7 16.7 0 0 1-3.5-6.3c-.8-2.5-1.2-5.5-1.2-9 0-3.1.4-6.1 1.2-8.7a16.4 16.4 0 0 1 9.8-10.6 22 22 0 0 1 8.5-1.4c3 0 5.7.4 8 1.2 2.4.8 4.2 2.1 5.9 3.7 1.5 1.6 2.7 3.7 3.6 6.3a32 32 0 0 1 1.1 8.8zm-8.5.4c0-2.1-.2-4-.5-5.6A11 11 0 0 0 66 22a7.6 7.6 0 0 0-3.1-2.8c-1.3-.7-3-1-5-1-2.1 0-3.7.3-5 1.1-1.3.8-2.4 1.7-3.3 2.9-.9 1.2-1.4 2.7-1.7 4.3a29 29 0 0 0 0 11.2c.3 1.7.9 3.1 1.6 4.4.8 1.2 1.8 2.2 3.1 2.8s3 1 5 1 3.7-.3 5-1.1c1.3-.8 2.4-1.7 3.3-3 .9-1.3 1.4-2.7 1.7-4.4.2-1.8.6-3.5.6-5.5zm42.9-7.7a13.3 13.3 0 0 1-4.1 10.2c-1.3 1.2-3 2.1-5 2.7-2 .7-4.2.9-6.9.9h-3.4v12.6l-.2.5c-.1.2-.3.3-.7.4l-1.2.2-2 .1-2-.1-1.3-.2-.7-.4a.8.8 0 0 1-.2-.5V15c0-1 .2-1.6.8-2.2.5-.4 1.2-.8 2-.8h9.4l2.7.1 3.1.4c1.2.2 2.4.7 3.7 1.3a10.7 10.7 0 0 1 5.1 5.8c.7 1.6.9 3 .9 4.6zm-8.6.6c0-1.4-.2-2.5-.8-3.5a5.9 5.9 0 0 0-1.8-2 7 7 0 0 0-2.3-.8l-2.5-.2h-3.5v13.4h3.7c1.3 0 2.4-.2 3.3-.5.9-.3 1.6-.9 2.2-1.4.5-.7 1-1.4 1.3-2.3.3-.8.4-1.6.4-2.7zM163 277.2c0 2.2-.3 4.1-1 5.7-.7 1.7-1.5 3.1-2.7 4.2a10.3 10.3 0 0 1-4.4 2.6c-1.7.7-3.8.9-6.2.9h-2.9V303l-.2.5-.5.4-1.1.2-1.7.1-1.7-.1-1.1-.2c-.3-.1-.4-.2-.5-.4l-.2-.5v-34.8c0-1 .2-1.6.7-2.2.4-.4 1.1-.8 1.7-.8h8.5l2.4.1 2.7.4a11.3 11.3 0 0 1 6.1 3.7c.8 1 1.4 2.1 1.7 3.4.2 1.4.4 2.8.4 4.4zm-7.6.6c0-1.4-.2-2.5-.7-3.4-.4-.9-1-1.5-1.6-2-.7-.4-1.3-.7-2.1-.8l-2.2-.2h-3v13.2h3.3c1.2 0 2.2-.2 2.9-.5s1.4-.9 2-1.4c.5-.7.9-1.3 1.1-2.2.2-.8.3-1.6.3-2.7zm45.2 6.6c0 3.3-.3 6.1-1.1 8.7a19 19 0 0 1-3.3 6.5 14.4 14.4 0 0 1-5.4 4c-2.2 1-4.7 1.4-7.4 1.4-2.8 0-5.2-.4-7.3-1.2-2.1-.8-3.8-2-5.2-3.6s-2.4-3.7-3.1-6.2a32.8 32.8 0 0 1 0-17.4c.8-2.5 1.8-4.7 3.3-6.4 1.4-1.7 3.3-3.1 5.4-4a18 18 0 0 1 7.5-1.4c2.7 0 5.1.4 7.2 1.2 2.1.8 3.8 2 5.2 3.6 1.4 1.6 2.4 3.7 3.1 6.2a30 30 0 0 1 1.1 8.6zm-7.6.4c0-2.1-.1-3.9-.4-5.5-.3-1.6-.8-3.1-1.5-4.3s-1.6-2.1-2.8-2.7-2.6-1-4.4-1c-1.7 0-3.3.3-4.4 1.1-1.2.8-2.2 1.7-2.9 2.9s-1.3 2.6-1.5 4.2a32.5 32.5 0 0 0 0 10.9c.3 1.7.8 3.1 1.5 4.3a6 6 0 0 0 2.8 2.7c1.2.7 2.6 1 4.4 1 1.8 0 3.3-.3 4.4-1.1a9 9 0 0 0 2.9-2.9 10 10 0 0 0 1.5-4.3c.2-1.6.4-3.4.4-5.3zm37.2 16.2-.1 1.5-.2 1-.3.5-.4.2h-21.1c-.7 0-1.1-.2-1.5-.5-.4-.4-.7-1-.7-2v-35.2l.2-.5.5-.4 1.1-.2 1.7-.1 1.7.1 1.1.2c.3.1.4.2.5.4l.2.5v31.2h16l.4.2.3.5.2 1c.4.5.4 1 .4 1.6zm33.5.4.4 1.7c.1.4 0 .8-.2 1s-.5.3-1.1.4l-2.2.1h-2.2l-1.2-.2-.5-.3-.3-.7-2.4-7.8h-13.3l-2.3 7.6-.3.8-.5.4-1.1.2-2 .1-2-.1c-.4-.1-.8-.2-1-.4-.2-.2-.2-.5-.2-1l.4-1.7 10.9-34.5c.1-.3.2-.7.4-.9l.7-.4 1.3-.2h4.9l1.5.2c.3.1.7.3.8.5l.4.9 11.1 34.3zm-16.3-28.5-5.1 16.5h10.1l-5-16.5zm48.4 28.6-.2 1.2-.5.9a2 2 0 0 1-.9.5l-1.1.2h-3l-1.6-.2a3 3 0 0 1-1.3-.8c-.4-.3-.8-.9-1.2-1.5-.3-.7-.8-1.4-1.2-2.5l-8.9-18.2c-.5-1.1-1.1-2.3-1.5-3.5l-1.4-3.7h-.1l.2 4.3.1 4.4V303l-.1.5-.5.4-1 .2-1.6.1-1.6-.1-1-.2-.5-.4-.1-.5v-34.9c0-1 .2-1.6.8-2.2.5-.4 1.1-.8 1.8-.8h3.9l1.7.2c.4.1.9.3 1.3.7l1.1 1.2 1 2 6.9 14.2 1.2 2.5 1.2 2.5 1.1 2.5 1 2.4-.1-4.3v-22.5l.2-.5.5-.4 1-.2 1.6-.1 1.5.1 1 .2c.2.1.4.2.4.4l.1.5v35h-.2zm35.4-17.2a27 27 0 0 1-1.3 9.1c-.9 2.5-2.1 4.6-3.7 6.2a15.4 15.4 0 0 1-5.9 3.6c-2.3.8-5 1.1-8.1 1.1h-8.6c-.7 0-1.1-.2-1.5-.5-.4-.4-.7-1-.7-2V268c0-.9.2-1.5.7-2 .4-.4 1-.5 1.5-.5h9.1c3.1 0 5.9.4 8.1 1.2 2.2.8 4.1 2.1 5.6 3.6 1.5 1.6 2.7 3.6 3.5 5.9.9 2.3 1.3 5.1 1.3 8.1zm-7.5.3c0-1.8-.2-3.6-.5-5.1-.4-1.6-1-2.9-2-4.1-.9-1.2-2-2.1-3.4-2.7s-3.1-1-5.4-1h-3.7v26.4h3.8c2 0 3.7-.3 5-.9a7.8 7.8 0 0 0 3.4-2.5c.9-1.1 1.6-2.5 2.1-4.2.4-1.8.7-3.7.7-5.9zM74.6 109.4v203.5H56.5V135.4l-31.8 13-6-16z"/>
+        <path d="M113.6 76s-13 19.3-13 60.7a93 93 0 0 0 13 49.8V313H94.8V78.6L74.6 87l-63.3 26.1L5 96.5l108.6-44.7V76z"/>
+        <path d="M215.4 17.7C155.6 17.7 107 68.6 107 131.4s48.5 113.7 108.4 113.7 108.4-50.9 108.4-113.7c-.1-62.8-48.6-113.7-108.4-113.7zm0 210c-50.2 0-91-43.2-91-96.3s40.8-96.3 91-96.3 91 43.2 91 96.3c-.1 53.1-40.8 96.3-91 96.3z"/>
+        <path d="M215.4 56.6c-39.3 0-71.3 33.5-71.3 74.8s32 74.8 71.3 74.8 71.3-33.5 71.3-74.8c-.1-41.3-32-74.8-71.3-74.8zm0 132.2c-29.7 0-54-25.8-54-57.4s24.2-57.4 54-57.4 54 25.8 54 57.4c-.1 31.6-24.3 57.4-54 57.4z"/>
+      </svg>
+    </div>
+
+    <div class="banner__content">
+      <div class="banner__left">
+        <svg class="banner__logo" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 769 441">
+          <defs>
+            <linearGradient id="onas-capitan-goldGrad" x1="0" y1="441" x2="700" y2="50" gradientUnits="userSpaceOnUse">
+              <stop offset="4%" stop-color="#19140C"/>
+              <stop offset="73%" stop-color="#8E7143"/>
+              <stop offset="100%" stop-color="#C2A468"/>
+            </linearGradient>
+          </defs>
+          <path fill="url(#onas-capitan-goldGrad)" d="M251 94c26-8 31-52 12-69-11-10-26-9-28-9h-66v145h11V97c80-2 63-2 89 66l11-4-16-44c-1-2-4-13-13-21zm-16-8h-55V27h55c1 0 11-1 20 7 11 8 10 35 0 44-8 8-19 8-20 8zm112 79c14 0 27-8 36-20v18h11V57h-11v17c-28-40-86-13-84 35 0 31 22 56 48 56zm0-100c48 1 48 87 0 88-48-1-48-87 0-88zm87 67c1 25 23 34 45 31v-11c-16 1-32-1-34-20l1-63h33V58h-34V26l-11 5v27h-19v11h19v63zm64-75h11v106h-11zm7-25c11 0 11-19 0-19s-11 19 0 19zm116 64v65h11c-2-35 15-104-40-106-13-1-28 2-37 13V57h-11v106h11v-51c-2-22 2-44 29-45 18-3 37 8 37 29zm80 61c15 0 28-7 37-18 0 24 5 57-29 59-10-2-23 3-38-10l-9 8c17 16 33 12 48 13 22 0 39-18 39-40V54h-11v19c-27-37-86-13-84 33 0 28 21 51 47 51zm0-92c48 1 48 80 0 81-47-1-47-80 0-81zM388 283c3-50-62-68-87-31h-1l1-18h-18l-1 33v117h20v-63h1c26 34 87 14 85-38zm-54 40c-18 0-32-12-32-29 1-5 0-20 2-24 4-14 17-23 31-23 45-1 42 79-1 76zm-95-89v18c-25-37-90-19-87 32-2 51 58 71 85 38h1v15h20V234h-19zm-1 60c-3 44-70 36-66-10-2-44 61-51 66-7v17zm289 44c15 0 27-6 34-16h1v15h20l-1-103h-18v18c-9-13-22-20-40-20-66 1-59 110 4 106zm3-91c31 2 35 29 31 55-4 13-16 21-31 21-43 3-46-77 0-76z"/>
+          <path fill="url(#onas-capitan-goldGrad)" d="m466 335-1-14c-14 3-28 2-27-18v-54h29v-14h-29v-37l-20 11v26h-17v14h17v54c-2 32 24 40 48 32zm166-140c1-15-25-15-25 0s26 14 25 0zm-22 40h20v101h-20zm122 43v58h20c-2-38 12-105-39-104-19 0-32 10-37 19h-1l1-16h-19v101h20c0-6-2-66 1-70 11-29 57-23 54 12zM54 224c19-24 56-17 77 0l8-14a80 80 0 0 0-79-13c-29 11-42 41-42 71-1 30 11 58 40 68 27 9 57 6 81-13l-6-15c-28 22-78 25-89-17-6-20-5-50 10-67zm358 160-19-2c-12-25-10-25-22 0-28 4-27 1-7 20-5 28-6 25 18 13 24 12 23 15 17-13l14-13c2-2 1-4-1-5zm84 0-19-2c-12-25-10-25-22 0-28 4-27 1-7 20-5 28-6 25 18 13 24 12 22 15 17-13l14-13c2-2 1-4-1-5zm85 0-19-2c-12-25-10-25-22 0-27 4-26 1-6 20-6 28-7 25 17 13 24 12 23 15 18-13l13-13c2-2 1-4-1-5zm84 0-19-2c-12-25-10-25-22 0-27 4-26 1-7 20-5 28-6 25 18 13 24 12 23 15 18-13l13-13c2-2 1-4-1-5zm85 0-19-2c-12-25-10-25-22 0-28 4-26 1-7 20-5 28-7 26 18 13 25 13 22 15 17-13l14-13c2-2 1-4-1-5zm-15 16-1 1 1 2 3 19-17-9-1-1v-46l8 18 2 1 19 2-14 13z"/>
+        </svg>
+      </div>
+
+      <div class="banner__divider"></div>
+
+      <div class="banner__right">
+        <h2 class="banner__heading">
+          Owocni w gronie<br>
+          10 najlepszych agencji<br>
+          reklamowych w&nbsp;Polsce.
+        </h2>
+        <p class="banner__body">
+          Raport amerykańskiej agencji ratingowej "Rating Captain" plasuje nas
+          w gronie 10 najlepszych agencji w&nbsp;Polsce na podstawie prawdziwych opinii w&nbsp;Google.
+        </p>
+      </div>
+    </div>
+
+    <div class="banner__curve">
+      <button class="curve-btn" id="onas-capitan-expandToggle">Jak powstaje raport</button>
+    </div>
+
+    <div class="banner__expand">
+      <div class="banner__expand-text">
+        <p>Raport tworzony jest przez amerykańską markę Rating Captain z&nbsp;siedzibą w&nbsp;Los Angeles 5101 Santa Monica Blvd Ste 8 Los Angeles, CA 90029.</p>
+        <p>W raporcie pod uwagę zostały wzięte firmy z&nbsp;Polski z&nbsp;największą liczbą opinii w&nbsp;Google oraz najwyższą średnią oceną według opinii klientów wyłącznie z&nbsp;prawdziwych kont Google.</p>
+        <p>Wszystkim agencjom gratulujemy poziomu i&nbsp;życzymy dalszych sukcesów.</p>
+      </div>
+    </div>
+  </div>
+  <!-- /onas-capitan -->
+
+  <!-- ====== CAROUSEL ====== -->
+  <section class="carousel-section" id="onas-carousel">
+    <div class="scene" id="onas-scene">
+      <div class="a3d" id="onas-inner"></div>
+    </div>
+  </section>
+
+  <div class="onas-press">
+    <div class="onas-press__text">
+      <p><b style="font-weight:500">Pracujesz z tymi samymi ludźmi,</b><br>
+      których znasz z publikacji na łamach:</p>
+    </div>
+    <div class="onas-press__logos">
+      <img decoding="async" src="data:image/avif;base64,AAAAHGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZgAAAYRtZXRhAAAAAAAAACFoZGxyAAAAAAAAAABwaWN0AAAAAAAAAAAAAAAAAAAAAA5waXRtAAAAAAABAAAANGlsb2MAAAAAREAAAgABAAAAAAGoAAEAAAAAAAACZwACAAAAAAQPAAEAAAAAAAACrgAAADhpaW5mAAAAAAACAAAAFWluZmUCAAAAAAEAAGF2MDEAAAAAFWluZmUCAAAAAAIAAGF2MDEAAAAAw2lwcnAAAACdaXBjbwAAAAxhdjFDgSACAAAAABNjb2xybmNseAABAA0AAYAAAAAUaXNwZQAAAAAAAAG+AAAAQwAAABBwaXhpAAAAAAMICAgAAAAMYXYxQ4EAHAAAAAAOcGl4aQAAAAABCAAAADhhdXhDAAAAAHVybjptcGVnOm1wZWdCOmNpY3A6c3lzdGVtczphdXhpbGlhcnk6YWxwaGEAAAAAHmlwbWEAAAAAAAAAAgABBIECAwQAAgSFAwaHAAAAGmlyZWYAAAAAAAAADmF1eGwAAgABAAEAAAUdbWRhdBIACgk4IbewmUBDQGQy1wRE/wAAQABAQOAPjbo4pYKzN/pjqrxbeewzMYxiQ3eDsHDExfXtTfvLJaeMbkIRPb0lNRSR57yknTRamZZhLbg7kudJE4PcC8E6cL+RCTMDLg4foF6n1EUk3baXI9PwSELBo0vaJsTtGzRm3g8qdHKPxh1gjuuuhijJ/2rTEmTPXQEyjzzgecQcxaw7JZHTR2RqFs6E0u2Yw3TvRG+nPV6uuOk9ZJCO+1ZS96UdareyatktEn5A1vFDy+5kR4MsjJymEOsjYJZDFrU1qgWGz+7DeoHFO0Rp7sdFT5ztp6+XM7RjVFLjH2sUbmCLK3npcGY78Ax5tDfBrXwdCwzFLER6T8jEo1Ugm4jsWoPD93m6wm+Iz84XoNYnr1ec2y2ySkASILIqnrUWP4kjNAolKauRxKuYq1Hw9qRBL7mHOaV/GqV0AmisjEu7o1hN+IzYofu/FlN3eNmBc3sLfyeK5LsrHMWrwnJD1YrbHV5arz/6rHI4PH8AYeZiEBQ/J5VSDt/+B3crhdbqLqq5Br+16BuKQtCBwrXF2O15k81UmU/rP9ZBchybP1v7VDVcFR99Uv7XN/nYLlpViBXDpSwUH9Zhv6tRIrxeVTUsVxcTvm8fM0OatFBmMakFL7BYskDQl25EX+PM8HbHRxdYHCyZinHWgBR+dJdSjiILCq61Swe16ewqxVAQO4S8SE0+9l+d6s3/IVRLS373QDEDOVIloQepG52/DjN4x5WWmlgXN+eWVd0F2ijF3Ep9uaRgp8e4DIrTignFgbELm8E1fAT+Cn+kE7HlLg8MgBIACgYYIbewmVQyoQUT/AAAVwD++kUJpVmRGT9o50MYUFrslp7PXtSnD8uWjlsXM5WEgYLKr0aJILYw4jiYs7NQFxqKYJBtrJWgc66JY69fc93alWAPdWx6cyIJNWnFrZ+TokDCVkdOu3kOMqES1aogl3bcyVQ7LRzbusJrbDR6yc1HJMK3IZcPtChdVgL2/YBnayPcoj2rPPuhEYOB8Xjd/4kRQPOONabjIWTxf92+Pn5XkyvT/mGSnSHPlSnWyCryX7IX/shlnV/msf1Yazfjzr5nG4KAKRgUllPbH/aiO3vYzrsHny+6rg13J0UjruCmc9b7i/l1SLMNxiRR5YrYi/yp64yEKQETMeYqhOdvHk3qdLt7yOxn6OLmN9trIXiZakwh7jawWfZUxbJqNgUrRNnPo8LaT5VJcASvds2jOdX4MofwmhwxAZWs1vSjMCEZKHBwEVQ2nFKuHjH4+3nvX5jGk/MLapDh+yr1T1VJnhGrkA0r8hWkiLMQYM8hFD60aryaCoOsIzg3Y13VNUXsT3RBzBCsS8eijaSPdQeNFfXC0sZ9u4hqLrBC9lemv7yAVI5rVt8332hexwyirEB7DiViocJwM1Csqcf29woaPPeOMl/AdssDH3A3ICmKISOf92nyjFyqTQSR5SIQ0D3yIDF/k2k6jiF9W3PBULliQYtM204KHomYk1soDyczWjzZ4bgnwfGSIjkbdIT/LCedUGM+leBjoQ5V2nC6qtzkIp6v29us0tr6uS2+d0aWyLD1mChpi55dkw8AKwcqrvEXSJG8KjaTv6jb/I/I+dMISmBlOwJYV7mQJsZqXG/NMIZTVvTfNk7AS7moVW6EYgAl2XmuHXRCYG7TpbzgAX++oqlyGEzH09Hb48RBhJW7RN2yis9tTsXC7pNbIMLw" alt="Logo publikacji" class="onas-press__logo">
+      <img fetchpriority="high" decoding="async" src="data:image/avif;base64,AAAAHGZ0eXBhdmlmAAAAAGF2aWZtaWYxbWlhZgAAAYRtZXRhAAAAAAAAACFoZGxyAAAAAAAAAABwaWN0AAAAAAAAAAAAAAAAAAAAAA5waXRtAAAAAAABAAAANGlsb2MAAAAAREAAAgABAAAAAAGoAAEAAAAAAAADigACAAAAAAUyAAEAAAAAAAADbQAAADhpaW5mAAAAAAACAAAAFWluZmUCAAAAAAEAAGF2MDEAAAAAFWluZmUCAAAAAAIAAGF2MDEAAAAAw2lwcnAAAACdaXBjbwAAAAxhdjFDgSACAAAAABNjb2xybmNseAABAA0AAYAAAAAUaXNwZQAAAAAAAAHSAAAAWwAAABBwaXhpAAAAAAMICAgAAAAMYXYxQ4EAHAAAAAAOcGl4aQAAAAABCAAAADhhdXhDAAAAAHVybjptcGVnOm1wZWdCOmNpY3A6c3lzdGVtczphdXhpbGlhcnk6YWxwaGEAAAAAHmlwbWEAAAAAAAAAAgABBIECAwQAAgSFAwaHAAAAGmlyZWYAAAAAAAAADmF1eGwAAgABAAEAAAb/bWRhdBIACgk4Ibo2mUBDQGQy+gZE/wABwABAQNDL+33VOfXku61Lw9jsmMGrYVMT4/4FtwnAWXHvD1r/0kGTwXSGtRGh5860uqUM+8GbJaUND2Is75anlxHpKAoLOqazoM0KU7LS7oYwf4KJ3AC1uguAJYad95NioB7/Xq2X60xs89EBTj0UOpPRfW1oroGK1GJdSazAJ+TAveMaXDfIPLqy2drM08Fib6/46+dE/RtidIUWvjh4HrWuD/TAP8Du+W3blSFsiydmESfZZZD2BKWhpJGkjC/9tCUcFNKB9twPMxqaSTO3j/yXp+ugR2PYx+3UkN1USxqeKak8IScV+/GWdVHn08Sc/RZ8KQdPP5M/599NNBaK6rdcvCNkJ/aA5u0rPfAAePd17HhomvC64PHrxGkoypNkE5BzvErjGGecNKPYSWw2BzS5WhxFI7d7xiG6+H57+Vu9R8g9//GkbqHAIdmuBUZT7kTqdXxpzEx0yW+unnNJhZRgAgF3CF3E2MPe9g8juypD0xmnlTp0xCDJ1rX+xJHSRIJGN4eIZMRidjP/9xsN1UG8QQimyiVY2vxXgMQB2HtuNbE/vAG956QFh+W6NEEQJ5OX5kRiWnh1cvSynA96Tij3O//o3XbqfFYCcW2Gf7K6jiGd2q43DIx38O5/NCqzCaCAE4+x8AGKZu8gSxBMnl0ACHYEZQ40/6uqaG2OezPoir7sFidXeluKYBQbQRwH////s8NPp/9pf2Y8SS8zIRtLeUh4bKUyAibWdm0AHMTiAtz7JgQeszhmj52Byb6lDi6WijWK2/TE8n2hqn628u9caQmlb1mFW5zfzuUqxvDsZmhuXKiRSAfsIhDE+2ruVrAhl6hmWIUBGz9EmUjjn6/P9FlxDnGo9Wu1Nk43aJj2FGkrq4x2OgK61zE5MLjXcIpIdVT+elAaviG+dqjSzFxoNTITSu+icAV/tCo1LQVIKZ+gBdWc3gC+fMRwO15KrgARCA7TJqxgZofDYHdH3Jqj248O2mgxx/+lAhwEaXivFLlasZsKz7qjg7CI6dBKB3iu/V9YTNWUxHrVa3Z6HYnuDRvP7zmVVWVEZ1z/e5ITtBahIg+Qev/XBCgVKCkcGnRobA7m3/JQCbxPPUYulUWWQopg0tyNvb5bdPAQsq6S7xJgYRxghhNVCR2NTiiMno9iFDMwSwc/VL+6P4+AlmON+dppQBIACgYYIbo2mVQy4AYT/A9IVwD5X0G9T0fYsmc11MT/zUvEVm+8Zm8snbS1vMfhDI+h8T8EOfoOfuUTxKaQqhUc4W14/kK3S6/j0otPd+thJvHTd1dvZYlHw7jXwsujY4gXbGy8iYamqX03zkcAkHcnGvcIBQ17GU9GHbcAngNg8zyx9Tt5O/0FOhpwWKNw3GMQNxk2Ff/+5nNM7a/Y2HYBbIxjZx7Mo0YUfHq7h38FYd5OllqU340GJDqaHbeT25stoE2U2njMhovu/kEXW2OH5PwYm5S7x3rGXleBV2s3vQaYQY0wFknW0lbfWctCb3N45eC7OFARI1idfnkHUg7CysNnizXY8N0FOtqpr+wllPDts2SVLZGH58KTjc1U/rPaStW2jfDOEEySCqJWv3ppXKwitMRJqZMMU0zgDPVZf3WSzuelzuPhdeZjml4R2NRWHyYHhwC56ZcauKO02P2cn5NcC8kZG8e7ZFsi/X4B8K5ud8+2UKHW7cHu4BGwnBG124hqmaavGXm0w/9SoucSMeOA8CvquzLkCXD2FLiT6GnEypqK+LKWQvlfuBYXBGiOTRsyHuRHED4btJMP5rR4eDLPrBIyf7tCnSB5Ue0WlpJL7wAoZMDwzd/4WjJmEGb/Yf17/+FjMwwZdEUfjf7hYFMFzCPECWTMrCNz2PMnzHifXd+Wqqz2z/f7dDLTJWorn+kQxv9RGHehnpmlAHw8ok/mdlYwHOFoBjJpZQ+p1oiIE5E6pL69xxJhPpJWGiL2IRAzusS07vT8EaCbFR4wXyMTZwkCty+6QrpWQOckQXXM9fhrlWUTdQEOnu3fQa2zOABGS1nvammTN0GIe19qkXBIS5Wp2618AR/MOFTzscwyJYlkimt3RMOXG6ZiFesPkO6Sr2fpEzaD09+yaL0Q5APt/+wAkkGy9M+I2pVq5+eAjiSA145G7rJfMD784NCj5/JHelhZGK6DD86RBAJbnshpXZSXhxnzRt+5b7WYHsFQzzeT627QtQXSXqeaXUVySsQC7qTV4Nx8d4h9zGra6hWRnccXf2GAjWU2w5FN+Kd/9o8SV1QhHupm4yTPkQqjX0hIRbDAcjCfosZwLK+7cbgoD2nnVgojuCdehXSAIIywpbvCmeEaz9g9FQuJJK/TedknBo4s7F0HvXw=" alt="Logo publikacji" class="onas-press__logo">
+    </div>
+  </div>
+
+  <div class="onas-text-block">
+    <div class="onas-sep-wrap onas-headline__sep--top">
+      <span class="onas-headline__sep" aria-hidden="true"></span>
+      <div class="lens-pill-wrapper">
+        <div class="lens-pill-glow"></div>
+        <div class="lens-pill-conic"></div>
+        <span class="lens-pill" style="padding:4px 6px 4px 14px;">
+          <span class="lens-pill-txt">0% mikrozarządzania</span>
+          <span class="lens-pill-badge">100% ODCIĄŻENIA</span>
+        </span>
+      </div>
+    </div>
+    <h2 class="onas-headline" style="
+      background-image: linear-gradient(135deg, #252030 2%, #2a2130 44%, #382630 56.7%, #512b2b 67.5%, #7d3527 80.2%, #7d3527 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    ">
+      Proces realizacji zaprojektowany dla<br class="br-headline">
+      <b style="font-weight:700">zapracowanych właścicieli firm.</b>
+      <span class="onas-headline__sep" aria-hidden="true"></span>
+    </h2>
+    <p class="onas-subtitle">
+      <b style="color:#c53c0a">Twój wkład =</b> 2 spotkania online <b style="color:#c53c0a">+</b> decyzje w kluczowych momentach.<br class="br-desktop">
+      Resztę bierzemy na siebie. <i>(Masz spokój i wolną głowę.)</i>
+    </p>
+  </div>
+
+  <!-- VIDEO POPUP — inside #onas-section for proper scoping -->
+  <div id="onas-video-popup">
+    <div class="popup-panel">
+      <div class="popup-close">✕</div>
+      <div class="popup-video-wrap">
+        <video controls playsinline preload="none"></video>
+      </div>
+      <div class="popup-content">
+        <span class="popup-tag">Porozmawiajmy o twoich liczbach</span>
+        <h3 class="popup-title"><b>Otrzymaj 3 propozycje cenowe</b> na projekt dla swojej firmy.</h3>
+        <div class="popup-buttons">
+          <a class="popup-cta" href="#kontakt">Otrzymaj wycenę teraz →</a>
+          <button class="popup-close-text" type="button">Zamknij wideo</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>
+
+  <div class="preview-spacer">end of onas-section</div>
+
+  <!-- Flex gap detector -->
+  <script>
+  (function(){
+    var el=document.createElement('div');
+    el.style.cssText='display:inline-flex;gap:1px;visibility:hidden;position:absolute';
+    el.appendChild(document.createElement('div'));
+    el.appendChild(document.createElement('div'));
+    document.body.appendChild(el);
+    var has=el.scrollWidth===1;
+    document.body.removeChild(el);
+    if(!has) document.getElementById('onas-section').classList.add('no-flex-gap');
+  })();
+  </script>
+
+  <script>
+    gsap.registerPlugin(ScrollTrigger);
+    ScrollTrigger.config({ ignoreMobileResize: true });
+
+    // PREVIEW-PLUGIN-01: Draggable z GSAP_PLUGINS_USED
+    if (typeof Draggable !== 'undefined') gsap.registerPlugin(Draggable);
+
+    // scrollRuntime stub — debounce 120ms (spojna z produkcja)
+    var _previewRefreshTimer = null;
+    var scrollRuntime = {
+      getScroll:      function() { return (window.lenis && window.lenis.scroll != null) ? window.lenis.scroll : window.scrollY; },
+      getRawScroll:   function() { return (window.lenis && window.lenis.targetScroll != null) ? window.lenis.targetScroll : window.scrollY; },
+      requestRefresh: function(reason) {
+        clearTimeout(_previewRefreshTimer);
+        _previewRefreshTimer = setTimeout(function() { ScrollTrigger.refresh(true); }, 120);
+      }
+    };
+
+    // === onasCarouselInit — KOD IDENTYCZNY Z TSX ===
+    var onasCarouselInit = (function() {
+
+function init(container) {
+    var $ = function(sel) { return container.querySelector(sel); };
+    var $$ = function(sel) { return container.querySelectorAll(sel); };
+    var $id = function(id) { return container.querySelector('#' + id); };
+    var getScroll = function() { return scrollRuntime.getScroll(); };
+    var getRawScroll = function() { return scrollRuntime.getRawScroll(); };
+
+    var cleanups = [];
+    var gsapInstances = [];
+    var timerIds = [];
+    var observers = [];
+
+    var tickFn = null;
+    var ticking = false;
+    var hfListeners = [];
+
+    /* ── PLAY BUTTON (video card overlay) ── */
+    function createPlayButton(card, size) {
+        var YELLOW='#ffc600', ns='http://www.w3.org/2000/svg';
+        var SW=Math.max(2,size*0.035), CX=size/2, CY=size/2;
+        var R=CX-SW*2-2, CIRC=2*Math.PI*R;
+        var DOT_R=SW*1.05, DOT_COUNT=Math.round(CIRC/(DOT_R*5.5));
+        var id='onas-pb'+Math.random().toString(36).slice(2,8);
+
+        /* Scoped keyframes */
+        var st=document.createElement('style');
+        st.textContent='@keyframes '+id+'-spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}';
+        document.head.appendChild(st);
+
+        var wrap=document.createElement('div');
+        wrap.className='play-btn';
+        /* Size controlled by CSS (% of card) — no inline px */
+        card.appendChild(wrap);
+
+        var svg=document.createElementNS(ns,'svg');
+        svg.setAttribute('width',size);svg.setAttribute('height',size);
+        svg.setAttribute('viewBox','0 0 '+size+' '+size);
+        svg.style.cssText='overflow:visible;display:block;';
+        wrap.appendChild(svg);
+
+        /* DOTS ring */
+        var dotsG=document.createElementNS(ns,'g');
+        dotsG.style.cssText='transform-origin:'+CX+'px '+CY+'px;animation:'+id+'-spin 8s linear infinite;animation-play-state:paused;will-change:transform;';
+        svg.appendChild(dotsG);
+        var dotEls=[];
+        for(var i=0;i<DOT_COUNT;i++){
+            var a=(i/DOT_COUNT)*Math.PI*2-Math.PI/2;
+            var dot=document.createElementNS(ns,'circle');
+            dot.setAttribute('cx',CX+Math.cos(a)*R);
+            dot.setAttribute('cy',CY+Math.sin(a)*R);
+            dot.setAttribute('r',DOT_R);dot.setAttribute('fill',YELLOW);
+            dot.setAttribute('opacity','0.22');
+            dot.style.transition='opacity 0.35s ease';
+            dotsG.appendChild(dot);dotEls.push(dot);
+        }
+
+        /* Progress ARC — driven by video timeupdate */
+        var arc=document.createElementNS(ns,'circle');
+        arc.setAttribute('cx',CX);arc.setAttribute('cy',CY);arc.setAttribute('r',R);
+        arc.setAttribute('fill','none');arc.setAttribute('stroke',YELLOW);
+        arc.setAttribute('stroke-width',SW*1.5);
+        arc.setAttribute('stroke-dasharray',CIRC);
+        arc.setAttribute('stroke-dashoffset',CIRC);
+        arc.setAttribute('stroke-linecap','round');
+        arc.setAttribute('transform','rotate(-90 '+CX+' '+CY+')');
+        arc.style.cssText='transition:opacity 0.4s ease;will-change:stroke-dashoffset;';
+        svg.appendChild(arc);
+
+        /* TRIANGLE */
+        var h=size*0.32, w=h*0.866, ox=h*0.1;
+        var triPts=(CX-w/2+ox)+','+(CY-h/2)+' '+(CX+w/2+ox)+','+CY+' '+(CX-w/2+ox)+','+(CY+h/2);
+        var triG=document.createElementNS(ns,'g');
+        triG.style.cssText='transform-origin:'+CX+'px '+CY+'px;transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1);';
+        svg.appendChild(triG);
+        var tri=document.createElementNS(ns,'polygon');
+        tri.setAttribute('points',triPts);tri.setAttribute('fill',YELLOW);
+        tri.style.transition='fill 0.3s ease';
+        triG.appendChild(tri);
+
+        /* HOVER — driven by CARD hover, not button hover */
+        var bounceT=null;
+        function enterHover(){
+            dotsG.style.animationPlayState='running';
+            dotEls.forEach(function(d){d.setAttribute('opacity','0.5');});
+            arc.style.opacity='0';
+            tri.setAttribute('fill','#ffffff');
+            triG.style.transform='scale(0.7)';
+            clearTimeout(bounceT);
+            bounceT=setTimeout(function(){triG.style.transform='scale(1.35)';},150);
+        }
+        function leaveHover(){
+            dotsG.style.animationPlayState='paused';
+            dotEls.forEach(function(d){d.setAttribute('opacity','0.22');});
+            arc.style.opacity='1';
+            tri.setAttribute('fill',YELLOW);
+            triG.style.transform='scale(0.75)';
+            clearTimeout(bounceT);
+            bounceT=setTimeout(function(){triG.style.transform='scale(1)';},150);
+        }
+
+        /* VIDEO PROGRESS — called from timeupdate */
+        function updateProgress(ratio){
+            arc.setAttribute('stroke-dashoffset',(CIRC*(1-ratio)).toFixed(1));
+        }
+
+        /* Cleanup */
+        cleanups.push(function(){
+            clearTimeout(bounceT);
+            if(st.parentNode) document.head.removeChild(st);
+        });
+
+        return {el:wrap, enterHover:enterHover, leaveHover:leaveHover, updateProgress:updateProgress};
+    }
+
+    function generateJellyfishSVG(index) {
+        var palettes = [
+            { body:'#ff6b9d', tent:'#c44569', bg:'#2d1b69', glow:'#ff6b9d' },
+            { body:'#48dbfb', tent:'#0abde3', bg:'#0a1628', glow:'#48dbfb' },
+            { body:'#ff9ff3', tent:'#f368e0', bg:'#1a0a2e', glow:'#ff9ff3' },
+            { body:'#54a0ff', tent:'#2e86de', bg:'#0c1445', glow:'#54a0ff' },
+            { body:'#5f27cd', tent:'#341f97', bg:'#0a0520', glow:'#a55eea' },
+            { body:'#00d2d3', tent:'#01a3a4', bg:'#021c1e', glow:'#00d2d3' },
+            { body:'#ff6348', tent:'#ee5a24', bg:'#2d0a0a', glow:'#ff6348' }
+        ];
+        var p = palettes[index % palettes.length];
+        var s = function(n) { return Math.sin(index*127.1+n*311.7)*0.5+0.5; };
+        var bodyY=30+s(1)*10, bodyW=28+s(2)*16, bodyH=20+s(3)*12;
+        var tentacles='', tentCount=5+Math.floor(s(4)*4);
+        for(var t=0;t<tentCount;t++){
+            var tx=50-bodyW/2+(bodyW/(tentCount-1))*t, ty=bodyY+bodyH*0.7;
+            var len=20+s(t+10)*25, c1=(s(t+20)-0.5)*20, c2=(s(t+30)-0.5)*15;
+            var op=(0.3+s(t+40)*0.5).toFixed(2), sw=(1+s(t+50)).toFixed(1);
+            tentacles+='<path d="M'+tx+','+ty+' Q'+(tx+c1)+','+(ty+len*0.5)+' '+(tx+c2)+','+(ty+len)+'" stroke="'+p.tent+'" stroke-width="'+sw+'" fill="none" opacity="'+op+'" stroke-linecap="round"/>';
+        }
+        var particles='';
+        for(var pp=0;pp<6;pp++){
+            var px=(s(pp+70)*100).toFixed(1),py=(s(pp+80)*100).toFixed(1),pr=(0.5+s(pp+90)*1.5).toFixed(1),po=(0.1+s(pp+95)*0.3).toFixed(2);
+            particles+='<circle cx="'+px+'" cy="'+py+'" r="'+pr+'" fill="'+p.glow+'" opacity="'+po+'"/>';
+        }
+        return '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" preserveAspectRatio="xMidYMid slice"><defs><radialGradient id="onas-glow'+index+'" cx="50%" cy="40%" r="50%"><stop offset="0%" stop-color="'+p.glow+'" stop-opacity="0.3"/><stop offset="100%" stop-color="'+p.bg+'" stop-opacity="0"/></radialGradient><radialGradient id="onas-body'+index+'" cx="50%" cy="30%" r="50%"><stop offset="0%" stop-color="'+p.body+'" stop-opacity="0.9"/><stop offset="70%" stop-color="'+p.body+'" stop-opacity="0.5"/><stop offset="100%" stop-color="'+p.tent+'" stop-opacity="0.2"/></radialGradient><filter id="onas-blur'+index+'"><feGaussianBlur stdDeviation="1.5"/></filter></defs><rect width="100" height="100" fill="'+p.bg+'"/>'+
+        '<ellipse cx="50" cy="'+bodyY+'" rx="'+bodyW+'" ry="'+(bodyH+10)+'" fill="url(#onas-glow'+index+')" filter="url(#onas-blur'+index+')"/>'+particles+tentacles+
+        '<ellipse cx="50" cy="'+bodyY+'" rx="'+(bodyW/2)+'" ry="'+(bodyH/2)+'" fill="url(#onas-body'+index+')"/>'+
+        '<ellipse cx="50" cy="'+(bodyY-2)+'" rx="'+(bodyW/3)+'" ry="'+(bodyH/3)+'" fill="'+p.body+'" opacity="0.3"/><ellipse cx="50" cy="'+(bodyY-3)+'" rx="'+(bodyW/5)+'" ry="'+(bodyH/5)+'" fill="white" opacity="0.15"/></svg>';
+    }
+
+    function svgToDataUri(svgString) { return 'data:image/svg+xml,' + encodeURIComponent(svgString); }
+    function getCardImageUrl(index) { return svgToDataUri(generateJellyfishSVG(index)); }
+
+    function preloadCardImages(selector) {
+        return new Promise(function(resolve) {
+            if (typeof imagesLoaded === 'function') {
+                imagesLoaded(container.querySelectorAll(selector), { background: true }, resolve);
+            } else { resolve(); }
+        });
+    }
+
+    var CarouselEngine = (function() {
+        function E() {
+            this.targetAngle=0; this.currentAngle=0; this.velocity=0;
+            this.isDragging=false; this.isSnapping=false;
+            this.autoplayActive=true;
+            this.config={
+                lerp:0.035, wheelSensitivity:0.12, dragSensitivity:0.15,
+                friction:0.985, snapStiffness:300, snapDamping:28, snapEnabled:true,
+                mass:1.0, velocityThreshold:0.3, maxVelocity:0.75, autoplaySpeed:4.0,
+                opacitySpread:0.15, frontZoneDeg:57, frontScale:1.14, frontEasing:'pulse',
+                glowScale:0.4, scaleEma:0.15, glowOffsetY:0.2, glowColor:'#f9cd90',
+                scrollInfluence:0.06, scrollTimeConstant:0.7, scrollMaxMomentum:1.0
+            };
+            this.velocitySamples=[]; this.cardCount=0; this.cardAngle=0;
+            this.a3dElement=null; this.sceneElement=null; this.cards=[]; this.lastTime=0;
+            this.cardScaleValues=[]; this._lastWrittenScale=[]; this._lastWrittenBr=[];
+            this._lastFrameBreatheLean=[0,0];
+            this._radiusBase=1.13; this._radiusExpand=1.25; this._radiusCurrent=1.13; this._radiusTarget=1.13;
+            this.lastScrollY=0; this._scrollVel=0; this._scrollMomentum=0; this.isInView=false;
+            this._lastAbsVel=0; this._lastCurrentAngle=0; this._idleFrames=0;
+            this._activeGlow='gold-ring'; this.glowTimer=0; this.glowThreshold=0.5;
+            this._cardStaticRY=[]; this._halfAngleDeg='';
+            this._lastGlowLevel=[]; this._wasFront=[]; this._wasGlowActive=[];
+            this._glowDirty=true; this._glowColorRgb=hexToRgb('#f9cd90'); this._glowLUT=null;
+            this._hoverTimelines=[]; this._hoverListeners=[]; this._cardStyleIdx=[];
+            this._pendingHoverX=-1; this._pendingHoverY=-1;
+            this._hoverDirty=false; this._hoverPointerIsMouse=false; this._hoverLeft=false;
+            this.reducedMotion=false;
+            if(window.matchMedia){
+                var mq=window.matchMedia('(prefers-reduced-motion: reduce)');
+                this.reducedMotion=mq.matches;
+                var self=this;
+                var mqChange=function(e){self.reducedMotion=e.matches;};
+                if(mq.addEventListener) mq.addEventListener('change',mqChange);
+                else if(mq.addListener) mq.addListener(mqChange);
+            }
+            var self=this;
+            this._bW=function(e){self._onWheel(e)};
+            this._bK=function(e){self._onK(e)};
+            this._ucAccum=0; this._ucInterval=1000/30;
+            this._bT=function(time,deltaTime){
+                self._tick(time,deltaTime);
+            };
+            this._lastDragX=0; this._lastDragTime=0; this._draggableInstance=null;
+            this._pressX=0; this._pressY=0; this._pressSpeed=0; this._tappedCard=null;
+            
+            
+            this._tickerActive=false; this._pausedAt=0; this._easingFn=null; this._isVisible=[];
+            // CASCADE REVEAL
+            this._revealState=[];
+            this._revealTriggered=false;
+            this._revealComplete=false;
+            this._revealTimeline=null;
+        }
+
+        var EASING_FNS={
+            spotlight:function(t){var t8=t*t*t*t*t*t*t*t;var f=Math.max(0,1-16*t8);return t>0.45?0:f;},
+            halo:function(t){return Math.pow(Math.cos(t*Math.PI/2),0.6);},
+            cascade:function(t){var step=Math.floor(t*5);var levels=[1,0.85,0.55,0.2,0];return step>=4?0:levels[step];},
+            trail:function(t,ra,velDir,ftNorm){var raSigned=ra/180;var trailBias=0;if(velDir!==0)trailBias=raSigned*velDir*0.35;var tTrail=Math.abs(raSigned)/ftNorm+trailBias;tTrail=Math.max(0,Math.min(1,tTrail));return 1-tTrail*tTrail*(3-2*tTrail);},
+            pulse:function(t){var f=1-t*t*(3-2*t);return Math.max(0,Math.min(1,f));},
+            duo:function(t){if(t<0.35)return 1;var d=(t-0.35)/0.65;return Math.max(0,1-d*d);},
+            elastic:function(t){var f;if(t<0.1)f=1+0.08*Math.sin(t/0.1*Math.PI);else if(t<0.8){var u=(t-0.1)/0.7;f=1-u*u*(2.7*u-1.7);}else f=Math.max(0,(1-t)/0.2*0.05);return Math.max(0,Math.min(1.08,f));},
+            threshold:function(t){if(t<0.15)return 1;var d2=(1-t)/(1-0.15);return Math.max(0,d2*d2*d2);},
+            bell:function(t){return Math.exp(-4.5*t*t);},
+            plateau:function(t){if(t<0.3)return 1;var d3=(t-0.3)/0.7;return Math.max(0,1-Math.pow(d3,1.5));}
+        };
+        var EASING_DEFAULT=function(t){if(t<0.5){var t4=t*t*t*t;return 1-8*t4;}var u2=-2*t+2;return u2*u2*u2*u2/2;};
+
+        E.prototype._bindEasing=function(name){this._easingFn=EASING_FNS[name]||EASING_DEFAULT;};
+
+        E.prototype.init=function(a,s){
+            this.a3dElement=a; this.sceneElement=s;
+            var section=$id('onas-carousel');
+            if(!section) { console.warn('onas-carousel: section not found'); return; }
+            this._sectionEl=section;
+            section.addEventListener('wheel',this._bW,{passive:false});
+            cleanups.push(function(){section.removeEventListener('wheel',this._bW);}.bind(this));
+            window.addEventListener('keydown',this._bK);
+            cleanups.push(function(){window.removeEventListener('keydown',this._bK);}.bind(this));
+            this.lastScrollY=getRawScroll();
+            var self=this;
+            if(window.IntersectionObserver){
+                var obs=new IntersectionObserver(function(entries){
+                    var wasInView=self.isInView;
+                    self.isInView=entries[0]?.isIntersecting ?? false;
+                    if(self.isInView&&!wasInView) self._wakeTicker();
+                    else if(!self.isInView&&wasInView&&!self.isDragging) self._sleepTicker();
+                },{threshold:0.2});
+                obs.observe(section);
+                observers.push(obs);
+            }
+
+            var proxy=document.createElement('div');
+            proxy.style.cssText='position:fixed;top:0;left:0;width:1px;height:1px;visibility:hidden;pointer-events:none;';
+            document.body.appendChild(proxy);
+            cleanups.push(function(){ if(proxy.parentNode) proxy.parentNode.removeChild(proxy); });
+
+            this._draggableInstance=Draggable.create(proxy,{
+                type:'x', trigger:section, zIndexBoost:false, allowContextMenu:true,
+                cursor:'', activeCursor:'',
+                onPress:function(){
+
+                    if(!self._revealComplete)return;
+
+                    /* === DETECT VIDEO CARD AT PRESS TIME (before it escapes) === */
+                    self._pressX=this.pointerX; self._pressY=this.pointerY;
+                    self._pressSpeed=Math.abs(self.velocity)+Math.abs(self._scrollMomentum);
+                    self._tappedCard=null;
+
+                    var px=this.pointerX-(window.pageXOffset||0), py=this.pointerY-(window.pageYOffset||0);
+                    for(var vi=0;vi<self.cards.length;vi++){
+                        var vc=self.cards[vi];
+                        if(!vc.classList.contains('card--video'))continue;
+                        if(!vc._fullSrc)continue;
+                        var rect=vc.getBoundingClientRect();
+                        if(rect.width<10||rect.height<10)continue; /* skip tiny back cards */
+                        var pad=30;
+                        if(px>=rect.left-pad&&px<=rect.right+pad&&py>=rect.top-pad&&py<=rect.bottom+pad){
+                            self._tappedCard=vc;
+                            /* Brake ONLY when tapping video card — not every touch */
+                            self.velocity=0;
+                            self._scrollMomentum=0;
+                            self.targetAngle=self.currentAngle;
+                            break;
+                        }
+                    }
+
+                    self._wakeTicker(); self.isDragging=true;
+                    self._sectionEl.classList.add('is-dragging');
+                    self.isSnapping=false; self._radiusTarget=self._radiusExpand;
+                    document.body.style.userSelect='none';
+                    if(self._hoveredCardIdx>=0&&self._hoverTimelines[self._hoveredCardIdx]) self._hoverTimelines[self._hoveredCardIdx].reverse();
+                    if(self._hoveredCardIdx>=0){var dragPb=self.cards[self._hoveredCardIdx]._playBtn;if(dragPb)dragPb.leaveHover();}
+                    self._hoveredCardIdx=-1; self.velocitySamples=[];
+                    self._lastDragX=this.x; self._lastDragTime=performance.now();
+                },
+                onDrag:function(){
+                    var dx=this.x-self._lastDragX; var now=performance.now(); var dt=now-self._lastDragTime;
+                    
+                    self._lastDragX=this.x; self._lastDragTime=now;
+                    self.targetAngle+=dx*self.config.dragSensitivity;
+                    if(dt>0){
+                        var iv=(dx*self.config.dragSensitivity)/(dt/16.67);
+                        var lv=self.velocitySamples.length>0?self.velocitySamples[self.velocitySamples.length-1]:iv;
+                        self.velocitySamples.push(0.8*iv+0.2*lv);
+                        if(self.velocitySamples.length>5)self.velocitySamples.shift();
+                    }
+                },
+                onRelease:function(){
+                    self.isDragging=false; self._sectionEl.classList.remove('is-dragging');
+                    document.body.style.userSelect=''; self._radiusTarget=self._radiusBase;
+
+                    /* === TAP VS DRAG: 15px threshold === */
+                    var dx=Math.abs(this.pointerX-self._pressX);
+                    var dy=Math.abs(this.pointerY-self._pressY);
+                    var isTap=dx<15&&dy<15;
+
+                    if(!isTap&&self.velocitySamples.length>0){
+                        var sum=0; for(var i=0;i<self.velocitySamples.length;i++) sum+=self.velocitySamples[i];
+                        self.velocity=sum/self.velocitySamples.length; self._clampVel();
+                    }
+                    if(Math.abs(self.velocity)<self.config.velocityThreshold&&self.config.snapEnabled) self.isSnapping=true;
+                    gsap.set(proxy,{x:0}); self._lastDragX=0;
+
+                    /* === OPEN VIDEO POPUP === */
+                    if(isTap&&self._revealComplete&&self._tappedCard){
+                        var popup=$id('onas-video-popup');
+                        if(popup&&!popup.classList.contains('is-open')){
+                            var pv=popup.querySelector('video');
+                            if(pv){
+                                self.velocity=0;
+                                self.targetAngle=self.currentAngle;
+                                pv.src=self._tappedCard._fullSrc;
+                                pv.currentTime=0;
+                                popup.classList.add('is-open');
+                                    document.body.style.overflow='hidden';
+                                pv.play().catch(function(){});
+                            }
+                        }
+                    }
+                    self._tappedCard=null;
+                }
+            })[0];
+            gsapInstances.push(this._draggableInstance);
+
+            this.lastTime=performance.now();
+            gsap.ticker.lagSmoothing(0);
+            tickFn=this._bT; gsap.ticker.add(tickFn); ticking=true; this._tickerActive=true;
+        };
+
+        E.prototype._sleepTicker=function(){
+            if(!this._tickerActive) return;
+            this._tickerActive=false; this._pausedAt=performance.now(); gsap.ticker.remove(this._bT);
+        };
+        E.prototype._wakeTicker=function(){
+            if(this._tickerActive) return;
+            this._tickerActive=true;
+            if(this._pausedAt>0&&this.autoplayActive){
+                var elapsed=(performance.now()-this._pausedAt)/1000;
+                var catchUp=this.config.autoplaySpeed*elapsed;
+                this.targetAngle+=catchUp; this.currentAngle+=catchUp;
+            }
+            this._pausedAt=0; this._scrollMomentum=0; this._scrollVel=0; this.lastScrollY=getRawScroll();
+            if(this._hoveredCardIdx>=0&&this._hoverTimelines[this._hoveredCardIdx]) this._hoverTimelines[this._hoveredCardIdx].reverse();
+            if(this._hoveredCardIdx>=0){var wakePb=this.cards[this._hoveredCardIdx]._playBtn;if(wakePb)wakePb.leaveHover();}
+            this._hoveredCardIdx=-1; gsap.ticker.add(this._bT); this._idleFrames=0;
+            for(var i=0;i<this._lastWrittenScale.length;i++){this._lastWrittenScale[i]=-1;this._lastWrittenBr[i]=-1;this._lastGlowLevel[i]=-1;}
+        };
+
+        var HOVER_STYLES=[
+            {elems:3,stagger:-0.12,initialScale:1.5,duration:0.6,ease:'power2.inOut',animate:'scale',origin:'50% 50%'},
+            {elems:4,stagger:-0.1,initialScale:2,duration:0.6,ease:'power2.inOut',animate:'scale',origin:'50% 50%'},
+            {elems:5,stagger:-0.1,initialScale:2,duration:0.6,ease:'power2.inOut',animate:'scaleX',origin:'0% 50%'},
+            {elems:4,stagger:-0.1,initialScale:1.8,duration:0.6,ease:'power2.inOut',animate:'scaleY',origin:'50% 0%'}
+        ];
+
+        E.prototype.renderCards=function(c,base,dup){
+            c.innerHTML=''; var total=base*dup; this.cardCount=total; this.cardAngle=360/total;
+            c.style.setProperty('--n',total);
+            if(this._hoverTimelines){for(var h=0;h<this._hoverTimelines.length;h++){if(this._hoverTimelines[h])this._hoverTimelines[h].kill();}}
+            if(this._hoverListeners){for(var hl=0;hl<this._hoverListeners.length;hl++){var li=this._hoverListeners[hl];if(li.type==='pointermove')li.el.removeEventListener('pointermove',li.enter);else if(li.type==='pointerleave')li.el.removeEventListener('pointerleave',li.leave);else{li.el.removeEventListener('mouseenter',li.enter);li.el.removeEventListener('mouseleave',li.leave);}}}
+            this._hoverTimelines=[]; this._hoverListeners=[]; this._cardStyleIdx=[];
+            var _svgCache=new Array(base); for(var si=0;si<base;si++) _svgCache[si]=generateJellyfishSVG(si);
+            /* Pre-encode SVGs as data URI for background-image (zero child DOM nodes) */
+            var _bgCache=new Array(base);
+            for(var bi=0;bi<base;bi++) _bgCache[bi]='url("data:image/svg+xml,'+encodeURIComponent(_svgCache[bi])+'")';
+            /* VIDEO CARD CONFIG: which baseIdx is video, src, poster */
+            var VIDEO_CARD={
+                baseIdx: 3,
+                src: '',            /* preview loop (set when ready) */
+                fullSrc: 'https://test-videos.co.uk/vids/bigbuckbunny/mp4/h264/720/Big_Buck_Bunny_720_10s_1MB.mp4',        /* TEST — replace with real showreel */
+                poster: _bgCache[3] /* falls back to SVG placeholder */
+            };
+            this._videoBaseIdx=VIDEO_CARD.baseIdx;
+            for(var i=0;i<total;i++){
+                var d=document.createElement('div'); d.className='card'; d.style.setProperty('--i',i);
+                d.style.opacity='0'; /* CASCADE REVEAL: invisible until animated */
+                var baseIdx=i%base; var style=HOVER_STYLES[baseIdx%4]; var numLayers=style.elems;
+                var isVideo=(baseIdx===VIDEO_CARD.baseIdx);
+                if(isVideo){
+                    /* VIDEO CARD: 1 layer with poster bg + hidden <video> + play button */
+                    d.classList.add('card--video');
+                    var innerHTML='<div class="card__wrap"><div class="card__layer"></div></div>';
+                    innerHTML+='<video muted loop playsinline preload="none"'+(VIDEO_CARD.src?' src="'+VIDEO_CARD.src+'"':'')+'></video>';
+                    d.innerHTML=innerHTML;
+                    d.querySelector('.card__layer').style.backgroundImage=VIDEO_CARD.poster;
+                    /* Play button — size relative to card */
+                    var btnSize=Math.round(Math.min(d.offsetWidth||80, 80)*0.55)||44;
+                    var pb=createPlayButton(d, Math.max(54, Math.round(btnSize*1.5)));
+                    d._playBtn=pb; /* ref for _initHoverEffects */
+                    d._fullSrc=VIDEO_CARD.fullSrc;
+                    /* Wire video timeupdate → arc progress */
+                    var vid=d.querySelector('video');
+                    if(vid){
+                        vid.addEventListener('timeupdate',function(){
+                            if(vid.duration>0) pb.updateProgress(vid.currentTime/vid.duration);
+                        });
+                    }
+                } else {
+                    /* NORMAL CARD: bg-image layers + hover parallax */
+                    var bgUri=_bgCache[baseIdx]; var innerHTML='';
+                    innerHTML+='<div class="card__wrap"><div class="card__layer"></div></div>';
+                    for(var j=1;j<numLayers;j++) innerHTML+='<div class="card__layer hover-layer"></div>';
+                    d.innerHTML=innerHTML;
+                    var allLayers=d.querySelectorAll('.card__layer');
+                    for(var l=0;l<allLayers.length;l++) allLayers[l].style.backgroundImage=bgUri;
+                }
+                c.appendChild(d);
+            }
+            this.cards=Array.prototype.slice.call(c.querySelectorAll('.card'));
+            this.cardScaleValues=new Array(total); this._lastWrittenScale=new Array(total);
+            this._lastWrittenBr=new Array(total); this._isVisible=new Array(total);
+            for(var j2=0;j2<total;j2++){this.cardScaleValues[j2]=1.0;this._lastWrittenScale[j2]=-1;this._lastWrittenBr[j2]=-1;this._isVisible[j2]=true;}
+            this._cardStaticRY=new Array(total);
+            for(var k=0;k<total;k++) this._cardStaticRY[k]=(k*360/total).toFixed(4);
+            this._halfAngleDeg=(180/total).toFixed(6);
+            this._tanHalf=Math.tan(Math.PI/total);
+            this._lastGlowLevel=new Array(total); this._wasFront=new Array(total); this._wasGlowActive=new Array(total);
+            for(var m=0;m<total;m++){this._lastGlowLevel[m]=-1;this._wasFront[m]=false;this._wasGlowActive[m]=false;}
+            // CASCADE REVEAL: init hidden
+            this._revealState=new Array(total);
+            for(var rv=0;rv<total;rv++) this._revealState[rv]={y:-250,opacity:0};
+            this._revealTriggered=false; this._revealComplete=false;
+            this._glowDirty=true; this._idleFrames=0;
+            this._initHoverEffects(base);
+        };
+
+        E.prototype._initHoverEffects=function(base){
+            var self=this; this._hoveredCardIdx=-1; this._cardStyleIdx=[];
+            for(var i=0;i<this.cards.length;i++){
+                var card=this.cards[i]; var baseIdx=i%base; var styleIdx=baseIdx%4;
+                var style=HOVER_STYLES[styleIdx]; this._cardStyleIdx.push(styleIdx);
+                var layers=card.querySelectorAll('.card__layer');
+                var isVideoCard=card.classList.contains('card--video');
+                if(isVideoCard){
+                    /* VIDEO CARD: overlay fade only (play btn driven from _processHover) */
+                    gsap.set(card,{transformOrigin:'50% 50%','--overlay-opacity':1});
+                    var vtl=gsap.timeline({paused:true,
+                        onReverseComplete:(function(c){return function(){c.classList.remove('is-hovered');};})(card)
+                    }).to(card,{'--overlay-opacity':0,duration:0.5,ease:'power2.inOut'},0);
+                    this._hoverTimelines.push(vtl); gsapInstances.push(vtl);
+                    continue;
+                }
+                if(layers.length<2){this._hoverTimelines.push(null);continue;}
+                gsap.set(card,{transformOrigin:'50% 50%','--overlay-opacity':1});
+                gsap.set(layers,{transformOrigin:style.origin});
+                var prop=style.animate; var setProps={}; setProps[prop]=style.initialScale;
+                var toProps={duration:style.duration,ease:style.ease,stagger:style.stagger};
+                toProps[prop]=function(idx){return +!idx;};
+                var tl=gsap.timeline({paused:true,
+                    onReverseComplete:(function(c){return function(){c.classList.remove('is-hovered');};})(card)
+                }).set(layers[0],setProps).to(layers,toProps,0).to(card,{'--overlay-opacity':0,duration:style.duration,ease:style.ease},0);
+                this._hoverTimelines.push(tl); gsapInstances.push(tl);
+            }
+            var section=$id('onas-carousel');
+            var onMove=function(e){if(e.pointerType!=='mouse')return;self._pendingHoverX=e.clientX;self._pendingHoverY=e.clientY;self._hoverDirty=true;self._hoverPointerIsMouse=true;self._hoverLeft=false;};
+            var onLeave=function(e){self._hoverLeft=true;self._hoverDirty=true;};
+            section.addEventListener('pointermove',onMove); section.addEventListener('pointerleave',onLeave);
+            this._hoverListeners.push({el:section,enter:onMove,leave:onLeave,type:'pointermove'},{el:section,enter:null,leave:onLeave,type:'pointerleave'});
+            hfListeners.push({el:section,type:'pointermove',fn:onMove,options:undefined},{el:section,type:'pointerleave',fn:onLeave,options:undefined});
+        };
+
+        E.prototype._processHover=function(){
+            if(!this._hoverDirty||!this._revealComplete)return; this._hoverDirty=false;
+            if(this._hoverLeft){this._hoverLeft=false;if(this._hoveredCardIdx>=0){if(this._hoverTimelines[this._hoveredCardIdx])this._hoverTimelines[this._hoveredCardIdx].reverse();var leavePb=this.cards[this._hoveredCardIdx]._playBtn;if(leavePb)leavePb.leaveHover();}this._hoveredCardIdx=-1;return;}
+            if(this.isDragging)return;
+            var mx=this._pendingHoverX,my=this._pendingHoverY; if(mx<0)return;
+            var bestIdx=-1,bestDist=Infinity;
+            for(var c=0;c<this.cards.length;c++){
+                if(!this._wasFront[c])continue;
+                var rect=this.cards[c].getBoundingClientRect();
+                if(rect.width<2||rect.height<2)continue;
+                var pad=8;
+                if(mx>=rect.left-pad&&mx<=rect.right+pad&&my>=rect.top-pad&&my<=rect.bottom+pad){
+                    var cx=rect.left+rect.width/2,cy=rect.top+rect.height/2;
+                    var dist=(mx-cx)*(mx-cx)+(my-cy)*(my-cy);
+                    if(dist<bestDist){bestDist=dist;bestIdx=c;}
+                }
+            }
+            if(bestIdx!==this._hoveredCardIdx){
+                /* Leave old card */
+                if(this._hoveredCardIdx>=0){
+                    if(this._hoverTimelines[this._hoveredCardIdx])this._hoverTimelines[this._hoveredCardIdx].reverse();
+                    var oldPb=this.cards[this._hoveredCardIdx]._playBtn;
+                    if(oldPb) oldPb.leaveHover();
+                }
+                this._hoveredCardIdx=bestIdx;
+                /* Enter new card */
+                if(bestIdx>=0&&this._hoverTimelines[bestIdx]){
+                    this.cards[bestIdx].classList.add('is-hovered');
+                    if(this._cardStyleIdx[bestIdx]===2){var card=this.cards[bestIdx];var rect2=card.getBoundingClientRect();var cardCenterX=rect2.left+rect2.width/2;var screenCenterX=document.documentElement.clientWidth/2;var layers=card.querySelectorAll('.card__layer');var newOrigin=(cardCenterX>screenCenterX)?'100% 50%':'0% 50%';gsap.set(layers,{transformOrigin:newOrigin});}
+                    this._hoverTimelines[bestIdx].play();
+                    var newPb=this.cards[bestIdx]._playBtn;
+                    if(newPb) newPb.enterHover();
+                }
+            }
+        };
+
+        E.prototype._clampVel=function(){var mv=this.config.maxVelocity;if(this.velocity>mv)this.velocity=mv;if(this.velocity<-mv)this.velocity=-mv;};
+
+        E.prototype._onWheel=function(e){
+            if(!this._revealComplete)return;
+            if(Math.abs(e.deltaX)>Math.abs(e.deltaY)){
+                e.preventDefault(); this._wakeTicker(); this.isSnapping=false;
+                var mult=1; if(e.deltaMode===1)mult=40; if(e.deltaMode===2)mult=800;
+                this.velocity+=e.deltaX*mult*this.config.wheelSensitivity*0.01; this._clampVel();
+            }
+        };
+
+        E.prototype._onK=function(e){
+            if(!this._revealComplete)return;
+            var dir=0;
+            if(e.key==='ArrowLeft'||e.key==='ArrowUp')dir=-1;
+            if(e.key==='ArrowRight'||e.key==='ArrowDown')dir=1;
+            if(dir!==0){e.preventDefault();this._wakeTicker();var ni=this._ni()+dir;this.targetAngle=-ni*this.cardAngle;this.velocity=0;this.isSnapping=true;}
+        };
+
+        E.prototype._ni=function(){return Math.round(-this.targetAngle/this.cardAngle)};
+
+        E.prototype._snap=function(dt){
+            var ni=Math.round(-this.targetAngle/this.cardAngle),st=-ni*this.cardAngle,disp=this.targetAngle-st;
+            var f=-this.config.snapStiffness*disp-this.config.snapDamping*this.velocity;
+            this.velocity+=(f/this.config.mass)*dt; this._clampVel(); this.targetAngle+=this.velocity*dt;
+            if(Math.abs(disp)<0.01&&Math.abs(this.velocity)<0.01){this.targetAngle=st;this.velocity=0;this.isSnapping=false;this.glowTimer=0.5;}
+        };
+
+        E.prototype._tick=function(time,deltaTime){
+            var dMs=Math.min(deltaTime,50),dt=dMs/1000,dt60=dt*60;
+            if(this.reducedMotion){if(this.a3dElement)this.a3dElement.style.transform='translateZ(var(--camera-dist)) translateY(calc(var(--pos-y-user) + var(--pos-y-auto))) scale(var(--zoom)) rotateX(var(--tilt)) rotateY('+this.currentAngle+'deg)';this._uc(0);return;}
+            this._processHover();
+            var sy=getRawScroll(),sd=sy-this.lastScrollY;this.lastScrollY=sy;
+            var scrollSmooth=Math.pow(0.8,dt60);
+            this._scrollVel=this._scrollVel*scrollSmooth+sd*(1-scrollSmooth);
+            if(this.isInView&&Math.abs(this._scrollVel)>0.3) this._scrollMomentum+=this._scrollVel*this.config.scrollInfluence;
+            var maxM=this.config.scrollMaxMomentum;
+            if(Math.abs(this._scrollMomentum)>0.001) this._scrollMomentum=maxM*Math.tanh(this._scrollMomentum/maxM);
+            this._scrollMomentum*=Math.exp(-dt/this.config.scrollTimeConstant);
+            if(Math.abs(this._scrollMomentum)<0.0005)this._scrollMomentum=0;
+            var autoplayDelta=0;
+            if(this.autoplayActive&&!this.isDragging){autoplayDelta=this.config.autoplaySpeed*dt;this.targetAngle+=autoplayDelta;}
+            this.targetAngle+=this._scrollMomentum*dt60;
+            if(!this.isDragging&&!this.isSnapping){
+                if(Math.abs(this.velocity)>0.001){
+                    this.targetAngle+=this.velocity*dt60;
+                    this.velocity*=Math.pow(this.config.friction,dt60);
+                    if(Math.abs(this.velocity)<this.config.velocityThreshold&&this.config.snapEnabled) this.isSnapping=true;
+                    if(Math.abs(this.velocity)<0.02) this.velocity=0;
+                }
+            }
+            if(this.isSnapping)this._snap(dt);
+            var lerpFactor=1-Math.pow(1-this.config.lerp,dt60);
+            this.currentAngle+=(this.targetAngle-this.currentAngle)*lerpFactor;
+            this.currentAngle+=autoplayDelta;
+            if(Math.abs(this._radiusCurrent-this._radiusTarget)>0.001){this._radiusCurrent+=(this._radiusTarget-this._radiusCurrent)*Math.min(1,dt*5);this.sceneElement.style.setProperty('--radius-mult',this._radiusCurrent.toFixed(4));}
+            if(this.a3dElement) this.a3dElement.style.transform='translateZ(var(--camera-dist)) translateY(calc(var(--pos-y-user) + var(--pos-y-auto))) scale(var(--zoom)) rotateX(var(--tilt)) rotateY('+this.currentAngle+'deg)';
+            var absVel=Math.abs(this.velocity)+Math.abs(this._scrollMomentum);
+            if(this.glowTimer>0){this.glowTimer-=dt;if(this.glowTimer<0)this.glowTimer=0;}
+            var angleDelta=Math.abs(this.currentAngle-this._lastCurrentAngle);
+            var radiusAnimating=Math.abs(this._radiusCurrent-this._radiusTarget)>0.001;
+            this._ucAccum+=dMs;
+            if(this._ucAccum>=this._ucInterval){
+                this._ucAccum=0;
+                if(absVel>0.01||angleDelta>0.05||this._idleFrames<3||this.glowTimer>0||radiusAnimating){
+                    this._uc(absVel); this._lastAbsVel=absVel; this._lastCurrentAngle=this.currentAngle;
+                    if(absVel<0.01&&angleDelta<0.05) this._idleFrames++; else this._idleFrames=0;
+                }
+            }
+        };
+
+        var GLOW_PRESETS={
+            'terracotta-soft':[{blur:3,spread:0.5,c:[196,129,107],a:0.5},{blur:6,spread:1,c:[212,165,116],a:0.2}],
+            'terracotta-fire':[{blur:2.5,spread:0.8,c:[196,129,107],a:0.7},{blur:5,spread:1.5,c:[212,165,116],a:0.35},{blur:8,spread:2,c:[196,129,107],a:0.15}],
+            'golden-haze':[{blur:3,spread:1,c:[212,165,116],a:0.65},{blur:6,spread:2,c:[212,165,116],a:0.3},{blur:2,spread:0,c:[212,165,116],a:0.1,inset:true}],
+            'ember':[{blur:2,spread:0.5,c:[196,129,107],a:0.8},{blur:4,spread:1,c:[180,90,60],a:0.4},{blur:8,spread:2,c:[139,125,107],a:0.2}],
+            'sunset-ring':[{ring:4,c:[196,129,107],a:0.7},{blur:2,spread:0.5,c:[212,165,116],a:0.5},{blur:5,spread:1.5,c:[196,129,107],a:0.25}],
+            'gold-ring':[{ring:2,c:[212,165,116],a:0.75},{blur:3,spread:1,c:[212,165,116],a:0.55},{blur:6,spread:2,c:[212,165,116],a:0.25},{blur:2,spread:0,c:[212,165,116],a:0.1,inset:true}],
+            'gold-ring-2':[{ring:2.5,c:[235,200,110],a:0.85},{blur:3,spread:1.5,c:[212,175,90],a:0.6},{blur:2,spread:0,c:[235,200,110],a:0.35,inset:true},{blur:6,spread:2.5,c:[190,155,60],a:0.15}]
+        };
+        var BASE_SHADOW='0 0 2em rgba(0,0,0,0.4)';
+        function hexToRgb(hex){hex=hex.replace('#','');if(hex.length===3)hex=hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];var n=parseInt(hex,16);return[(n>>16)&255,(n>>8)&255,n&255];}
+        function buildGlow(preset,f,gs,oY,colOvr){var p=[];for(var i=0;i<preset.length;i++){var l=preset[i],a=(l.a*f).toFixed(3);var c=colOvr||l.c;var col='rgba('+c[0]+','+c[1]+','+c[2]+','+a+')';if(l.ring){p.push('0 '+oY.toFixed(1)+'em 0 '+(l.ring*f*gs).toFixed(1)+'px '+col);}else{var pre=l.inset?'inset ':'';p.push(pre+'0 '+oY.toFixed(1)+'em '+(l.blur*gs).toFixed(2)+'em '+((l.spread||0)*gs).toFixed(2)+'em '+col);}}return p.join(', ');}
+
+        E.prototype._uc=function(absVel){
+            var n=this.cards.length;if(!n)return;
+            var os=this.config.opacitySpread;var ftNorm=this.config.frontZoneDeg/180;var boost=this.config.frontScale-1;
+            var glowPreset=GLOW_PRESETS[this._activeGlow]||null;var gs=this.config.glowScale;var oY=this.config.glowOffsetY;
+            var colOvr=this._glowColorRgb;var scaleEma=this.config.scaleEma;var thresh=this.glowThreshold;
+            var pulseActive=this.glowTimer>0;var pulseIntensity=pulseActive?Math.min(this.glowTimer/0.3,1):0;
+            var breathe=Math.min(absVel*0.003,0.02);var lean=this.velocity*0.15;lean=Math.max(-3,Math.min(3,lean));
+            var velDir=this.velocity>0.01?1:(this.velocity<-0.01?-1:0);
+            var breatheFactor=(1+breathe);
+            var tzPart=' translateZ(calc(var(--z-sign) * '+breatheFactor+' * var(--radius-mult) * (.5 * var(--card-width) + .5rem) / '+this._tanHalf.toFixed(6)+'))';
+            var rxPart=' rotateX(calc(var(--card-xtilt) + '+lean.toFixed(2)+'deg))';
+            if(this._glowDirty){
+                for(var g=0;g<n;g++)this._lastGlowLevel[g]=-1;this._glowDirty=false;
+                if(glowPreset){var lut={};lut[0]=BASE_SHADOW;for(var lvl=1;lvl<=37;lvl++)lut[lvl]=BASE_SHADOW+', '+buildGlow(glowPreset,(lvl-1)/20,gs,oY,colOvr);for(var nlvl=-1;nlvl>=-3;nlvl--)lut[nlvl]=BASE_SHADOW+', '+buildGlow(glowPreset,(-nlvl-1)/20,gs,oY,colOvr);this._glowLUT=lut;}else{this._glowLUT=null;}
+            }
+            var frameBreathe=breatheFactor,frameLean=lean;
+            var frameDirty=(Math.abs(frameBreathe-this._lastFrameBreatheLean[0])>0.0001||Math.abs(frameLean-this._lastFrameBreatheLean[1])>0.001);
+            if(frameDirty){this._lastFrameBreatheLean[0]=frameBreathe;this._lastFrameBreatheLean[1]=frameLean;for(var fd=0;fd<n;fd++)this._lastWrittenScale[fd]=-1;}
+            var revealing=!this._revealComplete;
+            for(var i=0;i<n;i++){
+                var ba=i*this.cardAngle,ra=((ba+this.currentAngle)%360+540)%360-180;
+                var shouldBeVisible=Math.abs(ra)<95;
+                if(shouldBeVisible!==this._isVisible[i]){this._isVisible[i]=shouldBeVisible;this.cards[i].style.visibility=shouldBeVisible?'visible':'hidden';if(!shouldBeVisible){this._lastWrittenScale[i]=-1;this._lastWrittenBr[i]=-1;this._lastGlowLevel[i]=-1;}
+                    /* VIDEO CARD: play/pause on visibility change */
+                    if(this.cards[i].classList.contains('card--video')){var vid=this.cards[i].querySelector('video');if(vid&&vid.src){if(shouldBeVisible&&this._revealComplete){vid.play().catch(function(){});vid.classList.add('is-playing');}else{vid.pause();vid.classList.remove('is-playing');}}}
+                }
+                if(!shouldBeVisible)continue;
+                var pr=Math.abs(ra)/180;var t=pr/ftNorm;if(t>1)t=1;
+                var frontness=this._easingFn(t,ra,velDir,ftNorm);
+                var halfStep=(this.cardAngle/2)/this.config.frontZoneDeg;var tSync=Math.min(1,t/halfStep*0.5);
+                var scaleF=Math.max(0,Math.min(1,1-tSync*tSync*(3-2*tSync)));var targetScale=1+boost*scaleF;
+                this.cardScaleValues[i]+=(targetScale-this.cardScaleValues[i])*scaleEma;var sc=this.cardScaleValues[i];
+                /* CASCADE REVEAL: read state + apply */
+                var ry=0,ro=1;
+                if(revealing&&this._revealState[i]){
+                    ry=this._revealState[i].y;
+                    ro=this._revealState[i].opacity;
+                    this.cards[i].style.opacity=ro.toFixed(3);
+                }
+                /* Transform: force write every frame during reveal (ry changes), normal gate after */
+                if(revealing||Math.abs(sc-this._lastWrittenScale[i])>0.0005){
+                    this._lastWrittenScale[i]=sc;
+                    var ryPart=ry!==0?' translateY('+ry.toFixed(1)+'px)':'';
+                    this.cards[i].style.transform='rotateY('+this._cardStaticRY[i]+'deg)'+tzPart+ryPart+rxPart+' scale('+sc.toFixed(4)+')';
+                }
+                /* During reveal: skip brightness, glow, hover classes — everything waits */
+                if(revealing) continue;
+                var br=0.92+frontness*0.16;
+                if(Math.abs(br-this._lastWrittenBr[i])>0.0005){this._lastWrittenBr[i]=br;this.cards[i].style.filter='brightness('+br.toFixed(3)+')';}
+                var isFrontGlow=frontness>thresh;
+                if(isFrontGlow!==this._wasFront[i]){this._wasFront[i]=isFrontGlow;if(isFrontGlow)this.cards[i].classList.add('is-front');else this.cards[i].classList.remove('is-front');}
+                var wantGlowActive=pulseActive&&isFrontGlow;
+                if(wantGlowActive!==this._wasGlowActive[i]){this._wasGlowActive[i]=wantGlowActive;if(wantGlowActive)this.cards[i].classList.add('glow-active');else this.cards[i].classList.remove('glow-active');}
+                var glowLevel;
+                if(!glowPreset){glowLevel=0;}else if(isFrontGlow){var glowF=scaleF*1.4;if(pulseActive)glowF=Math.min(1.8,glowF+pulseIntensity*0.4);glowLevel=1+Math.round(Math.min(glowF,1.8)*20);}else if(frontness>0.05){glowLevel=-(1+Math.round(frontness*0.12*20));}else{glowLevel=0;}
+                if(glowLevel!==this._lastGlowLevel[i]){this._lastGlowLevel[i]=glowLevel;this.cards[i].style.boxShadow=this._glowLUT?this._glowLUT[glowLevel]||BASE_SHADOW:BASE_SHADOW;}
+            }
+        };
+
+        E.prototype.toggleAutoplay=function(){this.autoplayActive=!this.autoplayActive;return this.autoplayActive;};
+        E.prototype.updateConfig=function(k,v){
+            if(k==='snapEnabled')this.config.snapEnabled=(v==='1'||v===true||v===1);
+            else if(k==='frontEasing'||k==='glowColor')this.config[k]=v;
+            else this.config[k]=parseFloat(v);
+            if(k==='frontEasing')this._bindEasing(v);
+            if(k==='glowColor')this._glowColorRgb=v?hexToRgb(v):null;
+            if(k==='glowColor'||k==='glowScale'||k==='glowOffsetY')this._glowDirty=true;
+        };
+
+        /* ══════════════════════════════════════════════════
+           CASCADE REVEAL — cards fall in while carousel rotates
+           Autoplay + scroll momentum: ACTIVE (natural rhythm)
+           Hover, drag, keyboard, glow: BLOCKED until complete
+           ══════════════════════════════════════════════════ */
+        E.prototype.startCascadeReveal=function(){
+            if(this._revealTriggered)return;
+            this._revealTriggered=true;
+            this._wakeTicker(); // ensure _uc runs
+
+            // Disable drag during reveal
+            if(this._draggableInstance)this._draggableInstance.disable();
+
+            var self=this;
+            var n=this.cards.length;
+
+            // Sort indices: left-to-right (most negative angle = leftmost)
+            var indices=[];
+            for(var i=0;i<n;i++) indices.push(i);
+            indices.sort(function(a,b){
+                var raA=((self._cardStaticRY[a]*1+self.currentAngle)%360+540)%360-180;
+                var raB=((self._cardStaticRY[b]*1+self.currentAngle)%360+540)%360-180;
+                return raB-raA;
+            });
+
+            // Build staggered timeline
+            this._revealTimeline=gsap.timeline({
+                onComplete:function(){
+                    self._revealComplete=true;
+                    // Re-enable drag
+                    if(self._draggableInstance)self._draggableInstance.enable();
+                    // Clean up inline opacity + force full repaint
+                    for(var c=0;c<n;c++){
+                        self.cards[c].style.opacity='';
+                        self._lastWrittenScale[c]=-1;
+                        self._lastWrittenBr[c]=-1;
+                        self._lastGlowLevel[c]=-1;
+                    }
+                    self._glowDirty=true;
+                    self._idleFrames=0;
+                    /* Start visible video cards after reveal + trigger play-btn slide-in */
+                    for(var v=0;v<n;v++){
+                        if(self.cards[v].classList.contains('card--video')){
+                            self.cards[v].classList.add('reveal-done');
+                            if(self._isVisible[v]){
+                                var vid=self.cards[v].querySelector('video');
+                                if(vid&&vid.src){vid.play().catch(function(){});vid.classList.add('is-playing');}
+                            }
+                        }
+                    }
+                }
+            });
+            gsapInstances.push(this._revealTimeline);
+
+            for(var j=0;j<n;j++){
+                var idx=indices[j];
+                this._revealTimeline.to(
+                    this._revealState[idx],
+                    {y:0, opacity:1, duration:1.5, ease:'back.out(5)'},
+                    j*0.15
+                );
+            }
+        };
+
+        E.prototype.resetReveal=function(){
+            var n=this.cards.length;
+            if(this._revealTimeline){this._revealTimeline.kill();this._revealTimeline=null;}
+            this._revealTriggered=false;
+            this._revealComplete=false;
+            if(this._draggableInstance)this._draggableInstance.disable();
+            for(var i=0;i<n;i++){
+                this._revealState[i]={y:-250,opacity:0};
+                this.cards[i].style.opacity='';
+                this._lastWrittenScale[i]=-1;
+                /* Pause video cards */
+                var vid=this.cards[i].querySelector('video');
+                if(vid){vid.pause();vid.classList.remove('is-playing');}
+                this.cards[i].classList.remove('reveal-done');
+            }
+            this._idleFrames=0;
+            window.scrollTo({top:0,behavior:'smooth'});
+        };
+
+        return E;
+    })();
+
+    var engine = new CarouselEngine();
+    var carouselEl = $id('onas-inner');
+    if(!carouselEl) { 
+        console.warn('onas: carousel inner not found'); 
+        return { pause:function(){}, resume:function(){}, kill:function(){} }; 
+    }
+    engine.renderCards(carouselEl, 7, 3);
+    preloadCardImages('.card__layer').then(function() {
+        engine.init(carouselEl, $id('onas-scene'));
+    });
+    engine._activeGlow = 'gold-ring'; engine._glowDirty = true;
+    engine.config.frontEasing = 'pulse'; engine._bindEasing('pulse');
+
+    /* ── CASCADE REVEAL: IntersectionObserver trigger ── */
+    if(window.IntersectionObserver){
+        var revealIO=new IntersectionObserver(function(entries){
+            if(entries[0]?.isIntersecting&&!engine._revealTriggered){
+                engine.startCascadeReveal();
+            }
+        },{root:null,rootMargin:'0px 0px -25% 0px',threshold:0.15});
+        var revealTarget=$id('onas-scene');
+        if(revealTarget) revealIO.observe(revealTarget);
+        observers.push(revealIO);
+    }
+
+    /* ── VIDEO POPUP: close logic ── */
+    var popup=$id('onas-video-popup');
+    if(popup){
+        var popupVid=popup.querySelector('video');
+        var popupClose=popup.querySelector('.popup-close');
+        var popupCloseText=popup.querySelector('.popup-close-text');
+        function closePopup(){
+            popup.classList.remove('is-open');
+            document.body.style.overflow='';
+            if(popupVid){popupVid.pause();popupVid.removeAttribute('src');popupVid.load();}
+        }
+        /* Named handlers for cleanup */
+        var onPopupBackdrop=function(e){ if(e.target===popup) closePopup(); };
+        var onPopupEsc=function(e){ if(e.key==='Escape'&&popup.classList.contains('is-open')) closePopup(); };
+        popup.addEventListener('click',onPopupBackdrop);
+        if(popupClose) popupClose.addEventListener('click',closePopup);
+        if(popupCloseText) popupCloseText.addEventListener('click',closePopup);
+        document.addEventListener('keydown',onPopupEsc);
+        cleanups.push(function(){
+            popup.removeEventListener('click',onPopupBackdrop);
+            if(popupClose) popupClose.removeEventListener('click',closePopup);
+            if(popupCloseText) popupCloseText.removeEventListener('click',closePopup);
+            document.removeEventListener('keydown',onPopupEsc);
+        });
+    }
+
+    /* Stable viewport height — ignores mobile toolbar show/hide (<100px change) */
+    var _stableVh=window.innerHeight;
+    function getStableVh(){
+        var raw=window.innerHeight;
+        if(Math.abs(raw-_stableVh)>100) _stableVh=raw;
+        return _stableVh;
+    }
+
+    function updateGalleryResponsive() {
+        var vw = document.documentElement.clientWidth;
+        var tilt;
+        if(vw>=1520) tilt=Math.max(3,-0.00909*vw+20.82);
+        else if(vw>=656) tilt=-0.01736*vw+33.4;
+        else tilt=-0.00962*vw+28.3;
+        var vh=getStableVh();
+        var cardWidth=17.5; if(vw<800) cardWidth=Math.max(6,0.0024*vw+5.42);
+        var perspective; if(vw>=800) perspective=65; else perspective=Math.max(26,0.065*vw+10.4);
+        var radiusMult=vw<400?0.99:1.05;
+
+        var root=container;
+        var sceneEl=$id('onas-scene');
+        root.style.setProperty('--tilt',tilt.toFixed(2)+'deg');
+        root.style.setProperty('--card-width',cardWidth.toFixed(2)+'rem');
+        root.style.setProperty('--card-radius',(cardWidth*0.086).toFixed(2)+'rem');
+        root.style.setProperty('--perspective',perspective.toFixed(1)+'rem');
+        if(sceneEl) sceneEl.style.setProperty('--radius-mult',radiusMult.toFixed(2));
+        if(typeof engine!=='undefined'&&engine._radiusBase!==undefined){
+            engine._radiusBase=radiusMult; engine._radiusExpand=radiusMult*1.106;
+            engine._radiusCurrent=radiusMult; engine._radiusTarget=radiusMult;
+        }
+        var BASE_H=1111; var hDelta=BASE_H-vh; var posAuto=Math.max(0,Math.min(220,hDelta*0.5));
+        root.style.setProperty('--pos-y-auto',posAuto.toFixed(1)+'px');
+        /* ultrawide posY: tilt capped at 3° above vw~1960, cards need to go lower */
+        /* -500 @ vw=1960  →  -670 @ vw=3440  (linear) */
+        if(vw>1960){
+            var posYu=Math.round(-500-(vw-1960)*0.1149);
+            root.style.setProperty('--pos-y-user',posYu+'px');
+        }
+
+        /* FIX P1: Reference prawdziwego Capitana */
+        var capitan=$id('onas-capitan');
+
+        if(sceneEl){
+            var maskValue;
+            if(vw>=1200&&capitan){
+                var rect=capitan.getBoundingClientRect();
+                var maskStart=(rect.left/vw)*100; var maskEnd=(rect.right/vw)*100;
+                var fadeWidth=12; var softStart=Math.max(0,maskStart-3); var softEnd=Math.min(100,maskEnd+3);
+                maskValue='linear-gradient(90deg, '+
+                    'rgba(255,0,0,0) 0%, rgba(255,0,0,0) '+softStart.toFixed(1)+'%, '+
+                    'rgba(255,0,0,0.05) '+maskStart.toFixed(1)+'%, '+
+                    'rgba(255,0,0,0.15) '+(maskStart+fadeWidth*0.2).toFixed(1)+'%, '+
+                    'rgba(255,0,0,0.35) '+(maskStart+fadeWidth*0.4).toFixed(1)+'%, '+
+                    'rgba(255,0,0,0.6) '+(maskStart+fadeWidth*0.6).toFixed(1)+'%, '+
+                    'rgba(255,0,0,0.85) '+(maskStart+fadeWidth*0.8).toFixed(1)+'%, '+
+                    'rgba(255,0,0,1) '+(maskStart+fadeWidth).toFixed(1)+'%, '+
+                    'rgba(255,0,0,1) '+(maskEnd-fadeWidth).toFixed(1)+'%, '+
+                    'rgba(255,0,0,0.85) '+(maskEnd-fadeWidth*0.8).toFixed(1)+'%, '+
+                    'rgba(255,0,0,0.6) '+(maskEnd-fadeWidth*0.6).toFixed(1)+'%, '+
+                    'rgba(255,0,0,0.35) '+(maskEnd-fadeWidth*0.4).toFixed(1)+'%, '+
+                    'rgba(255,0,0,0.15) '+(maskEnd-fadeWidth*0.2).toFixed(1)+'%, '+
+                    'rgba(255,0,0,0.05) '+maskEnd.toFixed(1)+'%, '+
+                    'rgba(255,0,0,0) '+softEnd.toFixed(1)+'%, rgba(255,0,0,0) 100%)';
+            } else {
+                maskValue='linear-gradient(90deg, transparent, red 15% 85%, transparent)';
+            }
+            sceneEl.style.webkitMask=maskValue; sceneEl.style.mask=maskValue;
+        }
+
+        /* ── pressY + logogap: calibrated anchors + kv-scaled vh comp ── */
+        var d=Math.max(0,1111-Math.min(vh,1111));
+        var pressY;
+        if(vw<=500){
+            /* mobile: linear fit from post-overflow-fix calibration */
+            pressY=Math.round(-485+0.70*d);
+        } else {
+            /* desktop: piecewise-linear base + kv-scaled quadratic comp */
+            var anchX=[500,620,959,980,1252,1663,1731,1734,1929,3440];
+            var anchY=[-485,-522,-398,-243,-321,-579,-565,-417,-513,-620];
+            var base=-620;
+            for(var i=0;i<9;i++){ if(vw<=anchX[i+1]){ var t=(vw-anchX[i])/(anchX[i+1]-anchX[i]); base=anchY[i]+t*(anchY[i+1]-anchY[i]); break; }}
+            var kv;
+            if(vw<=1252) kv=0.55;
+            else if(vw<=1731) kv=0.55+(vw-1252)*0.000564;
+            else kv=0.82;
+            pressY=Math.round(base+kv*(1.76*d-0.00119*d*d));
+        }
+        var logogap=vw>=600?118:42;
+        root.style.setProperty('--press-y',pressY+'px');
+        root.style.setProperty('--logo-gap',logogap+'px');
+
+        /* ── Anti-flash reveal (J7): show elements after first calc ── */
+        if(sceneEl) sceneEl.style.visibility='visible';
+        var pressEl=root.querySelector('.onas-press');
+        var textBlock=root.querySelector('.onas-text-block');
+        if(pressEl) pressEl.style.visibility='visible';
+        if(textBlock) textBlock.style.visibility='visible';
+    }
+
+    function onLoad(){updateGalleryResponsive();}
+    window.addEventListener('load',onLoad);
+    cleanups.push(function(){window.removeEventListener('load',onLoad);});
+    var galleryResizeTimeout;
+    var _lastResizeVw=document.documentElement.clientWidth;
+    function onResize(){
+        var currentVw=document.documentElement.clientWidth;
+        /* Mobile toolbar hide/show changes only height — ignore to prevent jitter */
+        if(currentVw===_lastResizeVw&&/Mobi|Android/i.test(navigator.userAgent))return;
+        _lastResizeVw=currentVw;
+        clearTimeout(galleryResizeTimeout);galleryResizeTimeout=setTimeout(updateGalleryResponsive,50);timerIds.push(galleryResizeTimeout);
+    }
+    window.addEventListener('resize',onResize);
+    cleanups.push(function(){window.removeEventListener('resize',onResize);});
+
+    /* FIX P4: Expand toggle USUNIĘTY — Capitan ma swój własny */
+
+    function pause(){
+        if(ticking&&tickFn){gsap.ticker.remove(tickFn);ticking=false;}
+        for(var i=0;i<hfListeners.length;i++){var hf=hfListeners[i];hf.el.removeEventListener(hf.type,hf.fn,hf.options);}
+    }
+    function resume(){
+        if(!ticking&&tickFn){gsap.ticker.add(tickFn);ticking=true;}
+        for(var i=0;i<hfListeners.length;i++){var hf=hfListeners[i];hf.el.addEventListener(hf.type,hf.fn,hf.options);}
+    }
+    function kill(){
+        pause();
+        for(var i=0;i<cleanups.length;i++){try{cleanups[i]();}catch(e){}}cleanups.length=0;
+        if(galleryResizeTimeout)clearTimeout(galleryResizeTimeout);timerIds.forEach(function(id){clearTimeout(id);});timerIds.length=0;
+        for(var j=0;j<observers.length;j++){if(observers[j]&&observers[j].disconnect)observers[j].disconnect();}observers.length=0;
+        for(var k=0;k<gsapInstances.length;k++){var inst=gsapInstances[k];if(inst&&inst.revert)try{inst.revert();}catch(e){}if(inst&&inst.kill)try{inst.kill();}catch(e){}}gsapInstances.length=0;
+        hfListeners.length=0;tickFn=null;
+    }
+    return { pause:pause, resume:resume, kill:kill };
+}
+
+    return init;
+    })();
+
+    // === onasCapitanInit_preview — synchroniczny wrapper (Three.js z window.*) ===
+    // Identyczna logika co TSX, Three.js otrzymywany z module script powyzej
+    function onasCapitanInit_preview(container) {
+      var THREE = window.THREE;
+      var EffectComposer = window.EffectComposer;
+      var RenderPass = window.RenderPass;
+      var UnrealBloomPass = window.UnrealBloomPass;
+      var RoomEnvironment = window.RoomEnvironment;
+      var SVGLoader = window.SVGLoader;
+      var BufferGeometryUtils = window.BufferGeometryUtils;
+
+  const $ = (sel) => container.querySelector(sel);
+  const $$ = (sel) => container.querySelectorAll(sel);
+  const $id = (id) => container.querySelector('#' + id);
+  const getScroll = () => scrollRuntime.getScroll();
+  const getRawScroll = () => scrollRuntime.getRawScroll();
+
+  const cleanups = [];
+  const gsapInstances = [];
+  const timerIds = [];
+  const observers = [];
+
+  // ── NULL GUARDS: structural elements ──
+  const expandToggle = $id('onas-capitan-expandToggle');
+  const badge = $id('onas-capitan-badgeWrapper');
+  const content = $('.banner__content');
+  if (!expandToggle || !badge || !content) {
+    console.warn('onas-capitan: critical DOM missing', { expandToggle: !!expandToggle, badge: !!badge, content: !!content });
+    return { pause(){}, resume(){}, kill(){} };
+  }
+
+  function onExpandClick() {
+    container.classList.toggle('is-expanded');
+    expandToggle.classList.toggle('is-active');
+  }
+  expandToggle.addEventListener('click', onExpandClick);
+  cleanups.push(() => expandToggle.removeEventListener('click', onExpandClick));
+
+  const mq = window.matchMedia('(max-width: 600px)');
+
+  let posRaf = 0;
+  let cachedContentH = 0;
+
+  function positionBadge() {
+    const h = cachedContentH;
+    if (h <= 0) return;
+    const isMobile = mq.matches;
+    if (isMobile) {
+      const topPx = h * 0.215;
+      badge.style.top = topPx + 'px';
+      badge.style.left = '78%';
+      badge.style.width = '69.3%';
+    } else {
+      const topPx = h * 0.87 - 20;
+      badge.style.top = topPx + 'px';
+      badge.style.left = '13.5%';
+      badge.style.width = '30.74%';
+    }
+    /* aspect-ratio: 1 fallback — keep badge square on Safari < 15 */
+    if (!CSS.supports || !CSS.supports('aspect-ratio', '1 / 1')) {
+      const bw = badge.offsetWidth;
+      if (bw > 0) badge.style.height = bw + 'px';
+    }
+  }
+
+  function schedulePosition() {
+    if (posRaf) return;
+    posRaf = requestAnimationFrame(() => { posRaf = 0; positionBadge(); });
+  }
+
+  const posRo = new ResizeObserver((entries) => {
+    const entry = entries[0];
+    cachedContentH = entry.contentRect.height;
+    schedulePosition();
+  });
+  posRo.observe(content);
+  observers.push(posRo);
+
+  function onMqChange() { schedulePosition(); }
+  if (mq.addEventListener) mq.addEventListener('change', onMqChange);
+  else mq.addListener(onMqChange);
+  cleanups.push(() => {
+    if (mq.removeEventListener) mq.removeEventListener('change', onMqChange);
+    else mq.removeListener(onMqChange);
+  });
+
+  schedulePosition();
+
+  const threeContainer = badge;
+  const DPR = Math.min(window.devicePixelRatio, 2);
+  const BLOOM_SCALE = 0.25;
+  const BLOOM_INTERVAL = 4;
+
+  function getSize() {
+    const rect = threeContainer.getBoundingClientRect();
+    return Math.round(rect.width) || 230;
+  }
+
+  let SIZE = getSize();
+
+  const scene = new THREE.Scene();
+  scene.background = null;
+  const camera = new THREE.PerspectiveCamera(28, 1, 0.1, 100);
+  camera.position.z = 15;
+
+  const isMobileInit = window.matchMedia('(max-width: 600px)').matches;
+
+  /* WebGL init — graceful degradation if GPU unavailable */
+  let baseRenderer, bloomRenderer;
+  try {
+    baseRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, premultipliedAlpha: false });
+  } catch(e) {
+    console.warn('WebGL init failed, badge 3D disabled:', e);
+    return { pause(){}, resume(){}, kill(){} };
+  }
+  baseRenderer.setClearColor(0x000000, 0);
+  baseRenderer.setSize(SIZE, SIZE);
+  baseRenderer.setPixelRatio(DPR);
+  baseRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+  baseRenderer.toneMappingExposure = 1.0;
+  baseRenderer.shadowMap.enabled = true;
+  baseRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  baseRenderer.domElement.id = 'onas-capitan-canvas-base';
+  baseRenderer.sortObjects = false;
+  threeContainer.appendChild(baseRenderer.domElement);
+
+  let bloomSize = Math.max(Math.round(SIZE * BLOOM_SCALE), 64);
+  try {
+    bloomRenderer = new THREE.WebGLRenderer({ antialias: false });
+  } catch(e) {
+    console.warn('Bloom WebGL init failed, badge 3D disabled:', e);
+    try { baseRenderer.dispose(); baseRenderer.domElement.remove(); } catch(x){}
+    return { pause(){}, resume(){}, kill(){} };
+  }
+  bloomRenderer.setSize(bloomSize, bloomSize);
+  bloomRenderer.setPixelRatio(1);
+  bloomRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+  bloomRenderer.toneMappingExposure = 1.0;
+  bloomRenderer.domElement.id = 'onas-capitan-canvas-bloom';
+  bloomRenderer.sortObjects = false;
+  threeContainer.appendChild(bloomRenderer.domElement);
+
+  const bloomBg = new THREE.Color(0x000000);
+  const renderPass = new RenderPass(scene, camera);
+  const bloomPass = new UnrealBloomPass(new THREE.Vector2(bloomSize, bloomSize), 1.5, 0.4, 0.85);
+  bloomPass.threshold = 0.15;
+  bloomPass.strength = 0.8;
+  bloomPass.radius = 0.9;
+
+  const composer = new EffectComposer(bloomRenderer);
+  composer.setSize(bloomSize, bloomSize);
+  composer.addPass(renderPass);
+  composer.addPass(bloomPass);
+
+  const pmremGenerator = new THREE.PMREMGenerator(baseRenderer);
+  scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
+  pmremGenerator.dispose();
+
+  /* Lighting: only lights with >2% contribution kept.
+     Removed: AmbientLight (0% — metalness:1 kills diffuse),
+     BackLight (0% — specular reflects away from camera at all angles),
+     TopLight (<1%), BottomFill (<0.5%).
+     Kept: SpotLight main (~18%), RimL/RimR (3-5% on edge at 90°/270°).
+     80%+ of visual comes from RoomEnvironment envMap. */
+  const spotLight = new THREE.SpotLight(0xffffff, 50);
+  spotLight.position.set(0, 1.5, 12);
+  spotLight.angle = Math.PI / 4;
+  spotLight.penumbra = 0.5;
+  spotLight.castShadow = true;
+  spotLight.shadow.autoUpdate = false;
+  spotLight.shadow.camera.near = 8;
+  spotLight.shadow.camera.far = 20;
+  scene.add(spotLight);
+
+  /* All medal light from envMap (80%+) + 1 frontal SpotLight (~18%).
+     RimL/RimR removed — 3-5% on edge moments covered by envMap + edgePeak bloom. */
+
+  let logoGroup = null;
+  let goldMaterial = null;
+  let shadowInitialized = false;
+  let baseScaleFactor = 1;
+  let allGeoRefs = [];  // for cleanup
+
+  /* ── Animatable element groups (THREE.Group pivots) ── */
+  const EL = {
+    base: null,       // Path 1 (big "1") + Path 2 (outer ring) + static T, P
+    innerRing: null,  // Path 3 — already working ring spin
+    small1: null,     // Small "1" stroke under big "1"
+    topO: null,       // Letter O in "TOP" — can spin around own axis
+    polP: null,       // P in "POLAND"
+    polO: null,       // O in "POLAND"
+    polL: null,       // L in "POLAND"
+    polA: null,       // A in "POLAND"
+    polN: null,       // N in "POLAND"
+    polD: null,       // D in "POLAND"
+  };
+
+  // Alias for backward compatibility
+  let ringPivot = null;
+
+  function buildLogoFromSVG() {
+    const svgEl = $id('onas-capitan-badge-svg');
+    if (!svgEl) {
+      console.warn('onas-capitan: badge SVG not found');
+      return null;
+    }
+    const svgString = new XMLSerializer().serializeToString(svgEl);
+    const svgData = new SVGLoader().parse(svgString);
+
+    const extrudeSettings = { depth: 12, bevelEnabled: true, bevelThickness: 1.5, bevelSize: 1.2, bevelOffset: 0, bevelSegments: 1 };
+
+    goldMaterial = new THREE.MeshStandardMaterial({ color: 0xf3ae23, metalness: 1.0, roughness: 0.15, envMapIntensity: 1.5 });
+
+    /* ═══════════════════════════════════════════════════════════
+       STEP 1: Extrude all shapes, tag with path index + bbox
+       ═══════════════════════════════════════════════════════════ */
+    const tagged = [];  // { geo, pathIdx, cx, cy, minX, maxX, minY, maxY }
+
+    svgData.paths.forEach((path, idx) => {
+      SVGLoader.createShapes(path).forEach((shape) => {
+        const geo = new THREE.ExtrudeGeometry(shape, extrudeSettings);
+        geo.computeBoundingBox();
+        const b = geo.boundingBox;
+        tagged.push({
+          geo,
+          pathIdx: idx,
+          cx: (b.min.x + b.max.x) * 0.5,
+          cy: (b.min.y + b.max.y) * 0.5,
+          minX: b.min.x, maxX: b.max.x,
+          minY: b.min.y, maxY: b.max.y
+        });
+      });
+    });
+
+    /* ═══════════════════════════════════════════════════════════
+       STEP 2: Compute unified center from ALL geometry
+       ═══════════════════════════════════════════════════════════ */
+    const tempMerge = BufferGeometryUtils.mergeGeometries(tagged.map(t => t.geo.clone()), false);
+    tempMerge.computeBoundingBox();
+    const box = tempMerge.boundingBox;
+    const cx = (box.min.x + box.max.x) * 0.5;
+    const cy = (box.min.y + box.max.y) * 0.5;
+    const cz = (box.min.z + box.max.z) * 0.5;
+    const sizeY = box.max.y - box.min.y;
+    tempMerge.dispose();
+
+    /* ═══════════════════════════════════════════════════════════
+       STEP 3: Classify each shape into groups by path + bbox
+       
+       SVG viewBox: 0 0 339 323
+       Path 0 contains: TOP letters (y < 60), POLAND letters (y > 250),
+                         small "1" stroke (y 109-313, x < 80)
+       Path 1: big "1" shape → BASE
+       Path 2: outer ring → BASE
+       Path 3: inner ring → ringPivot
+       ═══════════════════════════════════════════════════════════ */
+    const groups = {
+      base: [],      // path 1 + path 2 + static letters T, P
+      innerRing: [], // path 3
+      small1: [],    // path 0, y > 100 && x < 80
+      topO: [],      // path 0, y < 60, cx 40-80
+      polP: [],      // path 0, y > 250, cx < 170
+      polO: [],      // path 0, y > 250, cx 170-205
+      polL: [],      // path 0, y > 250, cx 205-240
+      polA: [],      // path 0, y > 250, cx 240-275
+      polN: [],      // path 0, y > 250, cx 275-310
+      polD: [],      // path 0, y > 250, cx > 310
+    };
+
+    for (const t of tagged) {
+      if (t.pathIdx === 1 || t.pathIdx === 2) {
+        groups.base.push(t.geo);
+      }
+      else if (t.pathIdx === 3) {
+        groups.innerRing.push(t.geo);
+      }
+      else if (t.pathIdx === 0) {
+        // Classify path 0 shapes by bbox position
+        if (t.cy > 100 && t.cx < 80) {
+          groups.small1.push(t.geo);
+        }
+        else if (t.cy < 60) {
+          // TOP letters: T and P are static (never animated) → merge to base
+          // Only O gets own pivot (spins around own axis)
+          if (t.cx >= 40 && t.cx < 80) groups.topO.push(t.geo);
+          else groups.base.push(t.geo); // T and P → base
+        }
+        else if (t.cy > 250) {
+          // POLAND letters
+          if (t.cx < 170) groups.polP.push(t.geo);
+          else if (t.cx < 205) groups.polO.push(t.geo);
+          else if (t.cx < 240) groups.polL.push(t.geo);
+          else if (t.cx < 275) groups.polA.push(t.geo);
+          else if (t.cx < 310) groups.polN.push(t.geo);
+          else groups.polD.push(t.geo);
+        }
+        else {
+          // Fallback: anything unclassified goes to base
+          groups.base.push(t.geo);
+        }
+      }
+    }
+
+    /* ═══════════════════════════════════════════════════════════
+       STEP 4: For each group, merge geos → translate → mesh → pivot
+       All use same center offset → everything stays in place
+       ═══════════════════════════════════════════════════════════ */
+    // DEFAULT: pivot at medal center — element stays in place, rotation = around medal center
+    // This is what innerRing needs for ring spin (opening/closing effect)
+    function buildGroup(geos) {
+      if (!geos || geos.length === 0) return null;
+      const merged = geos.length === 1 ? geos[0] : BufferGeometryUtils.mergeGeometries(geos, false);
+      merged.translate(-cx, -cy, -cz);
+      allGeoRefs.push(merged);
+
+      const mesh = new THREE.Mesh(merged, goldMaterial);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      mesh.frustumCulled = false;
+
+      const pivot = new THREE.Group();
+      pivot.add(mesh);
+      return pivot;
+    }
+
+    // OWN-CENTER PIVOT: element rotates around its own center (for letters that spin in place)
+    function buildGroupOwnPivot(geos) {
+      if (!geos || geos.length === 0) return null;
+      const merged = geos.length === 1 ? geos[0] : BufferGeometryUtils.mergeGeometries(geos, false);
+      allGeoRefs.push(merged);
+
+      merged.computeBoundingBox();
+      const eb = merged.boundingBox;
+      const eCx = (eb.min.x + eb.max.x) * 0.5;
+      const eCy = (eb.min.y + eb.max.y) * 0.5;
+      const eCz = (eb.min.z + eb.max.z) * 0.5;
+
+      // Mesh centered at own origin
+      merged.translate(-eCx, -eCy, -eCz);
+
+      const mesh = new THREE.Mesh(merged, goldMaterial);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      mesh.frustumCulled = false;
+
+      // Pivot positioned within medal space
+      const pivot = new THREE.Group();
+      pivot.position.set(eCx - cx, eCy - cy, eCz - cz);
+      pivot.add(mesh);
+      return pivot;
+    }
+
+    // DUAL PIVOT for innerRing:
+    //   outerPivot (medal center) → .rotation.y = scroll ring spin (✅ ACCEPTED)
+    //   localPivot (ring's own center) → .rotation.x/y/z = idle wobble (small, local)
+    function buildGroupDualPivot(geos) {
+      if (!geos || geos.length === 0) return null;
+      const merged = geos.length === 1 ? geos[0] : BufferGeometryUtils.mergeGeometries(geos, false);
+      allGeoRefs.push(merged);
+
+      merged.computeBoundingBox();
+      const eb = merged.boundingBox;
+      const eCx = (eb.min.x + eb.max.x) * 0.5;
+      const eCy = (eb.min.y + eb.max.y) * 0.5;
+      const eCz = (eb.min.z + eb.max.z) * 0.5;
+
+      merged.translate(-eCx, -eCy, -eCz);
+
+      const mesh = new THREE.Mesh(merged, goldMaterial);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      mesh.frustumCulled = false;
+
+      // Local pivot at ring's own center — idle wobble rotates here
+      const localPivot = new THREE.Group();
+      localPivot.position.set(eCx - cx, eCy - cy, eCz - cz);
+      localPivot.add(mesh);
+
+      // Outer pivot at medal center — scroll ring spin rotates here
+      const outerPivot = new THREE.Group();
+      outerPivot.add(localPivot);
+      outerPivot._localPivot = localPivot;
+
+      return outerPivot;
+    }
+
+    // FOOT+CENTER DUAL PIVOT for small "1":
+    //   outerPivot (foot of letter) → scroll Bézier animation
+    //   localPivot (center of letter) → idle wobble (subtle, like inner ring)
+    function buildGroupFootDualPivot(geos) {
+      if (!geos || geos.length === 0) return null;
+      const merged = geos.length === 1 ? geos[0] : BufferGeometryUtils.mergeGeometries(geos, false);
+      allGeoRefs.push(merged);
+
+      merged.computeBoundingBox();
+      const eb = merged.boundingBox;
+
+      // Center of letter (for idle pivot)
+      const eCx = (eb.min.x + eb.max.x) * 0.5;
+      const eCy = (eb.min.y + eb.max.y) * 0.5;
+      const eCz = (eb.min.z + eb.max.z) * 0.5;
+
+      // Foot of letter (bottom, for scroll pivot)
+      const footY = eb.max.y; // max Y = bottom in flipped SVG coords
+
+      // Mesh centered at letter's own center
+      merged.translate(-eCx, -eCy, -eCz);
+
+      const mesh = new THREE.Mesh(merged, goldMaterial);
+      mesh.castShadow = true;
+      mesh.receiveShadow = true;
+      mesh.frustumCulled = false;
+
+      // Local pivot at letter center (idle wobble rotates here)
+      const localPivot = new THREE.Group();
+      // Offset from foot to center
+      localPivot.position.set(eCx - eCx, eCy - footY, eCz - eCz); // = (0, center-foot, 0)
+      localPivot.add(mesh);
+
+      // Outer pivot at foot position in medal space (scroll animates here)
+      const outerPivot = new THREE.Group();
+      outerPivot.position.set(eCx - cx, footY - cy, eCz - cz);
+      outerPivot.add(localPivot);
+      outerPivot._localPivot = localPivot;
+
+      return outerPivot;
+    }
+
+    EL.base      = buildGroup(groups.base);
+    EL.innerRing = buildGroupDualPivot(groups.innerRing);  // dual pivot: scroll + local wobble
+    EL.small1    = buildGroupFootDualPivot(groups.small1);  // foot for scroll, center for idle
+
+    // Store home position on element for animation to read
+    if (EL.small1) {
+      EL.small1._homeX = EL.small1.position.x;
+      EL.small1._homeY = EL.small1.position.y;
+      EL.small1._homeZ = EL.small1.position.z;
+    }
+    EL.topO      = buildGroupOwnPivot(groups.topO);  // spins around own center
+    EL.polP      = buildGroupOwnPivot(groups.polP);  // own pivot for Y spin
+    EL.polO      = buildGroupOwnPivot(groups.polO);
+    EL.polL      = buildGroupOwnPivot(groups.polL);
+    EL.polA      = buildGroupOwnPivot(groups.polA);
+    EL.polN      = buildGroupOwnPivot(groups.polN);
+    EL.polD      = buildGroupOwnPivot(groups.polD);
+
+    // Backward compat alias
+    ringPivot = EL.innerRing;
+
+    /* ═══════════════════════════════════════════════════════════
+       STEP 5: Assemble hierarchy
+       wrapper > all element pivots
+       ═══════════════════════════════════════════════════════════ */
+    const wrapper = new THREE.Group();
+    for (const key of Object.keys(EL)) {
+      if (EL[key]) wrapper.add(EL[key]);
+    }
+
+    const visibleHeight = 2 * Math.tan((28 * Math.PI / 180) / 2) * 15;
+    const scaleFactor = (visibleHeight * 0.54) / sizeY;
+    baseScaleFactor = scaleFactor;
+    wrapper.scale.set(scaleFactor, -scaleFactor, scaleFactor);
+    scene.add(wrapper);
+    logoGroup = wrapper;
+  }
+
+  const mouse = { x: 0, y: 0, near: false, influence: 0 };
+  let rectCache = threeContainer.getBoundingClientRect();
+  let lastClientX = 0, lastClientY = 0;
+  let pmRaf = 0;
+
+  function onPointerEnter() { mouse.near = true; rectCache = threeContainer.getBoundingClientRect(); }
+  function onPointerLeave() { mouse.near = false; }
+  function onPointerMove(e) {
+    lastClientX = e.clientX; lastClientY = e.clientY;
+    if (!mouse.near) mouse.near = true;
+    if (pmRaf) return;
+    pmRaf = requestAnimationFrame(() => {
+      pmRaf = 0;
+      if (rectCache.width <= 0 || rectCache.height <= 0) return;
+      mouse.x = ((lastClientX - rectCache.left) / rectCache.width) * 2 - 1;
+      mouse.y = ((lastClientY - rectCache.top) / rectCache.height) * 2 - 1;
+    });
+  }
+
+  threeContainer.addEventListener('pointerenter', onPointerEnter, { passive: true });
+  threeContainer.addEventListener('pointerleave', onPointerLeave, { passive: true });
+  cleanups.push(() => {
+    threeContainer.removeEventListener('pointerenter', onPointerEnter, { passive: true });
+    threeContainer.removeEventListener('pointerleave', onPointerLeave, { passive: true });
+  });
+
+  const hfListeners = [
+    { target: threeContainer, event: 'pointermove', fn: onPointerMove, options: { passive: true } }
+  ];
+  hfListeners.forEach(l => l.target.addEventListener(l.event, l.fn, l.options));
+
+  let lastResizedSize = SIZE;
+  const threeRo = new ResizeObserver(() => {
+    rectCache = threeContainer.getBoundingClientRect();
+    const newSize = Math.round(rectCache.width) || 230;
+    if (Math.abs(newSize - lastResizedSize) >= 3 && newSize > 0) {
+      SIZE = newSize; lastResizedSize = newSize;
+      baseRenderer.setSize(SIZE, SIZE);
+      bloomSize = Math.max(Math.round(SIZE * BLOOM_SCALE), 64);
+      bloomRenderer.setSize(bloomSize, bloomSize);
+      composer.setSize(bloomSize, bloomSize);
+      rectCache = threeContainer.getBoundingClientRect(); // re-read after resize
+    }
+  });
+  threeRo.observe(threeContainer);
+  observers.push(threeRo);
+
+  let inView = true;
+  let pageVisible = !document.hidden;
+  let stActive = false;    // ScrollTrigger onToggle state
+  let running = true;
+  let ticking = false;
+  let tickFn = null;
+  let hoverAttract = 0;
+  let _effectiveFrame = 0; // hover-attract blended frame
+  let frameCount = 0;
+  let _lastSlX = 0, _lastSlY = 1.5; // shadow delta tracking
+  let _wakeSkip = false;   // Type B: skip velocity on first frame after wake
+
+  function onVisibilityChange() {
+    pageVisible = !document.hidden;
+    if (pageVisible) _wakeSkip = true; // tab switch = wake → skip velocity spike
+    syncRunning();
+  }
+  document.addEventListener('visibilitychange', onVisibilityChange, { passive: true });
+  cleanups.push(() => document.removeEventListener('visibilitychange', onVisibilityChange));
+
+  const io = new IntersectionObserver(
+    (entries) => { inView = entries[0]?.isIntersecting ?? false; syncRunning(); },
+    { root: null, threshold: 0.01, rootMargin: '200px' }
+  );
+  io.observe(threeContainer);
+  observers.push(io);
+
+  /* ── Badge reveal + scroll drift ── */
+  let _stableVhCap = window.innerHeight;
+  function getStableVhCap(){
+    const raw = window.innerHeight;
+    if (Math.abs(raw - _stableVhCap) > 100) _stableVhCap = raw;
+    return _stableVhCap;
+  }
+  const DRIFT_PX = 220;
+  const DRIFT_SCALE_START = 1.4;
+  const DRIFT_SCALE_END = 1.0;
+  const DRIFT_ROTX_START = -30; /* degrees 2D tilt at start */
+
+  /* Drift calculator — reusable */
+  function calcDriftProgress() {
+    const rect = container.getBoundingClientRect();
+    const vh = getStableVhCap();
+    const totalTravel = vh + rect.height;
+    const scrolled = vh - rect.top;
+    return Math.max(0, Math.min(1, scrolled / (totalTravel * 0.8)));
+  }
+
+  function setBadgeTransform(offset, scale, rot) {
+    badge.style.transform = 'translate(-50%, calc(-50% - ' + offset.toFixed(1) + 'px)) rotate(' + rot.toFixed(1) + 'deg) scale(' + scale.toFixed(4) + ')';
+  }
+
+  /* Scroll drift + inertia + scale */
+  let driftActive = false;
+  let driftRaf = 0;
+  let badgeScale = { v: 1 };
+  let driftInertia = 0;
+  let lastScrollY = window.scrollY;
+  let inertiaRunning = false;
+  let smoothProgress = 0; /* lerped progress — trails real scroll */
+  let smoothRaf = 0;
+
+  function updateBadgeDrift() {
+    if (mq.matches) {
+      badge.style.transform = 'translate(-50%, -50%) rotate(0deg)';
+      return;
+    }
+    const baseOffset = DRIFT_PX * (1 - smoothProgress);
+    const driftScale = DRIFT_SCALE_START + (DRIFT_SCALE_END - DRIFT_SCALE_START) * smoothProgress;
+    const driftRot = DRIFT_ROTX_START * (1 - smoothProgress);
+    setBadgeTransform(baseOffset - driftInertia, driftScale * badgeScale.v, driftRot);
+  }
+
+  /* Smooth follow loop — runs when badge is drifting */
+  function smoothLoop() {
+    if (!driftActive) return;
+    const target = calcDriftProgress();
+    const diff = target - smoothProgress;
+    if (Math.abs(diff) > 0.0005) {
+      smoothProgress += diff * 0.08; /* lerp factor — lower = more lag */
+      updateBadgeDrift();
+      smoothRaf = requestAnimationFrame(smoothLoop);
+    } else {
+      smoothProgress = target;
+      updateBadgeDrift();
+      smoothRaf = 0;
+    }
+  }
+
+  function kickSmooth() {
+    if (!smoothRaf) {
+      smoothRaf = requestAnimationFrame(smoothLoop);
+    }
+  }
+
+  function decayInertia() {
+    driftInertia *= 0.92;
+    if (Math.abs(driftInertia) < 0.5) {
+      driftInertia = 0;
+      inertiaRunning = false;
+      updateBadgeDrift();
+      return;
+    }
+    updateBadgeDrift();
+    requestAnimationFrame(decayInertia);
+  }
+
+  function onScrollDrift() {
+    if (!driftActive) return;
+    const sy = window.scrollY;
+    const delta = sy - lastScrollY;
+    lastScrollY = sy;
+    driftInertia = Math.max(-60, Math.min(60, delta * 0.35));
+
+    kickSmooth(); /* start/continue smooth follow */
+
+    if (!inertiaRunning && Math.abs(driftInertia) > 1) {
+      inertiaRunning = true;
+      requestAnimationFrame(decayInertia);
+    }
+  }
+
+  const badgeRevealIO = new IntersectionObserver(
+    (entries) => {
+      if (entries[0]?.isIntersecting) {
+        badgeRevealIO.disconnect();
+        const isMobileNow = mq.matches;
+
+        if (!isMobileNow) {
+          /* DESKTOP: GSAP reveal with drift from frame 1 */
+          driftActive = true;
+          lastScrollY = window.scrollY;
+          smoothProgress = calcDriftProgress(); /* sync initial */
+          window.addEventListener('scroll', onScrollDrift, { passive: true });
+          cleanups.push(() => window.removeEventListener('scroll', onScrollDrift));
+
+          /* Set initial state: drifted position, hidden, small */
+          badgeScale.v = 0.7;
+          badge.style.opacity = '0';
+          updateBadgeDrift();
+
+          /* Animate reveal — smooth loop handles drift+scale+rot */
+          var revealBadgeTl = gsap.timeline({
+            onUpdate: function() { updateBadgeDrift(); kickSmooth(); },
+            onComplete: function() {
+              badge.style.setProperty('--onas-badge-reveal', '72%');
+              badge.style.webkitMaskImage = 'none';
+              badge.style.maskImage = 'none';
+            }
+          });
+          revealBadgeTl.to(badge, {
+            opacity: 1,
+            '--onas-badge-reveal': '72%',
+            duration: 1.43,
+            ease: 'power3.out'
+          }, 0);
+          revealBadgeTl.to(badgeScale, {
+            v: 1,
+            duration: 1.43,
+            ease: 'power3.out'
+          }, 0);
+          gsapInstances.push(revealBadgeTl);
+
+        } else {
+          /* MOBILE: check @property support for smooth mask reveal */
+          var supportsAtProperty = !!(window.CSS && CSS.registerProperty);
+
+          if (supportsAtProperty) {
+            /* @property works — CSS keyframes animate --onas-badge-reveal smoothly */
+            container.classList.add('badge-revealed');
+            badge.addEventListener('animationend', () => {
+              badge.style.opacity = '1';
+              badge.style.transform = 'translate(-50%, -50%) rotate(0deg)';
+              badge.style.setProperty('--onas-badge-reveal', '72%');
+              badge.style.webkitMaskImage = 'none';
+              badge.style.maskImage = 'none';
+              badge.style.animation = 'none';
+            }, { once: true });
+          } else {
+            /* No @property (Safari < 16.4): skip broken mask, fade+scale only */
+            badge.style.webkitMaskImage = 'none';
+            badge.style.maskImage = 'none';
+            badge.style.opacity = '0';
+            badge.style.transform = 'translate(-50%, -50%) rotate(0deg) scale(0.7)';
+            gsap.to(badge, {
+              opacity: 1, scale: 1, duration: 1.0,
+              ease: 'power3.out'
+            });
+          }
+        }
+      }
+    },
+    { root: null, threshold: 0.05 }
+  );
+  badgeRevealIO.observe(container);
+  observers.push(badgeRevealIO);
+
+  /* ── syncRunning: OR logic — IO visible OR ScrollTrigger active → ticker runs ── */
+  function syncRunning() {
+    const shouldRun = (inView || stActive) && pageVisible;
+    if (shouldRun === running) return;
+    running = shouldRun;
+    if (running) {
+      _wakeSkip = true; // wake from sleep → skip first-frame velocity spike
+      if (!ticking) { ticking = true; gsap.ticker.add(tickFn); hfListeners.forEach(l => l.target.addEventListener(l.event, l.fn, l.options)); }
+    } else {
+      if (ticking) { ticking = false; gsap.ticker.remove(tickFn); hfListeners.forEach(l => l.target.removeEventListener(l.event, l.fn, l.options)); }
+    }
+  }
+
+  buildLogoFromSVG();
+
+  // Pre-compile shaders — eliminates first-frame jank
+  baseRenderer.compile(scene, camera);
+  bloomRenderer.compile(scene, camera);
+
+  const RX_CENTER = -0.063;
+  const PHI = 1.618033988;
+
+  /* ═══════════════════════════════════════════════════════════════
+     TWO BOLD SCENES — scroll-choreographed
+     
+     Lighting setup (optimized — 6 dead lights removed, PBR audit):
+       SpotLight(50)  at (0, 1.5, 12)    — main frontal specular (~18%)
+       RoomEnv PMREM                     — 80%+ of visual (envMapIntensity dynamic)
+       [REMOVED: Ambient(0%), backLight(0%), rimL/R(3-5% covered by envMap),
+        topLight(<1%), bottomFill(<0.5%)]
+     
+     Geometry:
+       bodyMesh  = text + outer circle ring (paths 0,1,2)
+       ringPivot → ringMesh = inner circle (path 3) — can rotate independently
+       Extrude depth: 12, bevel: 1.5/1.2
+       Material: metalness 1.0, roughness 0.15
+     ═══════════════════════════════════════════════════════════════ */
+
+  const J = { p: 0, prev: 0, on: false };
+
+
+
+  /* ── Small "1" idle — HARDCODED parameters ──
+     ry:12° @0.9Hz | rx:2.5° @0.35Hz | rz:9° @1Hz
+     floatY:14 @0.75Hz | floatZ:16 @0.7Hz
+     scale:5.5% @0.95Hz | mod:0.15
+  */
+  /* ── Small "1" idle — redesigned to match inner ring calm ──
+     Inner ring reference: perlin4, 0.6-0.9 Hz, ±30°, 3 axes only
+     Small "1": same philosophy — slow, wide, few axes, pure perlin4
+     
+     Primary:   rz (pendulum swing, like leaf on water)
+     Secondary: rx (gentle nod)
+     Tertiary:  position.y (float up/down)
+     NO: fast speeds, NO: perlinMod chaos, NO: scale pulsation, NO: position.z
+  */
+  const S1_IDLE = {
+    rzAmp: 0.40,   rzHz: 0.72,   // ±23° — primary pendulum swing (ring: 0.74)
+    rxAmp: 0.22,   rxHz: 0.55,   // ±13° — depth nod (ring: 0.62)
+    fyAmp: 8,      fyHz: 0.48,   // ±8 units — float up/down (ring: 0.88)
+  };
+
+  // MUST be before first use
+  let _s1CurrentFrame = 0;
+
+  /* ── Idle fade: all params fade to 0 by frame 900 (90% of 1000) ──
+     Frame 0-250:   collision ramp up (0.02 → 0.08)
+     Frame 250-500: ramp to peak (0.08 → 0.50)
+     Frame 500-700: hold mid (0.50)
+     Frame 700-1000: ramp to full (0.50 → 1.0) — visible, collision-free
+  */
+  function s1IdleFade() {
+    const f = _s1CurrentFrame;
+    if (f <= 0) return 0.02;
+    if (f >= 900) return 0;                                    // settled — no wobble
+    if (f <= 250) return 0.02 + (f / 250) * 0.06;             // collision ramp
+    if (f <= 500) return 0.08 + ((f - 250) / 250) * 0.42;     // grow to 0.50
+    if (f <= 700) return 0.50;                                  // hold during travel
+    // 700→900: fade out smoothly
+    const t = (f - 700) / 200;
+    return 0.50 * (1 - t * t * (3 - 2 * t));                   // smoothstep → 0
+  }
+
+  function applyS1Idle(time) {
+    return; // frozen — stays in final animation position
+  }
+
+
+
+  // ScrollTrigger — badge viewport traversal drives animation 0→100%
+  // Maps scroll progress to sceneRing p = 0.40 → 0.796
+  // start: badge top enters viewport bottom → 0%
+  // end:   badge top reaches viewport top   → 100% (badge still partially visible)
+  // Range = exactly 1× viewport height
+  const ANIM_START = 0.40;   // sceneRing p where ring = 189°
+  const ANIM_END   = 0.796;  // sceneRing p where settle = 7%
+  const ANIM_RANGE = ANIM_END - ANIM_START;
+
+  // Badge starts in animation mode at frame 0 — no auto-rotation phase
+  J.p = ANIM_START;
+  J.prev = ANIM_START;
+  J.on = true;
+
+  /* ── ScrollTrigger: badge as trigger (position:absolute = safe,
+       getBoundingClientRect is position-mode agnostic — verified in ST source)
+       scrub:true = direct link, Lenis handles ALL smoothing
+       invalidateOnRefresh = recalculate bounds on resize/refresh
+       onToggle = OR logic with IO for ticker sleep/wake ── */
+  const badgeST = ScrollTrigger.create({
+    trigger: badge,               // #onas-capitan-badgeWrapper (position:absolute — OK)
+    start: 'bottom 65%',           // badge bottom at 65% from top → progress 0
+    end: 'top 1%',                 // badge top reaches 1% from viewport top → progress 1
+    scrub: true,                  // direct link (Lenis = only smoother, no double-smooth)
+    invalidateOnRefresh: true,    // recalc bounds on resize/orientationchange
+    onUpdate(self) {
+      J.prev = J.p;
+      J.p = ANIM_START + Math.max(0, Math.min(1, self.progress)) * ANIM_RANGE;
+    },
+    onToggle(self) {
+      stActive = self.isActive;
+      syncRunning();              // OR logic: IO visible OR ST active → ticker runs
+    }
+  });
+
+  // Helpers
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function remap(t, a, b) { return Math.max(0, Math.min(1, (t - a) / (b - a))); }
+  function easeInOut(t) { return t < .5 ? 2*t*t : 1 - Math.pow(-2*t+2,2)/2; }
+  function dampSpring(t, amp, dec, frq) { return amp * Math.exp(-dec * t) * Math.cos(frq * t); }
+
+  /* ═══════════════════════════════════════════════════════════════
+     B: RING SPIN
+     
+     Medal w pozycji spoczynkowej. Spokojny.
+     Wewnętrzny ring (path 3 — mniejszy koncentric circle) robi
+     pełen obrót 360° wokół osi Y (horyzontalny flip).
+     
+     Geometry: ring extrude depth=12. Radius wew. ~54, zew. ~71.
+     Gap do outer ring = 20 units → nie klipuje przy obrocie.
+     
+     Przy rotacji ringu:
+       0°:   face ringu widoczny — pełny frontalny specular
+       45°:  bevel łapie rimLight — edge glow rośnie
+       90°:  krawędź ringu — cienka linia złota, rim lights PEAK
+       135°: tył ringu obraca się — envMap oświetla krawędź
+       180°: pełen tył — envMap intensity pumped via backPeak
+       270°: druga krawędź — znów rim lights peak
+       360°: powrót do face
+     
+     SpotLight pulsuje subtelnie żeby specular na ringu żył.
+     Bloom spikes przy 0° i 180° (face moments).
+     Ciało medalu (text + outer ring) ma delikatny micro-breathe.
+     ═══════════════════════════════════════════════════════════════ */
+  /* ═══════════════════════════════════════════════════════════════
+     IDLE LEVITATION — element-level organic motion
+     
+     Runs EVERY frame. Independent of scroll.
+     Uses pseudo-Perlin: 4 sines × incommensurate ratios → never repeats.
+     
+     1. EL.topO: rotation.y ±60° (±1.047 rad) — slow organic swing
+     2. EL.innerRing: rotation.x ±30°, rotation.y ±30° — drift inside O
+     3. POLAND: wave P→D, P largest amplitude, D smallest
+     ═══════════════════════════════════════════════════════════════ */
+  const SQRT2 = 1.4142135623730951;
+  const SQRT3 = 1.7320508075688772;
+
+  // Pseudo-Perlin: sum of sines with incommensurate frequency multipliers
+  // Returns -1..+1 (normalized). Never repeats.
+  function perlin4(time, baseSpeed) {
+    const s = baseSpeed;
+    return (
+      Math.sin(time * s) * 0.40 +
+      Math.sin(time * s * PHI)   * 0.30 +
+      Math.sin(time * s * SQRT2) * 0.20 +
+      Math.sin(time * s * SQRT3) * 0.10
+    );
+  }
+
+  // POLAND wave: P→D, P biggest amplitude, D smallest, phase-shifted
+  const POLAND_KEYS = ['polP', 'polO', 'polL', 'polA', 'polN', 'polD'];
+  const POLAND_AMPS = [0.18, 0.15, 0.12, 0.09, 0.06, 0.04]; // tilt rad — P~10° → D~2°
+  const POLAND_SPIN = [0.12, 0.18, 0.25, 0.35, 0.50, 0.70]; // Y-axis spin rad — P~7° → D~40°
+  const POLAND_PHASE_STEP = 0.7; // seconds of phase offset between letters
+  // Each letter has slightly different perlin speed → never sync
+  const POLAND_SPEEDS = [1.365, 1.248, 1.131, 1.482, 1.326, 1.209]; // +30% (was ~0.87-1.14)
+  const POLAND_YSPEEDS = [0.819, 0.936, 0.741, 1.053, 0.897, 1.014]; // +30% (was ~0.57-0.81)
+
+  function applyIdleLevitation(time) {
+    /* ── Inner ring — ALWAYS runs (independent of idleFade) ──
+         Amplitude ramp: frames 0-181 → scale 0.1→1.0 (prevents clipping outer ring)
+         frames 181+ or idle → full amplitude
+    */
+    if (EL.innerRing && EL.innerRing._localPivot) {
+      const lp = EL.innerRing._localPivot;
+
+      let wobbleScale = 1.0;
+      if ((J.on || hoverAttract > 0.01) && _effectiveFrame < 181) {
+        wobbleScale = 0.1 + 0.9 * (_effectiveFrame / 181);
+      }
+
+      lp.rotation.x = perlin4(time, 0.88) * 0.524 * wobbleScale;
+      lp.rotation.y = perlin4(time, 0.62) * 0.524 * wobbleScale;
+      lp.rotation.z = perlin4(time, 0.74) * 0.087 * wobbleScale;
+    }
+
+    /* ── Fade multiplier: topO + POLAND settle to SVG at 95-100% scroll ── */
+    let idleFade = 1.0;
+    if ((J.on || hoverAttract > 0.01) && _effectiveFrame >= 950) {
+      if (_effectiveFrame >= 1000) { idleFade = 0; }
+      else {
+        const t = (_effectiveFrame - 950) / 50;
+        idleFade = 1 - t * t * (3 - 2 * t);
+      }
+    }
+
+    /* ── OPT: skip ~60 Math.sin() when topO + POLAND produce zeros ── */
+    if (idleFade === 0) return;
+
+    /* ── TOP "O" — slow swing around own Y axis ±60° ── */
+    if (EL.topO) {
+      const swing = perlin4(time, 0.5625) * 0.524 * idleFade;
+      EL.topO.rotation.y = swing;
+      EL.topO.rotation.x = perlin4(time, 0.42) * 0.03 * idleFade;
+    }
+
+    /* ── POLAND wave — P initiates tilt, ripple through to D ── */
+    for (let i = 0; i < POLAND_KEYS.length; i++) {
+      const el = EL[POLAND_KEYS[i]];
+      if (!el) continue;
+
+      const phaseShift = i * POLAND_PHASE_STEP;
+      const wave = perlin4(time - phaseShift, POLAND_SPEEDS[i]);
+
+      el.rotation.x = wave * POLAND_AMPS[i] * idleFade;
+      el.rotation.z = wave * POLAND_AMPS[i] * 0.3 * idleFade;
+
+      el.rotation.y = perlin4(time, POLAND_YSPEEDS[i]) * POLAND_SPIN[i] * idleFade;
+    }
+  }
+
+  /* ═══════════════════════════════════════════════════════════════
+     SMALL "1" CHOREOGRAPHY — scroll-driven reveal
+     
+     FOOT PIVOT: rotation swings from the base.
+     
+     QUADRATIC BÉZIER through 3 points — ONE smooth organic curve:
+     P0 (frame 0):    hidden behind big "1"
+     P1 (control):    bounce peak — most extended
+     P2 (frame 800):  home
+     
+     B(t) = (1-t)²·P0 + 2(1-t)t·P1 + t²·P2
+     
+     No phases, no breaks, no sharp transitions.
+     The curve naturally sweeps through the bounce peak
+     and settles at home. Completely organic.
+     
+     Runs alongside ✅ ACCEPTED sceneRing, does NOT modify it.
+     ═══════════════════════════════════════════════════════════════ */
+  
+  // Three keyframes for Bézier
+  const S1_P0 = { ry: -1.7453, dpx: 56,  dpy: 0,  dpz: -78 }; // start: hidden
+  const S1_P1 = { ry: -1.5010, dpx: 18,  dpy: 56, dpz: 80  }; // control: bounce peak
+  const S1_P2 = { ry:  0.0873, dpx: 0,   dpy: 0,  dpz: 0   }; // end: home (5°)
+
+  function applyS1(ry, dpx, dpy, dpz) {
+    const hx = EL.small1._homeX || 0;
+    const hy = EL.small1._homeY || 0;
+    const hz = EL.small1._homeZ || 0;
+    EL.small1.rotation.y = ry;
+    EL.small1.position.x = hx + dpx;
+    EL.small1.position.y = hy + dpy;
+    EL.small1.position.z = hz + dpz;
+  }
+
+  /* ── DAMPED SPRING EASING ──
+     Physically-based: overshoot → undershoot → settle
+     Visible movement throughout full timeline (no dead tail).
+     
+     decay=3, freq=2.5: lands exactly at 1.0 (cos(2.5π)=0)
+     3 direction changes, visible oscillation to t=0.95
+  */
+  function dampedSpring(t, decay, freq) {
+    if (t <= 0) return 0;
+    if (t >= 1) return 1;
+    return 1 - Math.exp(-decay * t) * Math.cos(freq * Math.PI * t);
+  }
+
+  function animateSmall1(frame) {
+    if (!EL.small1) return;
+    _s1CurrentFrame = frame;
+
+    if (frame <= 0) {
+      applyS1(S1_P0.ry, S1_P0.dpx, S1_P0.dpy, S1_P0.dpz);
+      return;
+    }
+
+    if (frame >= 1000) {
+      applyS1(S1_P2.ry, S1_P2.dpx, S1_P2.dpy, S1_P2.dpz);
+      return;
+    }
+
+    const raw = frame / 1000; // full timeline, spring handles the rest
+
+    // ── dpx/dpz: damped spring settling (same spring for both axes) ──
+    const spring = dampedSpring(raw, 3, 2.5);
+    const dpx = S1_P0.dpx + (S1_P2.dpx - S1_P0.dpx) * spring;
+
+    // ── dpy: arc up and down, peak at center ──
+    // Pure sine: visible rise AND visible descent (no easeOut frontloading)
+    const dpy = S1_P1.dpy * Math.sin(raw * Math.PI);
+
+    const dpz = S1_P0.dpz + (S1_P2.dpz - S1_P0.dpz) * spring;
+
+    // ── ry: back-facing (kreska) for 0→70%, reveals face in 70→100% ──
+    // At -100° the "1" is edge-on/back = thin line. Smoothstep = zero velocity at both ends.
+    const ryT = raw < 0.7 ? 0 : (raw - 0.7) / 0.3;
+    const rySmooth = ryT * ryT * (3 - 2 * ryT); // smoothstep
+    const ry = S1_P0.ry + (S1_P2.ry - S1_P0.ry) * rySmooth;
+
+    applyS1(ry, dpx, dpy, dpz);
+  }
+
+
+  /* ═══════════════════════════════════════════════════════════════
+     ✅ ACCEPTED — NIE RUSZAĆ BEZ WYRAŹNEGO ŻYCZENIA
+     
+     RING TIMELINE — otwieranie/zamykanie inner ringu (rotation.y)
+     
+     Frame 1 = ring starts opening (0°)
+     Mid-point = ring fully open / edge visible (180°)
+     Frame ~780 = ring closed again (360°)
+     Frame 780-1000 = settle (damped bounce)
+     
+     Badge ALWAYS visible. No fade in/out. No scale ramp.
+     This IS the animation. Everything else builds on top of this.
+     
+     ⚠️  sceneRing() steruje TYLKO ringRy (= ringPivot.rotation.y)
+         Idle drift na rotation.x / rotation.z jest NIEZALEŻNY
+         i działa w applyIdleLevitation()
+     ═══════════════════════════════════════════════════════════════ */
+  let _srLastP = NaN;
+  const _srOut = { rx: RX_CENTER, ry: 0, rz: 0, sc: 1, envI: 1.5, blm: .8,
+                   slY: 1.5, slX: 0, ringRy: 0 };
+
+  function sceneRing(p) {
+    // Memoize: pure function of p — skip recompute when idle
+    if (p === _srLastP) return _srOut;
+    _srLastP = p;
+
+    const o = _srOut;
+    o.rx = RX_CENTER; o.ry = 0; o.rz = 0; o.sc = 1;
+    o.envI = 1.5; o.blm = .8; o.slY = 1.5; o.slX = 0; o.ringRy = 0;
+
+    if (p < 0.78) {
+      /* ── RING ROTATION: 0° → 360° ── */
+      const t = p / 0.78;  // 0→1 across rotation phase
+
+      // easeInOut for satisfying acceleration → deceleration
+      const spinProgress = easeInOut(t);
+      o.ringRy = spinProgress * Math.PI * 2;
+
+      // Body: gentle breathe, star is the ring
+      o.rx = RX_CENTER + Math.sin(t * Math.PI * 3) * 0.015;
+      o.ry = Math.sin(t * Math.PI * 2) * 0.025;
+
+      // envI & bloom mapped to ring angle
+      const ringAngle = o.ringRy;
+      const ringFace = Math.cos(ringAngle);  // +1 at 0° and 360°, -1 at 180°
+
+      // Face moments (0°, 360°): frontal specular
+      const facePeak = Math.pow(Math.max(0, ringFace), 4) * 0.6;
+      // Back moment (180°): envMap pumped (backLight removed — was placebo)
+      const backPeak = Math.pow(Math.max(0, -ringFace), 3) * 0.4;
+      // Edge moments (90°, 270°): rim lights catch thin edge
+      const edgeness = 1 - Math.abs(ringFace);
+      const edgePeak = Math.pow(edgeness, 2) * 0.5;
+
+      o.envI = 1.5 + facePeak + backPeak + edgePeak;
+      o.blm = 0.8 + facePeak * 1.2 + edgePeak * 0.8 + backPeak * 0.3;
+
+      // SpotLight gentle orbit to keep reflections alive
+      o.slY = 1.5 + Math.sin(t * Math.PI * 4) * 0.5;
+      o.slX = Math.sin(t * Math.PI * 3) * 0.6;
+
+      o.sc = 1.0;
+    }
+    else {
+      /* ── SETTLE: damped spring overshoot + bounce ── */
+      const t = remap(p, 0.78, 1.0);
+      const T = t * 4;
+
+      // Ring: overshoot past 2π, bounce back — visible through p=0.98
+      o.ringRy = Math.PI * 2 + dampSpring(T, 0.5, 0.5, 3.534);
+
+      // Body: sympathetic wobble
+      o.rx = RX_CENTER + dampSpring(T, 0.02, 2.5, 5.0);
+      o.ry = dampSpring(T, 0.03, 2.0, 4.5);
+
+      // Bloom on overshoot
+      const ringBounce = dampSpring(T, 0.5, 0.5, 3.534);
+      o.envI = 1.5 + Math.abs(ringBounce) * 2;
+      o.blm = 0.8 + Math.pow(Math.max(0, Math.abs(ringBounce) / 0.25), 2) * 0.6;
+
+      o.sc = 1.0;
+    }
+    return o;
+  }
+
+  /* ── Smooth state — initialized from sceneRing(ANIM_START) ── */
+  const _initC = sceneRing(ANIM_START);
+  let sRx = _initC.rx, sRy = _initC.ry, sRz = _initC.rz, sSc = _initC.sc;
+  let sEnvI = _initC.envI, sBlm = _initC.blm, sSlY = _initC.slY, sSlX = _initC.slX, sRingRy = _initC.ringRy;
+  const SP = 0.12;
+
+  tickFn = function capitanTick(time) {
+    if (!running) return;
+
+    /* ── Type B: skip velocity on first frame after wake ──
+       When ticker sleeps (IO/visibility) but ST.onUpdate keeps moving J.p,
+       J.prev stays stale. First frame after wake: J.p - J.prev = huge delta.
+       Fix: equalize prev→current, so vk = 0 on wake frame. */
+    if (_wakeSkip) {
+      _wakeSkip = false;
+      J.prev = J.p;
+    }
+
+    const targetInfluence = mouse.near ? 1 : 0;
+    mouse.influence += (targetInfluence - mouse.influence) * 0.04;
+
+    /* ── Hover attract: mouse near → animation glides to 100% ── */
+    const hoverTarget = mouse.near ? 1 : 0;
+    hoverAttract += (hoverTarget - hoverAttract) * 0.025; // slow, smooth glide
+    if (Math.abs(hoverAttract) < 0.001) hoverAttract = 0;
+
+    // Scroll progress (0→1) from wherever scroll is
+    const scrollProgress = J.on
+      ? Math.max(0, Math.min(1, (J.p - ANIM_START) / ANIM_RANGE))
+      : 0;
+    // Effective progress: blend scroll → 100% based on hover attract
+    const effProgress = scrollProgress + (1 - scrollProgress) * hoverAttract;
+    const effP = ANIM_START + effProgress * ANIM_RANGE;
+    const effFrame = Math.round(effProgress * 1000);
+    _effectiveFrame = effFrame; // expose for applyIdleLevitation
+
+    if (logoGroup) {
+      const p = hoverAttract > 0.01 ? effP : J.p;
+      const active = (J.on && p > 0.003 && p < 0.997) || hoverAttract > 0.01;
+
+      /* ── Idle levitation: ALWAYS runs (topO, POLAND wave, innerRing drift) ── */
+      applyIdleLevitation(time);
+
+      if (active) {
+        const c = sceneRing(p);
+
+        // Lerp everything smoothly
+        sRx    = lerp(sRx,    c.rx,     SP);
+        sRy    = lerp(sRy,    c.ry,     SP);
+        sRz    = lerp(sRz,    c.rz,     SP);
+        sSc    = lerp(sSc,    c.sc,     SP);
+        sEnvI  = lerp(sEnvI,  c.envI,   SP);
+        sBlm   = lerp(sBlm,   c.blm,    0.07);
+        sSlY   = lerp(sSlY,   c.slY,    0.08);
+        sSlX   = lerp(sSlX,   c.slX,    0.08);
+        sRingRy = lerp(sRingRy, c.ringRy || 0, SP);
+
+        // Micro-shimmer: gold always alive
+        const shY = Math.sin(time * 2.3) * 0.004 + Math.sin(time * 3.7) * 0.002;
+        const shX = Math.sin(time * 1.9) * 0.003;
+
+        // Scroll velocity kick (SCROLL delta only — NOT hover-influenced p)
+        const vk = (J.p - J.prev) * 2.5;
+
+        // ── Global levitation (old animation PHI harmonics, always running) ──
+        const t1 = time * 1.3, t2 = time * 0.9;
+        const levRx = Math.sin(t2) * 0.04 + Math.sin(t2 * PHI) * 0.02;
+        const levRy = Math.sin(t1) * 0.11 + Math.sin(t1 * PHI) * 0.045 + Math.sin(t1 * PHI * PHI) * 0.02;
+        const levRz = Math.sin(time * 0.4) * 0.01;
+
+        // Mouse deltas (old animation mouse response)
+        const mRx = mouse.y * 0.08;
+        const mRy = mouse.x * 0.25;
+        const inf = mouse.influence;
+
+        // Organic layer: (RX_CENTER + levitation) ↔ (RX_CENTER + mouse)
+        // Exactly like old animation: both branches include RX_CENTER
+        const orgRx = RX_CENTER + levRx * (1 - inf) + mRx * inf;
+        const orgRy = levRy * (1 - inf) + mRy * inf;
+        const orgRz = levRz * (1 - inf);
+
+        // Choreography delta fades on hover (old: auto faded to 0 at inf=1)
+        // inf=0: full choreography + levitation
+        // inf=1: ONLY mouse + RX_CENTER (identical to old animation)
+        logoGroup.rotation.x = orgRx + (sRx - RX_CENTER) * (1 - inf) + shX;
+        logoGroup.rotation.y = orgRy + sRy * (1 - inf) + shY + vk;
+        logoGroup.rotation.z = orgRz + sRz * (1 - inf);
+
+        // Scale
+        const s = baseScaleFactor * sSc;
+        logoGroup.scale.set(s, -s, s);
+
+        // Inner ring: scroll drives outerPivot.y (opening/closing)
+        // Local wobble on _localPivot is handled by applyIdleLevitation
+        if (ringPivot) {
+          ringPivot.rotation.y = sRingRy;
+        }
+
+        // Small "1": scroll animation + idle levitation
+        animateSmall1(effFrame);
+        applyS1Idle(time);
+
+        // Material
+        if (goldMaterial) goldMaterial.envMapIntensity = sEnvI;
+
+        // Bloom
+        bloomPass.strength = sBlm;
+
+        // SpotLight
+        spotLight.position.x = sSlX;
+        spotLight.position.y = sSlY;
+
+        // Update shadow only when light actually moved (delta-based, not position-based)
+        if (Math.abs(sSlX - _lastSlX) > 0.05 || Math.abs(sSlY - _lastSlY) > 0.05) {
+          baseRenderer.shadowMap.needsUpdate = true;
+          _lastSlX = sSlX; _lastSlY = sSlY;
+        }
+
+      }
+    }
+    if (!shadowInitialized) { baseRenderer.shadowMap.needsUpdate = true; shadowInitialized = true; }
+    scene.background = null;
+    baseRenderer.render(scene, camera);
+    // Bloom: every frame during scroll/hover, otherwise co 4 klatki (idle perlin <1Hz → 15fps bloom wystarczy)
+    const scrolling = Math.abs(J.p - J.prev) > 0.0001;
+    const hovering = hoverAttract > 0.01;
+    const doBloom = scrolling || hovering || (frameCount % BLOOM_INTERVAL === 0);
+    if (doBloom) { scene.background = bloomBg; composer.render(); }
+    frameCount++;
+  };
+
+  ticking = true;
+  gsap.ticker.add(tickFn);
+
+  function pause() {
+    if (!ticking) return;
+    ticking = false; gsap.ticker.remove(tickFn);
+    hfListeners.forEach(l => l.target.removeEventListener(l.event, l.fn, l.options));
+  }
+
+  function resume() {
+    if (ticking) return; if (!running) return;
+    _wakeSkip = true; // manual resume = wake → skip velocity spike
+    ticking = true; gsap.ticker.add(tickFn);
+    hfListeners.forEach(l => l.target.addEventListener(l.event, l.fn, l.options));
+  }
+
+  function kill() {
+    pause();
+    /* Stop rAF ghost loops */
+    driftActive = false;
+    inertiaRunning = false;
+    if (smoothRaf) { cancelAnimationFrame(smoothRaf); smoothRaf = 0; }
+    if (posRaf) { cancelAnimationFrame(posRaf); posRaf = 0; }
+    /* GSAP instances cleanup */
+    gsapInstances.forEach(inst => { try { inst.revert?.(); } catch(e){} try { inst.kill?.(); } catch(e){} }); gsapInstances.length = 0;
+    try { badgeST.kill(); } catch (e) { console.error(e); } // ScrollTrigger cleanup
+    cleanups.forEach(fn => { try { fn(); } catch (e) { console.error(e); } });
+    if (pmRaf) { cancelAnimationFrame(pmRaf); pmRaf = 0; }
+    observers.forEach(o => { try { o?.disconnect?.(); } catch (e) { console.error(e); } });
+    for (const g of allGeoRefs) { try { g.dispose(); } catch(e) {} }
+    if (goldMaterial) { try { goldMaterial.dispose(); } catch (e) { console.error(e); } }
+    try { baseRenderer.dispose(); } catch (e) { console.error(e); }
+    try { bloomRenderer.dispose(); } catch (e) { console.error(e); }
+    try { composer.dispose(); } catch (e) { console.error(e); }
+    if (scene.environment) { try { scene.environment.dispose(); } catch (e) { console.error(e); } }
+    try { baseRenderer.domElement.remove(); } catch (e) { console.error(e); }
+    try { bloomRenderer.domElement.remove(); } catch (e) { console.error(e); }
+  }
+
+  return { pause, resume, kill };
+
+    }
+
+    // === factoryInit — KOD IDENTYCZNY Z TSX (poza sync capitan boot) ===
+function factoryInit(container) {
+  /* ── Subsystem init ── */
+  var carouselInst = onasCarouselInit(container);
+  if (!carouselInst) carouselInst = { pause:function(){}, resume:function(){}, kill:function(){} };
+
+  var capitanEl = container.querySelector('#onas-capitan');
+  var capitanInst = null;
+
+/* ── IO Gating: Ścieżka 1 (Typ B) ── */
+  var _paused = false;
+  var _killed = false;
+  var _io = null;
+  var _ioDebounce = null;
+
+  function _getRM() {
+    var vh = (window.visualViewport ? window.visualViewport.height : window.innerHeight) || 800;
+    return Math.min(1200, Math.max(200, Math.round(vh * 1.0))) + 'px';
+  }
+
+  function _pause() {
+    if (_paused || _killed) return;
+    _paused = true;
+    if (carouselInst) carouselInst.pause();
+    if (capitanInst) capitanInst.pause();
+  }
+
+  function _resume() {
+    if (!_paused || _killed) return;
+    _paused = false;
+    if (carouselInst) carouselInst.resume();
+    if (capitanInst) capitanInst.resume();
+  }
+
+  function _kill() {
+    _killed = true;
+    _paused = true;
+    if (_io) { _io.disconnect(); _io = null; }
+    clearTimeout(_ioDebounce);
+    if (carouselInst) { try { carouselInst.kill(); } catch(e) { console.error(e); } }
+    if (capitanInst) { try { capitanInst.kill(); } catch(e) { console.error(e); } }
+    carouselInst = null;
+    capitanInst = null;
+  }
+
+  function _ioCallback(entries) {
+    if (_killed) return;
+    var entry = entries[0];
+    if (!entry) return;
+    if (entry.isIntersecting) { _resume(); }
+    else { _pause(); }
+  }
+
+  function _recreateIO() {
+    clearTimeout(_ioDebounce);
+    _ioDebounce = setTimeout(function() {
+      if (_killed) return;
+      if (_io) _io.disconnect();
+      var rm = _getRM();
+      _io = new IntersectionObserver(_ioCallback, { rootMargin: rm + ' 0px ' + rm + ' 0px' });
+      _io.observe(container);
+    }, 50);
+  }
+
+  function _onVVResize() { _recreateIO(); }
+
+  _recreateIO();
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', _onVVResize, { passive: true });
+  }
+
+
+  /* ── Boot capitan sync (PREVIEW: Three.js juz gotowy z module script) ── */
+  if (capitanEl) {
+    try {
+      capitanInst = onasCapitanInit_preview(capitanEl) || { pause:function(){}, resume:function(){}, kill:function(){} };
+      if (_paused) capitanInst.pause();
+    } catch(e) {
+      console.warn('onas-capitan: boot failed', e);
+      capitanInst = { pause:function(){}, resume:function(){}, kill:function(){} };
+    }
+  }
+
+
+  /* ── Graceful degradation: onerror on press logos ── */
+  var logos = container.querySelectorAll('.onas-press__logo');
+  for (var li = 0; li < logos.length; li++) {
+    logos[li].onerror = function() { this.classList.add('load-failed'); this.onerror = null; };
+  }
+
+  return { pause: _pause, resume: _resume, kill: _kill };
+}
+
+    // === Boot ===
+    function _boot() {
+      var container = document.getElementById('onas-section');
+      if (!container) { console.error('[PREVIEW] Missing #onas-section'); return; }
+      window.onasPreview = factoryInit(container);
+    }
+
+    if (window._threeReady) {
+      document.addEventListener('DOMContentLoaded', _boot);
+      if (document.readyState !== 'loading') _boot();
+    } else {
+      window.addEventListener('three-ready', function() {
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', _boot);
+        } else {
+          _boot();
+        }
+      }, { once: true });
+    }
+  </script>
+</body>
+</html>

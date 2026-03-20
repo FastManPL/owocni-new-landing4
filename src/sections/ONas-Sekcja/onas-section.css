@@ -1,0 +1,934 @@
+/* CSS BLOCK 1 — #onas-section #onas-capitan (P2A: no changes) */
+  #onas-section #onas-capitan {
+    --banner-color: #171717;
+    --bg-color: #f7f6f4;
+    --banner-width: clamp(62.5rem, 88vw, 110rem);
+    --banner-radius: 1.5rem;
+    --banner-curve-height: clamp(30px, calc(8.3vw - 2.66px), 72px);
+    --vignette-top: linear-gradient(180deg,
+      rgba(0,0,0,0.55) 0%,
+      rgba(0,0,0,0.35) 12%,
+      rgba(0,0,0,0.18) 25%,
+      rgba(0,0,0,0.07) 35%,
+      transparent 44%);
+    width: calc(100% - 2rem);
+    max-width: var(--banner-width);
+    margin-left: auto;
+    margin-right: auto;
+    position: relative;
+    z-index: 10; /* FIX P2: Capitan NAD karuzelą */
+    background: var(--banner-color);
+    border-radius: var(--banner-radius) var(--banner-radius) 0 0;
+  }
+
+  /* ── Top vignette: black → transparent over top ~42% ── */
+  #onas-section #onas-capitan::before {
+    content: '';
+    position: absolute;
+    top: 0; right: 0; bottom: 0; left: 0;
+    z-index: 0;
+    border-radius: var(--banner-radius) var(--banner-radius) 0 0;
+    pointer-events: none;
+    background: var(--vignette-top);
+  }
+
+  #onas-section #onas-capitan .banner__curve {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: calc(-1 * var(--banner-curve-height));
+    height: calc(var(--banner-curve-height) + 2px);
+    background:
+      linear-gradient(180deg,
+        var(--banner-color) 0%,
+        var(--banner-color) 25%,
+        #111 55%,
+        #0a0a0a 75%,
+        #050505 90%,
+        #000 100%);
+    border-radius: 0 0 50% 50% / 0 0 100% 100%;
+    z-index: 1;
+    transition: background 0.8s cubic-bezier(0.25, 0.1, 0.25, 1);
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding-top: calc(var(--banner-curve-height) * 0.28);
+  }
+
+  #onas-section #onas-capitan.fog-visible .banner__curve {
+    background:
+      radial-gradient(ellipse 55% 90% at 50% 0%, rgba(127,116,107,0.18) 0%, rgba(66,52,44,0.10) 30%, rgba(66,52,44,0.04) 55%, transparent 80%),
+      radial-gradient(ellipse 25% 80% at 20% 0%, rgba(127,116,107,0.08) 0%, transparent 60%),
+      radial-gradient(ellipse 20% 70% at 80% 0%, rgba(66,52,44,0.07) 0%, transparent 55%),
+      linear-gradient(180deg,
+        var(--banner-color) 0%,
+        var(--banner-color) 25%,
+        #111 55%,
+        #0a0a0a 75%,
+        #050505 90%,
+        #000 100%);
+  }
+
+  #onas-section #onas-capitan .curve-btn {
+    background: none;
+    border: none;
+    color: #7f746b;
+    font-family: 'Lexend', sans-serif;
+    font-weight: 400;
+    letter-spacing: 0.01em;
+    cursor: pointer;
+    white-space: nowrap;
+    padding: 0;
+    font-size: clamp(0.55rem, calc(2.2vw - 0.3px), 1.25rem);
+    opacity: 0.7;
+    transition: opacity 0.3s ease;
+    margin: 0;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6em;
+  }
+
+  #onas-section #onas-capitan .curve-btn:hover { opacity: 1; }
+
+  #onas-section #onas-capitan .curve-btn::after {
+    content: '';
+    display: inline-block;
+    width: 0.55em;
+    height: 0.55em;
+    border-right: 1.5px solid #7f746b;
+    border-bottom: 1.5px solid #7f746b;
+    transform: rotate(45deg);
+    margin-top: -0.15em;
+    transition: transform 0.3s ease;
+  }
+
+  #onas-section #onas-capitan .curve-btn:hover::after {
+    transform: rotate(45deg) translate(0.1em, 0.1em);
+  }
+
+  #onas-section #onas-capitan .curve-btn.is-active::after {
+    transform: rotate(-135deg);
+    margin-top: 0.15em;
+  }
+
+  #onas-section #onas-capitan .curve-btn.is-active {
+    opacity: 0.5;
+  }
+
+  #onas-section #onas-capitan .banner__mesh-top {
+    position: absolute;
+    top: 0; right: 0; bottom: 0; left: 0;
+    z-index: 0;
+    border-radius: var(--banner-radius) var(--banner-radius) 0 0;
+    pointer-events: none;
+    background:
+      linear-gradient(180deg, rgba(80,80,80,0.11) 0%, rgba(80,80,80,0.06) 4%, rgba(80,80,80,0.02) 9%, transparent 16%),
+      linear-gradient(180deg, rgba(66,52,44,0.035) 0%, rgba(66,52,44,0.015) 5%, transparent 12%),
+      radial-gradient(ellipse 70% 12% at 35% 0%, rgba(80,80,80,0.07) 0%, rgba(80,80,80,0.025) 50%, transparent 80%),
+      radial-gradient(ellipse 35% 10% at 78% 1%, rgba(80,80,80,0.05) 0%, transparent 70%),
+      radial-gradient(ellipse 20% 14% at 8% 2%, rgba(127,116,107,0.04) 0%, transparent 65%);
+  }
+
+  #onas-section #onas-capitan .banner__mesh-fog {
+    position: absolute;
+    top: 0; right: 0; bottom: 0; left: 0;
+    z-index: 0;
+    border-radius: var(--banner-radius) var(--banner-radius) 0 0;
+    pointer-events: none;
+    opacity: 0;
+    will-change: opacity;
+    transition: opacity 0.8s cubic-bezier(0.25, 0.1, 0.25, 1);
+    background:
+      /* OPTIMIZED: 4 gradients (was 12) — avg ΔE 0.78 (invisible) */
+      radial-gradient(ellipse 62% 44% at 50% 96%,
+        rgba(115,105,97,0.40) 2%, rgba(108,98,90,0.19) 28%,
+        rgba(98,88,80,0.12) 62%, rgba(85,75,68,0.03) 94%,
+        transparent 100%),
+      radial-gradient(ellipse 200% 100% at 74% 133%,
+        rgba(82,72,64,0.34) 32%, rgba(76,66,58,0.23) 40%,
+        rgba(70,60,54,0.07) 57%, rgba(60,52,46,0.05) 82%,
+        rgba(0,0,0,0.02) 96%),
+      radial-gradient(ellipse 86% 60% at 49% 62%,
+        rgba(35,32,30,0.02) 10%, rgba(48,42,38,0.13) 34%,
+        rgba(60,52,46,0.01) 58%, rgba(66,52,44,0.02) 81%,
+        rgba(0,0,0,0.02) 100%),
+      radial-gradient(ellipse 54% 91% at 10% 101%,
+        rgba(120,110,100,0.18) 0%, rgba(110,100,92,0.04) 40%,
+        rgba(95,85,78,0.02) 84%, transparent 100%);
+  }
+
+  #onas-section #onas-capitan.fog-visible .banner__mesh-fog {
+    opacity: 1;
+    animation: onas-capitan-fog-breathe 6s ease-in-out infinite;
+  }
+
+  @keyframes onas-capitan-fog-breathe {
+    0%, 100% { opacity: 0.3; }
+    50%      { opacity: 1; }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #onas-section #onas-capitan.fog-visible .banner__mesh-fog {
+      animation: none;
+      opacity: 1;
+    }
+  }
+
+  #onas-section #onas-capitan .banner__content {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    aspect-ratio: 1600 / 500;
+    display: flex;
+    align-items: stretch;
+    padding: clamp(1.33rem, calc(3.6vw - 1.76px), 3.85rem)
+             clamp(1.33rem, calc(3.6vw - 1.76px), 3.85rem)
+             0
+             clamp(1.33rem, calc(3.6vw - 1.76px), 3.85rem);
+    gap: clamp(1.33rem, calc(3.6vw - 1.76px), 3.85rem);
+  }
+
+  #onas-section #onas-capitan .banner__left {
+    flex: 0 0 35%;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+  }
+
+  #onas-section #onas-capitan .banner__logo {
+    width: 100%;
+    height: auto;
+    max-height: 100%;
+    display: block;
+  }
+
+  #onas-section #onas-capitan .banner__divider {
+    width: 1px;
+    flex-shrink: 0;
+    background: rgba(255,255,255,0.12);
+    margin-bottom: 15%;
+  }
+
+  #onas-section #onas-capitan .banner__right {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    gap: clamp(0.48rem, calc(1.29vw - 0.63px), 1.375rem);
+  }
+
+  #onas-section #onas-capitan .banner__heading {
+    font-weight: 500;
+    line-height: 1.2;
+    letter-spacing: -0.01em;
+    color: #cec2b0;
+    font-size: clamp(1.33rem, calc(3.6vw - 1.76px), 3.85rem);
+  }
+
+  #onas-section #onas-capitan .banner__body {
+    font-weight: 300;
+    line-height: 1.55;
+    color: #cec2b0;
+    font-size: clamp(1rem, calc(1.70vw - 0.83px), 1.815rem);
+  }
+
+  #onas-section #onas-capitan .banner__expand {
+    position: relative;
+    z-index: 1;
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.6s cubic-bezier(0.25, 0.1, 0.25, 1),
+                padding 0.6s cubic-bezier(0.25, 0.1, 0.25, 1);
+    padding: 0 clamp(1.33rem, calc(3.6vw - 1.76px), 3.85rem);
+  }
+
+  #onas-section #onas-capitan.is-expanded .banner__expand {
+    max-height: 600px;
+    padding: clamp(1.33rem, calc(3.6vw - 1.76px), 3.85rem);
+    padding-top: clamp(1.33rem, calc(3.6vw - 1.76px), 3.85rem);
+  }
+
+  #onas-section #onas-capitan .banner__expand-text {
+    font-weight: 300;
+    line-height: 1.55;
+    color: rgba(255,255,255,0.6);
+    font-size: clamp(1rem, calc(1.70vw - 0.83px), 1.815rem);
+  }
+
+  #onas-section #onas-capitan .banner__expand-text p {
+    margin-bottom: clamp(0.48rem, calc(1.29vw - 0.63px), 1.375rem);
+  }
+
+  #onas-section #onas-capitan .banner__expand-text p:last-child {
+    margin-bottom: 0;
+  }
+
+  #onas-section #onas-capitan .banner__link.is-active {
+    color: rgba(255,255,255,0.5);
+  }
+
+  /* ── Badge reveal: animated @property for radial mask ── */
+  @property --onas-badge-reveal {
+    syntax: '<percentage>';
+    initial-value: 0%;
+    inherits: false;
+  }
+
+  #onas-section #onas-capitan .banner__badge {
+    position: absolute;
+    z-index: 2;
+    width: 25.9%;
+    aspect-ratio: 1;
+    left: 11.5%;
+    top: 0;
+    pointer-events: auto;
+
+    /* ── Initial hidden: mask hides everything ──
+       IMPORTANT: Badge reveal triggers via IntersectionObserver
+       when #onas-section #onas-capitan crosses 30% visibility threshold.
+       Class .badge-revealed is added once (one-shot) by JS.
+       See: badgeRevealIO in capitan module init(). ── */
+    opacity: 0;
+    transform: translate(-50%, -50%) rotate(0deg) scale(0.7);
+    --onas-badge-reveal: 0%;
+    -webkit-mask-image: radial-gradient(circle at 50% 50%,
+      black 0%,
+      black var(--onas-badge-reveal),
+      transparent calc(var(--onas-badge-reveal) + 10%),
+      transparent 100%
+    );
+    mask-image: radial-gradient(circle at 50% 50%,
+      black 0%,
+      black var(--onas-badge-reveal),
+      transparent calc(var(--onas-badge-reveal) + 10%),
+      transparent 100%
+    );
+  }
+  @supports not (aspect-ratio: 1) {
+    /* Badge square fallback handled by JS in positionBadge() —
+       padding-bottom trick breaks canvas children (height: 0) */
+  }
+
+  #onas-section #onas-capitan.badge-revealed .banner__badge {
+    animation: onas-capitan-badge-reveal 1.43s cubic-bezier(0.25, 1, 0.5, 1) 0.1s forwards;
+  }
+
+  @keyframes onas-capitan-badge-reveal {
+    0%   { opacity: 0; --onas-badge-reveal: 0%; transform: translate(-50%, -50%) rotate(0deg) scale(0.7); }
+    8%   { opacity: 1; }
+    100% { opacity: 1; --onas-badge-reveal: 72%; transform: translate(-50%, -50%) rotate(0deg) scale(1); }
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    #onas-section #onas-capitan.badge-revealed .banner__badge {
+      animation: onas-capitan-badge-reveal-reduced 0.6s ease forwards;
+    }
+    @keyframes onas-capitan-badge-reveal-reduced {
+      from { opacity: 0; --onas-badge-reveal: 72%; transform: translate(-50%, -50%) rotate(0deg); }
+      to   { opacity: 1; --onas-badge-reveal: 72%; transform: translate(-50%, -50%) rotate(0deg); }
+    }
+  }
+
+  #onas-section #onas-capitan .banner__badge canvas {
+    display: block;
+    position: absolute;
+    top: 0; left: 0;
+    width: 100% !important;
+    height: 100% !important;
+  }
+
+  #onas-section #onas-capitan .banner__badge #onas-capitan-canvas-bloom {
+    mix-blend-mode: screen;
+    pointer-events: none;
+    filter: blur(3px);
+    -webkit-filter: blur(3px);
+    -webkit-mask-image: radial-gradient(circle at center, black 0%, black 20%, rgba(0,0,0,0.6) 30%, rgba(0,0,0,0.2) 40%, transparent 50%);
+    mask-image: radial-gradient(circle at center, black 0%, black 20%, rgba(0,0,0,0.6) 30%, rgba(0,0,0,0.2) 40%, transparent 50%);
+  }
+
+  @media (max-width: 600px) {
+    #onas-section .onas-headline .br-headline { display: none; }
+    #onas-section #onas-capitan { aspect-ratio: auto; min-height: 75vw; }
+    #onas-section #onas-capitan .banner__content { flex-direction: column; padding: 5vw 5vw 4vw; gap: 2.5vw; aspect-ratio: auto; }
+    #onas-section #onas-capitan .banner__left { flex: 0 0 auto; margin-bottom: 1vw; }
+    #onas-section #onas-capitan .banner__divider { width: 100%; height: 1px; margin-bottom: 0; }
+    #onas-section #onas-capitan .banner__right { flex: 1; }
+    #onas-section #onas-capitan .banner__logo { max-width: 42vw; }
+    #onas-section #onas-capitan .banner__heading { font-size: 5vw; margin-top: 0; }
+    #onas-section #onas-capitan .banner__body,
+    #onas-section #onas-capitan .banner__expand-text { font-size: 3vw; }
+    #onas-section #onas-capitan .banner__badge { width: 69.3%; left: 78%; top: calc(21.5% - 10px); }
+  }
+
+  @media (min-width: 601px) and (max-width: 720px) {
+    #onas-section #onas-capitan .banner__content { aspect-ratio: auto; padding-bottom: clamp(2rem, 6vw, 3.5rem); }
+  }
+
+/* CSS BLOCK 2 — #onas-section (P2A: +isolation:isolate, +graceful degradation) */
+#onas-section {
+    isolation: isolate;
+    --perspective: 65rem;
+    --card-width: 17.5rem;
+    --radius-mult: 1.13;
+    --tilt: 26deg;
+    --zoom: 2;
+    --card-xtilt: 0deg;
+    --camera-dist: 0px;
+    --z-sign: -1;
+    /* ── join-gap: pure CSS, zero CLS (no JS write needed) ── */
+    --join-gap: max(-236px, calc(112px - 38vh));
+    --pos-y-user: -500px;
+    --pos-y-auto: 0px;
+    --press-y: 0px;
+    --logo-gap: 0px;
+}
+/* ── join-gap: desktop overrides ── */
+@media (min-width: 656px) {
+    #onas-section { --join-gap: clamp(-236px, calc(19.4vw - 363px), 100px); }
+}
+@media (min-width: 1520px) {
+    #onas-section { --join-gap: clamp(-236px, calc(21.8vw - 400px), 100px); }
+}
+
+/* ── Anti-flash: hide until JS calculates positions (J7 pattern) ── */
+/* visibility:hidden reserves space in layout = zero CLS.
+   JS reveals after first updateGalleryResponsive() run. */
+#onas-section #onas-scene,
+#onas-section .onas-press,
+#onas-section .onas-text-block {
+    visibility: hidden;
+}
+/* ── Text block: single transform for sep + headline + subtitle ── */
+#onas-section .onas-text-block {
+    transform: translateY(var(--press-y));
+}
+
+#onas-section .carousel-section {
+    height: 100vh;
+    height: 100svh;
+    position: relative;
+    z-index: 1;
+    overflow: hidden;
+    cursor: grab;
+}
+
+#onas-section .carousel-section:active { cursor: grabbing; }
+
+#onas-section .scene,
+#onas-section .a3d { display: grid; }
+#onas-section .scene {
+    overflow: hidden;
+    perspective: var(--perspective);
+    -webkit-mask: linear-gradient(90deg, #0000, red var(--mask-start, 15%) var(--mask-end, 85%), #0000);
+    mask: linear-gradient(90deg, #0000, red var(--mask-start, 15%) var(--mask-end, 85%), #0000);
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 1;
+    touch-action: pan-y;
+}
+#onas-section .a3d {
+    place-self: center;
+    transform-style: preserve-3d;
+    transform: translateZ(var(--camera-dist)) translateY(calc(var(--pos-y-user) + var(--pos-y-auto))) scale(var(--zoom)) rotateX(var(--tilt)) rotateY(0deg);
+    will-change: transform;
+}
+
+#onas-section .card {
+    --w: var(--card-width);
+    --ba: calc(1turn / var(--n));
+    grid-area: 1 / 1; width: var(--w); aspect-ratio: 258 / 344;
+    border-radius: var(--card-radius, 1.5rem); backface-visibility: hidden;
+    transform-origin: center top; cursor: pointer;
+    position: relative; overflow: hidden;
+    transform: rotateY(calc(var(--i) * var(--ba))) rotateX(var(--card-xtilt));
+    box-shadow: 0 0 2em rgba(0,0,0,0.4);
+    will-change: transform; contain: layout style paint;
+    transition: none;
+}
+@supports not (aspect-ratio: 1 / 1) {
+    #onas-section .card { height: calc(var(--w) * 1.3333); }
+}
+#onas-section .card::after {
+    content: '';
+    position: absolute;
+    top: 0; right: 0; bottom: 0; left: 0;
+    background: rgba(0,0,0,0.3);
+    border-radius: inherit;
+    pointer-events: none;
+    opacity: var(--overlay-opacity, 1);
+    z-index: 10;
+}
+#onas-section .card.glow-active {
+    transition: box-shadow 0.15s ease-out;
+}
+#onas-section .is-dragging .card,
+#onas-section .is-dragging .card.glow-active {
+    transition: none !important;
+}
+#onas-section .card {
+    display: grid;
+}
+#onas-section .card__wrap,
+#onas-section .card > .card__layer {
+    grid-area: 1 / 1 / 2 / 2;
+    width: 100%; height: 100%;
+    border-radius: inherit;
+    transform-origin: 50% 50%;
+}
+#onas-section .card__wrap {
+    overflow: hidden;
+}
+#onas-section .card__layer {
+    width: 100%; height: 100%;
+    border-radius: inherit;
+    transform-origin: 50% 50%;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+#onas-section .card__layer svg { width: 100%; height: 100%; display: block; }
+#onas-section .card__layer img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* VIDEO CARD */
+#onas-section .card--video > video {
+    position: absolute; top: 0; right: 0; bottom: 0; left: 0;
+    width: 100%; height: 100%;
+    object-fit: cover; display: block;
+    border-radius: inherit;
+    opacity: 0; /* hidden until loaded, poster bg visible underneath */
+    transition: opacity 0.4s ease;
+    pointer-events: none;
+    z-index: 1;
+}
+#onas-section .card--video > video.is-playing {
+    opacity: 1; /* video loaded + playing → show over poster */
+}
+#onas-section .card--video .play-btn {
+    position: absolute;
+    bottom: 6%; right: 6%;
+    width: 22%; height: auto; aspect-ratio: 1;
+    z-index: 15;
+    pointer-events: none;
+    /* Slide-in: start offset left + hidden, reveal triggers entrance */
+    opacity: 0;
+    transform: translateX(-15px);
+    transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.5s ease;
+}
+#onas-section .card--video.reveal-done .play-btn {
+    opacity: 1;
+    transform: translateX(0);
+}
+#onas-section .card--video .play-btn svg {
+    width: 100% !important; height: 100% !important;
+}
+/* ── VIDEO POPUP (centered, 80% viewport) ── */
+#onas-section #onas-video-popup {
+    position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 100000;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(0,0,0,0);
+    visibility: hidden;
+    pointer-events: none;
+    transition: background 0.4s ease, visibility 0.4s ease;
+}
+#onas-section #onas-video-popup.is-open {
+    visibility: visible;
+    pointer-events: auto;
+    background: rgba(0,0,0,0.85);
+}
+#onas-section #onas-video-popup .popup-panel {
+    position: relative;
+    width: min(96vw, 1150px);
+    max-height: 90vh;
+    max-height: 90svh;
+    background: linear-gradient(180deg, #1a1816 0%, #141210 100%);
+    border-radius: 1.2rem;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 20px 80px rgba(0,0,0,0.6);
+    transform: translateY(40px) scale(0.96);
+    opacity: 0;
+    transition: transform 0.45s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.35s ease;
+}
+#onas-section #onas-video-popup.is-open .popup-panel {
+    transform: translateY(0) scale(1);
+    opacity: 1;
+}
+/* Close X — yellow circle, right side */
+#onas-section #onas-video-popup .popup-close {
+    position: absolute; top: 1rem; right: 1rem;
+    width: 48px; height: 48px;
+    background: #f5c518;
+    border: none;
+    border-radius: 50%; cursor: pointer;
+    color: #1a1816; font-size: 24px; font-weight: 700;
+    line-height: 48px; text-align: center;
+    z-index: 5;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.4);
+}
+#onas-section #onas-video-popup .popup-close:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 24px rgba(0,0,0,0.5);
+}
+/* Video — top part */
+#onas-section #onas-video-popup .popup-video-wrap {
+    position: relative;
+    width: 100%;
+    padding-top: 56.25%; /* 9/16 fallback for Safari < 15 */
+    aspect-ratio: 16 / 9;
+    background: #000;
+    flex-shrink: 0;
+}
+@supports (aspect-ratio: 16 / 9) {
+    #onas-section #onas-video-popup .popup-video-wrap { padding-top: 0; }
+}
+#onas-section #onas-video-popup video {
+    width: 100%; height: 100%;
+    object-fit: contain;
+    display: block;
+}
+@supports not (aspect-ratio: 16 / 9) {
+    #onas-section #onas-video-popup video { position: absolute; top: 0; left: 0; }
+}
+/* Content — bottom part */
+#onas-section #onas-video-popup .popup-content {
+    padding: clamp(1.2rem, 3.5vw, 2.2rem) clamp(1.5rem, 4vw, 2.5rem);
+    display: flex;
+    flex-direction: column;
+    gap: 1.2rem;
+    overflow-y: auto;
+}
+#onas-section #onas-video-popup .popup-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font: 600 11px/1 'Lexend', sans-serif;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(206,194,176,0.6);
+}
+#onas-section #onas-video-popup .popup-tag::before {
+    content: '';
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: #c53c0a;
+}
+#onas-section #onas-video-popup .popup-title {
+    font: 300 clamp(1.1rem, 2.5vw, 1.5rem)/1.3 'Lexend', sans-serif;
+    color: #f0ece6;
+    margin: 0;
+}
+#onas-section #onas-video-popup .popup-title b { font-weight: 600; }
+/* CTA button */
+#onas-section #onas-video-popup .popup-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 1rem 2rem;
+    border-radius: 999px;
+    background: #ffc600;
+    color: #1a1816;
+    font: 600 clamp(0.95rem, 1.8vw, 1.15rem)/1 'Lexend', sans-serif;
+    text-decoration: none;
+    cursor: pointer;
+    border: none;
+    transition: transform 0.2s, box-shadow 0.2s;
+    box-shadow: 0 4px 20px rgba(255,198,0,0.3);
+}
+#onas-section #onas-video-popup .popup-cta:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 30px rgba(255,198,0,0.45);
+}
+/* Close text button — same size as CTA */
+#onas-section #onas-video-popup .popup-close-text {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1rem 2rem;
+    border-radius: 999px;
+    background: transparent;
+    border: 1px solid rgba(206,194,176,0.2);
+    color: rgba(206,194,176,0.5);
+    font: 400 clamp(0.95rem, 1.8vw, 1.15rem)/1 'Lexend', sans-serif;
+    cursor: pointer;
+    transition: border-color 0.2s, color 0.2s;
+}
+#onas-section #onas-video-popup .popup-close-text:hover {
+    border-color: rgba(206,194,176,0.4);
+    color: rgba(206,194,176,0.8);
+}
+#onas-section #onas-video-popup .popup-buttons {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 2.5rem;
+    flex-wrap: wrap;
+}
+/* Mobile */
+@media (max-width: 600px) {
+    #onas-section #onas-video-popup .popup-panel {
+        width: 94vw;
+        max-height: 92vh;
+        border-radius: 1rem;
+    }
+}
+
+#onas-section .onas-press {
+    /* === Identical outer box as #onas-section #onas-capitan === */
+    width: calc(100% - 2rem);
+    max-width: clamp(62.5rem, 88vw, 110rem);
+    margin-left: auto;
+    margin-right: auto;
+    box-sizing: border-box;
+    /* === Internal padding matches banner__content left/right === */
+    padding: clamp(1rem, 2vw, 2rem) clamp(1.33rem, calc(3.6vw - 1.76px), 3.85rem);
+    /* === Desktop: side by side === */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: clamp(1.5rem, 3vw, 3.5rem);
+    /* === Position via CSS vars (automat + debug offset) === */
+    transform: translateY(var(--press-y));
+    margin-bottom: var(--logo-gap);
+}
+#onas-section .onas-press__text {
+    flex: none;
+    font-size: clamp(0.7rem, 1.15vw, 1.1rem);
+    line-height: 1.45;
+    color: rgba(80,70,60,0.7);
+    font-weight: 300;
+}
+#onas-section .onas-press__text p { margin: 0; }
+#onas-section .onas-press__text .br-desktop { display: inline; }
+#onas-section .onas-headline .br-desktop { display: inline; }
+#onas-section .onas-subtitle .br-desktop { display: inline; }
+#onas-section .onas-press__text .br-mobile { display: none; }
+#onas-section .onas-press__logos {
+    flex: none;
+    display: flex;
+    align-items: center;
+    gap: clamp(1rem, 3vw, 3rem);
+}
+#onas-section .onas-press__logo {
+    height: auto;
+    width: auto;
+    max-height: clamp(2.2rem, 4.5vw, 5.5rem);
+    opacity: 0.55;
+}
+@media (max-width: 1200px) {
+    #onas-section .onas-press {
+        flex-direction: column;
+        align-items: center;
+        gap: clamp(0.5rem, 1vw, 1rem);
+    }
+    #onas-section .onas-press__text { text-align: center; }
+    #onas-section .onas-press__text .br-desktop { display: none; }
+    #onas-section .onas-press__text .br-mobile { display: inline; }
+    #onas-section .onas-press__logos { justify-content: center; flex-wrap: wrap; }
+}
+@media (max-width: 600px) {
+    #onas-section .onas-headline .br-headline { display: none; }
+    #onas-section .onas-headline .br-desktop { display: none; }
+    #onas-section .onas-subtitle .br-desktop { display: none; }
+    #onas-section .onas-press {
+        padding-left: 5vw;
+        padding-right: 5vw;
+    }
+    #onas-section .onas-press__logo { max-height: none; max-width: 40%; }
+}
+
+#onas-section .onas-headline {
+    font-size: clamp(1.6rem, 4vw, 4.6rem);
+    font-weight: 300;
+    line-height: 1.15;
+    text-align: center;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+    max-width: 54ch;
+}
+@media (max-width: 370px) {
+    #onas-section .onas-headline { line-height: 1.35; }
+}
+@media (min-width: 371px) and (max-width: 600px) {
+    #onas-section .onas-headline { line-height: 1.3; }
+}
+#onas-section .onas-headline__sep {
+    display: block;
+    width: 100%;
+    max-width: 48rem;
+    height: 2px;
+    margin: 0.8em auto 0;
+    background: linear-gradient(to bottom,
+        rgba(58, 46, 30, 0.15) 0%, rgba(58, 46, 30, 0.15) 50%,
+        rgba(255, 255, 255, 0.6) 50%, rgba(255, 255, 255, 0.6) 100%
+    );
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 20%, #000 80%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 20%, #000 80%, transparent);
+    -webkit-text-fill-color: initial;
+    -webkit-background-clip: initial;
+    background-clip: initial;
+    transform: translateZ(0);
+    pointer-events: none;
+}
+/* ── TOP SEPARATOR WITH BADGE ── */
+@property --onas-border-angle {
+    syntax: '<angle>';
+    initial-value: 0deg;
+    inherits: false;
+}
+#onas-section .onas-sep-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    max-width: 48rem;
+    margin: 0 auto 2.2em;
+}
+#onas-section .onas-sep-wrap .onas-headline__sep {
+    position: absolute;
+    top: 50%;
+    left: 0; right: 0;
+    margin: 0;
+    transform: translateY(-50%);
+}
+/* Lens pill — scoped to onas */
+#onas-section .lens-pill-wrapper {
+    position: relative;
+    display: inline-flex;
+    z-index: 3;
+}
+#onas-section .lens-pill {
+    position: relative;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 4px 14px 4px 6px;
+    border-radius: 999px;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.9) 0%, #f7f6f4 100%);
+    border: none;
+    text-decoration: none;
+    cursor: default;
+}
+#onas-section .lens-pill-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 16px;
+    padding: 0 8px;
+    border-radius: 999px;
+    color: #fff;
+    font-family: 'Lexend', sans-serif;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .06em;
+    line-height: 1;
+    background: linear-gradient(160deg, rgba(255,150,80,1) 0%, rgba(230,80,20,1) 50%, rgba(180,50,5,1) 100%);
+    text-shadow: 0 -1px 0 rgba(0,0,0,0.4), 0 1px 0 rgba(255,255,255,0.2);
+}
+#onas-section .lens-pill-txt {
+    display: inline-flex;
+    align-items: center;
+    height: 16px;
+    font-family: 'Lexend', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    line-height: 1;
+    white-space: nowrap;
+    color: transparent;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.35) 0%, rgba(0,0,0,0.85) 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+#onas-section .lens-pill-conic {
+    position: absolute;
+    top: -1px; right: -1px; bottom: -1px; left: -1px;
+    border-radius: 999px;
+    padding: 1px;
+    background: conic-gradient(from var(--onas-border-angle, 0deg), transparent 0%, transparent 70%, rgba(254,199,8,0.5) 85%, rgba(255,122,24,0.5) 95%, transparent 100%);
+    -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    -webkit-mask-composite: xor;
+    mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+    mask-composite: exclude;
+    animation: onas-border-rotate 5.6s linear infinite;
+    z-index: 1;
+    pointer-events: none;
+}
+#onas-section .lens-pill-glow {
+    position: absolute;
+    top: -1px; right: -1px; bottom: -1px; left: -1px;
+    border-radius: 999px;
+    background: conic-gradient(from var(--onas-border-angle, 0deg), transparent 0%, transparent 70%, rgba(254,199,8,0.5) 85%, rgba(255,122,24,0.5) 95%, transparent 100%);
+    filter: blur(15px);
+    opacity: 0.6;
+    animation: onas-border-rotate 5.6s linear infinite;
+    z-index: 0;
+    pointer-events: none;
+}
+@keyframes onas-border-rotate {
+    0%   { --onas-border-angle: 0deg; }
+    100% { --onas-border-angle: 360deg; }
+}
+@supports not (background: conic-gradient(from var(--onas-border-angle, 0deg), red, blue)) {
+    #onas-section .lens-pill { border: 1px solid rgba(0,0,0,.09); }
+    #onas-section .lens-pill-conic, #onas-section .lens-pill-glow { display: none; }
+}
+/* Pause conic animation when text block is hidden */
+#onas-section .onas-text-block[style*="hidden"] .lens-pill-conic,
+#onas-section .onas-text-block[style*="hidden"] .lens-pill-glow {
+    animation-play-state: paused;
+}
+#onas-section .onas-subtitle {
+    color: rgba(80,70,60,0.7);
+    font-size: clamp(0.78rem, 1.96vw, 2.25rem);
+    font-weight: 200;
+    line-height: 1.45;
+    text-align: center;
+    margin: clamp(0.8rem, 2vw, 2rem) auto 0;
+    padding: 0 1.5rem;
+    max-width: 100%;
+    text-wrap: balance;
+}
+#onas-section .onas-subtitle b {
+    font-weight: 600;
+}
+#onas-section .card:not(.is-hovered) > .hover-layer { visibility: hidden; }
+#onas-section .card--video.is-front,
+#onas-section .card--video.is-hovered { cursor: pointer !important; }
+
+#onas-section #onas-carousel {
+  margin-top: var(--join-gap);
+}
+/* ── Flex gap fallback (Safari 13-14.0) ── */
+#onas-section.no-flex-gap #onas-capitan .banner__content > * + * {
+    margin-left: clamp(1.33rem, calc(3.6vw - 1.76px), 3.85rem);
+}
+#onas-section.no-flex-gap #onas-capitan .banner__right > * + * {
+    margin-top: clamp(0.48rem, calc(1.29vw - 0.63px), 1.375rem);
+}
+#onas-section.no-flex-gap .onas-press > * + * {
+    margin-top: clamp(0.5rem, 1vw, 1rem);
+}
+#onas-section.no-flex-gap .onas-press__logos > * + * {
+    margin-left: clamp(1rem, 3vw, 3rem);
+}
+#onas-section.no-flex-gap #onas-video-popup .popup-content > * + * {
+    margin-top: 1.2rem;
+}
+#onas-section.no-flex-gap #onas-video-popup .popup-buttons > * + * {
+    margin-left: 2.5rem;
+}
+@media (max-width: 600px) {
+    #onas-section.no-flex-gap #onas-capitan .banner__content > * + * {
+        margin-left: 0;
+        margin-top: 2.5vw;
+    }
+}
+/* ── Graceful degradation: latent fallback ── */
+#onas-section .onas-press__logo.load-failed {
+    opacity: 0.15;
+    filter: grayscale(1);
+}
+

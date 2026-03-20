@@ -1,0 +1,125 @@
+KROK 2: Section Manifest
+SECTION_MANIFEST:
+
+  slug:     'ONas-Sekcja'
+  type:     'B'
+  requires: ['scrollRuntime', 'gsap', 'ScrollTrigger', 'Draggable', 'three', 'imagesloaded']
+
+  # WYMAGANE przez integrator (Krok 0)
+  hasPin:   false
+  hasSnap:  false
+
+  webgl:
+    enabled:           true
+    role:              'decorative'
+    canvasOwnership:   'runtime'
+    shaderComplexity:  'medium'
+    textureMemoryMB:   2
+    warmup:            'immediate'
+    gpuWarmup:         ['compile']
+    fallback:          'hidden'
+    offscreenPolicy:
+      disposeAfterMs:  null
+
+  assets:
+    - kind:     'img'
+      src:      'data:image/avif (logo prasy #1, inline base64)'
+      priority: 'HOT'
+      critical: true
+      lcp:      false
+    - kind:     'img'
+      src:      'data:image/avif (logo prasy #2, inline base64)'
+      priority: 'HOT'
+      critical: true
+      lcp:      true
+    - kind:     'video'
+      src:      'card--video carousel preview (preload=none)'
+      priority: 'HOT'
+      critical: true
+      lcp:      false
+    - kind:     'canvas'
+      src:      'Three.js badge (runtime-created × 2: base + bloom)'
+      priority: 'WARM'
+      critical: false
+      lcp:      false
+    - kind:     'video'
+      src:      '#onas-video-popup fullscreen (preload=none)'
+      priority: 'WARM'
+      critical: false
+      lcp:      false
+
+  warmup: []
+
+  scrollTriggersCount: 1
+
+  geometryMutable:         false
+  geometryRefresh:         'none'
+  geometryContract:        'normal'
+  syntheticContextAllowed: true
+  entryExitInvariant:      false
+  preserveExistingGuards:  true
+
+  refreshSignals: []
+
+  export:
+    mode: 'named'
+    name: 'OnasSection'
+
+  slots: []
+
+  dciProps: []
+
+  timelineContract: undefined
+
+  specialNotes:
+    breakpoints:        ['370px', '500px', '600px', '601px', '720px', '800px', '1200px', '1520px', '1960px']
+    platformGuards:     ['reduced-motion', 'Safari-aspect-ratio-fallback', 'Safari-flex-gap-fallback', 'WebGL-graceful-degradation']
+    cpuGatingMechanism: 'IO-pause/resume'
+    cpuGatingPath:      1
+    dualInitArchitecture: 'wrapper factoryInit() koordynuje carousel + capitan lifecycle'
+    internalIOSubsystems: 'carousel sleep/wake IO (nie zawieszany przez wrapper pause) + capitan IO/visibilitychange/ST.onToggle'
+
+  integrationNotes:
+    hasPin:                false
+    hasSnap:               false
+    affectsGeometryBelow:  false
+    sensitiveTo:           []
+    testWith:              []
+
+  deliveryRisk: null
+
+  perf:
+    dynamicImport:       true
+    isHero:              false
+    gracefulDegradation: true
+    containApplied:      false
+    warnings:            ['PERF-W6', 'INIT-CPU-01']
+
+    # WYMAGANE przez integrator (Krok 0)
+    loading:
+      dynamicImport: true
+      clientOnly:    true
+      skeleton:      'none'
+      warmup:        []
+
+    # WYMAGANE przez integrator (Krok 0)
+    resourceHints:
+      preconnectDomains:  []
+      preloadCandidates:  []
+      prefetchDnsDomains: []
+      prefetchCandidates: []
+      cold:               []
+
+  scrollRuntimeRecommendations: []
+
+  runtimeChecks:
+    CLN-01: 'PASS'
+    SM-01:  'PASS'
+    SM-02:  'PASS'
+    INT-01: 'N/A'
+    INT-02: 'N/A'
+    INT-03: 'N/A'
+    INT-04: 'N/A'
+    WGL-01: 'PENDING'
+    WGL-02: 'PENDING'
+    WGL-03: 'N/A'
