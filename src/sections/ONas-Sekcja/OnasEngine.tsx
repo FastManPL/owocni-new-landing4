@@ -928,6 +928,9 @@ function init(container) {
         if(textBlock) textBlock.style.visibility='visible';
     }
 
+    // Dynamic-mounted section may initialize after window "load" already fired.
+    // Run once immediately to avoid fallback geometry (over-bent / too low carousel).
+    updateGalleryResponsive();
     function onLoad(){updateGalleryResponsive();}
     window.addEventListener('load',onLoad);
     cleanups.push(function(){window.removeEventListener('load',onLoad);});
