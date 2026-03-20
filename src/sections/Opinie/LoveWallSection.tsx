@@ -16,7 +16,6 @@ import './love-wall-section.css';
    ═══════════════════════════════════════════════════════════════ */
 function loveWallLogoInit(container: HTMLElement): { pause: () => void; resume: () => void; kill: () => void } {
 
-  const $ = (sel: string) => container.querySelector(sel);
   const $$ = (sel: string) => container.querySelectorAll(sel);
   const $id = (id: string) => container.querySelector('#' + id);
 
@@ -54,7 +53,8 @@ function loveWallLogoInit(container: HTMLElement): { pause: () => void; resume: 
       else if (cores <= 2 || isMobile) this.tier = 'low';
     },
     getMode: function(charCount: number) {
-      const useReal = charCount <= this.thresholds[this.tier];
+      const threshold = this.thresholds[this.tier] ?? 0;
+      const useReal = charCount <= threshold;
       useReal ? this.stats.real++ : this.stats.fallback++;
       return useReal ? 'real' : 'fallback';
     }
@@ -616,6 +616,7 @@ function loveWallLogoInit(container: HTMLElement): { pause: () => void; resume: 
     if (ticking) { gsap.ticker.remove(tickFn!); ticking = false; }
     for (let i = 0; i < hfListeners.length; i++) {
       const hf = hfListeners[i];
+      if (!hf) continue;
       hf.target.removeEventListener(hf.event, hf.fn, hf.options);
     }
   }
@@ -624,13 +625,24 @@ function loveWallLogoInit(container: HTMLElement): { pause: () => void; resume: 
     if (!ticking) { gsap.ticker.add(tickFn!); ticking = true; }
     for (let i = 0; i < hfListeners.length; i++) {
       const hf = hfListeners[i];
+      if (!hf) continue;
       hf.target.addEventListener(hf.event, hf.fn, hf.options);
     }
   }
   function kill() {
     pause();
-    for (let i = 0; i < cleanups.length; i++) { try { cleanups[i](); } catch(e) { console.error('[love-wall-logo] cleanup error:', e); } }
-    for (let i = 0; i < observers.length; i++) { try { observers[i].disconnect(); } catch(e) {} }
+    for (let i = 0; i < cleanups.length; i++) {
+      try {
+        const cleanup = cleanups[i];
+        if (cleanup) cleanup();
+      } catch(e) { console.error('[love-wall-logo] cleanup error:', e); }
+    }
+    for (let i = 0; i < observers.length; i++) {
+      try {
+        const observer = observers[i];
+        if (observer) observer.disconnect();
+      } catch(e) {}
+    }
     for (let i = 0; i < timerIds.length; i++) {
       const id = timerIds[i]; if (id) { try { clearTimeout(id); } catch(e) {} try { cancelAnimationFrame(id); } catch(e) {} }
     }
@@ -649,8 +661,6 @@ function loveWallLogoInit(container: HTMLElement): { pause: () => void; resume: 
 function loveWallVelocityInit(container: HTMLElement): { pause: () => void; resume: () => void; kill: () => void } {
   'use strict';
 
-  const $ = (sel: string) => container.querySelector(sel);
-  const $$ = (sel: string) => container.querySelectorAll(sel);
   const $id = (id: string) => container.querySelector('#' + id);
 
   const cleanups: Array<() => void> = [];
@@ -754,11 +764,15 @@ function loveWallVelocityInit(container: HTMLElement): { pause: () => void; resu
   let SEGMENT_PX_ROW1 = 0, SEGMENT_PX_ROW2 = 0, PX_PER_PERCENT_ROW1 = 0, PX_PER_PERCENT_ROW2 = 0;
   function measureSeam() {
     const p1 = reviewsRow1.length;
-    const s1 = row1Mover.querySelectorAll('.card-shell');
-    if (s1 && s1.length > p1) { const seg = (s1[p1] as HTMLElement).offsetLeft - (s1[0] as HTMLElement).offsetLeft, w = row1Mover.scrollWidth; if (seg > 0 && w > 0) { SEGMENT_PX_ROW1 = seg; PX_PER_PERCENT_ROW1 = w / 100; } }
+    const s1 = row1Mover!.querySelectorAll('.card-shell');
+    const s1Start = s1[0] as HTMLElement | undefined;
+    const s1Pivot = s1[p1] as HTMLElement | undefined;
+    if (s1Start && s1Pivot) { const seg = s1Pivot.offsetLeft - s1Start.offsetLeft, w = row1Mover!.scrollWidth; if (seg > 0 && w > 0) { SEGMENT_PX_ROW1 = seg; PX_PER_PERCENT_ROW1 = w / 100; } }
     const p2 = reviewsRow2.length;
-    const s2 = row2Mover.querySelectorAll('.card-shell');
-    if (s2 && s2.length > p2) { const seg = (s2[p2] as HTMLElement).offsetLeft - (s2[0] as HTMLElement).offsetLeft, w = row2Mover.scrollWidth; if (seg > 0 && w > 0) { SEGMENT_PX_ROW2 = seg; PX_PER_PERCENT_ROW2 = w / 100; } }
+    const s2 = row2Mover!.querySelectorAll('.card-shell');
+    const s2Start = s2[0] as HTMLElement | undefined;
+    const s2Pivot = s2[p2] as HTMLElement | undefined;
+    if (s2Start && s2Pivot) { const seg = s2Pivot.offsetLeft - s2Start.offsetLeft, w = row2Mover!.scrollWidth; if (seg > 0 && w > 0) { SEGMENT_PX_ROW2 = seg; PX_PER_PERCENT_ROW2 = w / 100; } }
   }
   measureSeam();
 
@@ -832,11 +846,11 @@ function loveWallVelocityInit(container: HTMLElement): { pause: () => void; resu
     const SCROLL_KILL_THRESHOLD = 4;
     if (state.row1.activeShell && absDy > 0) {
       state.row1.scrollDeltaAccum += absDy;
-      if (state.row1.scrollDeltaAccum >= SCROLL_KILL_THRESHOLD) { clearRowFocus(state.row1, row1Viewport); }
+      if (state.row1.scrollDeltaAccum >= SCROLL_KILL_THRESHOLD) { clearRowFocus(state.row1, row1Viewport!); }
     }
     if (state.row2.activeShell && absDy > 0) {
       state.row2.scrollDeltaAccum += absDy;
-      if (state.row2.scrollDeltaAccum >= SCROLL_KILL_THRESHOLD) { clearRowFocus(state.row2, row2Viewport); }
+      if (state.row2.scrollDeltaAccum >= SCROLL_KILL_THRESHOLD) { clearRowFocus(state.row2, row2Viewport!); }
     }
 
     const STABLE_SCROLL_EPSILON = 0.5, STABLE_SCROLL_THRESHOLD = 150;
@@ -940,8 +954,8 @@ function loveWallVelocityInit(container: HTMLElement): { pause: () => void; resu
   }
 
   function resetAllOnScroll() {
-    clearRowFocus(state.row1, row1Viewport);
-    clearRowFocus(state.row2, row2Viewport);
+    clearRowFocus(state.row1, row1Viewport!);
+    clearRowFocus(state.row2, row2Viewport!);
   }
 
   if (!prefersReducedMotion) {
@@ -963,6 +977,7 @@ function loveWallVelocityInit(container: HTMLElement): { pause: () => void; resu
     hfAttached = true;
     for (let i = 0; i < hfListeners.length; i++) {
       const h = hfListeners[i];
+      if (!h) continue;
       h.target.addEventListener(h.type, h.fn, h.options);
     }
   }
@@ -971,6 +986,7 @@ function loveWallVelocityInit(container: HTMLElement): { pause: () => void; resu
     hfAttached = false;
     for (let i = 0; i < hfListeners.length; i++) {
       const h = hfListeners[i];
+      if (!h) continue;
       h.target.removeEventListener(h.type, h.fn, h.options as EventListenerOptions);
     }
   }
@@ -1283,7 +1299,7 @@ function loveWallVelocityInit(container: HTMLElement): { pause: () => void; resu
   function centerCard(shell: HTMLElement, rowState: typeof state.row1, segmentPx: number, setRowX: (val: number) => void, onComplete?: () => void) {
     if (segmentPx <= 0) { if (onComplete) onComplete(); return; }
     const offset = getOffsetToCenter(shell), startX = rowState.x, anim = { progress: 0 };
-    const tw = gsap.to(anim, {
+    const tweenVars: gsap.TweenVars = {
       progress: 1, duration: 0.45, ease: 'power2.out',
       onUpdate: function() {
         rowState.x = startX + (offset * anim.progress);
@@ -1291,8 +1307,9 @@ function loveWallVelocityInit(container: HTMLElement): { pause: () => void; resu
         while (rowState.x > 0) rowState.x -= segmentPx;
         setRowX(rowState.x);
       },
-      onComplete
-    });
+    };
+    if (onComplete) tweenVars.onComplete = onComplete;
+    const tw = gsap.to(anim, tweenVars);
     gsapInstances.push(tw);
   }
 
@@ -1370,10 +1387,10 @@ function loveWallVelocityInit(container: HTMLElement): { pause: () => void; resu
     expandCardMobile(shell, viewport, rowState, rowId);
   }
 
-  function onRow1PointerDown(e: Event) { handleRowPointerDown(e, row1Viewport, state.row1, 'row1'); }
-  function onRow2PointerDown(e: Event) { handleRowPointerDown(e, row2Viewport, state.row2, 'row2'); }
-  function onRow1Click(e: Event) { handleRowClick(e, row1Viewport, state.row1, 'row1'); }
-  function onRow2Click(e: Event) { handleRowClick(e, row2Viewport, state.row2, 'row2'); }
+  function onRow1PointerDown(e: Event) { handleRowPointerDown(e, row1Viewport!, state.row1, 'row1'); }
+  function onRow2PointerDown(e: Event) { handleRowPointerDown(e, row2Viewport!, state.row2, 'row2'); }
+  function onRow1Click(e: Event) { handleRowClick(e, row1Viewport!, state.row1, 'row1'); }
+  function onRow2Click(e: Event) { handleRowClick(e, row2Viewport!, state.row2, 'row2'); }
   row1Viewport.addEventListener('pointerdown', onRow1PointerDown, { capture: true });
   cleanups.push(function() { row1Viewport.removeEventListener('pointerdown', onRow1PointerDown, { capture: true }); });
   row2Viewport.addEventListener('pointerdown', onRow2PointerDown, { capture: true });
@@ -1445,8 +1462,12 @@ function loveWallVelocityInit(container: HTMLElement): { pause: () => void; resu
       const s = swipe.samples;
       let vx = 0;
       if (s.length >= 2) {
-        const dt = (s[s.length - 1].t - s[0].t) / 1000;
-        if (dt > 0.01) vx = (s[s.length - 1].x - s[0].x) / dt;
+        const first = s[0];
+        const last = s[s.length - 1];
+        if (first && last) {
+          const dt = (last.t - first.t) / 1000;
+          if (dt > 0.01) vx = (last.x - first.x) / dt;
+        }
       }
       vx = Math.max(-2500, Math.min(2500, vx));
 
@@ -1494,8 +1515,8 @@ function loveWallVelocityInit(container: HTMLElement): { pause: () => void; resu
       if (state.tickerEnabled) stopTicker();
     } else {
       if (wasTickerRunning) {
-        clearRowFocus(state.row1, row1Viewport);
-        clearRowFocus(state.row2, row2Viewport);
+        clearRowFocus(state.row1, row1Viewport!);
+        clearRowFocus(state.row2, row2Viewport!);
         state.row1.speedScale.current = 1; state.row2.speedScale.current = 1;
         state.row1.motionVelocity = 0; state.row1.physicsVelocity = 0;
         state.row1.skew = 0; state.row1.scale = 1;
