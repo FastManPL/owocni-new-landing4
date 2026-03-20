@@ -806,7 +806,13 @@ function init(container) {
         function closePopup(){
             popup.classList.remove('is-open');
             document.body.style.overflow='';
-            if(popupVid){popupVid.pause();popupVid.removeAttribute('src');popupVid.load();}
+            if(popupVid){
+                popupVid.pause();
+                if (popupVid.getAttribute('src')) {
+                    popupVid.removeAttribute('src');
+                    popupVid.load();
+                }
+            }
         }
         /* Named handlers for cleanup */
         var onPopupBackdrop=function(e){ if(e.target===popup) closePopup(); };
@@ -1083,8 +1089,8 @@ async function onasCapitanInit(container) {
   baseRenderer.setPixelRatio(DPR);
   baseRenderer.toneMapping = THREE.ACESFilmicToneMapping;
   baseRenderer.toneMappingExposure = 1.0;
-  baseRenderer.shadowMap.enabled = true;
-  baseRenderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  baseRenderer.shadowMap.enabled = false;
+  baseRenderer.shadowMap.type = THREE.PCFShadowMap;
   baseRenderer.domElement.id = 'onas-capitan-canvas-base';
   baseRenderer.sortObjects = false;
   threeContainer.appendChild(baseRenderer.domElement);
@@ -1131,7 +1137,7 @@ async function onasCapitanInit(container) {
   spotLight.position.set(0, 1.5, 12);
   spotLight.angle = Math.PI / 4;
   spotLight.penumbra = 0.5;
-  spotLight.castShadow = true;
+  spotLight.castShadow = false;
   spotLight.shadow.autoUpdate = false;
   spotLight.shadow.camera.near = 8;
   spotLight.shadow.camera.far = 20;
