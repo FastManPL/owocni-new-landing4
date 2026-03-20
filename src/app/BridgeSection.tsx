@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef } from 'react';
-import { KineticSection } from '@/sections/kinetic/KineticSection';
+import KineticSection from '@/sections/kinetic/KineticSection';
 import { BridgeProvider } from './BridgeContext';
 
 /**
