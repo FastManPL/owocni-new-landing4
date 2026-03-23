@@ -225,7 +225,7 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
     gsapInstances.push(gsap.to(maskState,{alpha:0.0,duration:1,ease:'power2.out',overwrite:'auto'}));targetAlpha=0.0;
     isFirstIdle=false;}
   function stopTxtIdle(){if(!isTxtIdle)return;isTxtIdle=false;if(txtIdleTw)txtIdleTw.kill();txtIdleTw=gsap.to(txtState,{...TXT_ACTIVE,duration:1,ease:"power2.out"});gsapInstances.push(gsap.to(secState,{...SEC_ACT,duration:1,ease:"power2.out"}));
-    gsapInstances.push(gsap.to(maskState,{alpha:0.5,duration:0.5,ease:'power2.out',overwrite:'auto'}));targetAlpha=0.5;}
+    gsapInstances.push(gsap.to(maskState,{alpha:0.5,duration:0.3,ease:'power2.out',overwrite:'auto'}));targetAlpha=0.5;}
   function chkTxtIdle(ts: number){if(!tActive)return;if(ts-tLastMove>(isFirstIdle?1400:400)&&!isTxtIdle)startTxtIdle();}
 
   function animLettersIn(){letterAnims.forEach(a=>{if(a.cancel)a.cancel();else if(a.kill)a.kill();});letterAnims=[];resetSpans(upSpans);resetSpans(downSpans);lastFontSize=-1;let lf=0;
@@ -273,7 +273,7 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
     tiState.scale=0;tiState.rotation=-180;gsapInstances.push(gsap.to(tiState,{scale:1,rotation:0,duration:1,ease:"power3.out"}));
     tActive=true;ratchetStart=performance.now();startSec();startTarczaFollow();masterTL.play();animLettersIn();}
 
-  function tarczaOutro(){tActive=false;tFollowing=false;stopSec();
+  function tarczaOutro(){tActive=false;stopSec();
     gsap.killTweensOf(cState);gsap.killTweensOf(giState);gsap.killTweensOf(tiState);
     gsapInstances.push(gsap.to(giState,{scale:0,rotation:-180,duration:1,ease:"power3.in",onUpdate(){(tarczaGauge as HTMLElement).style.transform=`scale(${giState.scale}) rotate(${giState.rotation}deg)`;}}));
     gsapInstances.push(gsap.to(cState,{scale:0,rotation:-180,duration:1,ease:"power3.in",onUpdate(){(tarczaCenterCircle as HTMLElement).style.transform=`scale(${cState.scale}) rotate(${cState.rotation}deg)`;}}));
@@ -312,11 +312,17 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
 
   // === DOCUMENT-LEVEL TRACKING ===
   function processMousePos(){rafPending=false;if(paused||!isContainerVisible||isMobileDisabled)return;
+    updateCachedRect(); // FIX 3: zawsze świeży rect
     const x=lastMouseX-cachedRect.left,y=lastMouseY-cachedRect.top,h=cachedRect.height,w=cachedRect.width;
     const yMin=h*BOUNDARY_Y_ENTER,yMax=h*BOUNDARY_Y_LEAVE;
-    const inX=x>=0&&x<=w,inY=y>=yMin&&y<=yMax,should=inX&&inY;
+    const inX=x>=0&&x<=w;
+    // FIX B: Lens = full height+50px. Tarcza = 0.20–0.75.
+    const should=inX&&y>=-50&&y<=h+50;
+    const inTarcza=inX&&y>=yMin&&y<=yMax;
     if(should&&!isVirtuallyInside){isVirtuallyInside=true;handleMouseEnter(x,y);}
     else if(!should&&isVirtuallyInside){isVirtuallyInside=false;handleMouseLeave();}
+    if(inTarcza&&!tActive&&tFollowing){tarczaIntro(x,y);clockPlay();}
+    else if(!inTarcza&&tActive){tarczaOutro();clockPause();}
     if(inX&&y>=-50&&y<=h+50){
       mxTo!(x); myTo!(y);
       const cx=Math.max(scaledPad, Math.min(w-scaledPad, x));
@@ -325,7 +331,7 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
     }
     if(isVirtuallyInside){
       tCursorNormX=(x/w)*2-1;tCursorNormY=(y/h)*2-1;tLastMove=performance.now();stopTxtIdle();
-      if(targetAlpha!==0.5){gsapInstances.push(gsap.to(maskState,{alpha:0.5,duration:0.5,ease:'power2.out',overwrite:'auto'}));targetAlpha=0.5;}}}
+      if(targetAlpha!==0.5){gsapInstances.push(gsap.to(maskState,{alpha:0.5,duration:0.3,ease:'power2.out',overwrite:'auto'}));targetAlpha=0.5;}}}
 
   function handleDocMouseMove(e: MouseEvent){lastMouseX=e.clientX;lastMouseY=e.clientY;if(!rafPending){rafPending=true;requestAnimationFrame(processMousePos);}}
   function bindDoc(){if(documentListenerBound)return;document.addEventListener('mousemove',handleDocMouseMove,{passive:true});documentListenerBound=true;}
@@ -361,6 +367,22 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
   },{rootMargin:'200px 0px'});
   io.observe(containerEl);observers.push(io);cleanups.push(()=>unbindDoc());
 
+  // FIX 1: Direct mouseenter — bypass IO delay (React-specyficzne)
+  const _onDirectEnter = (e: MouseEvent) => {
+    if (paused || isMobileDisabled) return;
+    updateCachedRect();
+    if (!isContainerVisible) isContainerVisible = true;
+    if (!documentListenerBound) bindDoc();
+    const x = e.clientX - cachedRect.left;
+    const y = e.clientY - cachedRect.top;
+    if (!isVirtuallyInside) {
+      isVirtuallyInside = true;
+      handleMouseEnter(x, y);
+    }
+  };
+  (containerEl as HTMLElement).addEventListener('mouseenter', _onDirectEnter, { passive: true });
+  cleanups.push(() => (containerEl as HTMLElement).removeEventListener('mouseenter', _onDirectEnter));
+
   // Pause/resume hook — doc + rect + aureola listeners, media
   let _wasDocBound = false, _wasRectBound = false, _wasContainerVisible = false;
   pauseHooks.push(() => {
@@ -383,6 +405,11 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
   // === UNIFIED ENTER/LEAVE ===
   function handleMouseEnter(rx: number,ry: number){if(paused)return;
     hasEnteredOnce = true;
+    // FIX 4a: seed alpha + initial radius — prześwit od pierwszej ramki
+    maskState.alpha = 0.02;
+    maskState.radius = 0.25 * scaledRadius;
+    targetAlpha = 0.5;
+    lmNone = false;
     maskPos.x = rx; maskPos.y = ry;
     const clampX = Math.max(scaledPad, Math.min(cachedRect.width - scaledPad, rx));
     const clampY = Math.max(scaledPad, Math.min(cachedRect.height - scaledPad, ry));
@@ -391,7 +418,12 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
     xTo!(clampX); yTo!(clampY);
     gsapInstances.push(gsap.to(maskState,{radius:scaledRadius,duration:0.8,ease:'elastic.out(1, 0.75)',overwrite:'auto'}));
     gsap.set(cursorStage,{scale:1,opacity:1});
-    tarczaIntro(rx,ry);clockPlay();}
+    // FIX B: pełne intro tylko w pionie tarczy; poza nim sam loop (unika konfliktu z !inTarcza&&tActive w tej samej klatce)
+    const h = cachedRect.height, yMin = h * BOUNDARY_Y_ENTER, yMax = h * BOUNDARY_Y_LEAVE;
+    const inTarczaEnter = ry >= yMin && ry <= yMax;
+    if (inTarczaEnter) { tarczaIntro(rx, ry); clockPlay(); }
+    else { startTarczaFollow(); }
+  }
 
   function handleMouseLeave(){if(paused)return;
     gsapInstances.push(gsap.to(maskState,{radius:0,duration:0.5,ease:'power2.out',overwrite:'auto'}));
@@ -760,10 +792,20 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
   // + gsap.ticker (renderMask) → IO wywołuje pause()/resume().
   // rootMargin = clamp(200,1200, 0.5×VH). Recreate IO na resize (mobile toolbar).
   let _factoryKilled = false;
+  let _factoryHasBeenActive = false;
   let _factoryIO: IntersectionObserver | null = null;
   let _factoryIODebounce: ReturnType<typeof setTimeout> | null = null;
   function _getVH(){return(window.visualViewport&&window.visualViewport.height)||window.innerHeight;}
-  function _factoryIOCallback(entries: IntersectionObserverEntry[]){if(!entries[0])return;if(entries[0].isIntersecting){resume();}else{pause();}}
+  function _factoryIOCallback(entries: IntersectionObserverEntry[]){
+    if (!entries[0]) return;
+    if (entries[0].isIntersecting) {
+      _factoryHasBeenActive = true;
+      resume();
+    } else {
+      if (!_factoryHasBeenActive) return;
+      pause();
+    }
+  }
   function _recreateFactoryIO(){
     if (_factoryIODebounce) clearTimeout(_factoryIODebounce);
     _factoryIODebounce=setTimeout(function(){
