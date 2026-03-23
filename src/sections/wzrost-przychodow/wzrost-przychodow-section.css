@@ -8,12 +8,11 @@
   isolation: isolate;
   padding-block: clamp(2.5rem, 8vw, 5rem);
   padding-inline: clamp(0.75rem, 3vw, 1.5rem);
-  background: #e7e6e8;
 }
 
 #wzrost-przychodow-section .wzrost-wrap {
   width: 100%;
-  max-width: min(100%, 80rem);
+  max-width: min(100%, 90rem);
   margin-inline: auto;
 }
 
