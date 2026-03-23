@@ -114,7 +114,6 @@ function init(
         // freezeFinal: blokuje resize-handlery gdy animacja na końcu (ostatnia klatka)
         // mobileResizeLock: blokuje snap podczas toolbar/resize na touch devices
         let freezeFinal = false;
-        var _freezeClampBusy = false;
         var FREEZE_ON  = 0.95;
         var FREEZE_OFF = 0.94;
 
@@ -2317,17 +2316,8 @@ function init(
                             freezeFinal = false;
                         }
                         adaptiveDPR.lockForScroll();
-                        if (freezeFinal && !_freezeClampBusy) {
-                            var _snap3Px = _getSnapGeometry();
-                            if (_snap3Px) {
-                                var _s3 = _snap3Px.snaps[2];
-                                if (getScroll() > _s3 + 15) {
-                                    _freezeClampBusy = true;
-                                    scrollTo(_s3, { immediate: true, force: true });
-                                    requestAnimationFrame(function() { _freezeClampBusy = false; });
-                                }
-                            }
-                        }
+                        // BEZ clampu scroll → SNAP3: po SNAP3 jest overshoot (timeline do progress 1),
+                        // użytkownik musi móc przewinąć poza snaps[2], inaczej pin nigdy się nie kończy.
                         if (_sm.state === 'idle' || _sm.state === 'cooldown') {
                             _reconcileFromScroll();
                         }
@@ -3635,7 +3625,6 @@ function init(
         _s.blobTweens = null;
         // 6. Reset freeze/lock flags
         freezeFinal = false;
-        _freezeClampBusy = false;
         mobileResizeLock = false;
         clearTimeout(mobileResizeTimer);
         adaptiveDPR._scrollLockUntil = 0;
