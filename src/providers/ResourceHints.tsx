@@ -19,6 +19,9 @@ export function ResourceHints() {
       {/* love-wall — preconnect (perf.resourceHints.preconnectDomains) */}
       <link rel="preconnect" href="https://i.pravatar.cc" />
 
+      {/* Wistia — book-stats + O nas (osadzone playery) */}
+      <link rel="preconnect" href="https://fast.wistia.com" />
+
       {/* book-stats — preload tylko Statystyki-stron (użyty wcześniej); frame-001 prefetch (sekcja poniżej foldu, preload = „nie użyty w kilka s”) */}
       <link rel="preload" href="/books/Statystyki-stron.png" as="image" />
       <link rel="prefetch" href="/books/Ksiazka-Klatki/frame-001.webp" as="image" type="image/webp" />

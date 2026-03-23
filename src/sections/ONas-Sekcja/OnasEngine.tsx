@@ -1,7 +1,10 @@
 // @ts-nocheck
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, createElement } from 'react';
+import Script from 'next/script';
+import logoA from './logo-A.jpg';
+import logoB from './logo-B.jpg';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -339,19 +342,20 @@ function init(container) {
                     if(Math.abs(self.velocity)<self.config.velocityThreshold&&self.config.snapEnabled) self.isSnapping=true;
                     gsap.set(proxy,{x:0}); self._lastDragX=0;
 
-                    /* === OPEN VIDEO POPUP === */
+                    /* === OPEN VIDEO POPUP (Wistia) === */
                     if(isTap&&self._revealComplete&&self._tappedCard){
                         var popup=$id('onas-video-popup');
                         if(popup&&!popup.classList.contains('is-open')){
-                            var pv=popup.querySelector('video');
-                            if(pv){
-                                self.velocity=0;
-                                self.targetAngle=self.currentAngle;
-                                pv.src=self._tappedCard._fullSrc;
-                                pv.currentTime=0;
-                                popup.classList.add('is-open');
+                            var fs=self._tappedCard._fullSrc;
+                            if(fs&&String(fs).indexOf('__wistia_')===0){
+                                var wp=popup.querySelector('wistia-player');
+                                if(wp){
+                                    self.velocity=0;
+                                    self.targetAngle=self.currentAngle;
+                                    popup.classList.add('is-open');
                                     document.body.style.overflow='hidden';
-                                pv.play().catch(function(){});
+                                    if(typeof wp.play==='function') wp.play().catch(function(){});
+                                }
                             }
                         }
                     }
@@ -397,11 +401,12 @@ function init(container) {
             if(this._hoverTimelines){for(var h=0;h<this._hoverTimelines.length;h++){if(this._hoverTimelines[h])this._hoverTimelines[h].kill();}}
             if(this._hoverListeners){for(var hl=0;hl<this._hoverListeners.length;hl++){var li=this._hoverListeners[hl];if(li.type==='pointermove')li.el.removeEventListener('pointermove',li.enter);else if(li.type==='pointerleave')li.el.removeEventListener('pointerleave',li.leave);else{li.el.removeEventListener('mouseenter',li.enter);li.el.removeEventListener('mouseleave',li.leave);}}}
             this._hoverTimelines=[]; this._hoverListeners=[]; this._cardStyleIdx=[];
+            var ONAS_WISTIA_SWATCH='https://fast.wistia.com/embed/medias/fds00b5wst/swatch';
             var PEOPLE_MEDIA = [
                 '/assets/people/adam.jpg',
                 '/assets/people/iwona.jpg',
                 '/assets/people/jakub.jpg',
-                '/assets/people/mariusz.mp4',
+                ONAS_WISTIA_SWATCH,
                 '/assets/people/kinga.jpg',
                 '/assets/people/marta.jpg',
                 '/assets/people/paulina.jpg'
@@ -415,11 +420,11 @@ function init(container) {
                     : mediaPath;
                 _bgCache[bi]='url("'+posterPath+'")';
             }
-            /* VIDEO CARD CONFIG: which baseIdx is video, src, poster */
+            /* VIDEO CARD CONFIG: poster = Wistia swatch; fullscreen = Wistia w popup */
             var VIDEO_CARD={
                 baseIdx: 3,
-                src: '/assets/people/mariusz.mp4',
-                fullSrc: '/assets/people/mariusz.mp4',
+                src: '',
+                fullSrc: '__wistia_fds00b5wst__',
                 poster: _bgCache[3]
             };
             this._videoBaseIdx=VIDEO_CARD.baseIdx;
@@ -429,24 +434,15 @@ function init(container) {
                 var baseIdx=i%base; var style=HOVER_STYLES[baseIdx%4]; var numLayers=style.elems;
                 var isVideo=(baseIdx===VIDEO_CARD.baseIdx);
                 if(isVideo){
-                    /* VIDEO CARD: 1 layer with poster bg + hidden <video> + play button */
+                    /* VIDEO CARD: poster (Wistia swatch) + play → popup Wistia */
                     d.classList.add('card--video');
-                    var innerHTML='<div class="card__wrap"><div class="card__layer"></div></div>';
-                    innerHTML+='<video muted loop playsinline preload="none"'+(VIDEO_CARD.src?' src="'+VIDEO_CARD.src+'"':'')+'></video>';
-                    d.innerHTML=innerHTML;
+                    d.innerHTML='<div class="card__wrap"><div class="card__layer"></div></div>';
                     d.querySelector('.card__layer').style.backgroundImage=VIDEO_CARD.poster;
                     /* Play button — size relative to card */
                     var btnSize=Math.round(Math.min(d.offsetWidth||80, 80)*0.55)||44;
                     var pb=createPlayButton(d, Math.max(54, Math.round(btnSize*1.5)));
                     d._playBtn=pb; /* ref for _initHoverEffects */
                     d._fullSrc=VIDEO_CARD.fullSrc;
-                    /* Wire video timeupdate → arc progress */
-                    var vid=d.querySelector('video');
-                    if(vid){
-                        vid.addEventListener('timeupdate',function(){
-                            if(vid.duration>0) pb.updateProgress(vid.currentTime/vid.duration);
-                        });
-                    }
                 } else {
                     /* NORMAL CARD: bg-image layers + hover parallax */
                     var bgUri=_bgCache[baseIdx]; var innerHTML='';
@@ -814,18 +810,14 @@ function init(container) {
     /* ── VIDEO POPUP: close logic ── */
     var popup=$id('onas-video-popup');
     if(popup){
-        var popupVid=popup.querySelector('video');
+        var popupWistia=popup.querySelector('wistia-player');
         var popupClose=popup.querySelector('.popup-close');
         var popupCloseText=popup.querySelector('.popup-close-text');
         function closePopup(){
             popup.classList.remove('is-open');
             document.body.style.overflow='';
-            if(popupVid){
-                popupVid.pause();
-                if (popupVid.getAttribute('src')) {
-                    popupVid.removeAttribute('src');
-                    popupVid.load();
-                }
+            if(popupWistia && typeof popupWistia.pause==='function'){
+                try { popupWistia.pause(); } catch(e){}
             }
         }
         /* Named handlers for cleanup */
@@ -2439,6 +2431,13 @@ export default function OnasEngine() {
   }, { scope: rootRef });
 
   return (
+    <>
+    <Script src="https://fast.wistia.com/player.js" strategy="afterInteractive" />
+    <Script
+      src="https://fast.wistia.com/embed/fds00b5wst.js"
+      strategy="afterInteractive"
+      type="module"
+    />
     <section id="onas-section" ref={rootRef}>
 
 
@@ -2518,10 +2517,10 @@ export default function OnasEngine() {
       których znasz z publikacji na łamach:</p>
     </div>
     <div className="onas-press__logos">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img decoding="async" src="data:image/avif;base64,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" alt="Logo publikacji" className="onas-press__logo" />
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img fetchPriority="high" decoding="async" src="data:image/avif;base64,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" alt="Logo publikacji" className="onas-press__logo" />
+      {/* eslint-disable-next-line @next/next/no-img-element — lokalne JPG z sekcji */}
+      <img decoding="async" src={logoA.src} alt="Logo publikacji" className="onas-press__logo" />
+      {/* eslint-disable-next-line @next/next/no-img-element — lokalne JPG z sekcji */}
+      <img fetchPriority="high" decoding="async" src={logoB.src} alt="Logo publikacji" className="onas-press__logo" />
     </div>
   </div>
 
@@ -2558,7 +2557,11 @@ export default function OnasEngine() {
     <div className="popup-panel">
       <div className="popup-close">✕</div>
       <div className="popup-video-wrap">
-        <video controls playsInline preload="none"></video>
+        {createElement('wistia-player', {
+          'media-id': 'fds00b5wst',
+          seo: 'false',
+          aspect: '1.7777777777777777',
+        })}
       </div>
       <div className="popup-content">
         <span className="popup-tag">Porozmawiajmy o twoich liczbach</span>
@@ -2572,5 +2575,6 @@ export default function OnasEngine() {
   </div>
 
     </section>
+    </>
   );
 }
