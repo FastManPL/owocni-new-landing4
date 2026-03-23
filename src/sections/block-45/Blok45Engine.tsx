@@ -1369,7 +1369,7 @@ export default function Blok45Engine() {
                 </p>
               </div>
             </div>
-            <div className="full-width-image" style={{ background: '#4CAF50', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: '1.2rem', fontWeight: 600, letterSpacing: '0.05em' }}>
+            <div className="full-width-image">
               <picture>
                 <source media="(max-width: 599px)" srcSet="Ludzie-Small.avif" type="image/avif" />
                 <source media="(max-width: 599px)" srcSet="Ludzie-Small.webp" type="image/webp" />
