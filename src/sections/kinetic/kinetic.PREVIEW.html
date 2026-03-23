@@ -1,56 +1,75 @@
 <!DOCTYPE html>
 <!-- ⚠️ PREVIEW ONLY — NIE WKLEJAJ DO REPO -->
 <!-- Źródło prawdy: KineticSection.tsx + kinetic-section.css -->
-<!-- Weryfikuje React output — kod init() identyczny z tym co wchodzi do useGSAP -->
+<!-- To jest vanilla JS reprezentacja tego co wchodzi do useGSAP w KineticSection.tsx -->
+<!-- DEV overlay usunięty (FACTORY:DEV-OVERLAY:START/END) — identycznie z TSX -->
 <html lang="pl">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>kinetic — PREVIEW</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>kinetic — PREVIEW (P3)</title>
 
-    <!-- Google Fonts: Lexend -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap" rel="stylesheet">
+  <!-- Google Fonts: Lexend (Variable) -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@100..900&display=swap" rel="stylesheet">
 
-    <!-- GSAP 3.12.7 (pinned) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.7/gsap.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.7/ScrollTrigger.min.js"></script>
+  <!-- GSAP 3.12.7 (pinned) — identycznie z reference.html i stack.html -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.7/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.7/ScrollTrigger.min.js"></script>
 
-    <!-- Lenis @studio-freight/lenis@1.0.42 (wymagany przez snap machine) -->
-    <script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
-    <script>
-        // Shell Lenis — wymagany przez scrollTo/scrollOn/scrollOff w snap machine
-        const lenis = new Lenis({
-            autoRaf: false,
-            duration: 1.20,
-            wheelMultiplier: 0.80,
-            touchMultiplier: 1.0,
-            smoothWheel: true,
-            syncTouch: true,
-            syncTouchLerp: 0.10,
-            touchInertiaMultiplier: 14,
-            stopInertiaOnNavigate: false,
-            easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t))
-        });
-        try {
-            lenis.scrollTo(window.scrollY || 0, { immediate: true, force: true });
-            lenis.raf(performance.now());
-        } catch(e) {}
-        ScrollTrigger.config({ ignoreMobileResize: true });
-        gsap.ticker.lagSmoothing(0);
-        lenis.on('scroll', ScrollTrigger.update);
-        gsap.ticker.add((time) => { lenis.raf(time * 1000); }, false, true);
-        window.lenis = lenis;
+  <!-- Lenis @1.0.42 (pinned) — P3 replaces with scrollRuntime.ts import -->
+  <script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
+
+  <!-- Shell boot — kolejność 1:1 z reference.html (Lenis PIERWSZY) -->
+  <script>
+    const lenis = new Lenis({
+      autoRaf: false, duration: 1.20, wheelMultiplier: 0.80, touchMultiplier: 1.0,
+      smoothWheel: true, syncTouch: true, syncTouchLerp: 0.10,
+      touchInertiaMultiplier: 14, stopInertiaOnNavigate: false,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t))
+    });
+    try { const y = window.scrollY || 0; lenis.scrollTo(y, { immediate: true, force: true }); lenis.raf(performance.now()); } catch(e) {}
+    ScrollTrigger.config({ ignoreMobileResize: true });
+    gsap.ticker.lagSmoothing(0);
+    lenis.on('scroll', ScrollTrigger.update);
+    gsap.ticker.add((time) => { lenis.raf(time * 1000); }, false, true);
+    window.lenis = lenis;
+  </script>
+  <script>
+    // GSAP_PLUGINS_USED: [] — tylko ScrollTrigger (brak dodatkowych pluginów w tej sekcji)
+    // PREVIEW-PLUGIN-01: ScrollTrigger jedynym pluginem → zarejestrowany poniżej w init()
+    // requestRefresh z debounce 120ms — spójność z produkcją
+    let _previewRefreshTimer = null;
+    const scrollRuntime = {
+      getScroll:      () => window.lenis?.scroll ?? window.scrollY,
+      getRawScroll:   () => window.lenis?.actualScroll ?? window.scrollY,
+      requestRefresh: (reason) => {
+        clearTimeout(_previewRefreshTimer);
+        _previewRefreshTimer = setTimeout(() => ScrollTrigger.refresh(true), 120);
+      }
+    };
+  </script>
+
+  <style>
+    html { font-size: 16px; } /* zamrożona baza = produkcja (globals.css) */
+    *, *::before, *::after { box-sizing: border-box; }
+    body { margin: 0; background-color: #f7f6f4; overflow-x: hidden; scrollbar-width: none; }
+    body::-webkit-scrollbar { display: none; }
+    .preview-spacer { height: 40vh; background: #e8e8e8;
+      display: flex; align-items: center; justify-content: center;
+      font-family: monospace; font-size: 13px; color: #999; }
+
+    /* ═══ kinetic-section.css — LITERALNA KOPIA, ZERO MODYFIKACJI ═══ */
     </script>
 
     <style>
-        html { font-size: 16px; } /* zamrożona baza = produkcja (globals.css: html { font-size: 16px }) */
-        *, *::before, *::after { box-sizing: border-box; }
-        body { margin: 0; scrollbar-width: none; -ms-overflow-style: none; }
+        /* SHELL globals — P3 przeniesie do globals.css */
+        html { overflow-x: hidden; overflow-x: clip; }
+        body { margin: 0; padding: 0; overflow-x: hidden; scrollbar-width: none; -ms-overflow-style: none; background-color: #f7f6f4; }
         body::-webkit-scrollbar { display: none; }
-        .preview-spacer { height: 40vh; background: #0a0a0c; }
-        /* ═══ kinetic-section.css — LITERALNA KOPIA, ZERO MODYFIKACJI ═══ */
+    </style>
+    <style>
         /* ============================================
            FAZA 1.1: Zmienne CSS (scoped do sekcji)
            ============================================ */
@@ -438,19 +457,6 @@
         #kinetic-section #kinetic-block-1 {
             top: 36%; 
             transform: translateY(-50%);
-            overflow: hidden;
-        }
-        #kinetic-section #kinetic-b1-shimmer {
-            position: absolute;
-            top: -10%;
-            left: -40%;
-            width: 40%;
-            height: 120%;
-            background: linear-gradient(105deg, transparent 30%, rgba(255,255,255,0.6) 47%, rgba(255,255,255,0.85) 50%, rgba(255,255,255,0.6) 53%, transparent 70%);
-            mix-blend-mode: overlay;
-            pointer-events: none;
-            z-index: 2;
-            will-change: transform;
         }
         #kinetic-section #kinetic-block-1 .line:not(.bold-line) {
             font-size: clamp(1.56rem, 3.46vw, 3.02rem);
@@ -604,54 +610,40 @@
             opacity: 0; /* GSAP animuje 0→1 razem z Block 1 */
             background: radial-gradient(
                 72% 52.5% at 50% 48%,
-                transparent 35%,
-                #f7f6f4 85%
-            );
-        }
 
-        /* ════════════════════════════════════════════════════════
-           B-ISO-01 AUTO-FIX: isolation:isolate
-           mix-blend-mode:overlay na .kinetic-b1-shimmer jest
-           wewnątrzsekcyjny — blend z elementami sekcji niezmieniony.
-           contain:layout NIE dodane — overflow:visible + blobs
-           wychodzące poza bounds sekcji.
-           ════════════════════════════════════════════════════════ */
-        #kinetic-section {
-            isolation: isolate;
-        }
-    </style>
-        /* ═══ KONIEC CSS SEKCJI ═══ */
-    </style>
+    /* ═══ KONIEC CSS SEKCJI ═══ */
+  </style>
 </head>
 <body>
-    <div class="preview-spacer"></div>
 
-    <!-- HTML sekcji — identyczny z JSX (class= zamiast className=) -->
+  <div class="preview-spacer">↑ 40vh preview spacer (scroll context dla ST)</div>
+
     <div class="stage stage-pinned" id="kinetic-section">
-
-        <!-- GLOW LAYER -->
+        
+        <!-- GLOW LAYER - ambient light pod słowem "nigdy" -->
         <div class="nigdy-glow" id="kinetic-nigdy-glow"></div>
-
-        <!-- FAZA 2.1: Blob carrier -->
+        
+        <!-- ============================================
+             FAZA 2.1: Blob carrier z 3 blobami
+             ============================================ -->
         <div class="blob-carrier" id="kinetic-blob-carrier">
             <div class="blob-bg-preview" id="kinetic-blob-bg-preview"></div>
             <div class="blob blob-1" id="kinetic-blob1"></div>
             <div class="blob blob-2" id="kinetic-blob2"></div>
             <div class="blob blob-3" id="kinetic-blob3"></div>
         </div>
-
-        <!-- Blob canvas -->
+        
+        <!-- v140: Blob canvas — replaces DOM multiply blending with baked source-over -->
         <canvas id="kinetic-blob-canvas"></canvas>
-
-        <!-- PARTICLE QMARK + TUNNEL -->
+        
+        <!-- PARTICLE QMARK - "?" z cząsteczek, za tekstem -->
         <canvas id="kinetic-tunnel-canvas"></canvas>
         <canvas id="kinetic-particle-qmark-canvas"></canvas>
-
+        
         <div class="content-wrapper" data-gating-target>
-
+            
             <!-- BLOK 1 -->
             <div class="text-block" id="kinetic-block-1">
-                <div id="kinetic-b1-shimmer"></div>
                 <div class="line">W internecie</div>
                 <div class="line">jest więcej klientów,</div>
                 <div style="height: 0.72rem;"></div>
@@ -667,14 +659,14 @@
             <!-- BLOK 3 -->
             <div class="text-block" id="kinetic-block-3">
                 <div class="small-header">Wg badań <span class="highlight">GEMIUS</span>:</div>
-
+                
                 <!-- DESKTOP VERSION -->
                 <div class="block-3-desktop">
                     <div class="line">98% osób, które odwiedzi</div>
                     <div class="line">stronę polskiej firmy&nbsp;<span class="word-anchor"><span class="bg-layer"><span class="nigdy-plate" id="kinetic-nigdy-plate"></span></span><span class="text-layer"><span class="nigdy-text" id="kinetic-word-nigdy">nigdy</span></span></span></div>
                     <div class="line bold-line">nie stanie się jej klientami.</div>
                 </div>
-
+                
                 <!-- MOBILE VERSION -->
                 <div class="block-3-mobile">
                     <div class="line">98% osób,</div>
@@ -685,53 +677,43 @@
                 </div>
             </div>
 
-        </div>
+        </div> <!-- Koniec content-wrapper -->
 
-        <!-- CYLINDER COMPONENT -->
+        <!-- CYLINDER COMPONENT - fog renderowany w canvas -->
         <div id="kinetic-cylinder-wrapper">
             <canvas id="kinetic-cylinder-canvas"></canvas>
         </div>
 
-        <!-- VIGNETTE ELLIPSE -->
+        <!-- VIGNETTE ELLIPSE — narastająca od krawędzi w ostatnich klatkach -->
         <div class="kinetic-vignette" id="kinetic-vignette"></div>
 
-    </div>
+    </div> <!-- Koniec STREFA 1 -->
 
-    <div class="preview-spacer"></div>
 
-    <script>
-        gsap.registerPlugin(ScrollTrigger);
-        ScrollTrigger.config({ ignoreMobileResize: true });
-        // GSAP_PLUGINS_USED = [ScrollTrigger] — bez dodatkowych pluginów, brak rejestracji.
+  <div class="preview-spacer">↓ 40vh preview spacer (freeze na SNAP3 = celowe)</div>
 
-        // scrollRuntime stub z debounce 120ms — spójność z produkcją
-        let _previewRefreshTimer = null;
-        const scrollRuntime = {
-            getScroll:      () => window.lenis?.scroll ?? window.scrollY,
-            getRawScroll:   () => window.lenis?.actualScroll ?? window.scrollY,
-            requestRefresh: (reason) => {
-                clearTimeout(_previewRefreshTimer);
-                _previewRefreshTimer = setTimeout(() => ScrollTrigger.refresh(true), 120);
-            }
-        };
-
-        // ═══ init(container) — KOD IDENTYCZNY Z TYM CO WCHODZI DO useGSAP ═══
-        // ⚠️ To NIE jest literalna kopia reference.html.
-        // Ten sam kod który jest w KineticSection.tsx — bez DEV overlay, bez TS adnotacji.
-        // Różnice względem TSX: brak adnotacji typów (: string, : HTMLElement, itd.)
-        // Logika GSAP, teardown, scroll API — identyczne.
+  <script>
+    // ═══ init(container) — KOD IDENTYCZNY Z TYM CO WCHODZI DO useGSAP W KineticSection.tsx ═══
+    // ⚠️ Vanilla JS w <script> — brak TypeScript.
+    // Logika animacji: identyczna. Typy: usunięte (tylko składnia TS → vanilla JS).
+    // scrollRuntime: stub powyżej zastępuje import '@/lib/scrollRuntime'.
+    // Lenis: aktywny przez shell boot (window.lenis = lenis).
     function init(container) {
         const $ = (sel) => container.querySelector(sel);
         const $$ = (sel) => container.querySelectorAll(sel);
         const $id = (id) => container.querySelector('#' + id);
 
+        const DEBUG_MODE =
+            new URLSearchParams(window.location.search).has('debug') ||
+            localStorage.getItem('debug') === '1';
 
         const cleanups = [];
         const gsapInstances = [];
         const timerIds = [];
         const tickerFns = [];
         const observers = [];
-        const getScroll = () => scrollRuntime.getScroll();
+        const getScroll = () => scrollRuntime.getScroll(); // stub: window.lenis?.scroll ?? window.scrollY
+        // P3-WILL-REPLACE: scrollTo/scrollOn/scrollOff → scrollRuntime.ts
         const scrollTo  = (px, opts) => window.lenis?.scrollTo(px, opts);
         const scrollOn  = (ev, fn)   => window.lenis?.on(ev, fn);
         const scrollOff = (ev, fn)   => window.lenis?.off(ev, fn);
@@ -825,9 +807,9 @@
         // Start: 0.75, mierzy FPS, adaptuje 0.5-1.5
         // ============================================
         const adaptiveDPR = {
-            cap: 0.75,
+            cap: 0.5,
             min: 0.5,
-            max: 0.75,  // v139: cap = start, DPR never grows
+            max: 0.5,  // v139: cap = start, DPR never grows
             lastTime: performance.now(),
             frameCount: 0,
             avgFPS: 30,
@@ -875,7 +857,7 @@
             
             get: function() {
                 var dpr = Math.min(window.devicePixelRatio || 1, this.cap);
-                var maxDPR = 960 / (window.innerWidth || 960);
+                var maxDPR = 1920 / (window.innerWidth || 1920);
                 return Math.min(dpr, maxDPR);
             },
             
@@ -1051,7 +1033,7 @@
         // C = zielona ciemna (alternatywna)
         // ============================================
         const PALETTE_A = ['#dca368', '#f9a736', '#e8845a', '#7c4b0a', '#f5bd55', '#ffc217', '#fb8840', '#792c01', '#f5bd55', '#ffc217', '#fb8840', '#792c01'];
-        const PALETTE_B = ['#d9ebda', '#b2dab2', '#c1dcce', '#cfe2c7'];
+        const PALETTE_B = ['#8bc18b', '#9acb9e', '#87b983', '#a0d19f', '#c0ddc0', '#d7ead8', '#bad7b7', '#ddeedd'];
         
 
         // ============================================
@@ -1132,6 +1114,9 @@
 
         // Visual
         const pAlpha = new Float32Array(maxCapacity);
+        const pAlphaBase = new Float32Array(maxCapacity).fill(1.0);
+        // Pre-computed base alpha per color slot: darkest=0.40, brightest=0.80
+        const ALPHA_BASE = [0.58, 0.54, 0.57, 0.30, 0.70, 0.61, 0.68, 0.33, 0.70, 0.61, 0.68, 0.33];
         const sortedIndices = new Int16Array(maxCapacity);
 
         // Kolory Pre-calc (A=niebieski, B=zielony)
@@ -1144,8 +1129,8 @@
         // pBreathY/X: tY[i] * 0.005 / tX[i] * 0.005 — static target coords scaled for breath
         // pColorIdx: aIdx * PB_LEN + bIdx — static color bucket index
         const PA_LEN = PALETTE_A.length; // 12
-        const PB_LEN = PALETTE_B.length; // 4
-        const COLOR_COMBOS = PA_LEN * PB_LEN; // 48
+        const PB_LEN = PALETTE_B.length; // 8
+        const COLOR_COMBOS = PA_LEN * PB_LEN; // 96
         const pFlightBase = new Float32Array(maxCapacity); // 8KB
         const pBreathY = new Float32Array(maxCapacity);    // 8KB
         const pBreathX = new Float32Array(maxCapacity);    // 8KB
@@ -1231,6 +1216,17 @@
         PALETTE_A_RGB[9]  = { r: 255, g: 213, b: 97 };
         PALETTE_A_RGB[10] = { r: 253, g: 186, b: 145 };
         PALETTE_A_RGB[11] = { r: 151, g: 57, b: 2 };
+
+        // PALETTE_B raw overrides — V8 Tea green (pastelowy, S:28-35%, L:62-72%)
+        PALETTE_B_RGB[0] = { r: 139, g: 193, b: 139 }; // #8bc18b
+        PALETTE_B_RGB[1] = { r: 154, g: 203, b: 158 }; // #9acb9e
+        PALETTE_B_RGB[2] = { r: 135, g: 185, b: 131 }; // #87b983
+        PALETTE_B_RGB[3] = { r: 160, g: 209, b: 159 }; // #a0d19f
+        // Bright (+25% L):
+        PALETTE_B_RGB[4] = { r: 192, g: 221, b: 192 }; // #c0ddc0
+        PALETTE_B_RGB[5] = { r: 215, g: 234, b: 216 }; // #d7ead8
+        PALETTE_B_RGB[6] = { r: 186, g: 215, b: 183 }; // #bad7b7
+        PALETTE_B_RGB[7] = { r: 221, g: 238, b: 221 }; // #ddeedd
 
         // SIN LUT: 256 entries, ~0.025 max error = 0.6px przy 24px amplitudzie (subpikselowe)
         // Eliminuje 6000 Math.sin/cos calls per frame w breath animation
@@ -1548,6 +1544,7 @@
                 pBreathY[idx] = tY[idx] * 0.005;
                 pBreathX[idx] = tX[idx] * 0.005;
                 pColorIdx[idx] = aIdx * PB_LEN + bIdx;
+                pAlphaBase[idx] = ALPHA_BASE[aIdx];
 
                 // Pozycja startowa (pierścień)
                 setInitialPosition(idx, activeCount, selected.length);
@@ -1751,6 +1748,7 @@
                 pX[i] = lx;
                 pY[i] = ly;
                 pZ[i] = lz;
+                alpha *= pAlphaBase[i];
                 pAlpha[i] = alpha > 1 ? 1 : (alpha < 0 ? 0 : alpha);
             }
             } else if (cp <= 0) {
@@ -1782,6 +1780,7 @@
                 pX[i] = lx;
                 pY[i] = ly;
                 pZ[i] = lz;
+                alpha *= pAlphaBase[i];
                 pAlpha[i] = alpha > 1 ? 1 : (alpha < 0 ? 0 : alpha);
             }
             } else {
@@ -1854,6 +1853,7 @@
                 pX[i] = lx;
                 pY[i] = ly;
                 pZ[i] = lz;
+                alpha *= pAlphaBase[i];
                 pAlpha[i] = alpha > 1 ? 1 : (alpha < 0 ? 0 : alpha);
             }
             }
@@ -2469,9 +2469,14 @@
         // ============ TICKER - dirty check + render ============
         var _cylinderHidden = false; // P1: phase-aware display:none
         var _cylMotion = false; // P3: true when rotation changing → coarser slices (motion blur masks)
+        var _lastCylTick = 0;
+        var _CYL_FRAME_MS = 1000 / 45; // cylinder at 45fps (rest stays at 30fps)
         const _tickCylinder = () => {
             if (_s._killed) return;
-            if (!_sectionTickOk) return;
+            if (!_sectionVisible) return; // visibility guard (shared, H7-corrected by _tickSectionGate)
+            var _cylNow = performance.now();
+            if (_cylNow - _lastCylTick < _CYL_FRAME_MS) return;
+            _lastCylTick = _cylNow;
             if (document.hidden) return;
             
             // P1: Phase-aware — hide wrapper from compositor when invisible
@@ -3061,13 +3066,14 @@
 
             // ── GEOMETRIA ──────────────────────────────────────────────────
             // Oblicza absolutne px snap pointów z ST.start/end
-            var _geoCache = { stStart: 0, total: 0, grabStart: 0, snaps: [0, 0, 0], _valid: false };
+            var _geoCache = { stStart: 0, stEnd: 0, total: 0, grabStart: 0, snaps: [0, 0, 0], _valid: false };
             var _getSnapGeometry = function() {
                 if (_geoCache._valid) return _geoCache;
-                var st = pinnedTl.scrollTrigger;
+                var st = pinnedTl.scrollTrigger || _s._externalScrollTrigger;
                 if (!st || st.start == null || st.end == null) return null;
                 var total = st.end - st.start;
                 _geoCache.stStart = st.start;
+                _geoCache.stEnd = st.end;
                 _geoCache.total = total;
                 _geoCache.grabStart = st.start + GRAB_START * total;
                 for (var _gi = 0; _gi < KINETIC_SNAPS.length; _gi++) {
@@ -3076,6 +3082,7 @@
                 _geoCache._valid = true;
                 return _geoCache;
             };
+            _s._geoCache_invalidate = function() { _geoCache._valid = false; };
 
             // ── RECONCILE — tylko strażnik strefy ─────────────────────────
             // Ustawia zone i robi twardy exit do bridge.
@@ -3100,6 +3107,15 @@
 
                 // Kinetic zone — tylko ustaw zone
                 _sm.zone = 'kinetic';
+
+                // Za daleko za sekcją — reset do bridge
+                if (scroll > g.stEnd + _DISARM_BUF) {
+                    _sm.zone = 'bridge';
+                    _sm.committedIndex = -1;
+                    _sm.pendingIndex = null;
+                    if (_sm.state !== 'snapping') _sm.state = 'idle';
+                    return;
+                }
 
                 // Pre-SNAP1: trzymaj -1 dopóki nie dojechał przez magnet/handleIntent
                 // Gdy committedIndex=0 (był na SNAP1) ten blok jest pomijany —
@@ -3131,6 +3147,9 @@
 
                 // Poniżej Kinetic — zignoruj
                 if (scroll < g.grabStart + _ARM_BUF) return;
+
+                // Powyżej Kinetic — zignoruj (chroni przed snap z Block 4)
+                if (scroll > g.stEnd + _ARM_BUF) return;
 
                 // Upewnij się że zone jest uzbrojone
                 if (_sm.zone !== 'kinetic') _sm.zone = 'kinetic';
@@ -3265,9 +3284,7 @@
             };
 
             scrollOn('scroll', _lenisSnap1Handler);
-            cleanups.push(function() {
-                scrollOff('scroll', _lenisSnap1Handler);
-            });
+            // scrollOff moved to pause(), scrollOn to resume() — ENT-LC-03 fix
 
             // Init: odczytaj stan z aktualnej pozycji
             requestAnimationFrame(function() {
@@ -3279,22 +3296,22 @@
             const b1Bold = b1?.querySelectorAll(".line.bold-line") ?? [];
             const b2 = $("#kinetic-block-2");
             const b3 = $("#kinetic-block-3");
-            const b3Header = b3.querySelector(".small-header");
+            const b3Header = b3?.querySelector(".small-header");
             
             // Wybierz odpowiednią wersję block-3 (desktop lub mobile)
             // Nie polegamy na window.innerWidth — na mobile może dać inną wartość niż CSS media query
             // Zamiast tego sprawdzamy który kontener CSS faktycznie renderuje
-            const _mobC = b3.querySelector(".block-3-mobile");
-            const _dskC = b3.querySelector(".block-3-desktop");
+            const _mobC = b3?.querySelector(".block-3-mobile");
+            const _dskC = b3?.querySelector(".block-3-desktop");
             const isMobileB3 = _mobC && window.getComputedStyle(_mobC).display !== 'none';
             const b3Container = isMobileB3 ? _mobC : _dskC;
             const b3Lines = b3Container?.querySelectorAll(".line:not(.bold-line)") ?? [];
             const b3Bold = b3Container?.querySelector(".line.bold-line");
             
-            const root = container; // was document.documentElement — CSS vars scoped to #kinetic-section
+        // const root removed (TS-LINT-UNUSED-01 AUTO-FIX)
 
             // Palety kolorów dla blobów (z oryginału)
-            const initialBlue = "hsl(40, 35%, 94%)"; // warm (start state)
+        // const initialBlue removed (TS-LINT-UNUSED-01 AUTO-FIX)
             const palette1 = { 
                 bg: "hsl(210, 30%, 94%)", 
                 b1: "hsl(200, 35%, 88%)", 
@@ -3306,6 +3323,12 @@
                 b1: "hsl(30, 40%, 88%)", 
                 b2: "hsl(45, 30%, 90%)", 
                 b3: "hsl(15, 35%, 91%)" 
+            };
+            const palette3 = { 
+                bg: "hsl(270, 20%, 94%)", 
+                b1: "hsl(320, 25%, 90%)", 
+                b2: "hsl(260, 30%, 91%)", 
+                b3: "hsl(290, 20%, 89%)" 
             };
 
             // --- SEKWENCJA STREFY 1 ---
@@ -3644,50 +3667,38 @@
             
             // BIRTH blobów - PRZENIESIONY do keyframes per-blob (zero konfliktów scale)
             // Każdy blob ma własne "narodziny" wbudowane w keyframes 0% → ~4%
-            // Opacity fade-in - osobne tweeny (keyframes nie animują opacity = brak konfliktu)
-            // SYNC Z OSTATNIM ZDANIEM: bloby pojawiają się gdy linia 4 zaczyna się rysować
-            // Keyframes pozostają na I-2 — bloby statyczne przez chwilę, potem ruch
-            const BLOB_OPACITY_START = b1Start + B1_STAGGER * (B1_LINE_COUNT - 1);
+            // Opacity fade-in - bloby pojawiają się razem z tekstem "W internecie"
+            const BLOB_BIRTH = b1Start;
+            const BLOB_OPACITY_START = b1Start + B1_STAGGER * (B1_LINE_COUNT - 1); // blend switch anchor
             // v140: carrier stays hidden — blob canvas renders instead
             gsap.set(_elBlobCarrier, { visibility: 'hidden' });
-            pinnedTl.to(_elBlob1, { opacity: 0.99, duration: 1.5, ease: "power1.out" }, BLOB_OPACITY_START);
-            pinnedTl.to(_elBlob2, { opacity: 0.99, duration: 1.5, ease: "power1.out" }, 0.1 + BLOB_OPACITY_START);
-            pinnedTl.to(_elBlob3, { opacity: 0.99, duration: 1.5, ease: "power1.out" }, 0.2 + BLOB_OPACITY_START);
+            pinnedTl.to(_elBlob1, { opacity: 0.99, duration: 1.5, ease: "power1.out" }, BLOB_BIRTH);
+            pinnedTl.to(_elBlob2, { opacity: 0.99, duration: 1.5, ease: "power1.out" }, 0.1 + BLOB_BIRTH);
+            pinnedTl.to(_elBlob3, { opacity: 0.99, duration: 1.5, ease: "power1.out" }, 0.2 + BLOB_BIRTH);
 
             // BIRTH SCALE: rośnie z 0.15 → docelowy równolegle z opacity fade
-            // Osobne tweeny — nie kolidują z keyframes (keyframes startują później przy I-2)
-            pinnedTl.fromTo(_elBlob1, { scale: 0.15 }, { scale: 1.1, duration: 4.5, ease: "power1.out" }, BLOB_OPACITY_START);
-            pinnedTl.fromTo(_elBlob2, { scale: 0.15 }, { scale: 1.4, duration: 4.5, ease: "power1.out" }, 0.1 + BLOB_OPACITY_START);
-            pinnedTl.fromTo(_elBlob3, { scale: 0.15 }, { scale: 1.0, duration: 4.5, ease: "power1.out" }, 0.2 + BLOB_OPACITY_START);
+            pinnedTl.fromTo(_elBlob1, { scale: 0.15 }, { scale: 1.1, duration: 4.5, ease: "power1.out" }, BLOB_BIRTH);
+            pinnedTl.fromTo(_elBlob2, { scale: 0.15 }, { scale: 1.4, duration: 4.5, ease: "power1.out" }, 0.1 + BLOB_BIRTH);
+            pinnedTl.fromTo(_elBlob3, { scale: 0.15 }, { scale: 1.0, duration: 4.5, ease: "power1.out" }, 0.2 + BLOB_BIRTH);
 
-            // PARTICLE BLEND — opacity dip masks blend switch
-            pinnedTl.to(pqCanvas, { opacity: 0.15, duration: 0.4, ease: "power2.in" }, BLOB_OPACITY_START + 1.1);
-            pinnedTl.set(pqCanvas, { mixBlendMode: 'color-burn' }, BLOB_OPACITY_START + 1.5);
-            pinnedTl.to(pqCanvas, { opacity: 0.75, duration: 0.3, ease: "power2.out" }, BLOB_OPACITY_START + 1.5);
-            pinnedTl.to(pqCanvas, { opacity: 1, duration: 5.0, ease: "power2.out" }, 3.5 + I + DELTA);
+            // PARTICLE BLEND — gentle valley: 3U dip to 0.30 at switch, 1.5U ramp to 0.75
+            // power2.in: first 1U barely visible (1.00→0.92), accelerates to minimum
+            pinnedTl.to(pqCanvas, { opacity: 0.30, duration: BLOB_OPACITY_START + 1.5 - BLOB_BIRTH, ease: "power2.in" }, BLOB_BIRTH);
+            pinnedTl.set(pqCanvas, { mixBlendMode: 'multiply' }, BLOB_OPACITY_START + 1.5);
+            pinnedTl.to(pqCanvas, { opacity: 0.75, duration: 1.5, ease: "power2.out" }, BLOB_OPACITY_START + 1.5);
+            pinnedTl.to(pqCanvas, { opacity: 1, duration: 0.8, ease: "power2.out" }, 8.5 + I + DELTA);
             
-            // SHIMMER: single light sweep across ALL Block 1 text simultaneously
-            // 2.8U total, center passes through middle at blend switch
-            var _shimmer = $id('kinetic-b1-shimmer');
-            if (_shimmer) {
-                pinnedTl.fromTo(_shimmer, 
-                    { xPercent: 0 }, 
-                    { xPercent: 350, duration: 2.8, ease: "power1.inOut" }, 
-                    BLOB_OPACITY_START + 1.5 - 1.4
-                );
-            }
-            
-            // CHAR SWEEP: color pulse on "jest więcej klientów," synced with shimmer
+            // CHAR SWEEP: color pulse on "jest więcej klientów," at blend switch
             var _line2 = b1Lines[1]; // second .line:not(.bold-line)
             if (_line2) {
                 var _line2Chars = _line2.querySelectorAll('.anim-char');
                 if (_line2Chars.length > 0) {
-                    var _swDur = 2.8;
+                    var _swDur = 3.92; // 2× longer
                     var _swCenter = BLOB_OPACITY_START + 1.5;
-                    var _swUp = 0.25;
-                    var _swDown = 0.25;
+                    var _swUp = 0.6;  // per-char fade IN duration (wider band)
+                    var _swDown = 0.6; // per-char fade OUT duration (wider band)
                     var _swStagger = (_swDur - _swUp - _swDown) / _line2Chars.length;
-                    var _swStart = _swCenter - _swDur / 2;
+                    var _swStart = _swCenter - 1.4 - 1.96; // shifted earlier by old duration
                     pinnedTl.to(_line2Chars, {
                         color: "#ffb998",
                         duration: _swUp,
@@ -3700,6 +3711,29 @@
                         stagger: { each: _swStagger, from: "start" },
                         ease: "sine.out"
                     }, _swStart + _swUp);
+                    
+                    // Char sweep 2: green pulse on "W czym problem?" at second blend switch
+                    var _problemChars = container.querySelectorAll('#kinetic-problem-line .anim-char');
+                    if (_problemChars.length > 0) {
+                        var _sw2Dur = 1.96;
+                        var _sw2Up = 0.25;
+                        var _sw2Down = 0.25;
+                        var _sw2Center = 8.5 + I + DELTA;
+                        var _sw2Stagger = (_sw2Dur - _sw2Up - _sw2Down) / _problemChars.length;
+                        var _sw2Start = _sw2Center - 1.4;
+                        pinnedTl.to(_problemChars, {
+                            color: "#9df6e4",
+                            duration: _sw2Up,
+                            stagger: { each: _sw2Stagger, from: "start" },
+                            ease: "sine.in"
+                        }, _sw2Start);
+                        pinnedTl.to(_problemChars, {
+                            color: "#141414",
+                            duration: _sw2Down,
+                            stagger: { each: _sw2Stagger, from: "start" },
+                            ease: "sine.out"
+                        }, _sw2Start + _sw2Up);
+                    }
                 }
             }
 
@@ -4185,76 +4219,89 @@
         // Drift przy dużym desktop resize (>15%) = max 3.5%, znika przy nawigacji.
         // Docelowo: reinit path (kill→DOM restore→init) gdy splitIntoChars będzie idempotentna.
 
-    // ============================================
 
-    // ════════════════════════════════════════════════════════════════
-    // AUTO-FIX: ST-REFRESH-01 — section-in-view + layout-settle scaffold
-    // ════════════════════════════════════════════════════════════════
-    var _stIo = new IntersectionObserver(function(entries) {
-        if (!entries[0]?.isIntersecting) return;
-        scrollRuntime.requestRefresh('section-in-view');
-        _stIo.disconnect();
-    }, { threshold: 0, rootMargin: '0px' });
-    _stIo.observe(container);
-    observers.push(_stIo);
-    cleanups.push(function() { _stIo.disconnect(); });
+        // ============================================================
+        // CPU GATING — Ścieżka 1 (Typ B, pin:true + niezależne pętle)
+        // P2A AUTO-FIX: IO → pause()/resume()
+        // PIN-DISABLE-01: pause() NIE dotyka ScrollTrigger — zarządza pinem
+        // Target: [data-gating-target] = .content-wrapper
+        // rootMargin = clamp(200–1200px, 0.5 × visualViewport.height)
+        // ============================================================
+        var _gatingTarget = container.querySelector('[data-gating-target]') || container;
+        var _io = null;
+        var _ioDebounce = null;
 
-    var _settleTimer = setTimeout(function() {
-        scrollRuntime.requestRefresh('layout-settle');
-    }, 1000);
-    timerIds.push(_settleTimer);
-
-    // ════════════════════════════════════════════════════════════════
-    // AUTO-FIX: CPU GATING — Ścieżka 1 (Typ B, IO-safe pin — no disable)
-    // IO wywołuje pause()/resume(). NIE dotyka ST.
-    // rootMargin = 0.5 × VH (clamp 200–1200px).
-    // Obserwuje [data-gating-target] (content-wrapper) — stable bounding box.
-    // PIN-DISABLE-01 SAFE: pause() nie wywołuje ST.disable()/st.kill().
-    // ════════════════════════════════════════════════════════════════
-    var _factoryIo = null;
-    var _factoryIoDebounce = null;
-    var _factoryTarget = container.querySelector('[data-gating-target]') || container;
-
-    function _getFactoryRootMargin() {
-        var vh = (window.visualViewport && window.visualViewport.height) ? window.visualViewport.height : window.innerHeight;
-        var rm = Math.round(0.5 * vh);
-        rm = Math.max(200, Math.min(1200, rm));
-        return rm + 'px';
-    }
-
-    function _factoryIoCallback(entries) {
-        if (!entries[0]?.isIntersecting) {
-            pause();
-        } else {
-            resume();
+        function _getIoRootMargin() {
+            var vh = (window.visualViewport && window.visualViewport.height)
+                     ? window.visualViewport.height
+                     : window.innerHeight;
+            var rm = Math.min(1200, Math.max(200, Math.round(0.5 * vh)));
+            return rm + 'px';
         }
-    }
 
-    function _recreateFactoryIO() {
-        clearTimeout(_factoryIoDebounce);
-        _factoryIoDebounce = setTimeout(function() {
-            if (_s._killed) return;
-            if (_factoryIo) { _factoryIo.disconnect(); }
-            _factoryIo = new IntersectionObserver(_factoryIoCallback, {
-                rootMargin: _getFactoryRootMargin()
+        function _ioCallback(entries) {
+            if (!entries[0]?.isIntersecting) {
+                if (!_paused) pause();
+            } else {
+                if (_paused) resume();
+            }
+        }
+
+        function _recreateIO() {
+            clearTimeout(_ioDebounce);
+            _ioDebounce = setTimeout(function() {
+                if (_s._killed) return;
+                if (_io) { _io.disconnect(); }
+                var _rm = _getIoRootMargin();
+                _io = new IntersectionObserver(_ioCallback, {
+                    rootMargin: _rm,
+                    threshold: 0
+                });
+                _io.observe(_gatingTarget);
+                observers.push(_io);
+            }, 50);
+        }
+
+        // Named handlers — INP-LEAK-01
+        function _onVVResize()         { _recreateIO(); }
+        function _onOrientChange()     { _recreateIO(); }
+
+        _recreateIO();
+
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', _onVVResize, { passive: true });
+            cleanups.push(function() {
+                clearTimeout(_ioDebounce);
+                window.visualViewport.removeEventListener('resize', _onVVResize);
             });
-            _factoryIo.observe(_factoryTarget);
-            observers.push(_factoryIo);
-        }, 50);
-    }
-
-    function _onFactoryVVResize() { _recreateFactoryIO(); }
-
-    _recreateFactoryIO();
-
-    if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', _onFactoryVVResize, { passive: true });
+        }
+        window.addEventListener('orientationchange', _onOrientChange, { passive: true });
         cleanups.push(function() {
-            clearTimeout(_factoryIoDebounce);
-            window.visualViewport.removeEventListener('resize', _onFactoryVVResize);
+            window.removeEventListener('orientationchange', _onOrientChange);
         });
-    }
 
+        // ============================================================
+        // ST-REFRESH-01 — section-in-view + layout-settle scaffold
+        // P2A AUTO-FIX: ST position gating (osobny IO od CPU gatingu)
+        // ============================================================
+        var _stIo = new IntersectionObserver(function(entries) {
+            if (!entries[0]?.isIntersecting) return;
+            scrollRuntime.requestRefresh('section-in-view');
+            _stIo.disconnect();
+        }, { threshold: 0, rootMargin: '0px' });
+        _stIo.observe(container);
+        observers.push(_stIo);
+        cleanups.push(function() { _stIo.disconnect(); });
+
+        // layout-settle: 1000ms po init (pragmatic — gives fonts/images time to settle)
+        var _settleTimer = setTimeout(function() {
+            scrollRuntime.requestRefresh('layout-settle');
+        }, 1000);
+        timerIds.push(_settleTimer);
+
+
+        // ============================================================
+        // DEV OVERLAY — za ?debug=1 lub localStorage.debug==='1'
 
     // ============================================
     // LIFECYCLE: kill / pause / resume (Typ B)
@@ -4265,9 +4312,10 @@
         if (_paused) return;
         _paused = true;
         // Odłącz wszystkie ticker functions
-        // PIN-DISABLE-01 SAFE: NIE wywołujemy ST.disable()/st.kill() — ST zarządza pinem
         tickerFns.forEach(fn => { if (fn) gsap.ticker.remove(fn); });
-        // Pauzuj główny timeline (scrubbed timelines są celowo pomijane — ST zarządza pinem)
+        // ENT-LC-03: detach snap1 magnet listener during pause
+        scrollOff('scroll', _lenisSnap1Handler);
+        // Pauzuj główny timeline (i ScrollTrigger)
         gsapInstances.forEach(tl => {
             if (!tl) return;
             if (tl.scrollTrigger && tl.scrollTrigger.vars && tl.scrollTrigger.vars.scrub !== undefined) return;
@@ -4283,6 +4331,8 @@
         _paused = false;
         // Podłącz ticker functions
         tickerFns.forEach(fn => { if (fn) gsap.ticker.add(fn); });
+        // ENT-LC-03: re-attach snap1 magnet listener
+        scrollOn('scroll', _lenisSnap1Handler);
         // Wznów timeline
         gsapInstances.forEach(tl => {
             if (!tl) return;
@@ -4311,7 +4361,7 @@
         // 3. Wyczyść ticker references
         tickerFns.length = 0;
         // 4. Wyczyść timer IDs
-        timerIds.forEach(id => clearInterval(id));
+        timerIds.forEach(id => clearTimeout(id));
         timerIds.length = 0;
         // 4b. Wyczyść observers (IntersectionObserver etc.)
         observers.forEach(o => { try { o.disconnect?.(); } catch(e) {} });
@@ -4322,7 +4372,7 @@
         _s.particleQmark = null;
         _s.bridgeI = 0;
         _s.blobTweens = null;
-        // 6. Reset freeze/lock flags
+        // 7. Reset freeze/lock flags
         freezeFinal = false;
         _freezeClampBusy = false;
         mobileResizeLock = false;
@@ -4340,27 +4390,23 @@
         clearTimeout(_idleSnapTimer);
         _snap1MagnetFired = false;
         if (_kineticObserver) { _kineticObserver.kill(); _kineticObserver = null; }
-        // 7. Cleanup Factory IO (CPU Gating)
-        if (_factoryIo) { _factoryIo.disconnect(); _factoryIo = null; }
-        clearTimeout(_factoryIoDebounce);
-        // 8. Reset canvas clip-path
         var _pqc = $id('kinetic-particle-qmark-canvas');
         if (_pqc) _pqc.style.clipPath = '';
     }
 
-
-
     return { kill, pause, resume, _s };
 
-    } // END init()
-        // ═══ KONIEC init(container) ═══
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const el = document.getElementById('kinetic-section');
-            if (!el) throw new Error('[PREVIEW] Missing #kinetic-section — sprawdź HTML sekcji');
-            window.kineticPreview = init(el);
-            console.log('[kinetic PREVIEW] init complete:', window.kineticPreview);
-        });
-    </script>
+    } // END init()
+
+    // ═══ KONIEC init(container) ═══
+
+    window.addEventListener('load', function() {
+      const el = document.getElementById('kinetic-section');
+      if (!el) throw new Error('[PREVIEW] Missing #kinetic-section — sprawdź HTML sekcji');
+      window.kineticPreview = init(el);
+    });
+  </script>
+
 </body>
 </html>

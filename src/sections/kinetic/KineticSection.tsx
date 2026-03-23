@@ -1,4 +1,7 @@
-// @ts-nocheck
+// KineticSection.tsx — P3 Factory output
+// Source: kinetic.reference.html (P2A golden master)
+// Conversion: mechanical translation per Factory Pipeline v5.x
+// @ts-nocheck — sekcja Typ B (vanilla→TS); typowanie stopniowe w Fabryce.
 'use client';
 
 import { useRef } from 'react';
@@ -9,34 +12,28 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
 import { useBridgeContext } from '@/app/BridgeContext';
 import './kinetic-section.css';
 
-// Runtime safety in minified strict-mode builds.
-var _clipActive = false;
-var _clipOffCount = 0;
-
 // ⚠️ GSAP-SSR-01: ZAKAZ gsap.registerPlugin() na module top-level.
-// Next.js pre-renderuje Client Components na serwerze — window/document nie istnieją.
-// registerPlugin() WYŁĄCZNIE wewnątrz useGSAP(() => { ... }) jak poniżej.
+// gsap.registerPlugin(ScrollTrigger) jest wewnątrz init() wywoływanego z useGSAP — PASS.
+
+// Lenis: scrollTo / on / off wyłącznie przez scrollRuntime (instancja nie jest eksponowana globalnie).
 
 // ─────────────────────────────────────────────────────────────────────────────
-// init(container) — hardened vanilla kod z P2A, mechanicznie przetłumaczony.
-// Nie rozbijamy funkcji na części — wzorzec inst jest bezpieczny i mechaniczny.
-// Typ B: pause/resume/IO gating wewnątrz init() — bez zmian w stosunku do P2A.
-// scrollRuntime: getScroll + scrollTo/on/off — Lenis NIE jest na window.lenis (tylko w runtime).
+// init(container) — mechaniczna translacja vanilla JS z reference.html (P2A)
+// Logika GSAP identyczna. Typy dodane mechanicznie (konwersja P3).
 // ─────────────────────────────────────────────────────────────────────────────
-function init(
-    container: HTMLElement,
-    opts?: {
-        pinTriggerRef?: { current: HTMLElement | null };
-        pinSpacerRef?: { current: HTMLElement | null };
-    }
-): { kill: () => void; pause: () => void; resume: () => void } {
-        // W integracji bridge pin musi być liczony na wrapperze (nie na warstwie absolute).
-        const wrapperEl = typeof document !== 'undefined' ? document.getElementById('bridge-wrapper') : null;
-        const pinTrigger = (opts?.pinTriggerRef?.current ?? wrapperEl ?? container) as HTMLElement;
+    function init(
+        container: HTMLElement,
+        opts?: {
+            pinTriggerRef?: { current: HTMLElement | null };
+            pinSpacerRef?: { current: HTMLElement | null };
+        }
+    ): { kill: () => void; pause: () => void; resume: () => void } {
         const $ = (sel: string) => container.querySelector(sel);
         const $$ = (sel: string) => container.querySelectorAll(sel);
         const $id = (id: string) => container.querySelector('#' + id);
 
+        const wrapperEl = typeof document !== 'undefined' ? document.getElementById('bridge-wrapper') : null;
+        const pinTrigger = (opts?.pinTriggerRef?.current ?? wrapperEl ?? container) as HTMLElement;
 
         const cleanups = [];
         const gsapInstances = [];
@@ -44,9 +41,10 @@ function init(
         const tickerFns = [];
         const observers = [];
         const getScroll = () => scrollRuntime.getScroll();
-        const scrollTo  = (px, opts) => scrollRuntime.scrollTo(px, opts);
-        const scrollOn  = (ev, fn)   => scrollRuntime.on(ev, fn);
-        const scrollOff = (ev, fn)   => scrollRuntime.off(ev, fn);
+        const scrollTo = (px: number, opts?: Record<string, unknown>) =>
+            scrollRuntime.scrollTo(px, opts as never);
+        const scrollOn  = (ev: string, fn: (...args: unknown[]) => void) => scrollRuntime.on(ev, fn);
+        const scrollOff = (ev: string, fn: (...args: unknown[]) => void) => scrollRuntime.off(ev, fn);
 
         // ── Shared state (closure) — replaces window.* event bus (ENT-JS-09) ──
         const _s = {
@@ -88,7 +86,6 @@ function init(
             container.style.pointerEvents = '';
         };
         _s.hideLayer = function() {
-            // Po wyjściu z pina warstwa Kinetic nie może "mignąć" nad kolejną sekcją.
             container.style.visibility = 'hidden';
             container.style.opacity = '0';
             container.style.pointerEvents = 'none';
@@ -147,9 +144,9 @@ function init(
         // Start: 0.75, mierzy FPS, adaptuje 0.5-1.5
         // ============================================
         const adaptiveDPR = {
-            cap: 0.75,
+            cap: 0.5,
             min: 0.5,
-            max: 0.75,  // v139: cap = start, DPR never grows
+            max: 0.5,  // v139: cap = start, DPR never grows
             lastTime: performance.now(),
             frameCount: 0,
             avgFPS: 30,
@@ -197,7 +194,7 @@ function init(
             
             get: function() {
                 var dpr = Math.min(window.devicePixelRatio || 1, this.cap);
-                var maxDPR = 960 / (window.innerWidth || 960);
+                var maxDPR = 1920 / (window.innerWidth || 1920);
                 return Math.min(dpr, maxDPR);
             },
             
@@ -373,7 +370,7 @@ function init(
         // C = zielona ciemna (alternatywna)
         // ============================================
         const PALETTE_A = ['#dca368', '#f9a736', '#e8845a', '#7c4b0a', '#f5bd55', '#ffc217', '#fb8840', '#792c01', '#f5bd55', '#ffc217', '#fb8840', '#792c01'];
-        const PALETTE_B = ['#d9ebda', '#b2dab2', '#c1dcce', '#cfe2c7'];
+        const PALETTE_B = ['#8bc18b', '#9acb9e', '#87b983', '#a0d19f', '#c0ddc0', '#d7ead8', '#bad7b7', '#ddeedd'];
         
 
         // ============================================
@@ -454,6 +451,9 @@ function init(
 
         // Visual
         const pAlpha = new Float32Array(maxCapacity);
+        const pAlphaBase = new Float32Array(maxCapacity).fill(1.0);
+        // Pre-computed base alpha per color slot: darkest=0.40, brightest=0.80
+        const ALPHA_BASE = [0.58, 0.54, 0.57, 0.30, 0.70, 0.61, 0.68, 0.33, 0.70, 0.61, 0.68, 0.33];
         const sortedIndices = new Int16Array(maxCapacity);
 
         // Kolory Pre-calc (A=niebieski, B=zielony)
@@ -466,8 +466,8 @@ function init(
         // pBreathY/X: tY[i] * 0.005 / tX[i] * 0.005 — static target coords scaled for breath
         // pColorIdx: aIdx * PB_LEN + bIdx — static color bucket index
         const PA_LEN = PALETTE_A.length; // 12
-        const PB_LEN = PALETTE_B.length; // 4
-        const COLOR_COMBOS = PA_LEN * PB_LEN; // 48
+        const PB_LEN = PALETTE_B.length; // 8
+        const COLOR_COMBOS = PA_LEN * PB_LEN; // 96
         const pFlightBase = new Float32Array(maxCapacity); // 8KB
         const pBreathY = new Float32Array(maxCapacity);    // 8KB
         const pBreathX = new Float32Array(maxCapacity);    // 8KB
@@ -553,6 +553,17 @@ function init(
         PALETTE_A_RGB[9]  = { r: 255, g: 213, b: 97 };
         PALETTE_A_RGB[10] = { r: 253, g: 186, b: 145 };
         PALETTE_A_RGB[11] = { r: 151, g: 57, b: 2 };
+
+        // PALETTE_B raw overrides — V8 Tea green (pastelowy, S:28-35%, L:62-72%)
+        PALETTE_B_RGB[0] = { r: 139, g: 193, b: 139 }; // #8bc18b
+        PALETTE_B_RGB[1] = { r: 154, g: 203, b: 158 }; // #9acb9e
+        PALETTE_B_RGB[2] = { r: 135, g: 185, b: 131 }; // #87b983
+        PALETTE_B_RGB[3] = { r: 160, g: 209, b: 159 }; // #a0d19f
+        // Bright (+25% L):
+        PALETTE_B_RGB[4] = { r: 192, g: 221, b: 192 }; // #c0ddc0
+        PALETTE_B_RGB[5] = { r: 215, g: 234, b: 216 }; // #d7ead8
+        PALETTE_B_RGB[6] = { r: 186, g: 215, b: 183 }; // #bad7b7
+        PALETTE_B_RGB[7] = { r: 221, g: 238, b: 221 }; // #ddeedd
 
         // SIN LUT: 256 entries, ~0.025 max error = 0.6px przy 24px amplitudzie (subpikselowe)
         // Eliminuje 6000 Math.sin/cos calls per frame w breath animation
@@ -870,6 +881,7 @@ function init(
                 pBreathY[idx] = tY[idx] * 0.005;
                 pBreathX[idx] = tX[idx] * 0.005;
                 pColorIdx[idx] = aIdx * PB_LEN + bIdx;
+                pAlphaBase[idx] = ALPHA_BASE[aIdx];
 
                 // Pozycja startowa (pierścień)
                 setInitialPosition(idx, activeCount, selected.length);
@@ -1073,6 +1085,7 @@ function init(
                 pX[i] = lx;
                 pY[i] = ly;
                 pZ[i] = lz;
+                alpha *= pAlphaBase[i];
                 pAlpha[i] = alpha > 1 ? 1 : (alpha < 0 ? 0 : alpha);
             }
             } else if (cp <= 0) {
@@ -1104,6 +1117,7 @@ function init(
                 pX[i] = lx;
                 pY[i] = ly;
                 pZ[i] = lz;
+                alpha *= pAlphaBase[i];
                 pAlpha[i] = alpha > 1 ? 1 : (alpha < 0 ? 0 : alpha);
             }
             } else {
@@ -1176,6 +1190,7 @@ function init(
                 pX[i] = lx;
                 pY[i] = ly;
                 pZ[i] = lz;
+                alpha *= pAlphaBase[i];
                 pAlpha[i] = alpha > 1 ? 1 : (alpha < 0 ? 0 : alpha);
             }
             }
@@ -1791,9 +1806,14 @@ function init(
         // ============ TICKER - dirty check + render ============
         var _cylinderHidden = false; // P1: phase-aware display:none
         var _cylMotion = false; // P3: true when rotation changing → coarser slices (motion blur masks)
+        var _lastCylTick = 0;
+        var _CYL_FRAME_MS = 1000 / 45; // cylinder at 45fps (rest stays at 30fps)
         const _tickCylinder = () => {
             if (_s._killed) return;
-            if (!_sectionTickOk) return;
+            if (!_sectionVisible) return; // visibility guard (shared, H7-corrected by _tickSectionGate)
+            var _cylNow = performance.now();
+            if (_cylNow - _lastCylTick < _CYL_FRAME_MS) return;
+            _lastCylTick = _cylNow;
             if (document.hidden) return;
             
             // P1: Phase-aware — hide wrapper from compositor when invisible
@@ -2283,32 +2303,11 @@ function init(
             // Stan narracyjny zadeklarowany w STATE MACHINE v3 poniżej
             // (var _sm zdefiniowane po stworzeniu pinnedTl)
 
-            // Po zejściu w dół poza koniec pinu: nie łap snapów przy „micro scroll” w górę z kolejnej sekcji.
-            // Re-arm TYLKO gdy scroll jest w okolicy pinu (od dołu), NIE gdy jesteśmy nad Kinetic (hero/fakty…)
-            // — inaczej scroll << st.end spełnia „<= end - margin” i fałszywie zdejmowało disarm.
             var _snapDisarmedAfterForwardExit = false;
             var _SNAP_REARM_START_BUF_PX = 120;
             function _snapRearmMarginPx() {
                 var vh = typeof window !== 'undefined' ? window.innerHeight || 800 : 800;
                 return Math.round(Math.max(420, Math.min(920, vh * 0.52)));
-            }
-            function _maybeRearmKineticSnapsAfterForwardExit(scroll) {
-                if (!_snapDisarmedAfterForwardExit) return;
-                var st = pinnedTl.scrollTrigger;
-                if (!st || st.start == null || st.end == null) return;
-                var margin = _snapRearmMarginPx();
-                if (scroll > st.end - margin) return;
-                if (scroll < st.start - _SNAP_REARM_START_BUF_PX) return;
-                _snapDisarmedAfterForwardExit = false;
-            }
-            function _snapDisarmBlocksIntent(scroll) {
-                if (!_snapDisarmedAfterForwardExit) return false;
-                var st = pinnedTl.scrollTrigger;
-                if (!st || st.end == null || st.start == null) return false;
-                var margin = _snapRearmMarginPx();
-                if (scroll > st.end - margin) return true;
-                if (scroll < st.start - _SNAP_REARM_START_BUF_PX) return true;
-                return false;
             }
 
             const pinnedTl = gsap.timeline({
@@ -2349,8 +2348,7 @@ function init(
                         }
                         adaptiveDPR.lockForScroll();
                         _maybeRearmKineticSnapsAfterForwardExit(getScroll());
-                        // BEZ clampu scroll → SNAP3: po SNAP3 jest overshoot (timeline do progress 1),
-                        // użytkownik musi móc przewinąć poza snaps[2], inaczej pin nigdy się nie kończy.
+                        // Bez clampu scroll→SNAP3: overshoot musi móc przejść do końca pinu (wyjście do blok-4-5).
                         if (_sm.state === 'idle' || _sm.state === 'cooldown') {
                             _reconcileFromScroll();
                         }
@@ -2385,6 +2383,25 @@ function init(
             _s.pinnedTl = pinnedTl;
             gsapInstances.push(pinnedTl);
 
+            function _maybeRearmKineticSnapsAfterForwardExit(scroll: number) {
+                if (!_snapDisarmedAfterForwardExit) return;
+                var st = pinnedTl.scrollTrigger;
+                if (!st || st.start == null || st.end == null) return;
+                var margin = _snapRearmMarginPx();
+                if (scroll > st.end - margin) return;
+                if (scroll < st.start - _SNAP_REARM_START_BUF_PX) return;
+                _snapDisarmedAfterForwardExit = false;
+            }
+            function _snapDisarmBlocksIntent(scroll: number) {
+                if (!_snapDisarmedAfterForwardExit) return false;
+                var st = pinnedTl.scrollTrigger;
+                if (!st || st.end == null || st.start == null) return false;
+                var margin = _snapRearmMarginPx();
+                if (scroll > st.end - margin) return true;
+                if (scroll < st.start - _SNAP_REARM_START_BUF_PX) return true;
+                return false;
+            }
+
             // ══════════════════════════════════════════════════════════════
             // STATE MACHINE v3 — HARD BEATS ONLY
             // Spec: Bridge=wolny, Kinetic=hard beats, End=hard stop
@@ -2408,13 +2425,14 @@ function init(
 
             // ── GEOMETRIA ──────────────────────────────────────────────────
             // Oblicza absolutne px snap pointów z ST.start/end
-            var _geoCache = { stStart: 0, total: 0, grabStart: 0, snaps: [0, 0, 0], _valid: false };
+            var _geoCache = { stStart: 0, stEnd: 0, total: 0, grabStart: 0, snaps: [0, 0, 0], _valid: false };
             var _getSnapGeometry = function() {
                 if (_geoCache._valid) return _geoCache;
-                var st = pinnedTl.scrollTrigger;
+                var st = pinnedTl.scrollTrigger || _s._externalScrollTrigger;
                 if (!st || st.start == null || st.end == null) return null;
                 var total = st.end - st.start;
                 _geoCache.stStart = st.start;
+                _geoCache.stEnd = st.end;
                 _geoCache.total = total;
                 _geoCache.grabStart = st.start + GRAB_START * total;
                 for (var _gi = 0; _gi < KINETIC_SNAPS.length; _gi++) {
@@ -2423,6 +2441,7 @@ function init(
                 _geoCache._valid = true;
                 return _geoCache;
             };
+            _s._geoCache_invalidate = function() { _geoCache._valid = false; };
 
             // ── RECONCILE — tylko strażnik strefy ─────────────────────────
             // Ustawia zone i robi twardy exit do bridge.
@@ -2447,6 +2466,15 @@ function init(
 
                 // Kinetic zone — tylko ustaw zone
                 _sm.zone = 'kinetic';
+
+                // Za daleko za sekcją — reset do bridge
+                if (scroll > g.stEnd + _DISARM_BUF) {
+                    _sm.zone = 'bridge';
+                    _sm.committedIndex = -1;
+                    _sm.pendingIndex = null;
+                    if (_sm.state !== 'snapping') _sm.state = 'idle';
+                    return;
+                }
 
                 // Pre-SNAP1: trzymaj -1 dopóki nie dojechał przez magnet/handleIntent
                 // Gdy committedIndex=0 (był na SNAP1) ten blok jest pomijany —
@@ -2480,6 +2508,9 @@ function init(
 
                 // Poniżej Kinetic — zignoruj
                 if (scroll < g.grabStart + _ARM_BUF) return;
+
+                // Powyżej Kinetic — zignoruj (chroni przed snap z Block 4)
+                if (scroll > g.stEnd + _ARM_BUF) return;
 
                 // Upewnij się że zone jest uzbrojone
                 if (_sm.zone !== 'kinetic') _sm.zone = 'kinetic';
@@ -2617,9 +2648,7 @@ function init(
             };
 
             scrollOn('scroll', _lenisSnap1Handler);
-            cleanups.push(function() {
-                scrollOff('scroll', _lenisSnap1Handler);
-            });
+            // scrollOff moved to pause(), scrollOn to resume() — ENT-LC-03 fix
 
             // Init: odczytaj stan z aktualnej pozycji
             requestAnimationFrame(function() {
@@ -2631,22 +2660,22 @@ function init(
             const b1Bold = b1?.querySelectorAll(".line.bold-line") ?? [];
             const b2 = $("#kinetic-block-2");
             const b3 = $("#kinetic-block-3");
-            const b3Header = b3.querySelector(".small-header");
+            const b3Header = b3?.querySelector(".small-header");
             
             // Wybierz odpowiednią wersję block-3 (desktop lub mobile)
             // Nie polegamy na window.innerWidth — na mobile może dać inną wartość niż CSS media query
             // Zamiast tego sprawdzamy który kontener CSS faktycznie renderuje
-            const _mobC = b3.querySelector(".block-3-mobile");
-            const _dskC = b3.querySelector(".block-3-desktop");
+            const _mobC = b3?.querySelector(".block-3-mobile");
+            const _dskC = b3?.querySelector(".block-3-desktop");
             const isMobileB3 = _mobC && window.getComputedStyle(_mobC).display !== 'none';
             const b3Container = isMobileB3 ? _mobC : _dskC;
             const b3Lines = b3Container?.querySelectorAll(".line:not(.bold-line)") ?? [];
             const b3Bold = b3Container?.querySelector(".line.bold-line");
             
-            const root = container; // was document.documentElement — CSS vars scoped to #kinetic-section
+        // const root removed (TS-LINT-UNUSED-01 AUTO-FIX)
 
             // Palety kolorów dla blobów (z oryginału)
-            const initialBlue = "hsl(40, 35%, 94%)"; // warm (start state)
+        // const initialBlue removed (TS-LINT-UNUSED-01 AUTO-FIX)
             const palette1 = { 
                 bg: "hsl(210, 30%, 94%)", 
                 b1: "hsl(200, 35%, 88%)", 
@@ -2658,6 +2687,12 @@ function init(
                 b1: "hsl(30, 40%, 88%)", 
                 b2: "hsl(45, 30%, 90%)", 
                 b3: "hsl(15, 35%, 91%)" 
+            };
+            const palette3 = { 
+                bg: "hsl(270, 20%, 94%)", 
+                b1: "hsl(320, 25%, 90%)", 
+                b2: "hsl(260, 30%, 91%)", 
+                b3: "hsl(290, 20%, 89%)" 
             };
 
             // --- SEKWENCJA STREFY 1 ---
@@ -2996,50 +3031,38 @@ function init(
             
             // BIRTH blobów - PRZENIESIONY do keyframes per-blob (zero konfliktów scale)
             // Każdy blob ma własne "narodziny" wbudowane w keyframes 0% → ~4%
-            // Opacity fade-in - osobne tweeny (keyframes nie animują opacity = brak konfliktu)
-            // SYNC Z OSTATNIM ZDANIEM: bloby pojawiają się gdy linia 4 zaczyna się rysować
-            // Keyframes pozostają na I-2 — bloby statyczne przez chwilę, potem ruch
-            const BLOB_OPACITY_START = b1Start + B1_STAGGER * (B1_LINE_COUNT - 1);
+            // Opacity fade-in - bloby pojawiają się razem z tekstem "W internecie"
+            const BLOB_BIRTH = b1Start;
+            const BLOB_OPACITY_START = b1Start + B1_STAGGER * (B1_LINE_COUNT - 1); // blend switch anchor
             // v140: carrier stays hidden — blob canvas renders instead
             gsap.set(_elBlobCarrier, { visibility: 'hidden' });
-            pinnedTl.to(_elBlob1, { opacity: 0.99, duration: 1.5, ease: "power1.out" }, BLOB_OPACITY_START);
-            pinnedTl.to(_elBlob2, { opacity: 0.99, duration: 1.5, ease: "power1.out" }, 0.1 + BLOB_OPACITY_START);
-            pinnedTl.to(_elBlob3, { opacity: 0.99, duration: 1.5, ease: "power1.out" }, 0.2 + BLOB_OPACITY_START);
+            pinnedTl.to(_elBlob1, { opacity: 0.99, duration: 1.5, ease: "power1.out" }, BLOB_BIRTH);
+            pinnedTl.to(_elBlob2, { opacity: 0.99, duration: 1.5, ease: "power1.out" }, 0.1 + BLOB_BIRTH);
+            pinnedTl.to(_elBlob3, { opacity: 0.99, duration: 1.5, ease: "power1.out" }, 0.2 + BLOB_BIRTH);
 
             // BIRTH SCALE: rośnie z 0.15 → docelowy równolegle z opacity fade
-            // Osobne tweeny — nie kolidują z keyframes (keyframes startują później przy I-2)
-            pinnedTl.fromTo(_elBlob1, { scale: 0.15 }, { scale: 1.1, duration: 4.5, ease: "power1.out" }, BLOB_OPACITY_START);
-            pinnedTl.fromTo(_elBlob2, { scale: 0.15 }, { scale: 1.4, duration: 4.5, ease: "power1.out" }, 0.1 + BLOB_OPACITY_START);
-            pinnedTl.fromTo(_elBlob3, { scale: 0.15 }, { scale: 1.0, duration: 4.5, ease: "power1.out" }, 0.2 + BLOB_OPACITY_START);
+            pinnedTl.fromTo(_elBlob1, { scale: 0.15 }, { scale: 1.1, duration: 4.5, ease: "power1.out" }, BLOB_BIRTH);
+            pinnedTl.fromTo(_elBlob2, { scale: 0.15 }, { scale: 1.4, duration: 4.5, ease: "power1.out" }, 0.1 + BLOB_BIRTH);
+            pinnedTl.fromTo(_elBlob3, { scale: 0.15 }, { scale: 1.0, duration: 4.5, ease: "power1.out" }, 0.2 + BLOB_BIRTH);
 
-            // PARTICLE BLEND — opacity dip masks blend switch
-            pinnedTl.to(pqCanvas, { opacity: 0.15, duration: 0.4, ease: "power2.in" }, BLOB_OPACITY_START + 1.1);
-            pinnedTl.set(pqCanvas, { mixBlendMode: 'color-burn' }, BLOB_OPACITY_START + 1.5);
-            pinnedTl.to(pqCanvas, { opacity: 0.75, duration: 0.3, ease: "power2.out" }, BLOB_OPACITY_START + 1.5);
-            pinnedTl.to(pqCanvas, { opacity: 1, duration: 5.0, ease: "power2.out" }, 3.5 + I + DELTA);
+            // PARTICLE BLEND — gentle valley: 3U dip to 0.30 at switch, 1.5U ramp to 0.75
+            // power2.in: first 1U barely visible (1.00→0.92), accelerates to minimum
+            pinnedTl.to(pqCanvas, { opacity: 0.30, duration: BLOB_OPACITY_START + 1.5 - BLOB_BIRTH, ease: "power2.in" }, BLOB_BIRTH);
+            pinnedTl.set(pqCanvas, { mixBlendMode: 'multiply' }, BLOB_OPACITY_START + 1.5);
+            pinnedTl.to(pqCanvas, { opacity: 0.75, duration: 1.5, ease: "power2.out" }, BLOB_OPACITY_START + 1.5);
+            pinnedTl.to(pqCanvas, { opacity: 1, duration: 0.8, ease: "power2.out" }, 8.5 + I + DELTA);
             
-            // SHIMMER: single light sweep across ALL Block 1 text simultaneously
-            // 2.8U total, center passes through middle at blend switch
-            var _shimmer = $id('kinetic-b1-shimmer');
-            if (_shimmer) {
-                pinnedTl.fromTo(_shimmer, 
-                    { xPercent: 0 }, 
-                    { xPercent: 350, duration: 2.8, ease: "power1.inOut" }, 
-                    BLOB_OPACITY_START + 1.5 - 1.4
-                );
-            }
-            
-            // CHAR SWEEP: color pulse on "jest więcej klientów," synced with shimmer
+            // CHAR SWEEP: color pulse on "jest więcej klientów," at blend switch
             var _line2 = b1Lines[1]; // second .line:not(.bold-line)
             if (_line2) {
                 var _line2Chars = _line2.querySelectorAll('.anim-char');
                 if (_line2Chars.length > 0) {
-                    var _swDur = 2.8;
+                    var _swDur = 3.92; // 2× longer
                     var _swCenter = BLOB_OPACITY_START + 1.5;
-                    var _swUp = 0.25;
-                    var _swDown = 0.25;
+                    var _swUp = 0.6;  // per-char fade IN duration (wider band)
+                    var _swDown = 0.6; // per-char fade OUT duration (wider band)
                     var _swStagger = (_swDur - _swUp - _swDown) / _line2Chars.length;
-                    var _swStart = _swCenter - _swDur / 2;
+                    var _swStart = _swCenter - 1.4 - 1.96; // shifted earlier by old duration
                     pinnedTl.to(_line2Chars, {
                         color: "#ffb998",
                         duration: _swUp,
@@ -3052,6 +3075,29 @@ function init(
                         stagger: { each: _swStagger, from: "start" },
                         ease: "sine.out"
                     }, _swStart + _swUp);
+                    
+                    // Char sweep 2: green pulse on "W czym problem?" at second blend switch
+                    var _problemChars = container.querySelectorAll('#kinetic-problem-line .anim-char');
+                    if (_problemChars.length > 0) {
+                        var _sw2Dur = 1.96;
+                        var _sw2Up = 0.25;
+                        var _sw2Down = 0.25;
+                        var _sw2Center = 8.5 + I + DELTA;
+                        var _sw2Stagger = (_sw2Dur - _sw2Up - _sw2Down) / _problemChars.length;
+                        var _sw2Start = _sw2Center - 1.4;
+                        pinnedTl.to(_problemChars, {
+                            color: "#9df6e4",
+                            duration: _sw2Up,
+                            stagger: { each: _sw2Stagger, from: "start" },
+                            ease: "sine.in"
+                        }, _sw2Start);
+                        pinnedTl.to(_problemChars, {
+                            color: "#141414",
+                            duration: _sw2Down,
+                            stagger: { each: _sw2Stagger, from: "start" },
+                            ease: "sine.out"
+                        }, _sw2Start + _sw2Up);
+                    }
                 }
             }
 
@@ -3537,63 +3583,68 @@ function init(
         // Drift przy dużym desktop resize (>15%) = max 3.5%, znika przy nawigacji.
         // Docelowo: reinit path (kill→DOM restore→init) gdy splitIntoChars będzie idempotentna.
 
-    // ============================================
 
-    // NOTE: Dla sekcji scrub/pin nie wykonujemy mount-time refresh.
-    // Mobilny toolbar/resize potrafi przeliczyć ST w nieoptymalnym momencie
-    // i powodować drift/flicker. Refresh zostaje tylko w ścieżkach resize.
+        // ============================================================
+        // CPU GATING — Ścieżka 1 (Typ B, pin:true + niezależne pętle)
+        // P2A AUTO-FIX: IO → pause()/resume()
+        // PIN-DISABLE-01: pause() NIE dotyka ScrollTrigger — zarządza pinem
+        // Target: [data-gating-target] = .content-wrapper
+        // rootMargin = clamp(200–1200px, 0.5 × visualViewport.height)
+        // ============================================================
+        var _gatingTarget = container.querySelector('[data-gating-target]') || container;
+        var _io = null;
+        var _ioDebounce = null;
 
-    // ════════════════════════════════════════════════════════════════
-    // AUTO-FIX: CPU GATING — Ścieżka 1 (Typ B, IO-safe pin — no disable)
-    // IO wywołuje pause()/resume(). NIE dotyka ST.
-    // rootMargin = 0.5 × VH (clamp 200–1200px).
-    // Obserwuje [data-gating-target] (content-wrapper) — stable bounding box.
-    // PIN-DISABLE-01 SAFE: pause() nie wywołuje ST.disable()/st.kill().
-    // ════════════════════════════════════════════════════════════════
-    var _factoryIo = null;
-    var _factoryIoDebounce = null;
-    var _factoryTarget = container.querySelector('[data-gating-target]') || container;
-
-    function _getFactoryRootMargin() {
-        var vh = (window.visualViewport && window.visualViewport.height) ? window.visualViewport.height : window.innerHeight;
-        var rm = Math.round(0.5 * vh);
-        rm = Math.max(200, Math.min(1200, rm));
-        return rm + 'px';
-    }
-
-    function _factoryIoCallback(entries) {
-        if (!entries[0]?.isIntersecting) {
-            pause();
-        } else {
-            resume();
+        function _getIoRootMargin() {
+            var vh = (window.visualViewport && window.visualViewport.height)
+                     ? window.visualViewport.height
+                     : window.innerHeight;
+            var rm = Math.min(1200, Math.max(200, Math.round(0.5 * vh)));
+            return rm + 'px';
         }
-    }
 
-    function _recreateFactoryIO() {
-        clearTimeout(_factoryIoDebounce);
-        _factoryIoDebounce = setTimeout(function() {
-            if (_s._killed) return;
-            if (_factoryIo) { _factoryIo.disconnect(); }
-            _factoryIo = new IntersectionObserver(_factoryIoCallback, {
-                rootMargin: _getFactoryRootMargin()
+        function _ioCallback(entries) {
+            if (!entries[0]?.isIntersecting) {
+                if (!_paused) pause();
+            } else {
+                if (_paused) resume();
+            }
+        }
+
+        function _recreateIO() {
+            clearTimeout(_ioDebounce);
+            _ioDebounce = setTimeout(function() {
+                if (_s._killed) return;
+                if (_io) { _io.disconnect(); }
+                var _rm = _getIoRootMargin();
+                _io = new IntersectionObserver(_ioCallback, {
+                    rootMargin: _rm,
+                    threshold: 0
+                });
+                _io.observe(_gatingTarget);
+                observers.push(_io);
+            }, 50);
+        }
+
+        // Named handlers — INP-LEAK-01
+        function _onVVResize()         { _recreateIO(); }
+        function _onOrientChange()     { _recreateIO(); }
+
+        _recreateIO();
+
+        if (window.visualViewport) {
+            window.visualViewport.addEventListener('resize', _onVVResize, { passive: true });
+            cleanups.push(function() {
+                clearTimeout(_ioDebounce);
+                window.visualViewport.removeEventListener('resize', _onVVResize);
             });
-            _factoryIo.observe(_factoryTarget);
-            observers.push(_factoryIo);
-        }, 50);
-    }
-
-    function _onFactoryVVResize() { _recreateFactoryIO(); }
-
-    _recreateFactoryIO();
-
-    if (window.visualViewport) {
-        window.visualViewport.addEventListener('resize', _onFactoryVVResize, { passive: true });
+        }
+        window.addEventListener('orientationchange', _onOrientChange, { passive: true });
         cleanups.push(function() {
-            clearTimeout(_factoryIoDebounce);
-            window.visualViewport.removeEventListener('resize', _onFactoryVVResize);
+            window.removeEventListener('orientationchange', _onOrientChange);
         });
-    }
 
+        // ST-REFRESH: bez mount-time requestRefresh (pin/scrub + mobile toolbar — drift).
 
     // ============================================
     // LIFECYCLE: kill / pause / resume (Typ B)
@@ -3604,9 +3655,10 @@ function init(
         if (_paused) return;
         _paused = true;
         // Odłącz wszystkie ticker functions
-        // PIN-DISABLE-01 SAFE: NIE wywołujemy ST.disable()/st.kill() — ST zarządza pinem
         tickerFns.forEach(fn => { if (fn) gsap.ticker.remove(fn); });
-        // Pauzuj główny timeline (scrubbed timelines są celowo pomijane — ST zarządza pinem)
+        // ENT-LC-03: detach snap1 magnet listener during pause
+        scrollOff('scroll', _lenisSnap1Handler);
+        // Pauzuj główny timeline (i ScrollTrigger)
         gsapInstances.forEach(tl => {
             if (!tl) return;
             if (tl.scrollTrigger && tl.scrollTrigger.vars && tl.scrollTrigger.vars.scrub !== undefined) return;
@@ -3622,6 +3674,8 @@ function init(
         _paused = false;
         // Podłącz ticker functions
         tickerFns.forEach(fn => { if (fn) gsap.ticker.add(fn); });
+        // ENT-LC-03: re-attach snap1 magnet listener
+        scrollOn('scroll', _lenisSnap1Handler);
         // Wznów timeline
         gsapInstances.forEach(tl => {
             if (!tl) return;
@@ -3650,7 +3704,7 @@ function init(
         // 3. Wyczyść ticker references
         tickerFns.length = 0;
         // 4. Wyczyść timer IDs
-        timerIds.forEach(id => clearInterval(id));
+        timerIds.forEach(id => clearTimeout(id));
         timerIds.length = 0;
         // 4b. Wyczyść observers (IntersectionObserver etc.)
         observers.forEach(o => { try { o.disconnect?.(); } catch(e) {} });
@@ -3661,7 +3715,7 @@ function init(
         _s.particleQmark = null;
         _s.bridgeI = 0;
         _s.blobTweens = null;
-        // 6. Reset freeze/lock flags
+        // 7. Reset freeze/lock flags
         freezeFinal = false;
         _snapDisarmedAfterForwardExit = false;
         mobileResizeLock = false;
@@ -3679,31 +3733,24 @@ function init(
         clearTimeout(_idleSnapTimer);
         _snap1MagnetFired = false;
         if (_kineticObserver) { _kineticObserver.kill(); _kineticObserver = null; }
-        // 7. Cleanup Factory IO (CPU Gating)
-        if (_factoryIo) { _factoryIo.disconnect(); _factoryIo = null; }
-        clearTimeout(_factoryIoDebounce);
-        // 8. Reset canvas clip-path
         var _pqc = $id('kinetic-particle-qmark-canvas');
         if (_pqc) _pqc.style.clipPath = '';
     }
 
-
-
     return { kill, pause, resume, _s };
+
 
     } // END init()
 
 // ─────────────────────────────────────────────────────────────────────────────
-// KineticSection — React component wrapper
+// KineticSection — React wrapper (Typ B)
 // ─────────────────────────────────────────────────────────────────────────────
-export default function KineticSection() {
+export function KineticSection() {
   const rootRef = useRef<HTMLElement | null>(null);
   const bridge = useBridgeContext();
 
   useGSAP(() => {
-    // GSAP-SSR-01: registerPlugin WEWNĄTRZ useGSAP — nie na module top-level
-    gsap.registerPlugin(ScrollTrigger);
-
+    // GSAP-SSR-01: registerPlugin() wywołany wewnątrz init() — nie na module top-level ✓
     const el = rootRef.current;
     if (!el) {
       if (process.env.NODE_ENV !== 'production') {
@@ -3716,80 +3763,96 @@ export default function KineticSection() {
       pinSpacerRef: bridge?.pinSpacerRef,
     });
     return () => inst?.kill?.();
-    // useGSAP { scope: rootRef }: Context automatycznie revertuje instancje GSAP z init().
-    // inst.kill() revertuje je powtórnie + czyści observers/timers/listeners.
-    // Double cleanup jest bezpieczny — kill() jest idempotentny przez _s._killed guard.
+    // useGSAP scope revertuje instancje GSAP z init() automatycznie.
+    // inst.kill() revertuje je powtórnie + czyści observers/timers/listeners (idempotentne — _killed guard).
   }, { scope: rootRef });
 
   return (
-    <section id="kinetic-section" ref={rootRef} className="stage stage-pinned">
+    <section
+      id="kinetic-section"
+      className="stage stage-pinned"
+      ref={rootRef as React.RefObject<HTMLElement>}
+    >
+      <div className="nigdy-glow" id="kinetic-nigdy-glow" />
 
-      {/* GLOW LAYER - ambient light pod słowem "nigdy" */}
-      <div className="nigdy-glow" id="kinetic-nigdy-glow"></div>
-
-      {/* FAZA 2.1: Blob carrier z 3 blobami */}
       <div className="blob-carrier" id="kinetic-blob-carrier">
-        <div className="blob-bg-preview" id="kinetic-blob-bg-preview"></div>
-        <div className="blob blob-1" id="kinetic-blob1"></div>
-        <div className="blob blob-2" id="kinetic-blob2"></div>
-        <div className="blob blob-3" id="kinetic-blob3"></div>
+        <div className="blob-bg-preview" id="kinetic-blob-bg-preview" />
+        <div className="blob blob-1" id="kinetic-blob1" />
+        <div className="blob blob-2" id="kinetic-blob2" />
+        <div className="blob blob-3" id="kinetic-blob3" />
       </div>
 
-      {/* v140: Blob canvas */}
-      <canvas id="kinetic-blob-canvas"></canvas>
-
-      {/* PARTICLE QMARK + TUNNEL */}
-      <canvas id="kinetic-tunnel-canvas"></canvas>
-      <canvas id="kinetic-particle-qmark-canvas"></canvas>
+      <canvas id="kinetic-blob-canvas" />
+      <canvas id="kinetic-tunnel-canvas" />
+      <canvas id="kinetic-particle-qmark-canvas" />
 
       <div className="content-wrapper" data-gating-target>
-
-        {/* BLOK 1 */}
         <div className="text-block" id="kinetic-block-1">
-          <div id="kinetic-b1-shimmer"></div>
           <div className="line">W internecie</div>
           <div className="line">jest więcej klientów,</div>
-          <div style={{ height: '0.72rem' }}></div>
+          <div style={{ height: '0.72rem' }} />
           <div className="line bold-line line-large">niż Twoja firma jest</div>
           <div className="line bold-line line-large">w stanie obsłużyć!</div>
         </div>
 
-        {/* BLOK 2 */}
         <div className="text-block" id="kinetic-block-2">
-          <div className="line bold-line line-xlarge" id="kinetic-problem-line">W czym problem?</div>
+          <div className="line bold-line line-xlarge" id="kinetic-problem-line">
+            W czym problem?
+          </div>
         </div>
 
-        {/* BLOK 3 */}
         <div className="text-block" id="kinetic-block-3">
-          <div className="small-header">Wg badań <span className="highlight">GEMIUS</span>:</div>
+          <div className="small-header">
+            Wg badań <span className="highlight">GEMIUS</span>:
+          </div>
 
-          {/* DESKTOP VERSION */}
           <div className="block-3-desktop">
             <div className="line">98% osób, które odwiedzi</div>
-            <div className="line">stronę polskiej firmy&nbsp;<span className="word-anchor"><span className="bg-layer"><span className="nigdy-plate" id="kinetic-nigdy-plate"></span></span><span className="text-layer"><span className="nigdy-text" id="kinetic-word-nigdy">nigdy</span></span></span></div>
+            <div className="line">
+              stronę polskiej firmy&nbsp;
+              <span className="word-anchor">
+                <span className="bg-layer">
+                  <span className="nigdy-plate" id="kinetic-nigdy-plate" />
+                </span>
+                <span className="text-layer">
+                  <span className="nigdy-text" id="kinetic-word-nigdy">
+                    nigdy
+                  </span>
+                </span>
+              </span>
+            </div>
             <div className="line bold-line">nie stanie się jej klientami.</div>
           </div>
 
-          {/* MOBILE VERSION */}
           <div className="block-3-mobile">
             <div className="line">98% osób,</div>
             <div className="line">które odwiedzi</div>
             <div className="line">stronę polskiej firmy</div>
-            <div className="line"><span className="word-anchor"><span className="bg-layer"><span className="nigdy-plate" id="kinetic-nigdy-plate-mobile"></span></span><span className="text-layer"><span className="nigdy-text" id="kinetic-word-nigdy-mobile">nigdy</span></span></span>&nbsp;<span className="bold-text">nie stanie</span></div>
+            <div className="line">
+              <span className="word-anchor">
+                <span className="bg-layer">
+                  <span className="nigdy-plate" id="kinetic-nigdy-plate-mobile" />
+                </span>
+                <span className="text-layer">
+                  <span className="nigdy-text" id="kinetic-word-nigdy-mobile">
+                    nigdy
+                  </span>
+                </span>
+              </span>
+              &nbsp;<span className="bold-text">nie stanie</span>
+            </div>
             <div className="line bold-line">się jej klientami.</div>
           </div>
         </div>
-
       </div>
 
-      {/* CYLINDER COMPONENT */}
       <div id="kinetic-cylinder-wrapper">
-        <canvas id="kinetic-cylinder-canvas"></canvas>
+        <canvas id="kinetic-cylinder-canvas" />
       </div>
 
-      {/* VIGNETTE ELLIPSE */}
-      <div className="kinetic-vignette" id="kinetic-vignette"></div>
-
+      <div className="kinetic-vignette" id="kinetic-vignette" />
     </section>
   );
 }
+
+export default KineticSection;

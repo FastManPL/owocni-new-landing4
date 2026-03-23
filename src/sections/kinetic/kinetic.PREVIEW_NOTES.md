@@ -5,49 +5,45 @@
 | Co | W TSX | W PREVIEW |
 |----|-------|-----------|
 | DEV overlay | brak (usunięty w P3) | brak (identycznie) |
-| scrollRuntime | `getScroll()` + `scrollTo` / `on` / `off` (Lenis w runtime, **nie** `window.lenis`) | stub: `window.lenis?.scroll ?? window.scrollY` + debounce 120ms |
-| Lenis | aktywny (przez scrollRuntime) | aktywny przez CDN shell — snap machine działa |
+| scrollRuntime | `@/lib/scrollRuntime` (Lenis) | stub: `window.lenis?.scroll ?? window.scrollY` + debounce 120ms |
+| Lenis | aktywny przez scrollRuntime.ts | aktywny przez shell boot (window.lenis) |
 | StrictMode | aktywny (podwójny mount) | brak — nie wykryje nieidempotentnego kill() |
 | SSR / next/font | aktywny | brak — fonty z Google CDN |
-| next/image | zoptymalizowane | zwykły `<img>` (sekcja nie ma img) |
+| next/image | zoptymalizowane | zwykły `<img>` |
 | GSAP pluginy | importowane przez npm | ładowane przez CDN |
-| TS adnotacje | present (: string, : HTMLElement, itp.) | usunięte (vanilla JS w script) |
-| palette3 | usunięta (dead code) | usunięta (identycznie) |
-| DEBUG_MODE | usunięty (dead code po overlay removal) | usunięty (identycznie) |
+| `scrollTo/scrollOn/scrollOff` | `window.lenis?.* (P3-WILL-REPLACE)` | `window.lenis?.*` (identycznie) |
 
-## Ograniczenia PREVIEW (Typ B)
-
-PREVIEW używa Lenis przez CDN shell — snap machine (`scrollTo`, `scrollOn`, `scrollOff`)
-powinien działać poprawnie. Jeśli snap nie działa → sprawdź console na błędy Lenis.
-
-Pełna weryfikacja physics (velocity, momentum) wymaga `npm run dev` z Lenis z NPM.
+Akceptacja PREVIEW = akceptacja artefaktu TSX. PREVIEW weryfikuje **KineticSection.tsx**, nie reference.html.
 
 ## Co PREVIEW gwarantuje
-
-- Identyczna logika GSAP (timing, easing, scrub, snap, physics) — ten sam init(container)
+- Identyczna logika GSAP (timing, easing, snap, bridge/kinetic state machine)
 - Identyczny CSS (literalna kopia kinetic-section.css)
-- Identyczna struktura DOM (HTML 1:1 z JSX, class= zamiast className=)
-- scrollRuntime stub z debounce 120ms — spójność z produkcją
+- Identyczna struktura DOM
+- Identyczny mechanizm gating (IO → pause/resume)
+- ST-REFRESH-01 scaffold (section-in-view + layout-settle) — obecny
+
+## Ograniczenia PREVIEW (Typ B z velocity — nie powodują błędów)
+PREVIEW używa `window.lenis?.scroll` (przez stub) — w produkcji Lenis jest aktywny przez scrollRuntime.ts.
+Różnica: stub nie ma Lenis smooth-scrolling → fizyczny feel scrollu może się różnić.
+Animacje GSAP (timing, easing) są identyczne — Lenis zmienia tylko gładkość scrollu, nie prędkość GSAP.
+**Dla pełnej weryfikacji Typ B:** `npm run dev` + weryfikacja z Lenis aktywnym.
+
+## Freeze na SNAP3
+PREVIEW kończy się na SNAP3 — freeze jest celowy (DEV_SOLUTION v3, sekcja 12).
+W produkcji Block 4 scrolluje NAD zamrożoną klatką KINETIC. Dolny spacer nie jest potrzebny.
 
 ## Czy PREVIEW jest 1:1?
-
-OGRANICZONY:
-- Snap machine wymaga Lenis — Lenis załadowany przez CDN shell, snap powinien działać
-- `scrollRuntime.getScroll()` w PREVIEW = `window.lenis?.scroll ?? window.scrollY`
-- StrictMode (podwójny mount) nieaktywny — weryfikacja przez `npm run dev`
-- Pełna weryfikacja Typ B: `npm run dev` po wdrożeniu do repo
+PEŁNY — animacje i layout behawioralnie identyczne z artefaktem TSX.
+Różnica feel scrollu: Lenis smooth w produkcji, natywny w PREVIEW — nie jest błędem.
 
 ## Minimalny standard akceptacji
-
-- [ ] Cząsteczki (`!` i `?`) renderują się poprawnie
-- [ ] Cylinder (liczby) renderuje się poprawnie
-- [ ] Tunnel rings widoczne w fazie bridge
-- [ ] Bloby animują się płynnie
-- [ ] Snap do SNAP1 / SNAP2 / SNAP3 działa
-- [ ] Tekst Block 1, 2, 3 pojawia się we właściwych momentach
-- [ ] "nigdy" — blaszka + glow animuje się poprawnie
-- [ ] Brak FOUC (elementy ukryte przez CSS .text-block { opacity:0; visibility:hidden })
+- [ ] Layout bez FOUC / braków CSS
+- [ ] Animacja wejścia (bridge → SNAP1) poprawna
+- [ ] SNAP1 → SNAP2 → SNAP3 działają
+- [ ] Freeze na SNAP3 aktywny
+- [ ] Particle QMark ("?") pojawia się i transformuje w "!"
+- [ ] Cylinder 98% widoczny na SNAP3
+- [ ] NIGDY glow i blaszka widoczne na SNAP3
 
 ## Akcja
-
 **AKCEPTUJĘ** lub **ODRZUCAM [powód]**
