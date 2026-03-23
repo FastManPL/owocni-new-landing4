@@ -2284,11 +2284,31 @@ function init(
             // (var _sm zdefiniowane po stworzeniu pinnedTl)
 
             // Po zejściu w dół poza koniec pinu: nie łap snapów przy „micro scroll” w górę z kolejnej sekcji.
-            // Ponowne uzbrojenie dopiero gdy scroll <= st.end - margin (duże cofnięcie).
+            // Re-arm TYLKO gdy scroll jest w okolicy pinu (od dołu), NIE gdy jesteśmy nad Kinetic (hero/fakty…)
+            // — inaczej scroll << st.end spełnia „<= end - margin” i fałszywie zdejmowało disarm.
             var _snapDisarmedAfterForwardExit = false;
+            var _SNAP_REARM_START_BUF_PX = 120;
             function _snapRearmMarginPx() {
                 var vh = typeof window !== 'undefined' ? window.innerHeight || 800 : 800;
                 return Math.round(Math.max(420, Math.min(920, vh * 0.52)));
+            }
+            function _maybeRearmKineticSnapsAfterForwardExit(scroll) {
+                if (!_snapDisarmedAfterForwardExit) return;
+                var st = pinnedTl.scrollTrigger;
+                if (!st || st.start == null || st.end == null) return;
+                var margin = _snapRearmMarginPx();
+                if (scroll > st.end - margin) return;
+                if (scroll < st.start - _SNAP_REARM_START_BUF_PX) return;
+                _snapDisarmedAfterForwardExit = false;
+            }
+            function _snapDisarmBlocksIntent(scroll) {
+                if (!_snapDisarmedAfterForwardExit) return false;
+                var st = pinnedTl.scrollTrigger;
+                if (!st || st.end == null || st.start == null) return false;
+                var margin = _snapRearmMarginPx();
+                if (scroll > st.end - margin) return true;
+                if (scroll < st.start - _SNAP_REARM_START_BUF_PX) return true;
+                return false;
             }
 
             const pinnedTl = gsap.timeline({
@@ -2328,12 +2348,7 @@ function init(
                             freezeFinal = false;
                         }
                         adaptiveDPR.lockForScroll();
-                        if (_snapDisarmedAfterForwardExit) {
-                            var _stRearm = pinnedTl.scrollTrigger;
-                            if (_stRearm && _stRearm.end != null && getScroll() <= _stRearm.end - _snapRearmMarginPx()) {
-                                _snapDisarmedAfterForwardExit = false;
-                            }
-                        }
+                        _maybeRearmKineticSnapsAfterForwardExit(getScroll());
                         // BEZ clampu scroll → SNAP3: po SNAP3 jest overshoot (timeline do progress 1),
                         // użytkownik musi móc przewinąć poza snaps[2], inaczej pin nigdy się nie kończy.
                         if (_sm.state === 'idle' || _sm.state === 'cooldown') {
@@ -2460,12 +2475,8 @@ function init(
                 if (!g) return;
 
                 var scroll = getScroll();
-
-                if (_snapDisarmedAfterForwardExit) {
-                    var _stSnap = pinnedTl.scrollTrigger;
-                    if (_stSnap && _stSnap.end != null && scroll > _stSnap.end - _snapRearmMarginPx()) return;
-                    _snapDisarmedAfterForwardExit = false;
-                }
+                _maybeRearmKineticSnapsAfterForwardExit(scroll);
+                if (_snapDisarmBlocksIntent(scroll)) return;
 
                 // Poniżej Kinetic — zignoruj
                 if (scroll < g.grabStart + _ARM_BUF) return;
@@ -2572,12 +2583,8 @@ function init(
                 if (!g) return;
 
                 var scroll = e.scroll;
-
-                if (_snapDisarmedAfterForwardExit) {
-                    var _stMag = pinnedTl.scrollTrigger;
-                    if (_stMag && _stMag.end != null && scroll > _stMag.end - _snapRearmMarginPx()) return;
-                    _snapDisarmedAfterForwardExit = false;
-                }
+                _maybeRearmKineticSnapsAfterForwardExit(scroll);
+                if (_snapDisarmBlocksIntent(scroll)) return;
 
                 var snap1Px = g.snaps[0];
                 var magnetStart = g.grabStart + _ARM_BUF;
