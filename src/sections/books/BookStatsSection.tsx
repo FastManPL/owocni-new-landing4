@@ -609,7 +609,7 @@ export function BookStatsSection() {
           <div className="cs-floor__left">
             <video
               className="cs-img--stats cs-video"
-              src="/books/banner-konwersja-strony.mp4"
+              src="/books/Kalendarz_1-mute-video.mp4"
               poster="/books/Statystyki-stron.png"
               playsInline
               muted

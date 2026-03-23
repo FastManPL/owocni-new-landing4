@@ -29,6 +29,9 @@ function init(container: HTMLElement): {
   const videoBottom = $id("gwarancja-layer-bottom");
   const videoTop = $id("gwarancja-layer-top");
   const isVideo = (el: Element | null) => el && el.tagName === "VIDEO";
+  if (isVideo(videoTop)) {
+    (videoTop as HTMLVideoElement).setAttribute("fetchpriority", "high");
+  }
   const cursorStage = $id("gwarancja-cursor-stage");
   const cursorPivot = $id("gwarancja-cursor-pivot");
 
@@ -1128,6 +1131,17 @@ function init(container: HTMLElement): {
 
   // === VIDEO LAZY LOAD ===
   let bottomVideoLoaded = false;
+  /** Jednorazowe .load() na wideo mechanizmu — bez tego pierwszy play() często czeka na sieć/dekodowanie (duże opóźnienie przy hover). */
+  let mechanismVideoPrimed = false;
+  function primeMechanismVideoOnce() {
+    if (mechanismVideoPrimed || !isVideo(videoTop) || isMobileDisabled) return;
+    mechanismVideoPrimed = true;
+    try {
+      (videoTop as HTMLVideoElement).load();
+    } catch {
+      mechanismVideoPrimed = false;
+    }
+  }
   function loadBottomVideo() {
     if (bottomVideoLoaded || !isVideo(videoBottom) || isMobileDisabled) return;
     (videoBottom as HTMLVideoElement).load();
@@ -1150,6 +1164,7 @@ function init(container: HTMLElement): {
         bindRectListeners();
         bindAureola();
         loadBottomVideo();
+        primeMechanismVideoOnce();
         if (isVideo(videoTop))
           (videoTop as HTMLVideoElement).play().catch(() => {});
         if (isVideo(videoBottom) && bottomVideoLoaded)
@@ -1170,6 +1185,20 @@ function init(container: HTMLElement): {
   observers.push(io);
   cleanups.push(() => unbindDoc());
 
+  // Pierwszy callback IO bywa 1 klatkę później — jeśli kontener już blisko viewport, od razu rozpocznij pobieranie mechanizmu.
+  const _mechanismPrimeRaf = requestAnimationFrame(() => {
+    if (paused || isMobileDisabled) return;
+    const r = (containerEl as HTMLElement).getBoundingClientRect();
+    const vh = window.visualViewport?.height ?? window.innerHeight;
+    const m = 200;
+    if (r.bottom <= -m || r.top >= vh + m) return;
+    primeMechanismVideoOnce();
+    if (isVideo(videoTop) && (videoTop as HTMLVideoElement).paused) {
+      (videoTop as HTMLVideoElement).play().catch(() => {});
+    }
+  });
+  cleanups.push(() => cancelAnimationFrame(_mechanismPrimeRaf));
+
   // FIX 1: Direct mouseenter — bypass IO delay (React-specyficzne).
   // Ten sam setup co przy wejściu w viewport (IO), żeby wideo mechanizmu grało od pierwszej klatki.
   const _onDirectEnter = (e: MouseEvent) => {
@@ -1182,6 +1211,7 @@ function init(container: HTMLElement): {
     bindRectListeners();
     bindAureola();
     loadBottomVideo();
+    primeMechanismVideoOnce();
     if (isVideo(videoTop))
       (videoTop as HTMLVideoElement).play().catch(() => {});
     if (isVideo(videoBottom) && bottomVideoLoaded)
@@ -1223,6 +1253,7 @@ function init(container: HTMLElement): {
       if (_wasDocBound) bindDoc();
       if (_wasRectBound) bindRectListeners();
       bindAureola();
+      primeMechanismVideoOnce();
       if (isVideo(videoTop))
         (videoTop as HTMLVideoElement).play().catch(() => {});
       if (isVideo(videoBottom) && bottomVideoLoaded)
