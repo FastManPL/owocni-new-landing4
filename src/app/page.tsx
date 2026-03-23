@@ -9,6 +9,7 @@ import { LoveWallSection } from "@/sections/Opinie/LoveWallSection";
 import { OnasSectionWrapper } from "./OnasSectionWrapper";
 import { CyfroweWzrostySectionWrapper } from "./CyfroweWzrostySectionWrapper";
 import { CaseStudiesSection } from "@/sections/case-studies/CaseStudiesSection";
+import FAQSection from "@/sections/FAQ/FAQSection";
 
 export default function HomePage() {
   return (
@@ -24,6 +25,7 @@ export default function HomePage() {
       <CaseStudiesSection />
       <OnasSectionWrapper />
       <CyfroweWzrostySectionWrapper />
+      <FAQSection />
     </main>
   );
 }
