@@ -37,9 +37,11 @@
             z-index: 1;
         }
 
-        /* STREFA 1: Pinowana - dziedziczy z .stage */
+        /* STREFA 1: Pinowana — bez własnego „kartona” pod całą sekcją.
+           LP: Fakty jest tuż przed Bridge; pełne tło #f7f6f4 przykrywało Fakty przy wejściu w pin.
+           Przezroczystość: widać Fakty tam, gdzie bloby/canvas jeszcze nie zakrywają (opacity 0). */
         #kinetic-section {
-            background-color: var(--bg-color);
+            background-color: transparent;
         }
 
         /* ============================================
