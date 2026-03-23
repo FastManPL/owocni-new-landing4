@@ -2283,6 +2283,14 @@ function init(
             // Stan narracyjny zadeklarowany w STATE MACHINE v3 poniżej
             // (var _sm zdefiniowane po stworzeniu pinnedTl)
 
+            // Po zejściu w dół poza koniec pinu: nie łap snapów przy „micro scroll” w górę z kolejnej sekcji.
+            // Ponowne uzbrojenie dopiero gdy scroll <= st.end - margin (duże cofnięcie).
+            var _snapDisarmedAfterForwardExit = false;
+            function _snapRearmMarginPx() {
+                var vh = typeof window !== 'undefined' ? window.innerHeight || 800 : 800;
+                return Math.round(Math.max(420, Math.min(920, vh * 0.52)));
+            }
+
             const pinnedTl = gsap.timeline({
                 scrollTrigger: {
                     trigger: pinTrigger,
@@ -2303,7 +2311,11 @@ function init(
                     // P1: Auto-pause — stop canvas work when section off-screen
                     onEnter: function() { _s.activate(); _s.showLayer(); },
                     onEnterBack: function() { _s.activate(); _s.showLayer(); },
-                    onLeave: function() { _s.hibernate(); _s.hideLayer(); },
+                    onLeave: function() {
+                        _s.hibernate();
+                        _s.hideLayer();
+                        _snapDisarmedAfterForwardExit = true;
+                    },
                     onLeaveBack: function() { _s.hibernate(); _s.hideLayer(); },
 
                     // snap: {} USUNIĘTE — zastąpione przez state machine + lenis.scrollTo()
@@ -2316,6 +2328,12 @@ function init(
                             freezeFinal = false;
                         }
                         adaptiveDPR.lockForScroll();
+                        if (_snapDisarmedAfterForwardExit) {
+                            var _stRearm = pinnedTl.scrollTrigger;
+                            if (_stRearm && _stRearm.end != null && getScroll() <= _stRearm.end - _snapRearmMarginPx()) {
+                                _snapDisarmedAfterForwardExit = false;
+                            }
+                        }
                         // BEZ clampu scroll → SNAP3: po SNAP3 jest overshoot (timeline do progress 1),
                         // użytkownik musi móc przewinąć poza snaps[2], inaczej pin nigdy się nie kończy.
                         if (_sm.state === 'idle' || _sm.state === 'cooldown') {
@@ -2443,6 +2461,12 @@ function init(
 
                 var scroll = getScroll();
 
+                if (_snapDisarmedAfterForwardExit) {
+                    var _stSnap = pinnedTl.scrollTrigger;
+                    if (_stSnap && _stSnap.end != null && scroll > _stSnap.end - _snapRearmMarginPx()) return;
+                    _snapDisarmedAfterForwardExit = false;
+                }
+
                 // Poniżej Kinetic — zignoruj
                 if (scroll < g.grabStart + _ARM_BUF) return;
 
@@ -2548,6 +2572,13 @@ function init(
                 if (!g) return;
 
                 var scroll = e.scroll;
+
+                if (_snapDisarmedAfterForwardExit) {
+                    var _stMag = pinnedTl.scrollTrigger;
+                    if (_stMag && _stMag.end != null && scroll > _stMag.end - _snapRearmMarginPx()) return;
+                    _snapDisarmedAfterForwardExit = false;
+                }
+
                 var snap1Px = g.snaps[0];
                 var magnetStart = g.grabStart + _ARM_BUF;
 
@@ -3625,6 +3656,7 @@ function init(
         _s.blobTweens = null;
         // 6. Reset freeze/lock flags
         freezeFinal = false;
+        _snapDisarmedAfterForwardExit = false;
         mobileResizeLock = false;
         clearTimeout(mobileResizeTimer);
         adaptiveDPR._scrollLockUntil = 0;
