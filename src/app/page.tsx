@@ -21,9 +21,9 @@ export default function HomePage() {
       <KalkulatorSection />
       <GwarancjaSectionWrapper />
       <LoveWallSection />
+      <CaseStudiesSection />
       <OnasSectionWrapper />
       <CyfroweWzrostySectionWrapper />
-      <CaseStudiesSection />
     </main>
   );
 }
