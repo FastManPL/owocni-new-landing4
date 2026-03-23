@@ -1268,7 +1268,6 @@ function init(container: HTMLElement): {
     // FIX 4a: seed alpha + initial radius — prześwit od pierwszej ramki
     maskState.alpha = 0.02;
     maskState.radius = 0.25 * scaledRadius;
-    targetAlpha = 0.5;
     lmNone = false;
     maskPos.x = rx;
     maskPos.y = ry;
@@ -1293,6 +1292,18 @@ function init(container: HTMLElement): {
         overwrite: "auto",
       }),
     );
+    // FIX 4b musi pójść zawsze z enter — nie tylko z processMousePos: tam tween alpha→0.5 jest
+    // za if (targetAlpha !== 0.5). Ustawienie targetAlpha=0.5 przed ruchem myszy blokowało tween
+    // i zostawało alpha≈0.02 (niewidoczny mechanizm), a pełna widoczność wracała dopiero po stopTxtIdle.
+    gsapInstances.push(
+      gsap.to(maskState, {
+        alpha: 0.5,
+        duration: 0.3,
+        ease: "power2.out",
+        overwrite: "auto",
+      }),
+    );
+    targetAlpha = 0.5;
     gsap.set(cursorStage, { scale: 1, opacity: 1 });
     tarczaIntro(rx, ry);
     clockPlay();
