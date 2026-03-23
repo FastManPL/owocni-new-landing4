@@ -13,12 +13,12 @@
     background: #f7f6f4;
     isolation: isolate; /* FACTORY: B-ISO-01 — stacking context */
     /* Integracja LP: sekcja wyżej w flow — intro widać wcześniej u dołu ekranu podczas końcówki Kinetic + wave */
-    margin-top: clamp(-28vh, -19vh, -12vh);
+    margin-top: clamp(-36vh, -24vh, -15vh);
     overflow: visible; /* „i wychodzą” — napis musi móc wychodzić w bok (translateX) */
 }
 @media (max-width: 599px) {
     #blok-4-5-section {
-        margin-top: clamp(-20vh, -14vh, -9vh);
+        margin-top: clamp(-26vh, -18vh, -11vh);
     }
 }
 /* Tylko gdy wave jest widoczna (kurtyna) — sekcja nad bridge (z-index 10), żeby #blok-4-5-wave-wrap było widać jak w stacku */
@@ -86,13 +86,16 @@
 }
 @media (min-width: 600px) {
     #blok-4-5-section .text-above-illustration {
-        /* Mniejszy padding = linie „Potencjalni klienci…” wyżej, wcześniej w viewport */
-        padding-top: clamp(0rem, 1.2vw, 1.4rem);
+        /* Intro jeszcze wyżej w sekcji */
+        padding-top: 0;
+        margin-top: clamp(-1.25rem, -2.2vh, -0.35rem);
     }
 }
 @media (max-width: 599px) {
     #blok-4-5-section .text-above-illustration {
         margin-bottom: 0;
+        padding-top: 0;
+        margin-top: clamp(-0.75rem, -1.5vh, -0.2rem);
     }
 }
 
