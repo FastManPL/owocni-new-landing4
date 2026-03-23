@@ -401,12 +401,11 @@ function init(container) {
             if(this._hoverTimelines){for(var h=0;h<this._hoverTimelines.length;h++){if(this._hoverTimelines[h])this._hoverTimelines[h].kill();}}
             if(this._hoverListeners){for(var hl=0;hl<this._hoverListeners.length;hl++){var li=this._hoverListeners[hl];if(li.type==='pointermove')li.el.removeEventListener('pointermove',li.enter);else if(li.type==='pointerleave')li.el.removeEventListener('pointerleave',li.leave);else{li.el.removeEventListener('mouseenter',li.enter);li.el.removeEventListener('mouseleave',li.leave);}}}
             this._hoverTimelines=[]; this._hoverListeners=[]; this._cardStyleIdx=[];
-            var ONAS_WISTIA_SWATCH='https://fast.wistia.com/embed/medias/fds00b5wst/swatch';
             var PEOPLE_MEDIA = [
                 '/assets/people/adam.jpg',
                 '/assets/people/iwona.jpg',
                 '/assets/people/jakub.jpg',
-                ONAS_WISTIA_SWATCH,
+                '/assets/people/mariusz.mp4',
                 '/assets/people/kinga.jpg',
                 '/assets/people/marta.jpg',
                 '/assets/people/paulina.jpg'
@@ -420,10 +419,10 @@ function init(container) {
                     : mediaPath;
                 _bgCache[bi]='url("'+posterPath+'")';
             }
-            /* VIDEO CARD CONFIG: poster = Wistia swatch; fullscreen = Wistia w popup */
+            /* VIDEO CARD: loop MP4 na kafelku; tap → popup Wistia (fullSrc) */
             var VIDEO_CARD={
                 baseIdx: 3,
-                src: '',
+                src: '/assets/people/mariusz.mp4',
                 fullSrc: '__wistia_fds00b5wst__',
                 poster: _bgCache[3]
             };
@@ -434,15 +433,22 @@ function init(container) {
                 var baseIdx=i%base; var style=HOVER_STYLES[baseIdx%4]; var numLayers=style.elems;
                 var isVideo=(baseIdx===VIDEO_CARD.baseIdx);
                 if(isVideo){
-                    /* VIDEO CARD: poster (Wistia swatch) + play → popup Wistia */
+                    /* VIDEO CARD: poster + <video> loop + play → popup Wistia */
                     d.classList.add('card--video');
-                    d.innerHTML='<div class="card__wrap"><div class="card__layer"></div></div>';
+                    var innerHTML='<div class="card__wrap"><div class="card__layer"></div></div>';
+                    innerHTML+='<video muted loop playsinline preload="none"'+(VIDEO_CARD.src?' src="'+VIDEO_CARD.src+'"':'')+'></video>';
+                    d.innerHTML=innerHTML;
                     d.querySelector('.card__layer').style.backgroundImage=VIDEO_CARD.poster;
-                    /* Play button — size relative to card */
                     var btnSize=Math.round(Math.min(d.offsetWidth||80, 80)*0.55)||44;
                     var pb=createPlayButton(d, Math.max(54, Math.round(btnSize*1.5)));
-                    d._playBtn=pb; /* ref for _initHoverEffects */
+                    d._playBtn=pb;
                     d._fullSrc=VIDEO_CARD.fullSrc;
+                    var vid=d.querySelector('video');
+                    if(vid){
+                        vid.addEventListener('timeupdate',function(){
+                            if(vid.duration>0) pb.updateProgress(vid.currentTime/vid.duration);
+                        });
+                    }
                 } else {
                     /* NORMAL CARD: bg-image layers + hover parallax */
                     var bgUri=_bgCache[baseIdx]; var innerHTML='';
