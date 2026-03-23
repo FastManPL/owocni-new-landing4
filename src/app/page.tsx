@@ -1,4 +1,5 @@
 import { HeroSection } from "@/sections/hero/HeroSection";
+import { WzrostPrzychodowSection } from "@/sections/wzrost-przychodow/WzrostPrzychodowSection";
 import { BookStatsSection } from "@/sections/books/BookStatsSection";
 import { FaktySection } from "@/sections/fakty/FaktySection";
 import { BridgeSection } from "@/app/BridgeSection";
@@ -15,6 +16,7 @@ export default function HomePage() {
   return (
     <main>
       <HeroSection />
+      <WzrostPrzychodowSection />
       <BookStatsSection />
       <FaktySection />
       <BridgeSection />

@@ -1,0 +1,182 @@
+/* ═══════════════════════════════════════════════════════════
+   wzrost-przychodow — karta „W zasięgu ręki…” (portret + desktop)
+   B-ISO-01: root z isolation
+   ═══════════════════════════════════════════════════════════ */
+
+#wzrost-przychodow-section {
+  position: relative;
+  isolation: isolate;
+  padding-block: clamp(2.5rem, 8vw, 5rem);
+  padding-inline: clamp(0.75rem, 3vw, 1.5rem);
+  background: #e7e6e8;
+}
+
+#wzrost-przychodow-section .wzrost-wrap {
+  width: 100%;
+  max-width: min(100%, 80rem);
+  margin-inline: auto;
+}
+
+#wzrost-przychodow-section .wzrost-card {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  border: clamp(0.75rem, 2.5vw, 2.1875rem) solid #fff;
+  border-radius: clamp(1rem, 2vw, 2rem);
+  background: #fff;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+#wzrost-przychodow-section .wzrost-inner {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  min-height: 0;
+  border-radius: clamp(0.75rem, 1.5vw, 1.5rem);
+  overflow: hidden;
+  background: #d9d2cc;
+}
+
+@media (min-width: 900px) {
+  #wzrost-przychodow-section .wzrost-inner {
+    flex-direction: row;
+    align-items: stretch;
+    min-height: clamp(22rem, 50vw, 38rem);
+  }
+}
+
+#wzrost-przychodow-section .wzrost-copy {
+  position: relative;
+  z-index: 2;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: clamp(1.25rem, 4vw, 2.5rem) clamp(1rem, 3vw, 2rem);
+  text-align: center;
+}
+
+@media (min-width: 900px) {
+  #wzrost-przychodow-section .wzrost-copy {
+    flex: 0 0 42%;
+    max-width: 48%;
+    padding-inline: clamp(1rem, 2vw, 2rem);
+  }
+}
+
+#wzrost-przychodow-section .wzrost-headline {
+  margin: 0 0 clamp(1rem, 2.5vw, 2rem);
+  font-size: clamp(1.35rem, 4.2vw, 2.75rem);
+  font-weight: 700;
+  line-height: 1.15;
+  color: #000;
+}
+
+#wzrost-przychodow-section .wzrost-headline strong {
+  font-weight: 800;
+}
+
+#wzrost-przychodow-section .wzrost-sub {
+  margin: 0 0 clamp(1rem, 2.5vw, 2rem);
+  font-size: clamp(1rem, 2.8vw, 1.35rem);
+  color: #02011d;
+}
+
+#wzrost-przychodow-section .wzrost-cta-wrap {
+  display: flex;
+  justify-content: center;
+  margin-top: 0.5rem;
+}
+
+#wzrost-przychodow-section .wzrost-cta {
+  cursor: pointer;
+  border: 3px solid #262626;
+  border-radius: 999px;
+  padding: 0.8em clamp(2em, 6vw, 4em);
+  font-size: clamp(0.95rem, 2.8vw, 1.1rem);
+  font-weight: 700;
+  line-height: 1;
+  color: #262626;
+  background: #ffc600;
+  box-shadow: 0 0 0 0 #262626, 0 0.2em 0 0 #262626;
+  transform: translateY(-5px);
+  transition:
+    transform 0.05s cubic-bezier(0.5, 1, 0.7, 0.7),
+    box-shadow 0.05s cubic-bezier(0.5, 1, 0.7, 0.7);
+}
+
+#wzrost-przychodow-section .wzrost-cta:hover {
+  transform: translateY(0.15em);
+  box-shadow: 0 0 0 0 #262626, 0 0 0 0 #262626;
+}
+
+#wzrost-przychodow-section .wzrost-cta:active {
+  transform: translateY(0.08em);
+}
+
+#wzrost-przychodow-section .wzrost-footnote {
+  margin: clamp(1rem, 2.5vw, 1.25rem) auto 0;
+  max-width: 24rem;
+  font-size: clamp(0.8125rem, 2.2vw, 1rem);
+  font-weight: 500;
+  line-height: 1.35;
+  color: #02011d;
+}
+
+#wzrost-przychodow-section .wzrost-footnote strong {
+  font-weight: 700;
+}
+
+#wzrost-przychodow-section .wzrost-visual {
+  position: relative;
+  flex: 1 1 50%;
+  min-height: clamp(16rem, 85vw, 28rem);
+  background: #000;
+  border-radius: 0 0 clamp(0.75rem, 1.5vw, 1.5rem) clamp(0.75rem, 1.5vw, 1.5rem);
+  overflow: hidden;
+}
+
+@media (min-width: 900px) {
+  #wzrost-przychodow-section .wzrost-visual {
+    min-height: 0;
+    border-radius: 0 clamp(0.75rem, 1.5vw, 1.5rem) clamp(0.75rem, 1.5vw, 1.5rem) 0;
+  }
+}
+
+#wzrost-przychodow-section .wzrost-visual__bg {
+  position: absolute;
+  inset: 0;
+}
+
+#wzrost-przychodow-section .wzrost-visual__photo {
+  object-fit: cover;
+  object-position: center center;
+}
+
+#wzrost-przychodow-section .wzrost-player-shell {
+  position: absolute;
+  /* przybliżenie do czarnego ekranu laptopa na zdjęciu */
+  left: 50%;
+  top: 11%;
+  width: min(78%, 36rem);
+  transform: translateX(-50%);
+  z-index: 3;
+  border-radius: 4px;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.35);
+}
+
+#wzrost-przychodow-section .wzrost-player-shell wistia-player {
+  display: block;
+  width: 100%;
+}
+
+#wzrost-przychodow-section
+  wistia-player[media-id='kmqidz4bso']:not(:defined) {
+  background: center / contain no-repeat
+    url('https://fast.wistia.com/embed/medias/kmqidz4bso/swatch');
+  display: block;
+  filter: blur(5px);
+  padding-top: 56.25%;
+}
