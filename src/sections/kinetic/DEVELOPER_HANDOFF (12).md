@@ -85,8 +85,8 @@ import KineticSection from '@/sections/kinetic/KineticSection';
 
 - **Pin spacer**: sekcja tworzy pin-spacer (~6000px). Triggery sekcji poniżej mogą wymagać
   `scrollRuntime.requestRefresh()` po mount tej sekcji.
-- **Snap machine**: używa `window.lenis?.scrollTo()` bezpośrednio — zależność od Lenis
-  jako `window.lenis`. Upewnij się że scrollRuntime inicjalizuje Lenis przed mountem sekcji.
+- **Snap machine**: używa `scrollRuntime.scrollTo()` / `on` / `off` (Lenis wewnątrz runtime).
+  Nie zakładaj `window.lenis` w produkcji. Lenis musi być zainicjalizowany przed mountem sekcji.
 - **6 canvas tickerów**: intencjonalne (każdy ma dirty check + 30fps gate przez `_sectionTickOk`).
 - **CPU gating**: IO pause/resume aktywny — canvasy zatrzymują się gdy sekcja poza viewport.
 - **PERF-W7**: Polskie znaki + Lexend — weryfikacja latin-ext: testy PASS w stack.html.

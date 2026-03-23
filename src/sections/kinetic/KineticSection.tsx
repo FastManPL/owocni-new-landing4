@@ -21,8 +21,7 @@ var _clipOffCount = 0;
 // init(container) — hardened vanilla kod z P2A, mechanicznie przetłumaczony.
 // Nie rozbijamy funkcji na części — wzorzec inst jest bezpieczny i mechaniczny.
 // Typ B: pause/resume/IO gating wewnątrz init() — bez zmian w stosunku do P2A.
-// scrollRuntime: getScroll() → scrollRuntime.getScroll() (Lenis abstrahowany).
-// scrollTo/scrollOn/scrollOff: window.lenis Lenis-specific API zachowane.
+// scrollRuntime: getScroll + scrollTo/on/off — Lenis NIE jest na window.lenis (tylko w runtime).
 // ─────────────────────────────────────────────────────────────────────────────
 function init(
     container: HTMLElement,
@@ -45,9 +44,9 @@ function init(
         const tickerFns = [];
         const observers = [];
         const getScroll = () => scrollRuntime.getScroll();
-        const scrollTo  = (px, opts) => window.lenis?.scrollTo(px, opts);
-        const scrollOn  = (ev, fn)   => window.lenis?.on(ev, fn);
-        const scrollOff = (ev, fn)   => window.lenis?.off(ev, fn);
+        const scrollTo  = (px, opts) => scrollRuntime.scrollTo(px, opts);
+        const scrollOn  = (ev, fn)   => scrollRuntime.on(ev, fn);
+        const scrollOff = (ev, fn)   => scrollRuntime.off(ev, fn);
 
         // ── Shared state (closure) — replaces window.* event bus (ENT-JS-09) ──
         const _s = {

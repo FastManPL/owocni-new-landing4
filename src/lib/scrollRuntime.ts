@@ -11,6 +11,10 @@ interface ScrollToOptions {
   duration?: number;
   easing?: (t: number) => number;
   onComplete?: () => void;
+  /** Lenis: blokada scrollu do czasu zakończenia animacji (np. snap Kinetic). */
+  lock?: boolean;
+  /** Lenis: scroll mimo zatrzymanej instancji. */
+  force?: boolean;
 }
 
 interface ScrollRuntime {
@@ -302,6 +306,8 @@ function scrollTo(
     ...(options?.duration != null && { duration: options.duration }),
     ...(options?.easing != null && { easing: options.easing }),
     ...(options?.onComplete != null && { onComplete: options.onComplete }),
+    ...(options?.lock != null && { lock: options.lock }),
+    ...(options?.force != null && { force: options.force }),
   });
 }
 

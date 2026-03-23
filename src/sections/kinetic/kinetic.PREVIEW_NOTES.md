@@ -5,7 +5,7 @@
 | Co | W TSX | W PREVIEW |
 |----|-------|-----------|
 | DEV overlay | brak (usunięty w P3) | brak (identycznie) |
-| scrollRuntime | `@/lib/scrollRuntime` (Lenis) | stub: `window.lenis?.scroll ?? window.scrollY` + debounce 120ms |
+| scrollRuntime | `getScroll()` + `scrollTo` / `on` / `off` (Lenis w runtime, **nie** `window.lenis`) | stub: `window.lenis?.scroll ?? window.scrollY` + debounce 120ms |
 | Lenis | aktywny (przez scrollRuntime) | aktywny przez CDN shell — snap machine działa |
 | StrictMode | aktywny (podwójny mount) | brak — nie wykryje nieidempotentnego kill() |
 | SSR / next/font | aktywny | brak — fonty z Google CDN |
