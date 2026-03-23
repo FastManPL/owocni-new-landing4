@@ -27,6 +27,30 @@ import { useGSAP } from '@gsap/react';
 import { scrollRuntime } from '@/lib/scroll-runtime';
 import './faq-section.css';
 
+type FaqItem = { q: string; a: string };
+type ColumnId = 'left' | 'right';
+
+type FAQMorphingProProps = {
+  data: FaqItem[];
+  columnId: ColumnId;
+  openIndex: number | null;
+  onToggle: (col: ColumnId, i: number) => void;
+  visited: Set<number>;
+};
+
+type BurstParticle = {
+  x: number;
+  y: number;
+  vx: number;
+  vy: number;
+  size: number;
+  color: string;
+  life: number;
+  decay: number;
+  gravity: number;
+  drag: number;
+};
+
 // --- DATA ---
 const faqDataLeft = [
   { q: "Jak rozpocząć współpracę?", a: `Wszystko zaczyna się od <strong>warsztatu strategicznego</strong> z naszym zespołem.<br>Niezwłocznie po podpisaniu umowy.<br><br><strong>Na warsztacie:</strong><br>• Doprecyzowujemy harmonogram i Twoje oczekiwania<br>• Definiujemy cele, KPI i zakres projektu<br>• Sprawdzamy, czy "mamy do siebie chemię"<br><br><strong>Kluczowe:</strong> Po pierwszym warsztacie zdecydujemy wspólnie, czy "jest między nami chemia" — jeśli to nie będzie to czego oczekujesz, możesz natychmiast rozwiązać umowę bez żadnych kosztów. A my pokryjemy koszty przygotowań.<br><br>Projekt startujemy z reguły w ciągu <strong>3 dni roboczych</strong> od podpisania umowy.<br><br>Prosto i bez ryzyka.` },
@@ -41,7 +65,7 @@ const faqDataRight = [
   { q: "Jesteście drożsi od konkurencji?", a: `Dobrze, że chcesz to zobaczyć. Najlepiej widać to w liczbach.<br><br>Różnica między pojedynczym młodym freelancerem, a dojrzałym zespołem — to różnica między <strong>dziesięcioma zapytaniami a czterdziestoma</strong> z tej samej liczby odwiedzin strony.<br><br>Uzyskanie wysokich zwrotów z inwestycji to zadanie dla całego zespołu.<br><br>W Owocnych otrzymujesz ten sam proces. Te same kompetencje. I ten sam zespół, który realizuje duże giełdowe projekty w kwotach często przekraczających 100.000 zł, za ułamek tej ceny.<br><br>Oszczędności rzędu kilku tysięcy złotych na starcie potrafią zmienić się w kilkadziesiąt, czy nawet kilkaset tysięcy złotych strat rocznie.<br><br><strong>Prawdziwa cena to zwrot z inwestycji w czasie.</strong>` },
 ];
 
-const sineDelay = (i, n) => {
+const sineDelay = (i: number, n: number) => {
   const norm = i / Math.max(n - 1, 1);
   return norm * 0.38 + Math.sin(norm * Math.PI) * 0.08;
 };
@@ -55,9 +79,9 @@ const abcData = [
 
 // --- GSAP ANIMATIONS (gsap importowany bezpośrednio, bez parametru) ---
 // WARN-05: gsapRef singleton usunięty — gsap dostępny z importu
-function enterFS2(el) {
+function enterFS2(el: HTMLElement) {
   const parent = el.parentElement;
-  gsap.set(parent, { perspective: 1200 });
+  if (parent) gsap.set(parent, { perspective: 1200 });
   gsap.set(el, { clipPath: 'inset(0 0 100% 0)', rotationX: -56, opacity: 0, transformOrigin: 'top center' });
   const tl = gsap.timeline();
   tl.to(el, { clipPath: 'inset(0 0 -10% 0)', duration: 0.82, ease: 'power2.out' }, 0);
@@ -66,7 +90,7 @@ function enterFS2(el) {
   return tl;
 }
 
-function leaveFS2(el) {
+function leaveFS2(el: HTMLElement) {
   const tl = gsap.timeline({
     onComplete: () => {
       gsap.set(el, { clearProps: 'all' });
@@ -79,14 +103,20 @@ function leaveFS2(el) {
 }
 
 // --- FAQMorphingPro ---
-const FAQMorphingPro = React.memo(({ data, columnId, openIndex, onToggle, visited }) => {
-  const wrapperRef = useRef(null);
-  const contentRefs = useRef({});
-  const prevOpenRef = useRef(null);
+const FAQMorphingPro = React.memo(function FAQMorphingPro({
+  data,
+  columnId,
+  openIndex,
+  onToggle,
+  visited,
+}: FAQMorphingProProps) {
+  const wrapperRef = useRef<HTMLDivElement>(null);
+  const contentRefs = useRef<Record<string, HTMLElement | null>>({});
+  const prevOpenRef = useRef<number | null>(null);
 
   // Pointer tracking refs
-  const cachedRect = useRef(null);
-  const cachedGlow = useRef(null);
+  const cachedRect = useRef<DOMRect | null>(null);
+  const cachedGlow = useRef<HTMLElement | null>(null);
   const lastAngle = useRef(-1);
   const lastEdge = useRef(-1);
   const rafPending = useRef(false);
@@ -101,10 +131,10 @@ const FAQMorphingPro = React.memo(({ data, columnId, openIndex, onToggle, visite
     if (!w) return;
     const items = w.querySelectorAll('.pro-item');
     const n = items.length;
-    const timers = [];
-    items.forEach(el => el.classList.add('faq-hidden'));
+    const timers: ReturnType<typeof setTimeout>[] = [];
+    items.forEach((el) => el.classList.add('faq-hidden'));
     const obs = new IntersectionObserver((entries) => {
-      entries.forEach(e => {
+      entries.forEach((e) => {
         if (e.isIntersecting) {
           items.forEach((el, i) => {
             const t = setTimeout(() => {
@@ -118,10 +148,10 @@ const FAQMorphingPro = React.memo(({ data, columnId, openIndex, onToggle, visite
       });
     }, { threshold: 0.15 });
     obs.observe(w);
-    return () => { timers.forEach(t => clearTimeout(t)); obs.disconnect(); };
+    return () => { timers.forEach((t) => clearTimeout(t)); obs.disconnect(); };
   }, []);
 
-  const storeRef = useCallback((el, i) => {
+  const storeRef = useCallback((el: HTMLElement | null, i: number) => {
     contentRefs.current[`${columnId}-${i}`] = el;
   }, [columnId]);
 
@@ -138,16 +168,18 @@ const FAQMorphingPro = React.memo(({ data, columnId, openIndex, onToggle, visite
 
     // Kill glow na wszystkich items (bulletproof reset)
     if (w) {
-      w.querySelectorAll('.faq-glow').forEach(g => g.style.setProperty('--glow-int', '0'));
+      w.querySelectorAll('.faq-glow').forEach((g) => {
+        (g as HTMLElement).style.setProperty('--glow-int', '0');
+      });
     }
 
     // Zamknij poprzedni item + circle ripple
     if (prev !== null && prev !== curr) {
-      const el = contentRefs.current[`${columnId}-${prev}`];
-      if (el) leaveFS2(el);
+      const elPrev = contentRefs.current[`${columnId}-${prev}`];
+      if (elPrev) leaveFS2(elPrev);
       if (w) {
         const cir = w.querySelectorAll('.pro-item')[prev]?.querySelector('.pro-icon-circle');
-        if (cir) {
+        if (cir instanceof HTMLElement) {
           // Kill CSS transitions — GSAP przejmuje pełną kontrolę
           cir.style.transition = 'none';
           gsap.timeline({
@@ -165,13 +197,13 @@ const FAQMorphingPro = React.memo(({ data, columnId, openIndex, onToggle, visite
 
     // Otwórz aktualny — animuj content + glow 3s reveal
     if (curr !== null) {
-      const el = contentRefs.current[`${columnId}-${curr}`];
+      const elCurr = contentRefs.current[`${columnId}-${curr}`];
       // Bez rAF — w useGSAP DOM jest już zaktualizowany (timing jak useEffect)
-      if (el) enterFS2(el);
+      if (elCurr) enterFS2(elCurr);
       if (w) {
         const currItem = w.querySelectorAll('.pro-item')[curr];
         const currGlow = currItem?.querySelector('.faq-glow');
-        if (currGlow) {
+        if (currGlow instanceof HTMLElement) {
           currGlow.style.setProperty('--glow-int', '0');
           gsap.to(currGlow, { '--glow-int': 0.3, duration: 3, delay: 1, ease: 'power2.out' });
         }
@@ -186,8 +218,10 @@ const FAQMorphingPro = React.memo(({ data, columnId, openIndex, onToggle, visite
     if (!wrapper) return;
 
     // Cache rect + glow ref na pointerenter otwartego itemu
-    const enterHandler = (e) => {
-      const item = e.target.closest('.pro-item');
+    const enterHandler = (e: PointerEvent) => {
+      const t = e.target;
+      if (!(t instanceof Element)) return;
+      const item = t.closest('.pro-item');
       if (item && item.classList.contains('open')) {
         cachedRect.current = item.getBoundingClientRect();
         cachedGlow.current = item.querySelector('.faq-glow');
@@ -213,6 +247,7 @@ const FAQMorphingPro = React.memo(({ data, columnId, openIndex, onToggle, visite
 
       if (!cachedRect.current) cachedRect.current = item.getBoundingClientRect();
       const rect = cachedRect.current;
+      if (!rect) return;
 
       const x = pointerPos.current.x - rect.left;
       const y = pointerPos.current.y - rect.top;
@@ -240,8 +275,10 @@ const FAQMorphingPro = React.memo(({ data, columnId, openIndex, onToggle, visite
       }
     };
 
-    const handler = (e) => {
-      const item = e.target.closest('.pro-item');
+    const handler = (e: PointerEvent) => {
+      const t = e.target;
+      if (!(t instanceof Element)) return;
+      const item = t.closest('.pro-item');
       if (!item || !item.classList.contains('open')) return;
       pointerPos.current.x = e.clientX;
       pointerPos.current.y = e.clientY;
@@ -265,49 +302,55 @@ const FAQMorphingPro = React.memo(({ data, columnId, openIndex, onToggle, visite
   useEffect(() => {
     const w = wrapperRef.current;
     if (!w) return;
-    const btns = w.querySelectorAll('.pro-btn');
-    const tweens = new Map();
-    const weights = new Map();
+    const btns = w.querySelectorAll<HTMLButtonElement>('.pro-btn');
+    const tweens = new Map<HTMLElement, gsap.core.Tween>();
+    const weights = new Map<HTMLElement, { v: number }>();
 
-    const animateWeight = (title, target) => {
+    const animateWeight = (title: HTMLElement, target: number) => {
       // WARN-05: gsap importowany bezpośrednio, bez gsapRef.current
-      if (tweens.has(title)) tweens.get(title).kill();
+      const existing = tweens.get(title);
+      if (existing) existing.kill();
       if (!weights.has(title)) weights.set(title, { v: 400 });
       const obj = weights.get(title);
+      if (!obj) return;
       tweens.set(title, gsap.to(obj, {
         v: target, duration: 0.4, ease: 'power2.out',
         onUpdate: () => { title.style.fontVariationSettings = `'wght' ${obj.v}`; }
       }));
     };
 
-    const enter = (e) => {
-      const title = e.currentTarget.querySelector('.pro-title');
-      if (title) animateWeight(title, 600);
+    const enter: EventListener = (e) => {
+      const ct = e.currentTarget;
+      if (!(ct instanceof HTMLElement)) return;
+      const title = ct.querySelector('.pro-title');
+      if (title instanceof HTMLElement) animateWeight(title, 600);
     };
-    const leave = (e) => {
-      const title = e.currentTarget.querySelector('.pro-title');
-      if (!title) return;
-      const item = e.currentTarget.closest('.pro-item');
+    const leave: EventListener = (e) => {
+      const ct = e.currentTarget;
+      if (!(ct instanceof HTMLElement)) return;
+      const title = ct.querySelector('.pro-title');
+      if (!(title instanceof HTMLElement)) return;
+      const item = ct.closest('.pro-item');
       if (item && item.classList.contains('open')) return;
       animateWeight(title, 400);
     };
 
-    btns.forEach(btn => {
+    btns.forEach((btn) => {
       btn.addEventListener('mouseenter', enter);
       btn.addEventListener('mouseleave', leave);
     });
     return () => {
-      btns.forEach(btn => {
+      btns.forEach((btn) => {
         btn.removeEventListener('mouseenter', enter);
         btn.removeEventListener('mouseleave', leave);
       });
-      tweens.forEach(t => t.kill());
+      tweens.forEach((t) => t.kill());
     };
   }, []);
 
   return (
     <div className="faq-wrapper faq-morphing-pro" ref={wrapperRef}>
-      {data.map((item, i) => {
+      {data.map((item: FaqItem, i: number) => {
         const isOpen = openIndex === i;
         const isBeforeOpen = openIndex !== null && openIndex === i + 1;
         const isAfterOpen = openIndex !== null && i === openIndex + 1;
@@ -357,7 +400,7 @@ const FAQMorphingPro = React.memo(({ data, columnId, openIndex, onToggle, visite
       })}
     </div>
   );
-}, (prev, next) =>
+}, (prev: FAQMorphingProProps, next: FAQMorphingProProps) =>
   prev.openIndex === next.openIndex &&
   prev.visited === next.visited &&
   prev.columnId === next.columnId &&
@@ -369,24 +412,18 @@ const FAQMorphingPro = React.memo(({ data, columnId, openIndex, onToggle, visite
 const TOTAL_FAQ = faqDataLeft.length + faqDataRight.length;
 
 export default function FAQSection() {
-  // --- DEV GATE ---
-  const DEBUG_MODE = typeof window !== 'undefined' &&
-    (new URLSearchParams(window.location.search).has('debug') ||
-     localStorage.getItem('debug') === '1');
-
-  // --- getScroll helper (reguła 13.2: scrollRuntime.getScroll()) ---
-  // WARN-07: zaktualizowany z window.lenis → scrollRuntime.getScroll()
-  const getScroll = () => scrollRuntime.getScroll();
-
-  const [openCol, setOpenCol] = useState(null);
-  const [openIdx, setOpenIdx] = useState(null);
-  const [visited, setVisited] = useState({ left: new Set(), right: new Set() });
-  const abcRef = useRef(null);
+  const [openCol, setOpenCol] = useState<ColumnId | null>(null);
+  const [openIdx, setOpenIdx] = useState<number | null>(null);
+  const [visited, setVisited] = useState<{ left: Set<number>; right: Set<number> }>({
+    left: new Set(),
+    right: new Set(),
+  });
+  const abcRef = useRef<HTMLDivElement>(null);
   const popupShown = useRef(false);
-  const burstCanvasRef = useRef(null);
-  const overlayRef = useRef(null);
-  const popupRef = useRef(null);
-  const gsapRefreshTimer = useRef(null);
+  const burstCanvasRef = useRef<HTMLCanvasElement>(null);
+  const overlayRef = useRef<HTMLDivElement>(null);
+  const popupRef = useRef<HTMLElement>(null);
+  const gsapRefreshTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   // WARN-01: cleanupRef usunięty — każdy useEffect ma własny return, GSAP → useGSAP
 
   // BLOCKER-04: registerPlugin wewnątrz useGSAP (BETON GSAP-SSR-01)
@@ -403,19 +440,28 @@ export default function FAQSection() {
 
     const mm = gsap.matchMedia();
 
-    function initColumns(columns, starts, scrubVal) {
-      const ownTriggers = [];
-      const refs = Array.from(columns).map((col) => {
-        const letterProxy = col.querySelector('.tc-letter-proxy');
-        const takProxy = col.querySelector('.tc-tak-proxy');
-        gsap.set(letterProxy, { xPercent: -50, yPercent: -50, scale: 6, autoAlpha: 0 });
-        gsap.set(takProxy, { xPercent: -50, yPercent: -50, scale: 1, autoAlpha: 1 });
-        return { col, letterProxy, takProxy };
-      });
+    function initColumns(
+      columns: NodeListOf<Element>,
+      starts: string[],
+      scrubVal: number,
+    ) {
+      const ownTriggers: (ScrollTrigger | null | undefined)[] = [];
+      const refs = Array.from(columns)
+        .map((col) => {
+          const el = col as HTMLElement;
+          const letterProxy = el.querySelector<HTMLElement>('.tc-letter-proxy');
+          const takProxy = el.querySelector<HTMLElement>('.tc-tak-proxy');
+          if (!letterProxy || !takProxy) return null;
+          gsap.set(letterProxy, { xPercent: -50, yPercent: -50, scale: 6, autoAlpha: 0 });
+          gsap.set(takProxy, { xPercent: -50, yPercent: -50, scale: 1, autoAlpha: 1 });
+          return { col: el, letterProxy, takProxy };
+        })
+        .filter((r): r is NonNullable<typeof r> => r !== null);
       refs.forEach((r, idx) => {
+        const startAt = starts[idx] ?? 'top 50%';
         const tl = gsap.timeline({
           scrollTrigger: {
-            trigger: r.col, start: starts[idx], end: 'top 25%',
+            trigger: r.col, start: startAt, end: 'top 25%',
             scrub: scrubVal, invalidateOnRefresh: true, fastScrollEnd: true,
           }
         });
@@ -428,7 +474,7 @@ export default function FAQSection() {
           { scale: 0.08, autoAlpha: 0, duration: 2, ease: 'power2.in', immediateRender: false }, -0.5
         );
       });
-      return () => { ownTriggers.forEach(st => st.kill()); };
+      return () => { ownTriggers.forEach((st) => st?.kill()); };
     }
 
     mm.add('(min-width: 600px)', () => {
@@ -451,17 +497,17 @@ export default function FAQSection() {
   const showFaqPopup = useCallback(() => {
     const overlay = overlayRef.current;
     const popup = popupRef.current;
-    const canvas = burstCanvasRef.current;
-    if (!overlay || !popup || !canvas) return;
+    const canvasEl = burstCanvasRef.current;
+    if (!overlay || !popup || !canvasEl) return;
 
     // Confetti burst from viewport center
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
+    const ctxMaybe = canvasEl.getContext('2d');
+    if (!ctxMaybe) {
       // Canvas unavailable — skip confetti, open popup normally
       setTimeout(() => {
         overlay.style.display = 'grid';
         requestAnimationFrame(() => overlay.classList.add('visible'));
-        const pw = overlay.querySelector('.faq-popup-wrapper');
+        const pw = overlay.querySelector<HTMLElement>('.faq-popup-wrapper');
         if (pw) {
           pw.style.transform = 'scale(0.3)'; pw.style.opacity = '0';
           pw.style.transition = 'all 450ms cubic-bezier(0.22, 1, 0.36, 1)';
@@ -474,28 +520,31 @@ export default function FAQSection() {
       setTimeout(() => overlay.classList.add('content-reveal'), 400);
       return;
     }
+    const ctx = ctxMaybe;
+    const cvs = canvasEl;
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    canvas.width = window.innerWidth * dpr;
-    canvas.height = window.innerHeight * dpr;
-    canvas.style.width = `${window.innerWidth}px`;
-    canvas.style.height = `${window.innerHeight}px`;
-    canvas.style.display = 'block';
+    cvs.width = window.innerWidth * dpr;
+    cvs.height = window.innerHeight * dpr;
+    cvs.style.width = `${window.innerWidth}px`;
+    cvs.style.height = `${window.innerHeight}px`;
+    cvs.style.display = 'block';
     ctx.scale(dpr, dpr);
     const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
     const COLORS = ['#fec708', '#fc7900', '#fd9b00', '#fa4900', '#298f61', '#8cd3b3'];
-    const particles = [];
+    const particles: BurstParticle[] = [];
     for (let i = 0; i < 80; i++) {
       const angle = (i / 80) * Math.PI * 2 + (Math.random() - 0.5) * 0.5;
       const speed = 3 + Math.random() * 8;
+      const color = COLORS[Math.floor(Math.random() * COLORS.length)] ?? '#fec708';
       particles.push({ x: cx + (Math.random() - 0.5) * 120, y: cy + (Math.random() - 0.5) * 60,
         vx: Math.cos(angle) * speed, vy: Math.sin(angle) * speed,
-        size: 2 + Math.random() * 5, color: COLORS[Math.floor(Math.random() * COLORS.length)],
+        size: 2 + Math.random() * 5, color,
         life: 1, decay: 0.015 + Math.random() * 0.01, gravity: 0.08, drag: 0.97 });
     }
     let running = true, frame = 0;
     function animateBurst() {
       if (!running) return;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.clearRect(0, 0, cvs.width, cvs.height);
       let alive = 0;
       for (const p of particles) {
         if (p.life <= 0) continue;
@@ -513,9 +562,9 @@ export default function FAQSection() {
       else {
         running = false;
         ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        canvas.width = canvas.height = 1;
-        canvas.style.width = ''; canvas.style.height = ''; canvas.style.display = 'none';
+        ctx.clearRect(0, 0, cvs.width, cvs.height);
+        cvs.width = cvs.height = 1;
+        cvs.style.width = ''; cvs.style.height = ''; cvs.style.display = 'none';
       }
     }
     requestAnimationFrame(animateBurst);
@@ -524,7 +573,7 @@ export default function FAQSection() {
     setTimeout(() => {
       overlay.style.display = 'grid';
       requestAnimationFrame(() => overlay.classList.add('visible'));
-      const pw = overlay.querySelector('.faq-popup-wrapper');
+      const pw = overlay.querySelector<HTMLElement>('.faq-popup-wrapper');
       if (pw) {
         pw.style.transform = 'scale(0.3)'; pw.style.opacity = '0';
         pw.style.transition = 'all 450ms cubic-bezier(0.22, 1, 0.36, 1)';
@@ -542,7 +591,7 @@ export default function FAQSection() {
     const overlay = overlayRef.current;
     if (!overlay) return;
     overlay.classList.remove('visible', 'content-reveal');
-    const pw = overlay.querySelector('.faq-popup-wrapper');
+    const pw = overlay.querySelector<HTMLElement>('.faq-popup-wrapper');
     if (pw) pw.style.cssText = '';
     const handler = () => {
       if (!overlay.classList.contains('visible')) overlay.style.display = 'none';
@@ -556,17 +605,19 @@ export default function FAQSection() {
   useEffect(() => {
     const overlay = overlayRef.current;
     if (!overlay) return;
-    const handler = (e) => {
-      const btn = e.target.closest('.faq-popup-btn');
-      if (!btn) return;
+    const handler = (e: MouseEvent) => {
+      const t = e.target;
+      if (!(t instanceof Element)) return;
+      const btn = t.closest('.faq-popup-btn');
+      if (!(btn instanceof HTMLButtonElement)) return;
       const tileWrap = btn.closest('.faq-tile-wrap');
-      if (!tileWrap) return;
-      const id = tileWrap.dataset.tile;
+      if (!(tileWrap instanceof HTMLElement)) return;
+      const id = tileWrap.dataset.tile ?? '';
       tileWrap.classList.add('chosen');
-      overlay.querySelectorAll('.faq-tile-wrap').forEach(tw => {
+      overlay.querySelectorAll<HTMLElement>('.faq-tile-wrap').forEach((tw) => {
         if (tw.dataset.tile !== id) tw.classList.add('dimmed');
       });
-      overlay.querySelectorAll('.faq-popup-btn').forEach(b => {
+      overlay.querySelectorAll<HTMLButtonElement>('.faq-popup-btn').forEach((b) => {
         if (b !== btn) { b.disabled = true; b.textContent = 'Niedostępne'; }
       });
     };
@@ -574,7 +625,7 @@ export default function FAQSection() {
     return () => overlay.removeEventListener('click', handler);
   }, []);
 
-  const handleToggle = (col, i) => {
+  const handleToggle = (col: ColumnId, i: number) => {
     // Kopiuj tylko Set który faktycznie się zmienia — drugi przekazuj przez referencję
     const closingCol = openCol;
     const closingIdx = openIdx;
@@ -599,7 +650,8 @@ export default function FAQSection() {
 
     // BLOCKER-06: ScrollTrigger sync po zakończeniu animacji akordeonu (--faq-speed: 0.9s)
     // window.ScrollTrigger.refresh() → scrollRuntime.requestRefresh()
-    clearTimeout(gsapRefreshTimer.current);
+    const prevTimer = gsapRefreshTimer.current;
+    if (prevTimer !== undefined) clearTimeout(prevTimer);
     gsapRefreshTimer.current = setTimeout(
       () => scrollRuntime.requestRefresh('faq-accordion-toggle'),
       950
@@ -623,7 +675,8 @@ export default function FAQSection() {
   // Tu zostaje tylko timer (nie ma swojego useEffect return)
   useEffect(() => {
     return () => {
-      clearTimeout(gsapRefreshTimer.current);
+      const t = gsapRefreshTimer.current;
+      if (t !== undefined) clearTimeout(t);
     };
   }, []);
 
@@ -672,7 +725,13 @@ export default function FAQSection() {
         ))}
       </div>
       {/* POPUP OVERLAY */}
-      <div className="faq-overlay" ref={overlayRef} onClick={(e) => { if (e.target === overlayRef.current) closeFaqPopup(); }}>
+      <div
+        className="faq-overlay"
+        ref={overlayRef}
+        onClick={(e) => {
+          if (e.target === overlayRef.current) closeFaqPopup();
+        }}
+      >
         <div className="faq-popup-wrapper">
           <button className="faq-close" onClick={closeFaqPopup} aria-label="Zamknij">✕</button>
           <section className="faq-popup" ref={popupRef}>
