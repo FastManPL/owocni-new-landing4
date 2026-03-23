@@ -1,7 +1,6 @@
 'use client';
 
-import { useRef, createElement } from 'react';
-import Script from 'next/script';
+import { useRef } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -600,12 +599,6 @@ export function BookStatsSection() {
 
   return (
     <section id="book-stats-section" className="section" ref={rootRef}>
-      <Script src="https://fast.wistia.com/player.js" strategy="afterInteractive" />
-      <Script
-        src="https://fast.wistia.com/embed/kmqidz4bso.js"
-        strategy="afterInteractive"
-        type="module"
-      />
       {/* SENTRY: Early preload trigger — inside section for React container scope */}
       <div id="book-stats-sentry" aria-hidden="true" style={{ height: 0, overflow: 'hidden', pointerEvents: 'none' }} />
 
@@ -614,13 +607,17 @@ export function BookStatsSection() {
         {/* PIĘTRO 1: OBRAZY */}
         <div className="cs-floor cs-floor--images">
           <div className="cs-floor__left">
-            <div className="cs-img--stats cs-video cs-wistia-host" aria-hidden>
-              {createElement('wistia-player', {
-                'media-id': 'kmqidz4bso',
-                seo: 'false',
-                aspect: '1.7777777777777777',
-              })}
-            </div>
+            <video
+              className="cs-img--stats cs-video"
+              src="/books/Kalendarz_1-mute-video.mp4"
+              poster="/books/Statystyki-stron.png"
+              playsInline
+              muted
+              loop
+              autoPlay
+              preload="metadata"
+              aria-hidden
+            />
           </div>
           <div className="cs-floor__right">
             <div className="cs-img-placeholder cs-img--book">
