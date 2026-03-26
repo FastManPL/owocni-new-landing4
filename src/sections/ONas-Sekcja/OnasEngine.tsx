@@ -2342,6 +2342,8 @@ async function onasCapitanInit(container) {
     ticking = false; gsap.ticker.remove(tickFn);
     if (smoothRaf) { cancelAnimationFrame(smoothRaf); smoothRaf = 0; }
     if (inertiaRaf) { cancelAnimationFrame(inertiaRaf); inertiaRaf = 0; }
+    if (pmRaf) { cancelAnimationFrame(pmRaf); pmRaf = 0; }
+    if (posRaf) { cancelAnimationFrame(posRaf); posRaf = 0; }
     inertiaRunning = false;
     hfListeners.forEach(l => l.target.removeEventListener(l.event, l.fn, l.options));
   }
