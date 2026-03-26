@@ -189,8 +189,9 @@
 
 #wzrost-przychodow-section .wzrost-play-btn__icon {
   position: absolute;
-  right: 6%;
-  bottom: 6%;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
   width: clamp(3rem, 14%, 6rem);
   aspect-ratio: 1;
   z-index: 2;
@@ -205,11 +206,22 @@
 #wzrost-przychodow-section .wzrost-play-btn__icon circle {
   fill: #ffc600;
   stroke: #1f1f1f;
-  stroke-width: 2;
+  stroke-width: 1.8;
 }
 
 #wzrost-przychodow-section .wzrost-play-btn__icon polygon {
   fill: #1f1f1f;
+}
+
+#wzrost-przychodow-section .wzrost-play-btn__icon::before {
+  content: '';
+  position: absolute;
+  inset: -22%;
+  border-radius: 999px;
+  background-image: radial-gradient(circle, #ffc600 2px, transparent 2.5px);
+  background-size: 10px 10px;
+  opacity: 0.95;
+  pointer-events: none;
 }
 
 #wzrost-przychodow-section .wzrost-player-shell wistia-player {

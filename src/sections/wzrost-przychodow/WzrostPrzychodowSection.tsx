@@ -78,6 +78,7 @@ export function WzrostPrzychodowSection() {
                       'media-id': WISTIA_MEDIA_ID,
                       seo: 'false',
                       aspect: '1.7777777777777777',
+                      autoplay: 'true',
                     })
                   ) : (
                     <button
