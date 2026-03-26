@@ -330,7 +330,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
 
     var starsState = {
       triggerAuto: 0, triggerManual: 0, btnElement: btn,
-      wake: null as (() => void) | null, dispose: null as (() => void) | null
+      wake: null as (() => void) | null, sleep: null as (() => void) | null, dispose: null as (() => void) | null
     };
 
     // =========================================================
@@ -386,7 +386,14 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
           clock.getDelta(); requestAnimationFrame(animate);
         }
       }
+      function sleepThreeLoop() {
+        threeRunning = false;
+        document.removeEventListener('mousemove', mouseHandler);
+        document.removeEventListener('touchmove', touchHandler);
+        if (canvasVisible) { renderer.domElement.style.visibility = 'hidden'; canvasVisible = false; }
+      }
       starsState.wake = wakeThreeLoop;
+      starsState.sleep = sleepThreeLoop;
       var LUT_SIZE = 256;
       var LUT_tyPx = new Float32Array(LUT_SIZE), LUT_rP = new Float32Array(LUT_SIZE), LUT_op = new Float32Array(LUT_SIZE), LUT_sc = new Float32Array(LUT_SIZE);
       (function buildLUT() {
@@ -580,7 +587,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         if (renderer) { renderer.dispose(); if (renderer.domElement && renderer.domElement.parentNode) { renderer.domElement.parentNode.removeChild(renderer.domElement); } }
         if (scene.environment) scene.environment.dispose();
       }
-      return { wake: wakeThreeLoop, dispose: dispose };
+      return { wake: wakeThreeLoop, sleep: sleepThreeLoop, dispose: dispose };
     }
 
     // =========================================================
@@ -588,7 +595,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     // =========================================================
     var _webglSupported = (function() { try { var c = document.createElement('canvas'); return !!(c.getContext('webgl') || c.getContext('experimental-webgl')); } catch(e) { return false; } })();
     var _threeDepsPromise: Promise<any[]> | null = null;
-    var _starsEngine: { wake: () => void; dispose: () => void } | null = null;
+    var _starsEngine: { wake: () => void; sleep: () => void; dispose: () => void } | null = null;
     var _starsEnginePromise: Promise<any> | null = null;
 
     function loadThreeDeps() {
@@ -613,7 +620,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         var starsContainer = $id('blok-4-5-stars-canvas') as HTMLElement | null;
         if (!starsContainer) return null;
         _starsEngine = createStarsEngine(THREE, RoundedBoxGeometry, RoomEnvironment, BufferGeometryUtils, starsContainer, starsState);
-        starsState.wake = _starsEngine!.wake; starsState.dispose = _starsEngine!.dispose;
+        starsState.wake = _starsEngine!.wake; starsState.sleep = _starsEngine!.sleep; starsState.dispose = _starsEngine!.dispose;
         if (starsState.triggerAuto > 0 || starsState.triggerManual > 0) { starsState.wake!(); }
         return _starsEngine;
       }).catch(function(err: any) { console.warn('[blok-4-5] Stars engine init failed:', err); return null; }).finally(function() { _starsEnginePromise = null; });
@@ -1197,7 +1204,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
 
     // TYP B: pause / resume / kill
     var hfListeners: Array<{target:EventTarget;event:string;fn:EventListenerOrEventListenerObject;options?:any}>=[];
-    function pause(){if(ticking){gsap.ticker.remove(mainLoop);gsap.ticker.remove(glowTickFn);ticking=false;}if(eyePauseFn)eyePauseFn();hfListeners.forEach(function(entry){entry.target.removeEventListener(entry.event,entry.fn,entry.options);});}
+    function pause(){if(ticking){gsap.ticker.remove(mainLoop);gsap.ticker.remove(glowTickFn);ticking=false;}if(eyePauseFn)eyePauseFn();if(starsState.sleep)starsState.sleep();hfListeners.forEach(function(entry){entry.target.removeEventListener(entry.event,entry.fn,entry.options);});}
     function resume(){if(!ticking){if(sectionInView&&!document.hidden)gsap.ticker.add(mainLoop);if(tickIOVisible)gsap.ticker.add(glowTickFn);ticking=true;}if(eyeResumeFn)eyeResumeFn();hfListeners.forEach(function(entry){entry.target.addEventListener(entry.event,entry.fn,entry.options);});}
     function kill(){
       pause();
