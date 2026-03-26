@@ -399,6 +399,7 @@ function init(container) {
                                 if(wp){
                                     self.velocity=0;
                                     self.targetAngle=self.currentAngle;
+                                    wp.setAttribute('autoplay', 'true');
                                     popup.classList.add('is-open');
                                     document.body.style.overflow='hidden';
                                     ensurePopupWistiaLoaded()
@@ -886,6 +887,7 @@ function init(container) {
         function closePopup(){
             popup.classList.remove('is-open');
             document.body.style.overflow='';
+            if (popupWistia) popupWistia.removeAttribute('autoplay');
             if(popupWistia && typeof popupWistia.pause==='function'){
                 try { popupWistia.pause(); } catch(e){}
             }
