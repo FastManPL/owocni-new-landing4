@@ -2625,6 +2625,7 @@ export default function OnasEngine() {
           'media-id': 'fds00b5wst',
           seo: 'false',
           aspect: '1.7777777777777777',
+          autoplay: 'true',
         })}
       </div>
       <div className="popup-content">
