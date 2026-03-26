@@ -23,7 +23,7 @@ export function WzrostPrzychodowSection() {
       />
       <Script
         src={`https://fast.wistia.com/embed/${WISTIA_MEDIA_ID}.js`}
-        strategy="afterInteractive"
+        strategy="lazyOnload"
         type="module"
       />
 

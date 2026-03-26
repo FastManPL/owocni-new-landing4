@@ -2441,7 +2441,7 @@ export default function OnasEngine() {
     <Script src="https://fast.wistia.com/player.js" strategy="afterInteractive" />
     <Script
       src="https://fast.wistia.com/embed/fds00b5wst.js"
-      strategy="afterInteractive"
+      strategy="lazyOnload"
       type="module"
     />
     <section id="onas-section" ref={rootRef}>
