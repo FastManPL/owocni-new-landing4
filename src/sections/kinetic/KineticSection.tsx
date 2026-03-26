@@ -3589,7 +3589,7 @@ import './kinetic-section.css';
         // P2A AUTO-FIX: IO → pause()/resume()
         // PIN-DISABLE-01: pause() NIE dotyka ScrollTrigger — zarządza pinem
         // Target: [data-gating-target] = .content-wrapper
-        // rootMargin = clamp(200–1200px, 0.5 × visualViewport.height)
+        // rootMargin = clamp(120–320px, 0.2 × visualViewport.height)
         // ============================================================
         var _gatingTarget = container.querySelector('[data-gating-target]') || container;
         var _io = null;
@@ -3599,7 +3599,7 @@ import './kinetic-section.css';
             var vh = (window.visualViewport && window.visualViewport.height)
                      ? window.visualViewport.height
                      : window.innerHeight;
-            var rm = Math.min(1200, Math.max(200, Math.round(0.5 * vh)));
+            var rm = Math.min(320, Math.max(120, Math.round(0.2 * vh)));
             return rm + 'px';
         }
 
