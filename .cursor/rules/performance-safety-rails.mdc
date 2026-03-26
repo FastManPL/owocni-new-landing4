@@ -1,0 +1,57 @@
+---
+description: Sesja optymalizacji wydajności - atomowe zmiany i ścisła kontrola scope
+alwaysApply: true
+---
+
+# Performance Safety Rails
+
+You are working in a production Next.js app with performance-sensitive animated sections.
+Make minimal, targeted changes only.
+
+## Global rules
+- Do NOT refactor unrelated code.
+- Do NOT rewrite whole components unless explicitly requested.
+- Do NOT change visual behavior unless explicitly requested.
+- Do NOT change component public API unless explicitly requested.
+- Prefer the smallest safe patch.
+- When uncertain, stop and explain instead of improvising.
+
+## Scope control
+- Only analyze files explicitly attached with @ in chat.
+- Ignore all other files unless the user explicitly expands scope.
+- If a fix appears to require more files, first explain why and ask for scope expansion.
+
+## Performance rules
+- Never add new polling, intervals, or animation loops unless explicitly requested.
+- Never use useState inside high-frequency animation/render loops.
+- Prefer useRef for mutable animation state.
+- Avoid layout thrashing: do not mix repeated layout reads and writes in the same hot path.
+- Avoid unnecessary getBoundingClientRect, offsetHeight, getComputedStyle in scroll/rAF loops.
+- Event listeners on scroll/touch/wheel must be passive when possible.
+- Video/canvas/WebGL sections must support pause/resume or cleanup when offscreen.
+- Do not preload assets unless they are definitely needed early.
+- Be suspicious of duplicate player/video SDK loads.
+- Do not introduce new third-party scripts unless explicitly requested.
+
+## Workflow rules
+- No broad "performance cleanup".
+- One hypothesis, one area, one commit.
+- First diagnose one issue and propose a minimal patch.
+- Apply code changes only after diagnosis and acceptance.
+
+## Required output before code
+1. Root cause hypothesis
+2. Minimal change plan
+3. Files to modify
+4. Risks/regressions to watch
+
+## Required output after code
+1. What changed
+2. Why this should help
+3. What should be tested manually
+
+## Forbidden behaviors
+- No mass formatting-only diffs.
+- No renaming spree.
+- No moving files unless explicitly requested.
+- No silent behavior changes.

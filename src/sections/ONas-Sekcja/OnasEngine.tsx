@@ -2442,7 +2442,6 @@ export default function OnasEngine() {
     <Script
       src="https://fast.wistia.com/embed/fds00b5wst.js"
       strategy="afterInteractive"
-      type="module"
     />
     <section id="onas-section" ref={rootRef}>
 

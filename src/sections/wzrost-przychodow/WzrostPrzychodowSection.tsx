@@ -24,7 +24,6 @@ export function WzrostPrzychodowSection() {
       <Script
         src={`https://fast.wistia.com/embed/${WISTIA_MEDIA_ID}.js`}
         strategy="afterInteractive"
-        type="module"
       />
 
       <section id="wzrost-przychodow-section" aria-labelledby="wzrost-przychodow-heading">
