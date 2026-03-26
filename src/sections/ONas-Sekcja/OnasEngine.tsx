@@ -589,7 +589,7 @@ function init(container) {
             if(this._hoverLeft){this._hoverLeft=false;if(this._hoveredCardIdx>=0){if(this._hoverTimelines[this._hoveredCardIdx])this._hoverTimelines[this._hoveredCardIdx].reverse();var leavePb=this.cards[this._hoveredCardIdx]._playBtn;if(leavePb)leavePb.leaveHover();}this._hoveredCardIdx=-1;return;}
             if(this.isDragging)return;
             var mx=this._pendingHoverX,my=this._pendingHoverY; if(mx<0)return;
-            var bestIdx=-1,bestDist=Infinity;
+            var bestIdx=-1,bestDist=Infinity,bestRect=null;
             for(var c=0;c<this.cards.length;c++){
                 if(!this._wasFront[c])continue;
                 var rect=this.cards[c].getBoundingClientRect();
@@ -598,7 +598,7 @@ function init(container) {
                 if(mx>=rect.left-pad&&mx<=rect.right+pad&&my>=rect.top-pad&&my<=rect.bottom+pad){
                     var cx=rect.left+rect.width/2,cy=rect.top+rect.height/2;
                     var dist=(mx-cx)*(mx-cx)+(my-cy)*(my-cy);
-                    if(dist<bestDist){bestDist=dist;bestIdx=c;}
+                    if(dist<bestDist){bestDist=dist;bestIdx=c;bestRect=rect;}
                 }
             }
             if(bestIdx!==this._hoveredCardIdx){
@@ -612,7 +612,7 @@ function init(container) {
                 /* Enter new card */
                 if(bestIdx>=0&&this._hoverTimelines[bestIdx]){
                     this.cards[bestIdx].classList.add('is-hovered');
-                    if(this._cardStyleIdx[bestIdx]===2){var card=this.cards[bestIdx];var rect2=card.getBoundingClientRect();var cardCenterX=rect2.left+rect2.width/2;var screenCenterX=document.documentElement.clientWidth/2;var layers=card.querySelectorAll('.card__layer');var newOrigin=(cardCenterX>screenCenterX)?'100% 50%':'0% 50%';gsap.set(layers,{transformOrigin:newOrigin});}
+                    if(this._cardStyleIdx[bestIdx]===2&&bestRect){var card=this.cards[bestIdx];var cardCenterX=bestRect.left+bestRect.width/2;var screenCenterX=document.documentElement.clientWidth/2;var layers=card.querySelectorAll('.card__layer');var newOrigin=(cardCenterX>screenCenterX)?'100% 50%':'0% 50%';gsap.set(layers,{transformOrigin:newOrigin});}
                     this._hoverTimelines[bestIdx].play();
                     var newPb=this.cards[bestIdx]._playBtn;
                     if(newPb) newPb.enterHover();
