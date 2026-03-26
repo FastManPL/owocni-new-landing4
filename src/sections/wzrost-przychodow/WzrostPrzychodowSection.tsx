@@ -1,6 +1,6 @@
 'use client';
 
-import { createElement, useCallback, useRef, useState } from 'react';
+import { createElement, useCallback, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Script from 'next/script';
 import laptopPhoto from '../hero2/1.jpg';
@@ -19,6 +19,32 @@ export function WzrostPrzychodowSection() {
   const activateWistia = useCallback(() => {
     setIsWistiaActivated(true);
   }, []);
+
+  useEffect(() => {
+    if (!isWistiaActivated) return;
+
+    let cancelled = false;
+    const playWhenReady = () => {
+      if (cancelled) return;
+      const host = playerSlotRef.current?.querySelector('wistia-player') as
+        | (HTMLElement & { play?: () => Promise<unknown> })
+        | null;
+      if (!host || typeof host.play !== 'function') return;
+      host.play().catch(() => {});
+    };
+
+    customElements
+      .whenDefined('wistia-player')
+      .then(() => {
+        window.requestAnimationFrame(playWhenReady);
+        window.setTimeout(playWhenReady, 220);
+      })
+      .catch(() => {});
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isWistiaActivated]);
 
   return (
     <>
@@ -96,9 +122,14 @@ export function WzrostPrzychodowSection() {
                         priority={false}
                       />
                       <span className="wzrost-play-btn__icon" aria-hidden="true">
-                        <svg viewBox="0 0 56 56" focusable="false">
-                          <circle cx="28" cy="28" r="27" />
-                          <polygon points="23,18 40,28 23,38" />
+                        <svg viewBox="0 0 100 100" focusable="false">
+                          {Array.from({ length: 26 }).map((_, index) => {
+                            const angle = (index / 26) * Math.PI * 2 - Math.PI / 2;
+                            const cx = 50 + Math.cos(angle) * 39;
+                            const cy = 50 + Math.sin(angle) * 39;
+                            return <circle key={index} cx={cx} cy={cy} r="2" />;
+                          })}
+                          <polygon points="40,34 67,50 40,66" />
                         </svg>
                       </span>
                     </button>

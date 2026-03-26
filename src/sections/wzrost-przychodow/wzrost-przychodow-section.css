@@ -205,23 +205,11 @@
 
 #wzrost-przychodow-section .wzrost-play-btn__icon circle {
   fill: #ffc600;
-  stroke: #1f1f1f;
-  stroke-width: 1.8;
+  opacity: 0.22;
 }
 
 #wzrost-przychodow-section .wzrost-play-btn__icon polygon {
-  fill: #1f1f1f;
-}
-
-#wzrost-przychodow-section .wzrost-play-btn__icon::before {
-  content: '';
-  position: absolute;
-  inset: -22%;
-  border-radius: 999px;
-  background-image: radial-gradient(circle, #ffc600 2px, transparent 2.5px);
-  background-size: 10px 10px;
-  opacity: 0.95;
-  pointer-events: none;
+  fill: #ffc600;
 }
 
 #wzrost-przychodow-section .wzrost-player-shell wistia-player {

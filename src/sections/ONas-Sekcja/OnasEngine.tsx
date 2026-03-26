@@ -2,7 +2,6 @@
 'use client';
 
 import { useRef, useEffect, createElement } from 'react';
-import Script from 'next/script';
 import logoA from './logo-A.jpg';
 import logoB from './logo-B.jpg';
 import { useGSAP } from '@gsap/react';
@@ -36,6 +35,54 @@ function init(container) {
     var tickFn = null;
     var ticking = false;
     var hfListeners = [];
+    var wistiaPopupLoadPromise = null;
+
+    function loadScriptOnce(src, type) {
+        return new Promise(function(resolve, reject) {
+            var escapedSrc = src.replace(/"/g, '\\"');
+            var existing = document.querySelector('script[src="' + escapedSrc + '"]');
+            if (existing) {
+                if (existing.dataset.loaded === 'true') {
+                    resolve();
+                    return;
+                }
+                existing.addEventListener('load', function onLoad() {
+                    existing.dataset.loaded = 'true';
+                    resolve();
+                }, { once: true });
+                existing.addEventListener('error', function onError() {
+                    reject(new Error('Failed to load script: ' + src));
+                }, { once: true });
+                return;
+            }
+
+            var script = document.createElement('script');
+            script.src = src;
+            script.async = true;
+            if (type) script.type = type;
+            script.addEventListener('load', function onLoad() {
+                script.dataset.loaded = 'true';
+                resolve();
+            }, { once: true });
+            script.addEventListener('error', function onError() {
+                reject(new Error('Failed to load script: ' + src));
+            }, { once: true });
+            document.head.appendChild(script);
+        });
+    }
+
+    function ensurePopupWistiaLoaded() {
+        if (!wistiaPopupLoadPromise) {
+            wistiaPopupLoadPromise = loadScriptOnce('https://fast.wistia.com/player.js')
+                .then(function() {
+                    return loadScriptOnce('https://fast.wistia.com/embed/fds00b5wst.js', 'module');
+                })
+                .then(function() {
+                    return customElements.whenDefined('wistia-player');
+                });
+        }
+        return wistiaPopupLoadPromise;
+    }
 
     /* ── PLAY BUTTON (video card overlay) ── */
     function createPlayButton(card, size) {
@@ -354,7 +401,11 @@ function init(container) {
                                     self.targetAngle=self.currentAngle;
                                     popup.classList.add('is-open');
                                     document.body.style.overflow='hidden';
-                                    if(typeof wp.play==='function') wp.play().catch(function(){});
+                                    ensurePopupWistiaLoaded()
+                                        .then(function() {
+                                            if(typeof wp.play==='function') wp.play().catch(function(){});
+                                        })
+                                        .catch(function(){});
                                 }
                             }
                         }
@@ -2438,12 +2489,6 @@ export default function OnasEngine() {
 
   return (
     <>
-    <Script src="https://fast.wistia.com/player.js" strategy="lazyOnload" />
-    <Script
-      src="https://fast.wistia.com/embed/fds00b5wst.js"
-      strategy="lazyOnload"
-      type="module"
-    />
     <section id="onas-section" ref={rootRef}>
 
 
