@@ -1250,7 +1250,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     // ═══ FACTORY: CPU GATING ═══
     var _s={_killed:false},_factoryPaused=false;
     var _getVH=function(){return window.visualViewport?.height??window.innerHeight;};
-    var _calcRootMargin=function(){return Math.min(1200,Math.max(200,Math.round(1.0*_getVH())));};
+    var _calcRootMargin=function(){return Math.min(320,Math.max(120,Math.round(0.2*_getVH())));};
     var _factoryIO: IntersectionObserver|null=null,_factoryIODebounce: number|null=null;
     function _factoryIOCallback(entries: IntersectionObserverEntry[]){if(!entries[0])return;if(entries[0].isIntersecting){if(_factoryPaused){_factoryPaused=false;resume();}}else{if(!_factoryPaused){_factoryPaused=true;pause();}}}
     function _createFactoryIO(){var rm=_calcRootMargin();_factoryIO=new IntersectionObserver(_factoryIOCallback,{rootMargin:rm+'px 0px',threshold:0.01});_factoryIO.observe(container);observers.push(_factoryIO);}
