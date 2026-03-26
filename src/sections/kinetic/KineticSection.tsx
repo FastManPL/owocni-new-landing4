@@ -1636,7 +1636,10 @@ import './kinetic-section.css';
             // GUARD: rawWidth=0 → config.fontSize=0 → itemSpacing=0 → maxItems=Infinity → crash
             // Retry po wyrenderowaniu layoutu (RAF gwarantuje że DOM jest gotowy)
             if (rawWidth === 0) {
-                requestAnimationFrame(function() { resize(); });
+                requestAnimationFrame(function() {
+                    if (_paused || _s._killed) return;
+                    resize();
+                });
                 return;
             }
             
@@ -2359,6 +2362,7 @@ import './kinetic-section.css';
                         _sm.state = 'idle';
                         _sm.pendingIndex = null;
                         requestAnimationFrame(function() {
+                            if (_paused || _s._killed) return;
                             var g = _getSnapGeometry();
                             if (!g) return;
                             var scroll = getScroll();
@@ -2652,6 +2656,7 @@ import './kinetic-section.css';
 
             // Init: odczytaj stan z aktualnej pozycji
             requestAnimationFrame(function() {
+                if (_paused || _s._killed) return;
                 _reconcileFromScroll();
             });
             
@@ -3490,7 +3495,10 @@ import './kinetic-section.css';
                 nigdyGlow.style.top = (glowTop + glowOffsetY) + 'px';
             };
             
-            requestAnimationFrame(positionNigdyGlow);
+            requestAnimationFrame(function() {
+                if (_paused || _s._killed) return;
+                positionNigdyGlow();
+            });
             window.addEventListener('resize', positionNigdyGlow);
             cleanups.push(() => window.removeEventListener('resize', positionNigdyGlow));
             
