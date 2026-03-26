@@ -403,7 +403,20 @@ function init(container) {
                                     document.body.style.overflow='hidden';
                                     ensurePopupWistiaLoaded()
                                         .then(function() {
-                                            if(typeof wp.play==='function') wp.play().catch(function(){});
+                                            var tries = 0;
+                                            var maxTries = 8;
+                                            var attemptPlay = function() {
+                                                tries++;
+                                                var currentWp = popup.querySelector('wistia-player');
+                                                if (currentWp && typeof currentWp.play === 'function') {
+                                                    currentWp.play().catch(function(){});
+                                                    return;
+                                                }
+                                                if (tries < maxTries) {
+                                                    window.setTimeout(attemptPlay, 120);
+                                                }
+                                            };
+                                            attemptPlay();
                                         })
                                         .catch(function(){});
                                 }

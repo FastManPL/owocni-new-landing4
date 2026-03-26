@@ -123,8 +123,8 @@ export function WzrostPrzychodowSection() {
                       />
                       <span className="wzrost-play-btn__icon" aria-hidden="true">
                         <svg viewBox="0 0 100 100" focusable="false">
-                          {Array.from({ length: 26 }).map((_, index) => {
-                            const angle = (index / 26) * Math.PI * 2 - Math.PI / 2;
+                          {Array.from({ length: 18 }).map((_, index) => {
+                            const angle = (index / 18) * Math.PI * 2 - Math.PI / 2;
                             const cx = 50 + Math.cos(angle) * 39;
                             const cy = 50 + Math.sin(angle) * 39;
                             return <circle key={index} cx={cx} cy={cy} r="2" />;
