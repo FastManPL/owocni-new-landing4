@@ -1205,7 +1205,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     // TYP B: pause / resume / kill
     var hfListeners: Array<{target:EventTarget;event:string;fn:EventListenerOrEventListenerObject;options?:any}>=[];
     function pause(){if(ticking){gsap.ticker.remove(mainLoop);gsap.ticker.remove(glowTickFn);ticking=false;}if(eyePauseFn)eyePauseFn();if(starsState.sleep)starsState.sleep();hfListeners.forEach(function(entry){entry.target.removeEventListener(entry.event,entry.fn,entry.options);});}
-    function resume(){if(!ticking){if(sectionInView&&!document.hidden)gsap.ticker.add(mainLoop);if(tickIOVisible)gsap.ticker.add(glowTickFn);ticking=true;}if(eyeResumeFn)eyeResumeFn();hfListeners.forEach(function(entry){entry.target.addEventListener(entry.event,entry.fn,entry.options);});}
+    function resume(){if(!ticking){if(sectionInView&&!document.hidden)gsap.ticker.add(mainLoop);if(tickIOVisible)gsap.ticker.add(glowTickFn);ticking=true;}if(eyeResumeFn)eyeResumeFn();if(starsState.wake)starsState.wake();hfListeners.forEach(function(entry){entry.target.addEventListener(entry.event,entry.fn,entry.options);});}
     function kill(){
       pause();
       try {
