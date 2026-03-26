@@ -397,6 +397,12 @@ function init(container) {
                             if(fs&&String(fs).indexOf('__wistia_')===0){
                                 var wp=popup.querySelector('wistia-player');
                                 if(wp){
+                                    /* Recreate player node on each open so autoplay attribute
+                                       is applied during fresh initialization. */
+                                    var freshWp = wp.cloneNode(false);
+                                    freshWp.setAttribute('autoplay', 'true');
+                                    wp.replaceWith(freshWp);
+                                    wp = freshWp;
                                     self.velocity=0;
                                     self.targetAngle=self.currentAngle;
                                     wp.setAttribute('autoplay', 'true');
@@ -887,9 +893,10 @@ function init(container) {
         function closePopup(){
             popup.classList.remove('is-open');
             document.body.style.overflow='';
-            if (popupWistia) popupWistia.removeAttribute('autoplay');
-            if(popupWistia && typeof popupWistia.pause==='function'){
-                try { popupWistia.pause(); } catch(e){}
+            var currentWp = popup.querySelector('wistia-player');
+            if (currentWp) currentWp.removeAttribute('autoplay');
+            if(currentWp && typeof currentWp.pause==='function'){
+                try { currentWp.pause(); } catch(e){}
             }
         }
         /* Named handlers for cleanup */
