@@ -2438,7 +2438,6 @@ export default function OnasEngine() {
 
   return (
     <>
-    <Script src="https://fast.wistia.com/player.js" strategy="afterInteractive" />
     <Script
       src="https://fast.wistia.com/embed/fds00b5wst.js"
       strategy="lazyOnload"
