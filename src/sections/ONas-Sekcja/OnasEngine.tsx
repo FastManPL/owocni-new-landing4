@@ -1033,16 +1033,41 @@ function init(container) {
 
     /* FIX P4: Expand toggle USUNIĘTY — Capitan ma swój własny */
 
+    function syncInlineVideoPlayback(shouldPause){
+        if(!engine||!engine.cards||!engine.cards.length)return;
+        for(var i=0;i<engine.cards.length;i++){
+            var card=engine.cards[i];
+            if(!card||!card.classList||!card.classList.contains('card--video'))continue;
+            var vid=card.querySelector('video');
+            if(!vid||!vid.src)continue;
+            if(shouldPause){
+                if(!vid.paused&&!vid.ended) vid.setAttribute('data-onas-paused-by-io','1');
+                vid.pause();
+                vid.classList.remove('is-playing');
+                continue;
+            }
+            var wasPausedByIo=vid.getAttribute('data-onas-paused-by-io')==='1';
+            var cardVisible=card.style.visibility!=='hidden';
+            if(wasPausedByIo&&cardVisible&&engine._revealComplete){
+                vid.play().catch(function(){});
+                vid.classList.add('is-playing');
+            }
+            vid.removeAttribute('data-onas-paused-by-io');
+        }
+    }
     function pause(){
         if(ticking&&tickFn){gsap.ticker.remove(tickFn);ticking=false;}
         for(var i=0;i<hfListeners.length;i++){var hf=hfListeners[i];hf.el.removeEventListener(hf.type,hf.fn,hf.options);}
+        syncInlineVideoPlayback(true);
     }
     function resume(){
         if(!ticking&&tickFn){gsap.ticker.add(tickFn);ticking=true;}
         for(var i=0;i<hfListeners.length;i++){var hf=hfListeners[i];hf.el.addEventListener(hf.type,hf.fn,hf.options);}
+        syncInlineVideoPlayback(false);
     }
     function kill(){
         pause();
+        syncInlineVideoPlayback(false);
         for(var i=0;i<cleanups.length;i++){try{cleanups[i]();}catch(e){}}cleanups.length=0;
         if(galleryResizeTimeout)clearTimeout(galleryResizeTimeout);timerIds.forEach(function(id){clearTimeout(id);});timerIds.length=0;
         for(var j=0;j<observers.length;j++){if(observers[j]&&observers[j].disconnect)observers[j].disconnect();}observers.length=0;
