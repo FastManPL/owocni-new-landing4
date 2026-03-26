@@ -1617,7 +1617,8 @@ async function onasCapitanInit(container) {
 
   const io = new IntersectionObserver(
     (entries) => { inView = entries[0]?.isIntersecting ?? false; syncRunning(); },
-    { root: null, threshold: 0.01, rootMargin: '200px' }
+    // Tighter window to suspend WebGL sooner after leave.
+    { root: null, threshold: 0.01, rootMargin: '80px' }
   );
   io.observe(threeContainer);
   observers.push(io);
