@@ -1197,7 +1197,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     gsapInstances.push(stWalking);
     gsap.ticker.add(mainLoop);
     var ticking=true,sectionInView=true;
-    var mainLoopIO=new IntersectionObserver(function(entries){if(!entries[0])return;sectionInView=entries[0].isIntersecting;if(sectionInView&&!document.hidden&&ticking){gsap.ticker.add(mainLoop);}else if(!sectionInView){gsap.ticker.remove(mainLoop);}},{rootMargin:'200px 0px'});
+    var mainLoopIO=new IntersectionObserver(function(entries){if(!entries[0])return;sectionInView=entries[0].isIntersecting;if(sectionInView&&!document.hidden&&ticking){gsap.ticker.add(mainLoop);}else if(!sectionInView){gsap.ticker.remove(mainLoop);}},{rootMargin:'80px 0px'});
     mainLoopIO.observe(container);observers.push(mainLoopIO);
     var onMainVisChange=function(){if(document.hidden){gsap.ticker.remove(mainLoop);}else if(sectionInView&&ticking){gsap.ticker.add(mainLoop);}};
     document.addEventListener('visibilitychange',onMainVisChange);cleanups.push(function(){document.removeEventListener('visibilitychange',onMainVisChange);});
