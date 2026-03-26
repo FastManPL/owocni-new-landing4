@@ -1,6 +1,6 @@
 'use client';
 
-import { createElement, useCallback, useRef } from 'react';
+import { createElement, useCallback, useRef, useState } from 'react';
 import Image from 'next/image';
 import Script from 'next/script';
 import laptopPhoto from '../hero2/1.jpg';
@@ -10,22 +10,28 @@ const WISTIA_MEDIA_ID = 'kmqidz4bso';
 
 export function WzrostPrzychodowSection() {
   const playerSlotRef = useRef<HTMLDivElement>(null);
+  const [isWistiaActivated, setIsWistiaActivated] = useState(false);
 
   const scrollToDemo = useCallback(() => {
     playerSlotRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' });
   }, []);
 
+  const activateWistia = useCallback(() => {
+    setIsWistiaActivated(true);
+  }, []);
+
   return (
     <>
-      <Script
-        src="https://fast.wistia.com/player.js"
-        strategy="lazyOnload"
-      />
-      <Script
-        src={`https://fast.wistia.com/embed/${WISTIA_MEDIA_ID}.js`}
-        strategy="lazyOnload"
-        type="module"
-      />
+      {isWistiaActivated ? (
+        <>
+          <Script src="https://fast.wistia.com/player.js" strategy="afterInteractive" />
+          <Script
+            src={`https://fast.wistia.com/embed/${WISTIA_MEDIA_ID}.js`}
+            strategy="afterInteractive"
+            type="module"
+          />
+        </>
+      ) : null}
 
       <section id="wzrost-przychodow-section" aria-labelledby="wzrost-przychodow-heading">
         <div className="wzrost-wrap">
@@ -67,11 +73,35 @@ export function WzrostPrzychodowSection() {
                   ref={playerSlotRef}
                   className="wzrost-player-shell"
                 >
-                  {createElement('wistia-player', {
-                    'media-id': WISTIA_MEDIA_ID,
-                    seo: 'false',
-                    aspect: '1.7777777777777777',
-                  })}
+                  {isWistiaActivated ? (
+                    createElement('wistia-player', {
+                      'media-id': WISTIA_MEDIA_ID,
+                      seo: 'false',
+                      aspect: '1.7777777777777777',
+                    })
+                  ) : (
+                    <button
+                      type="button"
+                      className="play-btn wzrost-play-btn"
+                      onClick={activateWistia}
+                      aria-label="Odtwórz wideo"
+                    >
+                      <Image
+                        src="/wzrost-kmqidz4bso.webp"
+                        alt=""
+                        fill
+                        sizes="(max-width: 899px) 78vw, 36rem"
+                        className="wzrost-player-poster"
+                        priority={false}
+                      />
+                      <span className="wzrost-play-btn__icon" aria-hidden="true">
+                        <svg viewBox="0 0 56 56" focusable="false">
+                          <circle cx="28" cy="28" r="27" />
+                          <polygon points="23,18 40,28 23,38" />
+                        </svg>
+                      </span>
+                    </button>
+                  )}
                 </div>
               </div>
             </div>
