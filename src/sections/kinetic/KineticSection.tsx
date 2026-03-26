@@ -3658,16 +3658,6 @@ import './kinetic-section.css';
     // LIFECYCLE: kill / pause / resume (Typ B)
     // ============================================
     let _paused = false;
-    function _updateLifecycleDebug(state: 'paused' | 'running' | 'killed') {
-        if (process.env.NODE_ENV === 'production') return;
-        (window as any).__kineticLifecycleDebug = {
-            state: state,
-            paused: _paused,
-            killed: !!_s._killed,
-            tickerFnsCount: tickerFns.length,
-            timestamp: Date.now()
-        };
-    }
 
     function pause() {
         if (_paused) return;
@@ -3685,7 +3675,6 @@ import './kinetic-section.css';
         // P1: Zwolnij GPU layers z anim-char (101 spanów × backing store)
         var _ac = $$('.anim-char');
         for (var _i = 0; _i < _ac.length; _i++) _ac[_i].style.willChange = 'auto';
-        _updateLifecycleDebug('paused');
     }
 
     function resume() {
@@ -3706,7 +3695,6 @@ import './kinetic-section.css';
         for (var _i = 0; _i < _b2chars.length; _i++) _b2chars[_i].style.willChange = 'transform, opacity';
         var _b3hchars = container.querySelectorAll('#kinetic-block-3 .small-header .anim-char');
         for (var _i = 0; _i < _b3hchars.length; _i++) _b3hchars[_i].style.willChange = 'transform, opacity';
-        _updateLifecycleDebug('running');
     }
 
     function kill() {
@@ -3755,7 +3743,6 @@ import './kinetic-section.css';
         if (_kineticObserver) { _kineticObserver.kill(); _kineticObserver = null; }
         var _pqc = $id('kinetic-particle-qmark-canvas');
         if (_pqc) _pqc.style.clipPath = '';
-        _updateLifecycleDebug('killed');
     }
 
     return { kill, pause, resume, _s };
