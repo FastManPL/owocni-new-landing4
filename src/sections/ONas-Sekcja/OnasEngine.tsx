@@ -2395,7 +2395,8 @@ function factoryInit(container) {
 
   function _getRM() {
     var vh = (window.visualViewport ? window.visualViewport.height : window.innerHeight) || 800;
-    return Math.min(1200, Math.max(200, Math.round(vh * 1.0))) + 'px';
+    // Smaller pre-activation window: suspend earlier after leaving viewport.
+    return Math.min(320, Math.max(120, Math.round(vh * 0.2))) + 'px';
   }
 
   function _pause() {
