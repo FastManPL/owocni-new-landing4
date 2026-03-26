@@ -1657,6 +1657,7 @@ async function onasCapitanInit(container) {
   let inertiaRunning = false;
   let smoothProgress = 0; /* lerped progress — trails real scroll */
   let smoothRaf = 0;
+  let inertiaRaf = 0;
 
   function updateBadgeDrift() {
     if (mq.matches) {
@@ -1696,11 +1697,12 @@ async function onasCapitanInit(container) {
     if (Math.abs(driftInertia) < 0.5) {
       driftInertia = 0;
       inertiaRunning = false;
+      inertiaRaf = 0;
       updateBadgeDrift();
       return;
     }
     updateBadgeDrift();
-    requestAnimationFrame(decayInertia);
+    inertiaRaf = requestAnimationFrame(decayInertia);
   }
 
   function onScrollDrift() {
@@ -1714,7 +1716,7 @@ async function onasCapitanInit(container) {
 
     if (!inertiaRunning && Math.abs(driftInertia) > 1) {
       inertiaRunning = true;
-      requestAnimationFrame(decayInertia);
+      inertiaRaf = requestAnimationFrame(decayInertia);
     }
   }
 
@@ -2338,6 +2340,9 @@ async function onasCapitanInit(container) {
   function pause() {
     if (!ticking) return;
     ticking = false; gsap.ticker.remove(tickFn);
+    if (smoothRaf) { cancelAnimationFrame(smoothRaf); smoothRaf = 0; }
+    if (inertiaRaf) { cancelAnimationFrame(inertiaRaf); inertiaRaf = 0; }
+    inertiaRunning = false;
     hfListeners.forEach(l => l.target.removeEventListener(l.event, l.fn, l.options));
   }
 
@@ -2354,6 +2359,7 @@ async function onasCapitanInit(container) {
     driftActive = false;
     inertiaRunning = false;
     if (smoothRaf) { cancelAnimationFrame(smoothRaf); smoothRaf = 0; }
+    if (inertiaRaf) { cancelAnimationFrame(inertiaRaf); inertiaRaf = 0; }
     if (posRaf) { cancelAnimationFrame(posRaf); posRaf = 0; }
     /* GSAP instances cleanup */
     gsapInstances.forEach(inst => { try { inst.revert?.(); } catch(e){} try { inst.kill?.(); } catch(e){} }); gsapInstances.length = 0;
