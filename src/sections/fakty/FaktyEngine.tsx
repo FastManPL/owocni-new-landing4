@@ -610,6 +610,20 @@ function init(container: HTMLElement): { kill: () => void } {
   let orgSnapshotDirty=true, orgLastProgress=-1;
   let orgCachedSLx=0, orgCachedSLy=0, orgCachedPLx=0, orgCachedPLy=0;
 
+  let orgReduceMotion = false;
+  if (typeof window !== 'undefined' && typeof window.matchMedia === 'function') {
+    const mq = window.matchMedia('(prefers-reduced-motion: reduce)');
+    orgReduceMotion = mq.matches;
+    const onReduceMotion = () => { orgReduceMotion = mq.matches; };
+    if (typeof mq.addEventListener === 'function') {
+      mq.addEventListener('change', onReduceMotion);
+      cleanups.push(() => mq.removeEventListener('change', onReduceMotion));
+    } else {
+      mq.addListener(onReduceMotion);
+      cleanups.push(() => mq.removeListener(onReduceMotion));
+    }
+  }
+
   function renderStaticSnapshot(W: number, H: number, drawW: number, pp: number, sp: number) {
     orgOffCtx.clearRect(0,0,W,H);
     drawGridLines(orgOffCtx,drawW,H,pp);
@@ -635,9 +649,11 @@ function init(container: HTMLElement): { kill: () => void } {
     }
     orgCtx.clearRect(0,0,W,H);
     orgCtx.drawImage(orgOffscreen,0,0,W,H);
-    const t=performance.now()*0.001;
-    if(sp>0.05)drawOrgFlare(orgCtx,orgCachedSLx,orgCachedSLy,sp,t+0.45,ORG.secondary,ORG_FLARE_S);
-    if(pp>0.05)drawOrgFlare(orgCtx,orgCachedPLx,orgCachedPLy,pp,t,ORG.primary,ORG_FLARE_P);
+    if(!orgReduceMotion){
+      const t=performance.now()*0.001;
+      if(sp>0.05)drawOrgFlare(orgCtx,orgCachedSLx,orgCachedSLy,sp,t+0.45,ORG.secondary,ORG_FLARE_S);
+      if(pp>0.05)drawOrgFlare(orgCtx,orgCachedPLx,orgCachedPLy,pp,t,ORG.primary,ORG_FLARE_P);
+    }
   }
 
   let orgLastRender=0;
