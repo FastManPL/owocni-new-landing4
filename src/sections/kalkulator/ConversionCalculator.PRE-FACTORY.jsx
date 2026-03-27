@@ -1876,7 +1876,6 @@ export default function ConversionCalculator() {
   }, []);
 
   const bannerRef = useRef(null);
-  const bannerRectRef = useRef(null);
   const spotlightRequestRef = useRef(null);
   
   // FLIP ANIMATION REFS
@@ -1887,22 +1886,13 @@ export default function ConversionCalculator() {
   const flipTweenRef = useRef(null);
   
   useEffect(() => {
-    const updateRect = () => {
-      if (bannerRef.current) {
-        bannerRectRef.current = bannerRef.current.getBoundingClientRect();
-      }
-    };
-
-    updateRect();
-    window.addEventListener('resize', updateRect, { passive: true });
-
     return () => {
-      window.removeEventListener('resize', updateRect);
       if (spotlightRequestRef.current) cancelAnimationFrame(spotlightRequestRef.current);
     };
   }, []);
 
   const handleMouseMove = useCallback((e) => {
+    if (typeof document !== 'undefined' && document.hidden) return;
     if (isFlippedRef.current) return;
     if (!bannerRef.current || spotlightRequestRef.current) return;
 
