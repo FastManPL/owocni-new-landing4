@@ -876,9 +876,9 @@ function init(container) {
         return { pause:function(){}, resume:function(){}, kill:function(){} }; 
     }
     engine.renderCards(carouselEl, 7, 3);
-    preloadCardImages('.card__layer').then(function() {
-        engine.init(carouselEl, $id('onas-scene'));
-    });
+    /* INIT ASAP: do not block carousel startup on background image decode. */
+    engine.init(carouselEl, $id('onas-scene'));
+    preloadCardImages('.card__layer');
     engine._activeGlow = 'gold-ring'; engine._glowDirty = true;
     engine.config.frontEasing = 'pulse'; engine._bindEasing('pulse');
 
@@ -888,7 +888,7 @@ function init(container) {
             if(entries[0]?.isIntersecting&&!engine._revealTriggered){
                 engine.startCascadeReveal();
             }
-        },{root:null,rootMargin:'0px 0px -25% 0px',threshold:0.15});
+        },{root:null,rootMargin:'200px 0px -10% 0px',threshold:0.01});
         var revealTarget=$id('onas-scene');
         if(revealTarget) revealIO.observe(revealTarget);
         observers.push(revealIO);
