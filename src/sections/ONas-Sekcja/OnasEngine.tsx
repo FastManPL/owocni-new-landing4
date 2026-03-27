@@ -544,7 +544,7 @@ function init(container) {
             for(var m=0;m<total;m++){this._lastGlowLevel[m]=-1;this._wasFront[m]=false;this._wasGlowActive[m]=false;}
             // CASCADE REVEAL: init hidden
             this._revealState=new Array(total);
-            for(var rv=0;rv<total;rv++) this._revealState[rv]={y:-250,opacity:0};
+            for(var rv=0;rv<total;rv++) this._revealState[rv]={y:-160,opacity:0};
             this._revealTriggered=false; this._revealComplete=false;
             this._glowDirty=true; this._idleFrames=0;
             this._initHoverEffects(base);
@@ -841,8 +841,8 @@ function init(container) {
                 var idx=indices[j];
                 this._revealTimeline.to(
                     this._revealState[idx],
-                    {y:0, opacity:1, duration:1.5, ease:'back.out(5)'},
-                    j*0.15
+                    {y:0, opacity:1, duration:0.9, ease:'power3.out'},
+                    j*0.06
                 );
             }
         };
@@ -854,7 +854,7 @@ function init(container) {
             this._revealComplete=false;
             if(this._draggableInstance)this._draggableInstance.disable();
             for(var i=0;i<n;i++){
-                this._revealState[i]={y:-250,opacity:0};
+                this._revealState[i]={y:-160,opacity:0};
                 this.cards[i].style.opacity='';
                 this._lastWrittenScale[i]=-1;
                 /* Pause video cards */
