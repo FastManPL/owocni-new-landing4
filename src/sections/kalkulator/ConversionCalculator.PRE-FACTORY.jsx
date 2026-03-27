@@ -487,6 +487,9 @@ function createCounterEngine(container, gsap, config) {
     springInitialVelocity: 0,
     activeMainNumber: 'new',
     mainNumberAnimationId: null,
+    mainCrossfadeStartTime: null,
+    mainCrossfadeIncomingEl: null,
+    mainCrossfadePausedElapsed: null,
     // [OPT-4] Pre-allocated fixed-size arrays — in-place mutation, zero allocation in hot path
     stableDigits: new Array(MAX_DIGITS).fill(false),
     stableDigitsLen: 0,
@@ -807,6 +810,36 @@ function createCounterEngine(container, gsap, config) {
   }
 
   // === MAIN NUMBER ===
+  function attachMainCrossfadeTicker(incomingElement, startTimeMs) {
+    state.mainCrossfadeStartTime = startTimeMs;
+    state.mainCrossfadeIncomingEl = incomingElement;
+    state.mainCrossfadePausedElapsed = null;
+    const springDuration = mainSpringDuration;
+
+    const springTicker = () => {
+      const elapsed = (performance.now() - startTimeMs) / 1000;
+
+      if (elapsed >= springDuration) {
+        gsap.set(incomingElement, { opacity: 1 });
+        gsap.ticker.remove(springTicker);
+        state.mainNumberAnimationId = null;
+        state.mainCrossfadeStartTime = null;
+        state.mainCrossfadeIncomingEl = null;
+        state.mainCrossfadePausedElapsed = null;
+        return;
+      }
+
+      const springOpacity = MAIN_SPRING.solve(elapsed, 0, 1);
+
+      gsap.set(incomingElement, {
+        opacity: Math.min(1, Math.max(0, springOpacity))
+      });
+    };
+
+    state.mainNumberAnimationId = springTicker;
+    gsap.ticker.add(springTicker);
+  }
+
   function animateMainNumber(tokenized) {
     if (state.isFirstRender) {
       updateDigitSpans(mainNewDigitSpans, mainNewSpanCache, tokenized, false);
@@ -820,6 +853,9 @@ function createCounterEngine(container, gsap, config) {
     if (state.mainNumberAnimationId) {
       gsap.ticker.remove(state.mainNumberAnimationId);
       state.mainNumberAnimationId = null;
+      state.mainCrossfadeStartTime = null;
+      state.mainCrossfadeIncomingEl = null;
+      state.mainCrossfadePausedElapsed = null;
     }
     gsap.killTweensOf(mainNumberOld);
     gsap.killTweensOf(mainNumberNew);
@@ -843,28 +879,7 @@ function createCounterEngine(container, gsap, config) {
     gsap.set(outgoingElement, { opacity: 0, immediateRender: true });
     gsap.set(incomingElement, { opacity: 0, immediateRender: true });
 
-    const springDuration = mainSpringDuration;
-    const startTime = performance.now();
-
-    const springTicker = () => {
-      const elapsed = (performance.now() - startTime) / 1000;
-      
-      if (elapsed >= springDuration) {
-        gsap.set(incomingElement, { opacity: 1 });
-        gsap.ticker.remove(springTicker);
-        state.mainNumberAnimationId = null;
-        return;
-      }
-      
-      const springOpacity = MAIN_SPRING.solve(elapsed, 0, 1);
-      
-      gsap.set(incomingElement, {
-        opacity: Math.min(1, Math.max(0, springOpacity))
-      });
-    };
-
-    state.mainNumberAnimationId = springTicker;
-    gsap.ticker.add(springTicker);
+    attachMainCrossfadeTicker(incomingElement, performance.now());
   }
 
   function finalizeDigitsAsStable() {
@@ -1031,8 +1046,35 @@ function createCounterEngine(container, gsap, config) {
         cancelAnimationFrame(state.animationFrameId);
         state.animationFrameId = null;
       }
+      if (state.mainNumberAnimationId) {
+        const elapsed = (performance.now() - state.mainCrossfadeStartTime) / 1000;
+        gsap.ticker.remove(state.mainNumberAnimationId);
+        state.mainNumberAnimationId = null;
+        state.mainCrossfadeStartTime = null;
+        if (state.mainCrossfadeIncomingEl && elapsed < mainSpringDuration) {
+          state.mainCrossfadePausedElapsed = elapsed;
+        } else {
+          if (state.mainCrossfadeIncomingEl) {
+            gsap.set(state.mainCrossfadeIncomingEl, { opacity: 1 });
+          }
+          state.mainCrossfadeIncomingEl = null;
+          state.mainCrossfadePausedElapsed = null;
+        }
+      }
     },
     resume: () => {
+      if (state.isDocumentHidden) return;
+      if (state.mainCrossfadePausedElapsed != null && state.mainCrossfadeIncomingEl) {
+        const saved = state.mainCrossfadePausedElapsed;
+        const incomingElement = state.mainCrossfadeIncomingEl;
+        if (saved >= mainSpringDuration) {
+          gsap.set(incomingElement, { opacity: 1 });
+          state.mainCrossfadeIncomingEl = null;
+          state.mainCrossfadePausedElapsed = null;
+        } else {
+          attachMainCrossfadeTicker(incomingElement, performance.now() - saved * 1000);
+        }
+      }
       if (state.animationFrameId === null && state.currentValue !== state.targetValue && !state.isDocumentHidden) {
         state.springStartValue = state.currentValue;
         state.springStartTime = performance.now();
@@ -1053,6 +1095,9 @@ function createCounterEngine(container, gsap, config) {
           gsap.ticker.remove(state.mainNumberAnimationId);
           state.mainNumberAnimationId = null;
         }
+        state.mainCrossfadeStartTime = null;
+        state.mainCrossfadeIncomingEl = null;
+        state.mainCrossfadePausedElapsed = null;
         ghosts.forEach(ghost => { try { gsap.killTweensOf(ghost.allElements); } catch(e) {} });
         try { gsap.killTweensOf(mainNumberOld); } catch(e) {}
         try { gsap.killTweensOf(mainNumberNew); } catch(e) {}
