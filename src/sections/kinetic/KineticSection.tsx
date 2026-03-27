@@ -3495,12 +3495,24 @@ import './kinetic-section.css';
                 nigdyGlow.style.top = (glowTop + glowOffsetY) + 'px';
             };
             
-            requestAnimationFrame(function() {
-                if (_paused || _s._killed) return;
-                positionNigdyGlow();
+            let nigdyGlowResizeRaf: number | null = null;
+            const schedulePositionNigdyGlow = function() {
+                if (nigdyGlowResizeRaf !== null) return;
+                nigdyGlowResizeRaf = requestAnimationFrame(function() {
+                    nigdyGlowResizeRaf = null;
+                    if (_paused || _s._killed) return;
+                    positionNigdyGlow();
+                });
+            };
+            schedulePositionNigdyGlow();
+            window.addEventListener('resize', schedulePositionNigdyGlow, { passive: true });
+            cleanups.push(() => {
+                window.removeEventListener('resize', schedulePositionNigdyGlow);
+                if (nigdyGlowResizeRaf !== null) {
+                    cancelAnimationFrame(nigdyGlowResizeRaf);
+                    nigdyGlowResizeRaf = null;
+                }
             });
-            window.addEventListener('resize', positionNigdyGlow);
-            cleanups.push(() => window.removeEventListener('resize', positionNigdyGlow));
             
             // === GLOW - ustawienie początkowe (scale: 0, z centrum) ===
             gsap.set(nigdyGlow, { scale: 0, transformOrigin: "center center" });
