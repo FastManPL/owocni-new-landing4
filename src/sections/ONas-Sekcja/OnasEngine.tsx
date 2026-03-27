@@ -878,7 +878,16 @@ function init(container) {
     engine.renderCards(carouselEl, 7, 3);
     /* INIT ASAP: do not block carousel startup on background image decode. */
     engine.init(carouselEl, $id('onas-scene'));
-    preloadCardImages('.card__layer');
+    /* Defer heavy background preload so first carousel frames stay responsive. */
+    var deferLayerPreload=function(){
+        var runPreload=function(){preloadCardImages('.card__layer');};
+        if(typeof window.requestIdleCallback==='function'){
+            window.requestIdleCallback(runPreload,{timeout:1500});
+        }else{
+            setTimeout(runPreload,1200);
+        }
+    };
+    deferLayerPreload();
     engine._activeGlow = 'gold-ring'; engine._glowDirty = true;
     engine.config.frontEasing = 'pulse'; engine._bindEasing('pulse');
 
