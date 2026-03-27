@@ -1935,6 +1935,7 @@ import './kinetic-section.css';
                 this._hasConicGrad = (typeof CanvasRenderingContext2D !== 'undefined' &&
                     typeof CanvasRenderingContext2D.prototype.createConicGradient === 'function');
 
+                let tunnelResizeRaf = null;
                 const _resizeTunnel = () => { 
                     const newWidth = window.innerWidth;
                     const widthChanged = (newWidth !== this.lastWidth);
@@ -1944,8 +1945,21 @@ import './kinetic-section.css';
                         this._build(); 
                     }
                 };
-                window.addEventListener('resize', _resizeTunnel);
-                cleanups.push(() => window.removeEventListener('resize', _resizeTunnel));
+                const scheduleResizeTunnel = () => {
+                    if (tunnelResizeRaf !== null) return;
+                    tunnelResizeRaf = requestAnimationFrame(() => {
+                        tunnelResizeRaf = null;
+                        _resizeTunnel();
+                    });
+                };
+                window.addEventListener('resize', scheduleResizeTunnel, { passive: true });
+                cleanups.push(() => {
+                    window.removeEventListener('resize', scheduleResizeTunnel);
+                    if (tunnelResizeRaf !== null) {
+                        cancelAnimationFrame(tunnelResizeRaf);
+                        tunnelResizeRaf = null;
+                    }
+                });
                 this._resize();
                 this._build();
             }
