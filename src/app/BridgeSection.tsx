@@ -25,7 +25,14 @@ export function BridgeSection() {
   return (
     <BridgeProvider value={bridgeValue}>
       {/* Własny pinSpacer — GSAP nie wstawia węzła w drzewo, unikamy "insertBefore" (React). */}
-      <div ref={pinSpacerRef} style={{ minHeight: '100vh' }}>
+      <div
+        ref={pinSpacerRef}
+        style={{
+          minHeight: '100vh',
+          // Wcześniejsze wejście pinu (~40vh): nachodzi na Fakty; bridge z-index:10 > fakty.
+          marginTop: 'clamp(-48vh, -40vh, -32vh)',
+        }}
+      >
         <div
           id="bridge-wrapper"
           ref={wrapperRef}
