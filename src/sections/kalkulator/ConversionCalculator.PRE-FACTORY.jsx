@@ -1990,24 +1990,36 @@ export default function ConversionCalculator() {
       const otherAxis = isMobileView ? 'rotateX' : 'rotateY';
       cardRef.current.style.transform = `${rotAxis}(180deg) ${otherAxis}(0deg) scale(1)`;
     };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener('resize', handleResize, { passive: true });
+    return () => window.removeEventListener('resize', handleResize, { passive: true });
   }, []);
 
   useEffect(() => {
-    const update = () => {
+    let resizeRafId = null;
+    const applyScreenUpdate = () => {
       const newWidth = window.innerWidth;
       const newHeight = window.innerHeight;
-      
       if (newWidth !== lastWidthRef.current) {
         lastWidthRef.current = newWidth;
         setScreenSize({ w: newWidth, h: newHeight });
       }
     };
-    
-    update();
-    window.addEventListener('resize', update);
-    return () => window.removeEventListener('resize', update);
+    const scheduleScreenUpdate = () => {
+      if (resizeRafId !== null) return;
+      resizeRafId = requestAnimationFrame(() => {
+        resizeRafId = null;
+        applyScreenUpdate();
+      });
+    };
+    applyScreenUpdate();
+    window.addEventListener('resize', scheduleScreenUpdate, { passive: true });
+    return () => {
+      window.removeEventListener('resize', scheduleScreenUpdate, { passive: true });
+      if (resizeRafId !== null) {
+        cancelAnimationFrame(resizeRafId);
+        resizeRafId = null;
+      }
+    };
   }, []);
 
   const isLargeScreen = screenSize.w >= 1200;
