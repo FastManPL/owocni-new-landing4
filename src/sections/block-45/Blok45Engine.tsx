@@ -565,7 +565,15 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         requestAnimationFrame(animate);
       }
       function _onThreeResize() { camera.aspect = window.innerWidth / window.innerHeight; camera.updateProjectionMatrix(); renderer.setSize(window.innerWidth, window.innerHeight); updatePixelScale(); cacheButtonRect(); updateResponsiveConfig(); }
-      window.addEventListener('resize', _onThreeResize);
+      var threeResizeRaf: number | null = null;
+      function _scheduleThreeResize() {
+        if (threeResizeRaf !== null) return;
+        threeResizeRaf = requestAnimationFrame(function() {
+          threeResizeRaf = null;
+          _onThreeResize();
+        });
+      }
+      window.addEventListener('resize', _scheduleThreeResize, { passive: true });
       function _onThreeScroll() { updateButtonRectFromScroll(); }
       window.addEventListener('scroll', _onThreeScroll, { passive: true });
       updatePixelScale(); initParticles();
@@ -578,7 +586,8 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       function dispose() {
         if (_disposed) return; _disposed = true;
         if (_envMapIdleId && typeof window.cancelIdleCallback === 'function') window.cancelIdleCallback(_envMapIdleId);
-        window.removeEventListener('resize', _onThreeResize); window.removeEventListener('scroll', _onThreeScroll);
+        window.removeEventListener('resize', _scheduleThreeResize); window.removeEventListener('scroll', _onThreeScroll);
+        if (threeResizeRaf !== null) { cancelAnimationFrame(threeResizeRaf); threeResizeRaf = null; }
         var btnEl = starsState.btnElement;
         if (btnEl) { btnEl.removeEventListener('pointerdown', btnPointerDown); btnEl.removeEventListener('touchstart', btnTouchStart); }
         document.removeEventListener('mousemove', mouseHandler); document.removeEventListener('touchmove', touchHandler);
