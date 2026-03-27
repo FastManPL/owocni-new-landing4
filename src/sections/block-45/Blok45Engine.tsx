@@ -1112,6 +1112,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     // BURST + POPUP
     // =========================================================
     var burstCanvas: HTMLCanvasElement|null=null,burstCtx: CanvasRenderingContext2D|null=null,morphGhost: HTMLElement|null=null;
+    var popupTransitionEndHandler: ((e: TransitionEvent) => void) | null = null;
 
     function initBurstCanvas() { burstCanvas=$id('blok-4-5-burstCanvas') as HTMLCanvasElement|null; if(burstCanvas)burstCtx=burstCanvas.getContext('2d'); morphGhost=$id('blok-4-5-morphGhost') as HTMLElement|null; }
 
@@ -1153,7 +1154,9 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       if(overlay){
         overlay.classList.remove('visible','content-reveal');
         var pw=container.querySelector('.popup-wrapper') as HTMLElement|null;if(pw)pw.style.cssText='';
-        overlay.addEventListener('transitionend',function handler(){if(!overlay!.classList.contains('visible'))overlay!.style.display='none';overlay!.removeEventListener('transitionend',handler);});
+        if(popupTransitionEndHandler){overlay.removeEventListener('transitionend',popupTransitionEndHandler);popupTransitionEndHandler=null;}
+        popupTransitionEndHandler=function(){if(!overlay!.classList.contains('visible'))overlay!.style.display='none';if(popupTransitionEndHandler){overlay!.removeEventListener('transitionend',popupTransitionEndHandler);popupTransitionEndHandler=null;}};
+        overlay.addEventListener('transitionend',popupTransitionEndHandler);
       }
     }
 
@@ -1169,7 +1172,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       btns.forEach(function(b){b.addEventListener('click',_onRevealClick);_revealHandlers.push(b);});
       var _popupCloseEl=$id('blok-4-5-popupClose'),_popupBottomCloseEl=$id('blok-4-5-popupBottomClose');
       if(_popupCloseEl)_popupCloseEl.addEventListener('click',closePopup);if(_popupBottomCloseEl)_popupBottomCloseEl.addEventListener('click',closePopup);
-      cleanups.push(function(){_revealHandlers.forEach(function(b){b.removeEventListener('click',_onRevealClick);});if(_popupCloseEl)_popupCloseEl.removeEventListener('click',closePopup);if(_popupBottomCloseEl)_popupBottomCloseEl.removeEventListener('click',closePopup);});
+      cleanups.push(function(){_revealHandlers.forEach(function(b){b.removeEventListener('click',_onRevealClick);});if(_popupCloseEl)_popupCloseEl.removeEventListener('click',closePopup);if(_popupBottomCloseEl)_popupBottomCloseEl.removeEventListener('click',closePopup);var overlay=$id('blok-4-5-popupOverlay') as HTMLElement|null;if(overlay&&popupTransitionEndHandler){overlay.removeEventListener('transitionend',popupTransitionEndHandler);popupTransitionEndHandler=null;}});
     }
 
     // =========================================================
