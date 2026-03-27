@@ -35,7 +35,9 @@ function loveWallLogoInit(container: HTMLElement): { pause: () => void; resume: 
     LERP: 0.18,
     SCROLL_FACTOR: 2.1,
     VELOCITY_SMOOTHING: 0.03,
-    VELOCITY_CLAMP: 17
+    VELOCITY_CLAMP: 17,
+    // Continuous letter effects: larger epsilon cuts redundant style writes.
+    CONTINUOUS_DIST_EPSILON: 0.02
   };
 
   const SHADOW_HIDDEN = '0 0 2px currentColor, 0 0 4px currentColor, 0 0 8px currentColor, 0 0 16px currentColor, 0 0 32px currentColor, 0 0 48px currentColor, 0 0 64px currentColor, 0 0 80px currentColor';
@@ -377,7 +379,7 @@ function loveWallLogoInit(container: HTMLElement): { pause: () => void; resume: 
             const c = word.chars[j];
             const charCenterX = sx + word.charStep * (j + 0.5);
             const dist = (charCenterX - vpW / 2) / (vpW / 2);
-            if (c.lastDist === undefined || Math.abs(dist - c.lastDist) >= 0.01) {
+            if (c.lastDist === undefined || Math.abs(dist - c.lastDist) >= CFG.CONTINUOUS_DIST_EPSILON) {
               const canTriggerDebris = debrisBudgetAvailable && !debrisTriggered;
               const didTriggerDebris = word.eff.update(c.ctx, dist, canTriggerDebris);
               if (didTriggerDebris) debrisTriggered = true;
