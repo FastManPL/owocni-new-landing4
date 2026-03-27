@@ -946,10 +946,12 @@ function init(container: HTMLElement): { kill: () => void } {
     lazyStObserver.observe(container);
     observers.push(lazyStObserver);
     lazyStTimeout = setTimeout(maybeCreateScrollTriggers, 1200);
-    // FIX 3: Force re-apply frame po powrocie do karty
+    // FIX 3: Force re-apply frame + organic ratio po powrocie do karty (reflow/fonty bez ResizeObserver)
     function onVisibilityChange() {
       if(document.visibilityState==='visible'&&framesReady){
         const frame=currentFrame;currentFrame=-1;applyFrame(frame);
+        measureOrgRatio();
+        orgSnapshotDirty=true;
       }
     }
     document.addEventListener('visibilitychange',onVisibilityChange);
