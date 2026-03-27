@@ -2385,7 +2385,7 @@ import './kinetic-section.css';
                     },
 
                     onRefresh: function() {
-                        _geoCache._valid = false;
+                        if (_geoCache) _geoCache._valid = false;
                         _sm.state = 'idle';
                         _sm.pendingIndex = null;
                         requestAnimationFrame(function() {
