@@ -1971,19 +1971,7 @@ export default function ConversionCalculator() {
     });
   }, []);
 
-  // RESIZE HANDLER FOR FLIP AXIS CHANGE
-  useEffect(() => {
-    const handleResize = () => {
-      if (isAnimatingRef.current || !isFlippedRef.current || !cardRef.current) return;
-      const isMobileView = window.innerWidth < 1200;
-      const rotAxis = isMobileView ? 'rotateY' : 'rotateX';
-      const otherAxis = isMobileView ? 'rotateX' : 'rotateY';
-      cardRef.current.style.transform = `${rotAxis}(180deg) ${otherAxis}(0deg) scale(1)`;
-    };
-    window.addEventListener('resize', handleResize, { passive: true });
-    return () => window.removeEventListener('resize', handleResize, { passive: true });
-  }, []);
-
+  // Jeden listener resize: breakpoint layout (rAF) + oś flip gdy karta obrócona
   useEffect(() => {
     let resizeRafId = null;
     const applyScreenUpdate = () => {
@@ -2001,10 +1989,21 @@ export default function ConversionCalculator() {
         applyScreenUpdate();
       });
     };
+    const handleFlipAxisOnResize = () => {
+      if (isAnimatingRef.current || !isFlippedRef.current || !cardRef.current) return;
+      const isMobileView = window.innerWidth < 1200;
+      const rotAxis = isMobileView ? 'rotateY' : 'rotateX';
+      const otherAxis = isMobileView ? 'rotateX' : 'rotateY';
+      cardRef.current.style.transform = `${rotAxis}(180deg) ${otherAxis}(0deg) scale(1)`;
+    };
+    const onWindowResize = () => {
+      scheduleScreenUpdate();
+      handleFlipAxisOnResize();
+    };
     applyScreenUpdate();
-    window.addEventListener('resize', scheduleScreenUpdate, { passive: true });
+    window.addEventListener('resize', onWindowResize, { passive: true });
     return () => {
-      window.removeEventListener('resize', scheduleScreenUpdate, { passive: true });
+      window.removeEventListener('resize', onWindowResize, { passive: true });
       if (resizeRafId !== null) {
         cancelAnimationFrame(resizeRafId);
         resizeRafId = null;
