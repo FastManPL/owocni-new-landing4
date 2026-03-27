@@ -1443,7 +1443,7 @@ function loveWallVelocityInit(container: HTMLElement): { pause: () => void; resu
     swipe.samples.push({ x: pe.clientX, t: Date.now() });
     if (swipe.samples.length > 5) swipe.samples.shift();
   }
-  addCleanup(document, 'pointermove', onDocPointerMove, { passive: true });
+  addHfListener(document, 'pointermove', onDocPointerMove, { passive: true });
 
   function onDocPointerUp(e: Event) {
     const pe = e as PointerEvent;
