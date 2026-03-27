@@ -1,5 +1,20 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import gsap from 'gsap';
+import { scrollRuntime } from '@/lib/scrollRuntime';
+
+/** Blokuje overflow-X podczas flipu 3D — `clip` zamiast `hidden` (mniej konfliktu ze scrollbar-gutter / podwójnym paskiem). */
+function setKalkulatorFlipOverflowLock(on) {
+  const el = document.documentElement;
+  if (!on) {
+    el.style.overflowX = '';
+    return;
+  }
+  if (typeof CSS !== 'undefined' && CSS.supports && CSS.supports('overflow-x', 'clip')) {
+    el.style.overflowX = 'clip';
+  } else {
+    el.style.overflowX = 'hidden';
+  }
+}
 
 // ============================================
 // MODUŁ-LEVEL OPTIMIZATIONS
@@ -1871,7 +1886,7 @@ export default function ConversionCalculator() {
       flipTweenRef.current?.kill();
       flipTweenRef.current = null;
       rootRef.current?.classList.remove('kalkulator-flip-animating');
-      try { document.documentElement.style.overflowX = ''; } catch(e) {}
+      try { setKalkulatorFlipOverflowLock(false); } catch(e) {}
     };
   }, []);
 
@@ -1916,7 +1931,7 @@ export default function ConversionCalculator() {
 
     isAnimatingRef.current = true;
     rootRef.current?.classList.add('kalkulator-flip-animating');
-    document.documentElement.style.overflowX = 'hidden';
+    setKalkulatorFlipOverflowLock(true);
 
     const isMobileView = window.innerWidth < 1200;
     const rotAxis = isMobileView ? 'rotateY' : 'rotateX';
@@ -1954,8 +1969,13 @@ export default function ConversionCalculator() {
         isFlippedRef.current = !isFlippedRef.current;
         isAnimatingRef.current = false;
         rootRef.current?.classList.remove('kalkulator-flip-animating');
-        document.documentElement.style.overflowX = '';
-        
+        setKalkulatorFlipOverflowLock(false);
+        requestAnimationFrame(() => {
+          requestAnimationFrame(() => {
+            scrollRuntime.requestRefresh('kalkulator-flip-end');
+          });
+        });
+
         if (!bannerRef.current || !backRef.current) return;
         
         // Set final visibility state
