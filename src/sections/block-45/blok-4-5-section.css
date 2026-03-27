@@ -737,7 +737,6 @@
 #blok-4-5-section .blok-4-5-wave-wrap {
     position: fixed;
     inset: 0;
-    z-index: 22;
     pointer-events: none;
     overflow: hidden;
     background: transparent;
