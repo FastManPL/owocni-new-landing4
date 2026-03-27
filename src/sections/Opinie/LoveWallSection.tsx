@@ -1018,7 +1018,7 @@ function loveWallVelocityInit(container: HTMLElement): { pause: () => void; resu
       if (rowState.activeShell && rowState.activeShell !== shell) {
         rowState.activeShell.classList.remove('is-active');
         const p = tiltState.get(rowState.activeShell);
-        if (p && p.raf) { cancelAnimationFrame(p.raf); timerIds.push(0); }
+        if (p && p.raf) { cancelAnimationFrame(p.raf); }
         resetTilt(rowState.activeShell);
       }
       rowState.activeShell = shell;
@@ -1029,7 +1029,7 @@ function loveWallVelocityInit(container: HTMLElement): { pause: () => void; resu
       const tiltEl = shell.querySelector('.card-tilt') as HTMLElement | null;
       tiltState.set(shell, { clientX, raf: 0, bounds: { width: rect.width, centerX: rect.left + rect.width / 2 }, cardEl, tiltEl });
       const s = tiltState.get(shell);
-      if (s && !s.raf) { const rafId = requestAnimationFrame(function() { updateTilt(shell); }); s.raf = rafId; timerIds.push(rafId); }
+      if (s && !s.raf) { const rafId = requestAnimationFrame(function() { updateTilt(shell); }); s.raf = rafId; }
     }
 
     function setupRowHover(viewport: HTMLElement, rowState: typeof state.row1, _cfg: typeof CONFIG.row1) {
@@ -1082,7 +1082,7 @@ function loveWallVelocityInit(container: HTMLElement): { pause: () => void; resu
           if (!s) return;
           if (s.clientX === pe.clientX) return;
           s.clientX = pe.clientX;
-          if (!s.raf) { const rafId = requestAnimationFrame(function() { updateTilt(shell!); }); s.raf = rafId; timerIds.push(rafId); }
+          if (!s.raf) { const rafId = requestAnimationFrame(function() { updateTilt(shell!); }); s.raf = rafId; }
         }
 
         if (!rowState.paused) {
