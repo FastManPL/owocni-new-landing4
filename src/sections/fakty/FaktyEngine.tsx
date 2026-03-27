@@ -557,14 +557,34 @@ function init(container: HTMLElement): { kill: () => void } {
     }
   }
 
-  let orgRow1Ref: HTMLElement | null=null, orgCachedRatio=0, orgLastInnerW=0;
+  let orgRow1Ref: HTMLElement | null=null, orgCachedRatio=0;
   function measureOrgRatio() {
     if (!faktyBlock || !faktyDom) return;
-    orgLastInnerW=window.innerWidth;
     if(!orgRow1Ref)orgRow1Ref=faktyDom.querySelector<HTMLElement>('.title-row--1');
     const blockW=faktyBlock.offsetWidth;
     const textWcss=orgRow1Ref?orgRow1Ref.getBoundingClientRect().width:blockW;
     orgCachedRatio=blockW>0?textWcss/blockW:1;
+  }
+
+  let orgResizeRaf: number | null = null;
+  let orgBlockResizeObs: ResizeObserver | null = null;
+  if (typeof ResizeObserver !== 'undefined') {
+    orgBlockResizeObs = new ResizeObserver(() => {
+      if (orgResizeRaf !== null) return;
+      orgResizeRaf = requestAnimationFrame(() => {
+        orgResizeRaf = null;
+        if (!isKilled) measureOrgRatio();
+      });
+    });
+    orgBlockResizeObs.observe(faktyBlock);
+    cleanups.push(() => {
+      if (orgResizeRaf !== null) {
+        cancelAnimationFrame(orgResizeRaf);
+        orgResizeRaf = null;
+      }
+      orgBlockResizeObs?.disconnect();
+      orgBlockResizeObs = null;
+    });
   }
 
   const ORG_RENDER_SCALE=0.5, ORG_REF_WIDTH=1200;
@@ -605,7 +625,6 @@ function init(container: HTMLElement): { kill: () => void } {
     const W=orgCssW,H=orgCssH;
     if(!W||!H)return;
     const yOff=ORG.globalYOffset;
-    if(window.innerWidth!==orgLastInnerW)measureOrgRatio();
     const drawW=W*(orgCachedRatio+1)*0.5;
     if(drawW!==orgSegDrawW||H!==orgSegH){rebuildSegments(drawW,H,yOff);orgSnapshotDirty=true;}
     const pp=orgProg(orgState.progress,ORG.primaryDelay,ORG.primarySpeed);
@@ -634,6 +653,7 @@ function init(container: HTMLElement): { kill: () => void } {
   function buildOrganicST() {
     if(orgST)return;
     resizeOrgCanvas();
+    measureOrgRatio();
     const tween=gsap.to(orgState,{
       progress:1,ease:'none',
       scrollTrigger:{ trigger:faktyBlock, start:'top bottom-=30%', end:'bottom center', scrub:1 }
