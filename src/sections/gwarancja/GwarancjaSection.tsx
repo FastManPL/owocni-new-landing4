@@ -110,12 +110,14 @@ function init(container: HTMLElement): {
   let cachedRect = (containerEl as HTMLElement).getBoundingClientRect();
   /** Ostatni odczyt layoutu — throttling w processMousePos (Layout w trace). */
   let lastRectReadAt = performance.now();
-  const RECT_MIN_INTERVAL_MS = 50;
+  const RECT_FORCE_SYNC_MS = 250;
+  let rectDirty = false;
   let rectDebounceTimer: ReturnType<typeof setTimeout> | null = null;
   let scrollRectRaf: number | null = null;
   function updateCachedRect() {
     cachedRect = (containerEl as HTMLElement).getBoundingClientRect();
     lastRectReadAt = performance.now();
+    rectDirty = false;
   }
   /** Scroll: max 1×/klatkę (rAF), bez opóźnienia 100 ms — świeży rect przy przewijaniu. */
   function scheduleRectFromScroll() {
@@ -131,6 +133,7 @@ function init(container: HTMLElement): {
       updateCachedRect();
       computeScale();
     }, 100);
+    rectDirty = true;
   }
   let rectListenersBound = false;
   function bindRectListeners() {
@@ -1080,7 +1083,8 @@ function init(container: HTMLElement): {
   function processMousePos() {
     rafPending = false;
     if (paused || !isContainerVisible || isMobileDisabled) return;
-    if (performance.now() - lastRectReadAt >= RECT_MIN_INTERVAL_MS) {
+    const now = performance.now();
+    if (rectDirty || now - lastRectReadAt >= RECT_FORCE_SYNC_MS) {
       updateCachedRect();
     }
     const x = lastMouseX - cachedRect.left,
@@ -1354,11 +1358,13 @@ function init(container: HTMLElement): {
   function pause() {
     if (paused) return;
     paused = true;
+    container.classList.add("lens-oop");
     pauseHooks.forEach((fn) => fn());
   }
   function resume() {
     if (!paused) return;
     paused = false;
+    if (isContainerVisible) container.classList.remove("lens-oop");
     resumeHooks.forEach((fn) => fn());
   }
   function kill() {
