@@ -2193,13 +2193,13 @@ import './kinetic-section.css';
             gsap.set(_elBlobCarrier, { opacity: 1 });
             
             if (window.innerWidth < 600) {
-                gsap.set(_elBlob1, { x: "5vw", y: "5vh", scale: 1.2, rotation: 15 });
-                gsap.set(_elBlob2, { xPercent: -50, yPercent: -50, x: "-15vw", y: "-40vh", scale: 1.0, rotation: -10 });
-                gsap.set(_elBlob3, { xPercent: -50, yPercent: -50, x: "-9.5vw", y: "-16vh", scale: 0.25, rotation: -30 });
+                gsap.set(_elBlob1, { x: "5vw", y: "0vh", scale: 1.2, rotation: 15 });
+                gsap.set(_elBlob2, { xPercent: -50, yPercent: -50, x: "-15vw", y: "-46vh", scale: 1.0, rotation: -10 });
+                gsap.set(_elBlob3, { xPercent: -50, yPercent: -50, x: "-9.5vw", y: "-22vh", scale: 0.25, rotation: -30 });
             } else {
-                gsap.set(_elBlob1, { x: "5vw", y: "30vh", scale: 0.15, rotation: 29 });
-                gsap.set(_elBlob2, { xPercent: -50, yPercent: -50, x: "8vw", y: "8vh", scale: 0.15, rotation: 0 });
-                gsap.set(_elBlob3, { xPercent: -50, yPercent: -50, x: "-21vw", y: "0vh", scale: 0.15, rotation: -36 });
+                gsap.set(_elBlob1, { x: "5vw", y: "10vh", scale: 0.15, rotation: 29 });
+                gsap.set(_elBlob2, { xPercent: -50, yPercent: -50, x: "8vw", y: "-6vh", scale: 0.15, rotation: 0 });
+                gsap.set(_elBlob3, { xPercent: -50, yPercent: -50, x: "-21vw", y: "-12vh", scale: 0.15, rotation: -36 });
             }
 
             // ============================================
@@ -3199,7 +3199,7 @@ import './kinetic-section.css';
                 // BLOB1 (CSS: 20vw, 20vh, 100vw) - startuje lewy-górny
                 pinnedTl.to(_elBlob1, {
                     keyframes: {
-                        "0%":      { x: "5vw",  y: "5vh",   scale: 1.2,  rotation: 15 },
+                        "0%":      { x: "5vw",  y: "0vh",   scale: 1.2,  rotation: 15 },
                         // SNAP1 - pozycja zachowana identycznie
                         "22.00%":  { x: "10vw", y: "10vh",  scale: 1.04, rotation: 20 },
                         "46.00%":  { x: "12vw", y: "8vh",   scale: 0.55, rotation: 22 },
@@ -3215,7 +3215,7 @@ import './kinetic-section.css';
                 // BLOB2 (CSS: 80vw, 80vh, 120vw) - startuje lewy-środek
                 pinnedTl.to(_elBlob2, {
                     keyframes: {
-                        "0%":      { xPercent: -50, yPercent: -50, x: "-15vw", y: "-40vh", scale: 1.0, rotation: -10 },
+                        "0%":      { xPercent: -50, yPercent: -50, x: "-15vw", y: "-46vh", scale: 1.0, rotation: -10 },
                         // SNAP1 - pozycja zachowana identycznie
                         "22.00%":  { x: "-40vw", y: "-37vh", scale: 1.17, rotation: -15 },
                         "46.00%":  { x: "-38vw", y: "-37vh", scale: 1.00, rotation: -18 }, // was scale:0.5 y:-44vh → utrzymuje zasięg nad dołem "!" na SNAP2
@@ -3231,7 +3231,7 @@ import './kinetic-section.css';
                 // BLOB3 (CSS: 50vw, 50vh, 80vw)
                 pinnedTl.to(_elBlob3, {
                     keyframes: {
-                        "0%":      { xPercent: -50, yPercent: -50, x: "-9.5vw", y: "-16vh", scale: 0.25, rotation: -30 },
+                        "0%":      { xPercent: -50, yPercent: -50, x: "-9.5vw", y: "-22vh", scale: 0.25, rotation: -30 },
                         // SNAP1 - pozycja zachowana identycznie
                         "29.96%":  { x: "-5vw", y: "-10vh",  scale: 1.11, rotation: -25 },
                         // SNAP2 — blob centruje się
@@ -3250,7 +3250,7 @@ import './kinetic-section.css';
                 
                 _s.blobTweens.blob1 = pinnedTl.to(_elBlob1, {
                     keyframes: {
-                        "0%":      { x: "5vw",   y: "30vh",  scale: 1.1,  rotation: 29 },
+                        "0%":      { x: "5vw",   y: "10vh",  scale: 1.1,  rotation: 29 },
                         "28.59%":  { x: "9vw",    y: "9.5vh",  scale: 0.75, rotation: 29 },
                         "35.04%":  { x: "16.5vw", y: "23vh",   scale: 0.75, rotation: 29 },
                         "47.94%":  { x: "16.5vw", y: "23vh",   scale: 0.70, rotation: 29 },
@@ -3265,7 +3265,7 @@ import './kinetic-section.css';
                 
                 _s.blobTweens.blob2 = pinnedTl.to(_elBlob2, {
                     keyframes: {
-                        "0%":      { x: "8vw",   y: "8vh",    scale: 1.4, rotation: 0 },
+                        "0%":      { x: "8vw",   y: "-6vh",   scale: 1.4, rotation: 0 },
                         "31.83%":  { x: "-9vw", y: "-15vh",  scale: 1.35, rotation: 0 },
                         "54.20%":  { x: "-9vw", y: "-15vh",  scale: 0.35, rotation: -85 },
                         "84.00%":  { x: "-9vw", y: "2vh",    scale: 1.00, rotation: -85 },
@@ -3278,7 +3278,7 @@ import './kinetic-section.css';
                 
                 _s.blobTweens.blob3 = pinnedTl.to(_elBlob3, {
                     keyframes: {
-                        "0%":      { x: "-21vw",  y: "0vh",    scale: 1.00, rotation: -36 },
+                        "0%":      { x: "-21vw",  y: "-12vh",  scale: 1.00, rotation: -36 },
                         "32.16%":  { x: "-1vw",   y: "0.5vh",  scale: 1.10, rotation: -41 },
                         "56.62%":  { x: "-1vw",   y: "0.5vh",  scale: 0.50, rotation: -45 },
                         "83.74%":  { x: "-23vw",  y: "0vh",    scale: 0.95, rotation: 110 },

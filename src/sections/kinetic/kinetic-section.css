@@ -159,7 +159,7 @@
         #kinetic-section .blob-1 {
             width: 70vw;
             height: 70vw;
-            top: 25vh;
+            top: 16vh;
             left: 25vw;
             transform: translate(-50%, -50%);
             background-color: hsl(30, 40%, 88%); /* warm b1 */
@@ -171,7 +171,7 @@
         #kinetic-section .blob-2 {
             width: 80vw;
             height: 80vw;
-            top: 75vh;
+            top: 66vh;
             left: 75vw;
             transform: translate(-50%, -50%);
             background-color: hsl(45, 30%, 90%); /* warm b2 */
@@ -183,7 +183,7 @@
         #kinetic-section .blob-3 {
             width: 60vw;
             height: 60vw;
-            top: 50vh;
+            top: 40vh;
             left: 50vw;
             transform: translate(-50%, -50%);
             background-color: hsl(15, 35%, 91%); /* warm b3 */
@@ -199,19 +199,19 @@
             #kinetic-section .blob-1 {
                 width: 100vw;
                 height: 100vw;
-                top: 20vh;
+                top: 12vh;
                 left: 20vw;
             }
             #kinetic-section .blob-2 {
                 width: 120vw;
                 height: 120vw;
-                top: 80vh;
+                top: 72vh;
                 left: 80vw;
             }
             #kinetic-section .blob-3 {
                 width: 80vw;
                 height: 80vw;
-                top: 50vh;
+                top: 40vh;
                 left: 50vw;
             }
         }
