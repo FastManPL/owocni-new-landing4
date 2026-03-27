@@ -1067,7 +1067,7 @@ function createCounterEngine(container, gsap, config) {
 // ============================================
 // REACT COMPONENT - AnimatedNumberGSAP
 // ============================================
-function AnimatedNumberGSAP({ value, accentColor, fontSize }) {
+function AnimatedNumberGSAP({ value, accentColor, fontSize, sectionInView = true }) {
   const containerRef = useRef(null);
   const engineRef = useRef(null);
   const [ready, setReady] = useState(false);
@@ -1140,6 +1140,15 @@ function AnimatedNumberGSAP({ value, accentColor, fontSize }) {
     }
   }, [value, ready]);
 
+  useEffect(() => {
+    if (!ready || !engineRef.current) return;
+    if (sectionInView) {
+      engineRef.current.resume();
+    } else {
+      engineRef.current.pause();
+    }
+  }, [sectionInView, ready]);
+
   return (
     <div 
       ref={containerRef} 
@@ -1191,6 +1200,13 @@ const FLIP_GLOBAL_STYLES = `
 #kalkulator-section.kalkulator-flip-animating .source-btn {
   opacity: 0.5 !important;
   pointer-events: none !important;
+}
+`;
+
+/** IO gating: poza viewport — zero kosztu GPU na nieskończonej animacji kropki */
+const KALKULATOR_VIEWPORT_STYLES = `
+#kalkulator-section.kalkulator-section--offscreen [data-kalkulator-dot] {
+  animation-play-state: paused !important;
 }
 `;
 
@@ -1566,6 +1582,7 @@ function injectKalkulatorStyles() {
   const ids = [
     { id: 'kalkulator-slider-global-styles', css: SLIDER_GLOBAL_STYLES },
     { id: 'kalkulator-flip-global-styles', css: FLIP_GLOBAL_STYLES },
+    { id: 'kalkulator-viewport-styles', css: KALKULATOR_VIEWPORT_STYLES },
     { id: 'kalkulator-backside-global-styles', css: BACKSIDE_GLOBAL_STYLES },
   ];
   const elements = [];
@@ -1886,6 +1903,7 @@ export default function ConversionCalculator() {
   
   const lastWidthRef = useRef(0);
   const rootRef = useRef(null);
+  const [sectionInView, setSectionInView] = useState(true);
 
   // [PIPELINE] Style injection with cleanup
   useEffect(() => {
@@ -1910,6 +1928,22 @@ export default function ConversionCalculator() {
   const isFlippedRef = useRef(false);
   const isAnimatingRef = useRef(false);
   const flipTweenRef = useRef(null);
+
+  // IO: poza viewport — pauza animacji kropki (CSS) + spring liczb (engine pause/resume)
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root || typeof IntersectionObserver === 'undefined') return;
+    const io = new IntersectionObserver(
+      (entries) => {
+        const e = entries[0];
+        if (!e) return;
+        setSectionInView(e.isIntersecting);
+      },
+      { rootMargin: '120px 0px', threshold: 0 }
+    );
+    io.observe(root);
+    return () => io.disconnect();
+  }, []);
   
   useEffect(() => {
     return () => {
@@ -2138,7 +2172,7 @@ export default function ConversionCalculator() {
   `, [centerX, centerY, rangeX, rangeY]);
 
   return (
-    <div id="kalkulator-section" ref={rootRef} className="min-h-screen w-full flex items-center justify-center p-4" style={{ backgroundColor: '#f7f6f4', outline: dbg(D.screen), position: 'relative', isolation: 'isolate' }}>
+    <div id="kalkulator-section" ref={rootRef} className={`min-h-screen w-full flex items-center justify-center p-4${!sectionInView ? ' kalkulator-section--offscreen' : ''}`} style={{ backgroundColor: '#f7f6f4', outline: dbg(D.screen), position: 'relative', isolation: 'isolate' }}>
       <DebugLabel show={showDebug} name="SCREEN" color={D.screen} />
       
       {/* PERSPECTIVE WRAPPER */}
@@ -2186,7 +2220,9 @@ export default function ConversionCalculator() {
         {isLargeScreen && (
           <>
             <style>{dotKeyframes}</style>
-            <div style={{ 
+            <div
+              data-kalkulator-dot
+              style={{ 
               position: 'absolute', 
               width: `${dotSize}px`, 
               height: `${dotSize}px`, 
@@ -2270,7 +2306,7 @@ export default function ConversionCalculator() {
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', order: isMobile ? 2 : 'unset', paddingRight: isMobile ? '0' : '140px', outline: dbg(D.result1) }}>
             <DebugLabel show={showDebug} name="RESULT-1" color={D.result1} />
             <div style={{ fontFamily: font, lineHeight: 1.1, textAlign: 'right', display: 'flex', alignItems: isMobile ? 'flex-end' : 'baseline', justifyContent: 'flex-end',  }}>
-              <AnimatedNumberGSAP value={display1} accentColor={accentColor} fontSize={fontSize.number} />
+              <AnimatedNumberGSAP value={display1} accentColor={accentColor} fontSize={fontSize.number} sectionInView={sectionInView} />
               {isMobile ? (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginLeft: '0.5em',  height: fontSize.number }}>
                   <span style={{ fontSize: `calc(${fontSize.number} * 0.48)`, fontWeight: 600, color: '#141414', lineHeight: 0.85, letterSpacing: '0.08em' }}>PLN</span>
@@ -2320,7 +2356,7 @@ export default function ConversionCalculator() {
           <div style={{ position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'flex-end', order: isMobile ? 4 : 'unset', paddingRight: isMobile ? '0' : '140px', outline: dbg(D.result2) }}>
             <DebugLabel show={showDebug} name="RESULT-2" color={D.result2} />
             <div style={{ fontFamily: font, lineHeight: 1.1, textAlign: 'right', display: 'flex', alignItems: isMobile ? 'flex-end' : 'baseline', justifyContent: 'flex-end',  }}>
-              <AnimatedNumberGSAP value={display2} accentColor={accentColor} fontSize={fontSize.number} />
+              <AnimatedNumberGSAP value={display2} accentColor={accentColor} fontSize={fontSize.number} sectionInView={sectionInView} />
               {isMobile ? (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', marginLeft: '0.5em',  height: fontSize.number }}>
                   <span style={{ fontSize: `calc(${fontSize.number} * 0.48)`, fontWeight: 600, color: '#141414', lineHeight: 0.85, letterSpacing: '0.08em' }}>PLN</span>
