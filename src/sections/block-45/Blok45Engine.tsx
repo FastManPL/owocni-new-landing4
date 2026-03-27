@@ -1264,14 +1264,16 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       function scheduleEyeFrame(){if(!eyeTicking&&!eyesDead){eyeTicking=true;requestAnimationFrame(eyeTick);}}
       function onEyeMouseMove(e: MouseEvent){if(eyesPaused)return;eyeMouseX=e.clientX;eyeMouseY=e.clientY;scheduleEyeFrame();}
       function onEyeResize(){if(eyesPaused)return;buildEyeCache();}
+      var eyeResizeRaf: number | null = null;
+      function scheduleEyeResize(){if(eyeResizeRaf!==null)return;eyeResizeRaf=requestAnimationFrame(function(){eyeResizeRaf=null;onEyeResize();});}
       var _eyeScrollRebuildPending=false;
       function onEyeScroll(){if(eyesPaused)return;if(!_eyeScrollRebuildPending&&eyeCache.length===0){_eyeScrollRebuildPending=true;requestAnimationFrame(function(){_eyeScrollRebuildPending=false;buildEyeCache();});}scheduleEyeFrame();}
       if(document.fonts&&document.fonts.ready){document.fonts.ready.then(function(){if(!eyesDead){buildEyeCache();scheduleEyeFrame();}});}
       else{var _eyeInitTid=setTimeout(function(){buildEyeCache();scheduleEyeFrame();},300);timerIds.push({type:'timeout',id:_eyeInitTid});}
       eyePauseFn=function(){eyesPaused=true;};
       eyeResumeFn=function(){buildEyeCache();eyesPaused=false;scheduleEyeFrame();};
-      document.addEventListener('mousemove',onEyeMouseMove,{passive:true});window.addEventListener('resize',onEyeResize,{passive:true});window.addEventListener('scroll',onEyeScroll,{passive:true});
-      cleanups.push(function(){eyesDead=true;document.removeEventListener('mousemove',onEyeMouseMove);window.removeEventListener('resize',onEyeResize);window.removeEventListener('scroll',onEyeScroll);eyeCache=[];});
+      document.addEventListener('mousemove',onEyeMouseMove,{passive:true});window.addEventListener('resize',scheduleEyeResize,{passive:true});window.addEventListener('scroll',onEyeScroll,{passive:true});
+      cleanups.push(function(){eyesDead=true;document.removeEventListener('mousemove',onEyeMouseMove);window.removeEventListener('resize',scheduleEyeResize);window.removeEventListener('scroll',onEyeScroll);if(eyeResizeRaf!==null){cancelAnimationFrame(eyeResizeRaf);eyeResizeRaf=null;}eyeCache=[];});
     })();
 
     // ═══ FACTORY: CPU GATING ═══
