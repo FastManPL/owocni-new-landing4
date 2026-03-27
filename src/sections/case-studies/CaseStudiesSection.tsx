@@ -95,10 +95,23 @@ export function CaseStudiesSection() {
   const [mobileParams3] = useState(MOBILE_PARAMS_TILE3_DEFAULT);
 
   useEffect(() => {
-    const check = () => setIsMobile(typeof window !== 'undefined' && window.innerWidth < 1024);
-    check();
-    window.addEventListener('resize', check);
-    return () => window.removeEventListener('resize', check);
+    if (typeof window === 'undefined') return;
+    const media = window.matchMedia('(max-width: 1023px)');
+    const apply = (next: boolean) => {
+      setIsMobile((prev) => (prev === next ? prev : next));
+    };
+    apply(media.matches);
+
+    const onChange = (event: MediaQueryListEvent) => {
+      apply(event.matches);
+    };
+    // Safari fallback
+    if (typeof media.addEventListener === 'function') {
+      media.addEventListener('change', onChange);
+      return () => media.removeEventListener('change', onChange);
+    }
+    media.addListener(onChange);
+    return () => media.removeListener(onChange);
   }, []);
 
   const video1Ref = useAutoplayVideo();
