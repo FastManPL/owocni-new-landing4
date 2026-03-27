@@ -58,6 +58,9 @@ function init(container: HTMLElement): { kill: () => void } {
   let charOffsets: { el: HTMLElement; x: number; y: number }[] = [];
   let currentFrame         = -1;
   const playhead           = { frame: 0 };
+  /** Jak tunnel: scrub może wywołać onUpdate >1× / frame — jedna aktualizacja CSS na klatkę. */
+  let frameScrollRafId: number | null = null;
+  let frameScrollPendingIndex: number | null = null;
   let isKilled             = false;
   let stableViewportHeight = window.innerHeight;
 
@@ -196,6 +199,16 @@ function init(container: HTMLElement): { kill: () => void } {
     if (!framesReady) return;
     const wrapped = frameURLsWrapped[index];
     if (wrapped && faktyDom) { faktyDom.style.setProperty('--current-frame-url', wrapped); }
+  }
+  function scheduleFrameScrollApply(index: number) {
+    frameScrollPendingIndex = index;
+    if (frameScrollRafId !== null) return;
+    frameScrollRafId = requestAnimationFrame(() => {
+      frameScrollRafId = null;
+      const idx = frameScrollPendingIndex;
+      frameScrollPendingIndex = null;
+      if (idx !== null) applyFrame(idx);
+    });
   }
 
   function setupVideoFill() {
@@ -659,6 +672,19 @@ function init(container: HTMLElement): { kill: () => void } {
   const T_SNAP=['10%','20%','30%','40%'];
   let tunnelAtlasSource: HTMLCanvasElement | ImageBitmap | null=null, tunnelLastStep=-1;
   let tunnelST: ScrollTrigger | null=null;
+  /** Coaleskuje wiele ticków scrub w jednej klatce do jednego blitu (ST może wywołać onUpdate >1× / frame). */
+  let tunnelScrollRafId: number | null = null;
+  let tunnelScrollPendingStep: number | null = null;
+  function scheduleTunnelScrollDraw(step: number) {
+    tunnelScrollPendingStep = step;
+    if (tunnelScrollRafId !== null) return;
+    tunnelScrollRafId = requestAnimationFrame(() => {
+      tunnelScrollRafId = null;
+      const s = tunnelScrollPendingStep;
+      tunnelScrollPendingStep = null;
+      if (s !== null) tunnelDraw(s);
+    });
+  }
 
   function tunnelSnapText(raw: number) {
     if(raw<=14)return T_SNAP[0];if(raw<=24)return T_SNAP[1];if(raw<=34)return T_SNAP[2];return T_SNAP[3];
@@ -712,11 +738,13 @@ function init(container: HTMLElement): { kill: () => void } {
     }
     tunnelST=ScrollTrigger.create({
       trigger:faktyBlock, start:'top bottom', end:'bottom top', scrub:true,
-      onUpdate:function(self){ tunnelDraw(Math.floor(self.progress*T_SPEED*(T_STEPS-1))); }
+      onUpdate:function(self){ scheduleTunnelScrollDraw(Math.floor(self.progress*T_SPEED*(T_STEPS-1))); }
     });
     gsapInstances.push(tunnelST);
   }
   cleanups.push(()=>{
+    if(tunnelScrollRafId!==null){cancelAnimationFrame(tunnelScrollRafId);tunnelScrollRafId=null;}
+    tunnelScrollPendingStep=null;
     if(tunnelAtlasSource&&'close' in tunnelAtlasSource&&typeof tunnelAtlasSource.close==='function')tunnelAtlasSource.close();
     tunnelAtlasSource=null;
     if(tunnelCanvas){tunnelCanvas.width=0;tunnelCanvas.height=0;}
@@ -725,6 +753,8 @@ function init(container: HTMLElement): { kill: () => void } {
   // ── frameST ────────────────────────────────────────────────
   let frameST: ScrollTrigger | null=null;
   function buildFrameScroll() {
+    if(frameScrollRafId!==null){cancelAnimationFrame(frameScrollRafId);frameScrollRafId=null;}
+    frameScrollPendingIndex=null;
     if(frameST){frameST.kill();frameST=null;}
     if(!faktyBlock||!faktyDom)return;
     const row1=faktyDom.querySelector<HTMLElement>('.title-row--1');
@@ -744,7 +774,7 @@ function init(container: HTMLElement): { kill: () => void } {
       onLeave:     ()=>pauseOrganic(),
       onEnterBack: ()=>enableOrganic(),
       onLeaveBack: ()=>disableOrganic(),
-      onUpdate:    function(){ applyFrame(Math.round(playhead.frame)); },
+      onUpdate:    function(){ scheduleFrameScrollApply(Math.round(playhead.frame)); },
     });
     gsapInstances.push(frameST);
   }
@@ -776,7 +806,7 @@ function init(container: HTMLElement): { kill: () => void } {
   // Zewnętrzna warstwa bezpieczeństwa ponad wewnętrzny frameST gating.
   // On leave (poza rootMargin): disableOrganic() — zatrzymuje RAF
   // On enter: brak akcji — frameST zarządza enableOrganic() w viewport
-  // rootMargin: clamp(200px, 0.5×VH, 1200px)
+  // rootMargin: clamp(120px, 0.35×VH, 600px) — wężej niż 0.5×VH/1200px: wcześniej gasi organic offscreen
   // Koegzystencja bezpieczna: enableOrganic/disableOrganic idempotentne.
   // ══════════════════════════════════════════════════════════
   let _io: IntersectionObserver | null=null;
@@ -784,7 +814,7 @@ function init(container: HTMLElement): { kill: () => void } {
 
   function _getVH() { return window.visualViewport?.height ?? window.innerHeight; }
   function _getRootMargin() {
-    const px=Math.min(1200,Math.max(200,Math.round(0.5*_getVH())));
+    const px=Math.min(600,Math.max(120,Math.round(0.35*_getVH())));
     return px+'px';
   }
   function _ioCallback(entries: IntersectionObserverEntry[]) {
@@ -816,6 +846,8 @@ function init(container: HTMLElement): { kill: () => void } {
   // ── kill ───────────────────────────────────────────────────
   function kill() {
     isKilled = true;
+    if(frameScrollRafId!==null){cancelAnimationFrame(frameScrollRafId);frameScrollRafId=null;}
+    frameScrollPendingIndex=null;
     if (lazyStTimeout !== null) {
       clearTimeout(lazyStTimeout);
       lazyStTimeout = null;
