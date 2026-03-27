@@ -252,6 +252,7 @@ function init(container) {
             this._pendingHoverX=-1; this._pendingHoverY=-1;
             this._hoverDirty=false; this._hoverPointerIsMouse=false; this._hoverLeft=false;
             this._lastHoverMoveX=-1; this._lastHoverMoveY=-1;
+            this._hoverRectCache=[]; this._hoverRectCacheTs=0; this._hoverRectCacheTtl=50;
             this.reducedMotion=false;
             if(window.matchMedia){
                 var mq=window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -533,6 +534,7 @@ function init(container) {
                 c.appendChild(d);
             }
             this.cards=Array.prototype.slice.call(c.querySelectorAll('.card'));
+            this._hoverRectCache=new Array(total); this._hoverRectCacheTs=0;
             this.cardScaleValues=new Array(total); this._lastWrittenScale=new Array(total);
             this._lastWrittenBr=new Array(total); this._isVisible=new Array(total);
             for(var j2=0;j2<total;j2++){this.cardScaleValues[j2]=1.0;this._lastWrittenScale[j2]=-1;this._lastWrittenBr[j2]=-1;this._isVisible[j2]=true;}
@@ -599,10 +601,17 @@ function init(container) {
             if(this._hoverLeft){this._hoverLeft=false;if(this._hoveredCardIdx>=0){if(this._hoverTimelines[this._hoveredCardIdx])this._hoverTimelines[this._hoveredCardIdx].reverse();var leavePb=this.cards[this._hoveredCardIdx]._playBtn;if(leavePb)leavePb.leaveHover();}this._hoveredCardIdx=-1;return;}
             if(this.isDragging)return;
             var mx=this._pendingHoverX,my=this._pendingHoverY; if(mx<0)return;
+            var now=performance.now();
+            var useCachedRects=(now-this._hoverRectCacheTs)<this._hoverRectCacheTtl;
+            if(!useCachedRects){this._hoverRectCacheTs=now;}
             var bestIdx=-1,bestDist=Infinity,bestRect=null;
             for(var c=0;c<this.cards.length;c++){
                 if(!this._wasFront[c])continue;
-                var rect=this.cards[c].getBoundingClientRect();
+                var rect=useCachedRects?this._hoverRectCache[c]:null;
+                if(!rect){
+                    rect=this.cards[c].getBoundingClientRect();
+                    this._hoverRectCache[c]=rect;
+                }
                 if(rect.width<2||rect.height<2)continue;
                 var pad=8;
                 if(mx>=rect.left-pad&&mx<=rect.right+pad&&my>=rect.top-pad&&my<=rect.bottom+pad){
