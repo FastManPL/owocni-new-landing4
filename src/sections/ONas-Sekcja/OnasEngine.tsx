@@ -251,6 +251,7 @@ function init(container) {
             this._hoverTimelines=[]; this._hoverListeners=[]; this._cardStyleIdx=[];
             this._pendingHoverX=-1; this._pendingHoverY=-1;
             this._hoverDirty=false; this._hoverPointerIsMouse=false; this._hoverLeft=false;
+            this._lastHoverMoveX=-1; this._lastHoverMoveY=-1;
             this.reducedMotion=false;
             if(window.matchMedia){
                 var mq=window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -577,11 +578,20 @@ function init(container) {
                 this._hoverTimelines.push(tl); gsapInstances.push(tl);
             }
             var section=$id('onas-carousel');
-            var onMove=function(e){if(e.pointerType!=='mouse')return;self._pendingHoverX=e.clientX;self._pendingHoverY=e.clientY;self._hoverDirty=true;self._hoverPointerIsMouse=true;self._hoverLeft=false;};
+            var HOVER_MOVE_EPSILON=1;
+            var passivePointerOpts={passive:true};
+            var onMove=function(e){
+                if(e.pointerType!=='mouse')return;
+                if(self._lastHoverMoveX>=0&&self._lastHoverMoveY>=0){
+                    if(Math.abs(e.clientX-self._lastHoverMoveX)<HOVER_MOVE_EPSILON&&Math.abs(e.clientY-self._lastHoverMoveY)<HOVER_MOVE_EPSILON)return;
+                }
+                self._lastHoverMoveX=e.clientX; self._lastHoverMoveY=e.clientY;
+                self._pendingHoverX=e.clientX;self._pendingHoverY=e.clientY;self._hoverDirty=true;self._hoverPointerIsMouse=true;self._hoverLeft=false;
+            };
             var onLeave=function(e){self._hoverLeft=true;self._hoverDirty=true;};
-            section.addEventListener('pointermove',onMove); section.addEventListener('pointerleave',onLeave);
+            section.addEventListener('pointermove',onMove,passivePointerOpts); section.addEventListener('pointerleave',onLeave);
             this._hoverListeners.push({el:section,enter:onMove,leave:onLeave,type:'pointermove'},{el:section,enter:null,leave:onLeave,type:'pointerleave'});
-            hfListeners.push({el:section,type:'pointermove',fn:onMove,options:undefined},{el:section,type:'pointerleave',fn:onLeave,options:undefined});
+            hfListeners.push({el:section,type:'pointermove',fn:onMove,options:passivePointerOpts},{el:section,type:'pointerleave',fn:onLeave,options:undefined});
         };
 
         E.prototype._processHover=function(){
