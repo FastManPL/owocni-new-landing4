@@ -364,6 +364,7 @@ export function CaseStudiesSection() {
           if (ctx) {
             const frameCount = 41;
             const images: HTMLImageElement[] = [];
+            let lastRenderedFrame = -1;
             for (let i = 0; i < frameCount; i++) {
               const img = document.createElement('img');
               img.src = getAssetPath(
@@ -372,9 +373,11 @@ export function CaseStudiesSection() {
               images.push(img);
             }
             const updateCanvas = (index: number) => {
+              if (index === lastRenderedFrame) return;
               if (images[index]?.complete) {
                 ctx.clearRect(0, 0, canvas.width, canvas.height);
                 ctx.drawImage(images[index], 0, 0, canvas.width, canvas.height);
+                lastRenderedFrame = index;
               }
             };
             images[0]?.addEventListener('load', () => updateCanvas(0));
