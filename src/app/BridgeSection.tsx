@@ -29,8 +29,8 @@ export function BridgeSection() {
         ref={pinSpacerRef}
         style={{
           minHeight: '100vh',
-          // Wcześniejsze wejście pinu (~40vh): nachodzi na Fakty; bridge z-index:10 > fakty.
-          marginTop: 'clamp(-48vh, -40vh, -32vh)',
+          // Wcześniejsze wejście pinu (~60vh): nachodzi na Fakty; bridge z-index:10 > fakty.
+          marginTop: 'clamp(-68vh, -60vh, -52vh)',
         }}
       >
         <div
