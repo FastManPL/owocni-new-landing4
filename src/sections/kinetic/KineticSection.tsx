@@ -1450,9 +1450,22 @@ import './kinetic-section.css';
         // ============================================
         // START
         // ============================================
-        const _resizeParticle = function() { resize(); };
-        window.addEventListener('resize', _resizeParticle);
-        cleanups.push(() => window.removeEventListener('resize', _resizeParticle));
+        let particleResizeRaf: number | null = null;
+        const scheduleResizeParticle = function() {
+            if (particleResizeRaf !== null) return;
+            particleResizeRaf = requestAnimationFrame(function() {
+                particleResizeRaf = null;
+                resize();
+            });
+        };
+        window.addEventListener('resize', scheduleResizeParticle, { passive: true });
+        cleanups.push(() => {
+            window.removeEventListener('resize', scheduleResizeParticle);
+            if (particleResizeRaf !== null) {
+                cancelAnimationFrame(particleResizeRaf);
+                particleResizeRaf = null;
+            }
+        });
         resize();
         
         // Adaptive DPR - callback przy zmianie jakości
