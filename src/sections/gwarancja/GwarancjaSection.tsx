@@ -108,9 +108,22 @@ function init(container: HTMLElement): {
   computeScale();
 
   let cachedRect = (containerEl as HTMLElement).getBoundingClientRect();
+  /** Ostatni odczyt layoutu — throttling w processMousePos (Layout w trace). */
+  let lastRectReadAt = performance.now();
+  const RECT_MIN_INTERVAL_MS = 50;
   let rectDebounceTimer: ReturnType<typeof setTimeout> | null = null;
+  let scrollRectRaf: number | null = null;
   function updateCachedRect() {
     cachedRect = (containerEl as HTMLElement).getBoundingClientRect();
+    lastRectReadAt = performance.now();
+  }
+  /** Scroll: max 1×/klatkę (rAF), bez opóźnienia 100 ms — świeży rect przy przewijaniu. */
+  function scheduleRectFromScroll() {
+    if (scrollRectRaf != null) return;
+    scrollRectRaf = requestAnimationFrame(() => {
+      scrollRectRaf = null;
+      updateCachedRect();
+    });
   }
   function debouncedRectUpdate() {
     if (rectDebounceTimer) clearTimeout(rectDebounceTimer);
@@ -122,14 +135,20 @@ function init(container: HTMLElement): {
   let rectListenersBound = false;
   function bindRectListeners() {
     if (rectListenersBound) return;
-    window.addEventListener("scroll", debouncedRectUpdate, { passive: true });
+    window.addEventListener("scroll", scheduleRectFromScroll, {
+      passive: true,
+    });
     window.addEventListener("resize", debouncedRectUpdate, { passive: true });
     rectListenersBound = true;
   }
   function unbindRectListeners() {
     if (!rectListenersBound) return;
-    window.removeEventListener("scroll", debouncedRectUpdate);
+    window.removeEventListener("scroll", scheduleRectFromScroll);
     window.removeEventListener("resize", debouncedRectUpdate);
+    if (scrollRectRaf != null) {
+      cancelAnimationFrame(scrollRectRaf);
+      scrollRectRaf = null;
+    }
     if (rectDebounceTimer) {
       clearTimeout(rectDebounceTimer);
       rectDebounceTimer = null;
@@ -1061,7 +1080,9 @@ function init(container: HTMLElement): {
   function processMousePos() {
     rafPending = false;
     if (paused || !isContainerVisible || isMobileDisabled) return;
-    updateCachedRect(); // FIX 3: zawsze świeży rect
+    if (performance.now() - lastRectReadAt >= RECT_MIN_INTERVAL_MS) {
+      updateCachedRect();
+    }
     const x = lastMouseX - cachedRect.left,
       y = lastMouseY - cachedRect.top,
       h = cachedRect.height,
