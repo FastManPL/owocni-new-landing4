@@ -1153,6 +1153,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       requestAnimationFrame(animateBurst);
       popupOpenTid1=setTimeout(function(){
         if(!overlay)return;overlay.style.display='grid';
+        container.classList.add('popup-overlay-active');
         requestAnimationFrame(function(){overlay!.classList.add('visible');});
         var pw=container.querySelector('.popup-wrapper') as HTMLElement|null;
         if(pw){pw.style.transform='scale(0.3)';pw.style.opacity='0';pw.style.transition='all 450ms cubic-bezier(0.22,1,0.36,1)';requestAnimationFrame(function(){requestAnimationFrame(function(){if(pw){pw.style.transform='scale(1)';pw.style.opacity='1';}});});}
@@ -1172,7 +1173,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         overlay.classList.remove('visible','content-reveal');
         var pw=container.querySelector('.popup-wrapper') as HTMLElement|null;if(pw)pw.style.cssText='';
         if(popupTransitionEndHandler){overlay.removeEventListener('transitionend',popupTransitionEndHandler);popupTransitionEndHandler=null;}
-        popupTransitionEndHandler=function(){if(!overlay!.classList.contains('visible'))overlay!.style.display='none';if(popupTransitionEndHandler){overlay!.removeEventListener('transitionend',popupTransitionEndHandler);popupTransitionEndHandler=null;}};
+        popupTransitionEndHandler=function(){if(!overlay!.classList.contains('visible')){overlay!.style.display='none';container.classList.remove('popup-overlay-active');}if(popupTransitionEndHandler){overlay!.removeEventListener('transitionend',popupTransitionEndHandler);popupTransitionEndHandler=null;}};
         overlay.addEventListener('transitionend',popupTransitionEndHandler);
       }
     }
@@ -1189,7 +1190,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       btns.forEach(function(b){b.addEventListener('click',_onRevealClick);_revealHandlers.push(b);});
       var _popupCloseEl=$id('blok-4-5-popupClose'),_popupBottomCloseEl=$id('blok-4-5-popupBottomClose');
       if(_popupCloseEl)_popupCloseEl.addEventListener('click',closePopup);if(_popupBottomCloseEl)_popupBottomCloseEl.addEventListener('click',closePopup);
-      cleanups.push(function(){_revealHandlers.forEach(function(b){b.removeEventListener('click',_onRevealClick);});if(_popupCloseEl)_popupCloseEl.removeEventListener('click',closePopup);if(_popupBottomCloseEl)_popupBottomCloseEl.removeEventListener('click',closePopup);if(popupOpenTid1!==null){clearTimeout(popupOpenTid1);popupOpenTid1=null;}if(popupOpenTid2!==null){clearTimeout(popupOpenTid2);popupOpenTid2=null;}var overlay=$id('blok-4-5-popupOverlay') as HTMLElement|null;if(overlay&&popupTransitionEndHandler){overlay.removeEventListener('transitionend',popupTransitionEndHandler);popupTransitionEndHandler=null;}});
+      cleanups.push(function(){_revealHandlers.forEach(function(b){b.removeEventListener('click',_onRevealClick);});if(_popupCloseEl)_popupCloseEl.removeEventListener('click',closePopup);if(_popupBottomCloseEl)_popupBottomCloseEl.removeEventListener('click',closePopup);if(popupOpenTid1!==null){clearTimeout(popupOpenTid1);popupOpenTid1=null;}if(popupOpenTid2!==null){clearTimeout(popupOpenTid2);popupOpenTid2=null;}container.classList.remove('popup-overlay-active');var overlay=$id('blok-4-5-popupOverlay') as HTMLElement|null;if(overlay&&popupTransitionEndHandler){overlay.removeEventListener('transitionend',popupTransitionEndHandler);popupTransitionEndHandler=null;}});
     }
 
     // =========================================================

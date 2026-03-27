@@ -25,6 +25,10 @@
 #blok-4-5-section.wave-reveal-active {
     z-index: 20;
 }
+/* Popup musi wygrać stacking context także nad sekcją kinetic (mobile/desktop). */
+#blok-4-5-section.popup-overlay-active {
+    z-index: 30001;
+}
 /* --- Globalne style tekstu --- */
 #blok-4-5-section .line {
     font-size: clamp(1.8rem, 4vw, 3.5rem);
