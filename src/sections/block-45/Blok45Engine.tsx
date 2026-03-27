@@ -1119,6 +1119,8 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     function showPopup() {
       var overlay=$id('blok-4-5-popupOverlay') as HTMLElement|null,popup=$id('blok-4-5-popup') as HTMLElement|null;
       if(!overlay||!popup||!manaContainer||!burstCanvas||!burstCtx||!morphGhost)return;
+      // Guard przed re-entry: nie uruchamiaj burst/popup ponownie, jeśli overlay już aktywny.
+      if(overlay.classList.contains('visible')||overlay.style.display==='grid')return;
       var manaRect=manaContainer.getBoundingClientRect(),cx=manaRect.left+manaRect.width/2,cy=manaRect.top+manaRect.height/2;
       burstCanvas.width=window.innerWidth;burstCanvas.height=window.innerHeight;burstCanvas.style.display='block';
       var burstParticles: any[]=[],COLORS=['#fec708','#fc7900','#fd9b00','#fa4900','#298f61','#8cd3b3'],COUNT=80;
