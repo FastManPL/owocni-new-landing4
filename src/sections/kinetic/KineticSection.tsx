@@ -3062,17 +3062,18 @@ import './kinetic-section.css';
             // ============================================
             
             // BIRTH blobów - PRZENIESIONY do keyframes per-blob (zero konfliktów scale)
-            // Każdy blob ma własne "narodziny" wbudowane w keyframes 0% → ~4%
-            // Bloby zaczynają dużo wcześniej (overlap na końcówkę Fakty), bez przesuwania geometrii sekcji.
-            const BLOB_BIRTH = -6.0;
+            // Skala i blend pqCanvas MUSZĄ być zakotwiczone w b1Start (sync z tekstem i keyframes blobów).
+            // Wcześniejszy overlap na Fakty: tylko fade opacity od b1AnimStart (małe kulki), bez przesuwania skali.
+            const BLOB_BIRTH = b1Start;
             const BLOB_OPACITY_START = b1Start + B1_STAGGER * (B1_LINE_COUNT - 1); // blend switch anchor
+            const BLOB_FADE_START = b1AnimStart;
             // v140: carrier stays hidden — blob canvas renders instead
             gsap.set(_elBlobCarrier, { visibility: 'hidden' });
-            pinnedTl.set(_elBlob1, { opacity: 1 }, BLOB_BIRTH);
-            pinnedTl.set(_elBlob2, { opacity: 1 }, 0.1 + BLOB_BIRTH);
-            pinnedTl.set(_elBlob3, { opacity: 1 }, 0.2 + BLOB_BIRTH);
+            pinnedTl.to(_elBlob1, { opacity: 0.99, duration: 1.5, ease: "power1.out" }, BLOB_FADE_START);
+            pinnedTl.to(_elBlob2, { opacity: 0.99, duration: 1.5, ease: "power1.out" }, 0.1 + BLOB_FADE_START);
+            pinnedTl.to(_elBlob3, { opacity: 0.99, duration: 1.5, ease: "power1.out" }, 0.2 + BLOB_FADE_START);
 
-            // BIRTH SCALE: rośnie z 0.15 → docelowy równolegle z opacity fade
+            // BIRTH SCALE: rośnie z 0.15 → docelowy razem z wejściem Block 1 (b1Start)
             pinnedTl.fromTo(_elBlob1, { scale: 0.15 }, { scale: 1.1, duration: 4.5, ease: "power1.out" }, BLOB_BIRTH);
             pinnedTl.fromTo(_elBlob2, { scale: 0.15 }, { scale: 1.4, duration: 4.5, ease: "power1.out" }, 0.1 + BLOB_BIRTH);
             pinnedTl.fromTo(_elBlob3, { scale: 0.15 }, { scale: 1.0, duration: 4.5, ease: "power1.out" }, 0.2 + BLOB_BIRTH);
@@ -3630,12 +3631,13 @@ import './kinetic-section.css';
             // NIGDY - pozostaje w stanie intro na U:23 (spadki usunięte)
 
         // VIGNETTE: CSS gradient zamrożony (zero repaint), GSAP tylko opacity
-        // Fade in razem z Block 1 text (b1Start → b1Start + 4.5U)
+        // Opóźnienie względem b1Start: w fazie overlap widać Fakty pod małymi blobami bez „kremowej” poświaty krawędzi.
+        const VIGNETTE_START = BLOB_OPACITY_START + 1.5;
         pinnedTl.to($id('kinetic-vignette'), {
             opacity: 1,
             duration: 4.5,
             ease: "power2.out"
-        }, b1Start);
+        }, VIGNETTE_START);
 
         // koniec main timeline setup
 
