@@ -13,12 +13,12 @@
     background: #f7f6f4;
     isolation: isolate; /* FACTORY: B-ISO-01 — stacking context */
     /* Integracja LP: sekcja wyżej w flow — intro widać wcześniej u dołu ekranu podczas końcówki Kinetic + wave */
-    margin-top: clamp(-36vh, -24vh, -15vh);
+    margin-top: clamp(-46vh, -32vh, -22vh);
     overflow: visible; /* „i wychodzą” — napis musi móc wychodzić w bok (translateX) */
 }
 @media (max-width: 599px) {
     #blok-4-5-section {
-        margin-top: clamp(-26vh, -18vh, -11vh);
+        margin-top: clamp(-34vh, -24vh, -16vh);
     }
 }
 /* Tylko gdy wave jest widoczna (kurtyna) — sekcja nad bridge (z-index 10), żeby #blok-4-5-wave-wrap było widać jak w stacku */
