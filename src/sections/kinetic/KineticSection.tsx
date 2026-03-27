@@ -3340,9 +3340,23 @@ import './kinetic-section.css';
                     blobCanvas.style.height = vh + 'px';
                 }
 
+                let blobResizeRaf = null;
+                function scheduleResizeBlobCanvas() {
+                    if (blobResizeRaf !== null) return;
+                    blobResizeRaf = requestAnimationFrame(function() {
+                        blobResizeRaf = null;
+                        resizeBlobCanvas();
+                    });
+                }
                 resizeBlobCanvas();
-                window.addEventListener('resize', resizeBlobCanvas);
-                cleanups.push(function() { window.removeEventListener('resize', resizeBlobCanvas); });
+                window.addEventListener('resize', scheduleResizeBlobCanvas, { passive: true });
+                cleanups.push(function() {
+                    window.removeEventListener('resize', scheduleResizeBlobCanvas);
+                    if (blobResizeRaf !== null) {
+                        cancelAnimationFrame(blobResizeRaf);
+                        blobResizeRaf = null;
+                    }
+                });
 
                 // Hide DOM blobs from compositor
                 _elBlobCarrier.style.visibility = 'hidden';
