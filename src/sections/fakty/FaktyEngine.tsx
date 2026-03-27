@@ -625,6 +625,7 @@ function init(container: HTMLElement): { kill: () => void } {
   function orgLoop(now: number) {
     if(!orgActive||isKilled){orgRafId=null;return;}
     orgRafId=requestAnimationFrame(orgLoop);
+    if(typeof document!=='undefined'&&document.visibilityState==='hidden')return;
     if(now-orgLastRender<32)return;
     orgLastRender=now;
     renderOrganic();
