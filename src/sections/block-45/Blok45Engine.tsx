@@ -269,9 +269,9 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
 
       function debounce(ms: number, fn: () => void) { var t = 0; return function() { clearTimeout(t); t = setTimeout(fn, ms); }; }
       var refreshST = debounce(120, function() { scrollRuntime.requestRefresh('st-refresh'); });
-      window.addEventListener('resize', refreshST);
+      window.addEventListener('resize', refreshST, { passive: true });
       window.addEventListener('orientationchange', refreshST);
-      if (window.visualViewport) { window.visualViewport.addEventListener('resize', refreshST); }
+      if (window.visualViewport) { window.visualViewport.addEventListener('resize', refreshST, { passive: true }); }
       cleanups.push(function() {
         window.removeEventListener('resize', refreshST);
         window.removeEventListener('orientationchange', refreshST);
