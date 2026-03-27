@@ -165,6 +165,27 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
   wrappers.forEach(function(w: HTMLElement) { buildCounter(w); });
 
   let counterObserver: IntersectionObserver | null = null;
+  /* Spin when stats enter upper ~80% of viewport (equiv. old: rect.top < 0.8 * innerHeight).
+     IntersectionObserver only — no per-scroll getBoundingClientRect (Etap 4 hot path). */
+  function attachSpinWhenReadyObserver() {
+    if (!statsContainer || _killed) return;
+    let spinIO: IntersectionObserver | null = null;
+    spinIO = new IntersectionObserver(function(entries) {
+      if (_killed || !ready || spun || !entries[0]) return;
+      if (entries[0].isIntersecting) {
+        spinAll();
+        spinIO?.disconnect();
+      }
+    }, {
+      root: null,
+      /* Shrink root from bottom by 20% → intersection region = top 80% of viewport */
+      rootMargin: '0px 0px -20% 0px',
+      threshold: 0
+    });
+    spinIO.observe(statsContainer);
+    observers.push(spinIO);
+  }
+
   if (statsContainer) {
     counterObserver = new IntersectionObserver(function(entries) {
       if (entries[0]?.isIntersecting && !ready) {
@@ -174,23 +195,12 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
           timerIds.push(tid);
         });
         counterObserver?.disconnect();
+        attachSpinWhenReadyObserver();
       }
     }, { threshold: 0.01 });
     counterObserver.observe(statsContainer);
     observers.push(counterObserver);
   }
-
-  /* --- Scroll trigger: spin when 80% in viewport --- */
-  function onScroll() {
-    if (!ready || spun || !statsContainer) return;
-    const rect = statsContainer.getBoundingClientRect();
-    if (rect.top < window.innerHeight * 0.80) {
-      spinAll();
-      window.removeEventListener('scroll', onScroll);
-    }
-  }
-  window.addEventListener('scroll', onScroll, { passive: true });
-  cleanups.push(function() { window.removeEventListener('scroll', onScroll); });
 
   /* ========================================================
      BOOK FRAME SEQUENCE — Canvas scroll animation
