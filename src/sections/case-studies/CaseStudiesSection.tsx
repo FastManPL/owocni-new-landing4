@@ -375,7 +375,9 @@ export function CaseStudiesSection() {
 
         // Canvas image sequence (tile 2)
         const canvas = canvasRef.current;
-        if (canvas && section2) {
+        const canRenderCanvasSequence =
+          typeof window !== 'undefined' && window.innerWidth >= 1024;
+        if (canvas && section2 && canRenderCanvasSequence) {
           const ctx = canvas.getContext('2d');
           if (ctx) {
             const frameCount = 41;
