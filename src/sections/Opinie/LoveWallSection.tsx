@@ -713,7 +713,7 @@ function loveWallVelocityInit(container: HTMLElement): { pause: () => void; resu
   function createCard(r: { text: string; author: string; fontClass: string; avatar: string }, i: number) {
     return '<div class="card-shell" data-index="' + i + '"><div class="card-tilt"><article class="card"><div class="card__rating"><span class="card__rating-number">5.0</span><div class="card__stars">' +
       '<svg class="card__star" viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg>'.repeat(5) +
-      '</div></div><p class="card__quote ' + (r.fontClass || '') + '">\u201C' + r.text + '\u201D</p><div class="card__author"><img class="card__avatar" loading="eager" decoding="async" width="27" height="27" src="' + r.avatar + '" onerror="this.classList.add(\'load-failed\');this.onerror=null;" alt="' + r.author + '"><span class="card__name">' + r.author + '</span><button class="card__expand-btn" aria-label="Powiększ opinię">+</button></div></article></div></div>';
+      '</div></div><p class="card__quote ' + (r.fontClass || '') + '">\u201C' + r.text + '\u201D</p><div class="card__author"><img class="card__avatar" loading="lazy" decoding="async" width="27" height="27" src="' + r.avatar + '" onerror="this.classList.add(\'load-failed\');this.onerror=null;" alt="' + r.author + '"><span class="card__name">' + r.author + '</span><button class="card__expand-btn" aria-label="Powiększ opinię">+</button></div></article></div></div>';
   }
 
   const REPEATS = 2;
