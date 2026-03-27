@@ -2022,8 +2022,15 @@ export default function ConversionCalculator() {
     };
     applyScreenUpdate();
     window.addEventListener('resize', onWindowResize, { passive: true });
+    const vv = typeof window !== 'undefined' ? window.visualViewport : null;
+    if (vv) {
+      vv.addEventListener('resize', onWindowResize, { passive: true });
+    }
     return () => {
       window.removeEventListener('resize', onWindowResize, { passive: true });
+      if (vv) {
+        vv.removeEventListener('resize', onWindowResize, { passive: true });
+      }
       if (resizeRafId !== null) {
         cancelAnimationFrame(resizeRafId);
         resizeRafId = null;
