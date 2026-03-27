@@ -3063,14 +3063,14 @@ import './kinetic-section.css';
             
             // BIRTH blobów - PRZENIESIONY do keyframes per-blob (zero konfliktów scale)
             // Każdy blob ma własne "narodziny" wbudowane w keyframes 0% → ~4%
-            // Opacity fade-in - bloby pojawiają się razem z tekstem "W internecie"
-            const BLOB_BIRTH = b1Start;
+            // Bloby zaczynają dużo wcześniej (overlap na końcówkę Fakty), bez przesuwania geometrii sekcji.
+            const BLOB_BIRTH = -6.0;
             const BLOB_OPACITY_START = b1Start + B1_STAGGER * (B1_LINE_COUNT - 1); // blend switch anchor
             // v140: carrier stays hidden — blob canvas renders instead
             gsap.set(_elBlobCarrier, { visibility: 'hidden' });
-            pinnedTl.to(_elBlob1, { opacity: 0.99, duration: 1.5, ease: "power1.out" }, BLOB_BIRTH);
-            pinnedTl.to(_elBlob2, { opacity: 0.99, duration: 1.5, ease: "power1.out" }, 0.1 + BLOB_BIRTH);
-            pinnedTl.to(_elBlob3, { opacity: 0.99, duration: 1.5, ease: "power1.out" }, 0.2 + BLOB_BIRTH);
+            pinnedTl.set(_elBlob1, { opacity: 1 }, BLOB_BIRTH);
+            pinnedTl.set(_elBlob2, { opacity: 1 }, 0.1 + BLOB_BIRTH);
+            pinnedTl.set(_elBlob3, { opacity: 1 }, 0.2 + BLOB_BIRTH);
 
             // BIRTH SCALE: rośnie z 0.15 → docelowy równolegle z opacity fade
             pinnedTl.fromTo(_elBlob1, { scale: 0.15 }, { scale: 1.1, duration: 4.5, ease: "power1.out" }, BLOB_BIRTH);
