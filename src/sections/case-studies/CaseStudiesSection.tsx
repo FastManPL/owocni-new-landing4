@@ -130,6 +130,7 @@ export function CaseStudiesSection() {
       let stCreated = false;
       let lazyStTimeout: ReturnType<typeof setTimeout> | null = null;
       let lazyStObserver: IntersectionObserver | null = null;
+      let canvasPreloadTimer: ReturnType<typeof setTimeout> | null = null;
 
       function maybeCreateScrollTriggers() {
         if (stCreated) return;
@@ -377,13 +378,38 @@ export function CaseStudiesSection() {
           if (ctx) {
             const frameCount = 41;
             const images: HTMLImageElement[] = [];
+            const imageUrls: string[] = [];
             let lastRenderedFrame = -1;
             for (let i = 0; i < frameCount; i++) {
               const img = document.createElement('img');
-              img.src = getAssetPath(
-                `/assets/portfolios/canvas/${String(i).padStart(3, '0')}.jpg`
+              imageUrls.push(
+                getAssetPath(
+                  `/assets/portfolios/canvas/${String(i).padStart(3, '0')}.jpg`
+                )
               );
               images.push(img);
+            }
+            let sequencePrimed = false;
+            const primeSequenceGradually = () => {
+              if (sequencePrimed) return;
+              sequencePrimed = true;
+              let index = 0;
+              const loadNext = () => {
+                if (index >= frameCount) {
+                  canvasPreloadTimer = null;
+                  return;
+                }
+                if (!images[index]?.src) {
+                  images[index]!.src = imageUrls[index]!;
+                }
+                index += 1;
+                canvasPreloadTimer = setTimeout(loadNext, 24);
+              };
+              loadNext();
+            };
+            // First frame only; rest load lazily on first active scroll update.
+            if (images[0] && imageUrls[0]) {
+              images[0].src = imageUrls[0];
             }
             const updateCanvas = (index: number) => {
               if (index === lastRenderedFrame) return;
@@ -403,6 +429,7 @@ export function CaseStudiesSection() {
                   end: 'bottom 20%',
                   scrub: true,
                   onUpdate: (self) => {
+                    primeSequenceGradually();
                     const progress = self.progress;
                     const frameIndex = Math.min(
                       frameCount - 1,
@@ -429,6 +456,7 @@ export function CaseStudiesSection() {
 
       return () => {
         if (lazyStTimeout !== null) clearTimeout(lazyStTimeout);
+        if (canvasPreloadTimer !== null) clearTimeout(canvasPreloadTimer);
         lazyStObserver?.disconnect();
         triggers.forEach((t) => t.kill());
       };
