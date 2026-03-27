@@ -669,7 +669,7 @@
 
 @property --blok-4-5-tile-border-angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
 
-#blok-4-5-section .overlay { display: none; position: fixed; top: 0; right: 0; bottom: 0; left: 0; inset: 0; place-items: center; padding: clamp(12px, 3.5vw, 28px); background: rgba(24,20,16,.82); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 9999; opacity: 0; visibility: hidden; transition: opacity 0.4s ease, visibility 0.4s ease; }
+#blok-4-5-section .overlay { display: none; position: fixed; top: 0; right: 0; bottom: 0; left: 0; inset: 0; place-items: center; padding: clamp(12px, 3.5vw, 28px); background: rgba(24,20,16,.82); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 30000; opacity: 0; visibility: hidden; transition: opacity 0.4s ease, visibility 0.4s ease; }
 #blok-4-5-section .overlay.visible { display: grid; align-items: start; overflow-y: auto; opacity: 1; visibility: visible; }
 #blok-4-5-section .popup-wrapper { position: relative; width: min(960px, 100%); margin: auto; padding: 24px 0; transform: scale(0.9) translateY(20px); transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
 #blok-4-5-section .overlay.visible .popup-wrapper { transform: scale(1) translateY(0); }

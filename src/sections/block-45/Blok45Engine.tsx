@@ -1113,6 +1113,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     // =========================================================
     var burstCanvas: HTMLCanvasElement|null=null,burstCtx: CanvasRenderingContext2D|null=null,morphGhost: HTMLElement|null=null;
     var popupTransitionEndHandler: ((e: TransitionEvent) => void) | null = null;
+    var popupOpenTid1: number | null = null, popupOpenTid2: number | null = null;
 
     function initBurstCanvas() { burstCanvas=$id('blok-4-5-burstCanvas') as HTMLCanvasElement|null; if(burstCanvas)burstCtx=burstCanvas.getContext('2d'); morphGhost=$id('blok-4-5-morphGhost') as HTMLElement|null; }
 
@@ -1121,6 +1122,8 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       if(!overlay||!popup||!manaContainer||!burstCanvas||!burstCtx||!morphGhost)return;
       // Guard przed re-entry: nie uruchamiaj burst/popup ponownie, jeśli overlay już aktywny.
       if(overlay.classList.contains('visible')||overlay.style.display==='grid')return;
+      if(popupOpenTid1!==null){clearTimeout(popupOpenTid1);popupOpenTid1=null;}
+      if(popupOpenTid2!==null){clearTimeout(popupOpenTid2);popupOpenTid2=null;}
       var manaRect=manaContainer.getBoundingClientRect(),cx=manaRect.left+manaRect.width/2,cy=manaRect.top+manaRect.height/2;
       burstCanvas.width=window.innerWidth;burstCanvas.height=window.innerHeight;burstCanvas.style.display='block';
       var burstParticles: any[]=[],COLORS=['#fec708','#fc7900','#fd9b00','#fa4900','#298f61','#8cd3b3'],COUNT=80;
@@ -1139,21 +1142,24 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         else{running=false;if(burstCtx&&burstCanvas){burstCtx.clearRect(0,0,burstCanvas.width,burstCanvas.height);burstCanvas.width=burstCanvas.height=1;burstCanvas.style.display='none';}}
       }
       requestAnimationFrame(animateBurst);
-      var tid1=setTimeout(function(){
+      popupOpenTid1=setTimeout(function(){
         if(!overlay)return;overlay.style.display='grid';
         requestAnimationFrame(function(){overlay!.classList.add('visible');});
         var pw=container.querySelector('.popup-wrapper') as HTMLElement|null;
         if(pw){pw.style.transform='scale(0.3)';pw.style.opacity='0';pw.style.transition='all 450ms cubic-bezier(0.22,1,0.36,1)';requestAnimationFrame(function(){requestAnimationFrame(function(){if(pw){pw.style.transform='scale(1)';pw.style.opacity='1';}});});}
         popup!.classList.add('popup--animated');
+        popupOpenTid1=null;
       },180);
-      timerIds.push({type:'timeout',id:tid1});
-      var tid2=setTimeout(function(){overlay!.classList.add('content-reveal');},400);
-      timerIds.push({type:'timeout',id:tid2});
+      timerIds.push({type:'timeout',id:function(){return popupOpenTid1;}});
+      popupOpenTid2=setTimeout(function(){overlay!.classList.add('content-reveal');popupOpenTid2=null;},400);
+      timerIds.push({type:'timeout',id:function(){return popupOpenTid2;}});
     }
 
     function closePopup() {
       var overlay=$id('blok-4-5-popupOverlay') as HTMLElement|null;
       if(overlay){
+        if(popupOpenTid1!==null){clearTimeout(popupOpenTid1);popupOpenTid1=null;}
+        if(popupOpenTid2!==null){clearTimeout(popupOpenTid2);popupOpenTid2=null;}
         overlay.classList.remove('visible','content-reveal');
         var pw=container.querySelector('.popup-wrapper') as HTMLElement|null;if(pw)pw.style.cssText='';
         if(popupTransitionEndHandler){overlay.removeEventListener('transitionend',popupTransitionEndHandler);popupTransitionEndHandler=null;}
@@ -1174,7 +1180,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       btns.forEach(function(b){b.addEventListener('click',_onRevealClick);_revealHandlers.push(b);});
       var _popupCloseEl=$id('blok-4-5-popupClose'),_popupBottomCloseEl=$id('blok-4-5-popupBottomClose');
       if(_popupCloseEl)_popupCloseEl.addEventListener('click',closePopup);if(_popupBottomCloseEl)_popupBottomCloseEl.addEventListener('click',closePopup);
-      cleanups.push(function(){_revealHandlers.forEach(function(b){b.removeEventListener('click',_onRevealClick);});if(_popupCloseEl)_popupCloseEl.removeEventListener('click',closePopup);if(_popupBottomCloseEl)_popupBottomCloseEl.removeEventListener('click',closePopup);var overlay=$id('blok-4-5-popupOverlay') as HTMLElement|null;if(overlay&&popupTransitionEndHandler){overlay.removeEventListener('transitionend',popupTransitionEndHandler);popupTransitionEndHandler=null;}});
+      cleanups.push(function(){_revealHandlers.forEach(function(b){b.removeEventListener('click',_onRevealClick);});if(_popupCloseEl)_popupCloseEl.removeEventListener('click',closePopup);if(_popupBottomCloseEl)_popupBottomCloseEl.removeEventListener('click',closePopup);if(popupOpenTid1!==null){clearTimeout(popupOpenTid1);popupOpenTid1=null;}if(popupOpenTid2!==null){clearTimeout(popupOpenTid2);popupOpenTid2=null;}var overlay=$id('blok-4-5-popupOverlay') as HTMLElement|null;if(overlay&&popupTransitionEndHandler){overlay.removeEventListener('transitionend',popupTransitionEndHandler);popupTransitionEndHandler=null;}});
     }
 
     // =========================================================
