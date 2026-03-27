@@ -574,7 +574,14 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         });
       }
       window.addEventListener('resize', _scheduleThreeResize, { passive: true });
-      function _onThreeScroll() { updateButtonRectFromScroll(); }
+      var threeScrollRaf: number | null = null;
+      function _onThreeScroll() {
+        if (threeScrollRaf !== null) return;
+        threeScrollRaf = requestAnimationFrame(function() {
+          threeScrollRaf = null;
+          updateButtonRectFromScroll();
+        });
+      }
       window.addEventListener('scroll', _onThreeScroll, { passive: true });
       updatePixelScale(); initParticles();
       renderer.domElement.style.visibility = 'hidden'; canvasVisible = false;
@@ -588,6 +595,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         if (_envMapIdleId && typeof window.cancelIdleCallback === 'function') window.cancelIdleCallback(_envMapIdleId);
         window.removeEventListener('resize', _scheduleThreeResize); window.removeEventListener('scroll', _onThreeScroll);
         if (threeResizeRaf !== null) { cancelAnimationFrame(threeResizeRaf); threeResizeRaf = null; }
+        if (threeScrollRaf !== null) { cancelAnimationFrame(threeScrollRaf); threeScrollRaf = null; }
         var btnEl = starsState.btnElement;
         if (btnEl) { btnEl.removeEventListener('pointerdown', btnPointerDown); btnEl.removeEventListener('touchstart', btnTouchStart); }
         document.removeEventListener('mousemove', mouseHandler); document.removeEventListener('touchmove', touchHandler);
