@@ -2410,19 +2410,8 @@ import './kinetic-section.css';
                 }
             });
             
-            // Pre-layer reveal: pokaż kinetic wcześniej (nad Fakty), ale bez zmiany geometrii pina.
-            const preLayerST = ScrollTrigger.create({
-                trigger: pinTrigger,
-                start: "top bottom",
-                end: "top top",
-                onEnter: function() { _s.activate(); _s.showLayer(); },
-                onEnterBack: function() { _s.activate(); _s.showLayer(); },
-                onLeaveBack: function() { _s.hibernate(); _s.hideLayer(); }
-            });
-
             // Eksport do window dla zewnętrznych komponentów (Particle, Tunnel, Cylinder)
             _s.pinnedTl = pinnedTl;
-            gsapInstances.push(preLayerST);
             gsapInstances.push(pinnedTl);
 
             function _maybeRearmKineticSnapsAfterForwardExit(scroll: number) {
