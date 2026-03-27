@@ -1188,9 +1188,16 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     initCanvases();initBubbles();initMana();initStarCanvas();initPopup();
     requestAnimationFrame(function(){chars.forEach(function(c,i){charStates[i].baseOffsetLeft=c.offsetLeft;});updateCachedFontSize();cacheBaseMetrics();});
 
-    function onResizeMain(){resizeCanvases();}
-    window.addEventListener('resize',onResizeMain);cleanups.push(function(){window.removeEventListener('resize',onResizeMain);});
-    if(window.visualViewport){window.visualViewport.addEventListener('resize',onResizeMain);cleanups.push(function(){window.visualViewport!.removeEventListener('resize',onResizeMain);});}
+    var resizeMainRaf: number | null = null;
+    function onResizeMain(){
+      if(resizeMainRaf!==null)return;
+      resizeMainRaf=requestAnimationFrame(function(){
+        resizeMainRaf=null;
+        resizeCanvases();
+      });
+    }
+    window.addEventListener('resize',onResizeMain,{passive:true});cleanups.push(function(){window.removeEventListener('resize',onResizeMain);if(resizeMainRaf!==null){cancelAnimationFrame(resizeMainRaf);resizeMainRaf=null;}});
+    if(window.visualViewport){window.visualViewport.addEventListener('resize',onResizeMain,{passive:true});cleanups.push(function(){window.visualViewport!.removeEventListener('resize',onResizeMain);if(resizeMainRaf!==null){cancelAnimationFrame(resizeMainRaf);resizeMainRaf=null;}});}
     window.addEventListener('scroll',handleScrollWalking,{passive:true});cleanups.push(function(){window.removeEventListener('scroll',handleScrollWalking);});
 
     var stWalking=ScrollTrigger.create({trigger:'#blok-4-5-voidSection',start:"top 35%",once:true,onEnter:function(){hasStarted=true;anchorScrollY=lastScrollY;if((window as any)._blok45Debug)(window as any)._blok45Debug.walkingStarted=true;}});
