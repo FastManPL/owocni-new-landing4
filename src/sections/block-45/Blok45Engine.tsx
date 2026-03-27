@@ -1281,15 +1281,15 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     var _s={_killed:false},_factoryPaused=false;
     var _getVH=function(){return window.visualViewport?.height??window.innerHeight;};
     var _calcRootMargin=function(){return Math.min(320,Math.max(120,Math.round(0.2*_getVH())));};
-    var _factoryIO: IntersectionObserver|null=null,_factoryIODebounce: number|null=null;
+    var _factoryIO: IntersectionObserver|null=null,_factoryIODebounce: number|null=null,_factoryIORaf: number|null=null;
     function _factoryIOCallback(entries: IntersectionObserverEntry[]){if(!entries[0])return;if(entries[0].isIntersecting){if(_factoryPaused){_factoryPaused=false;resume();}}else{if(!_factoryPaused){_factoryPaused=true;pause();}}}
     function _createFactoryIO(){var rm=_calcRootMargin();_factoryIO=new IntersectionObserver(_factoryIOCallback,{rootMargin:rm+'px 0px',threshold:0.01});_factoryIO.observe(container);observers.push(_factoryIO);}
     function _recreateFactoryIO(){if(_factoryIODebounce)clearTimeout(_factoryIODebounce);_factoryIODebounce=setTimeout(function(){if(_s._killed)return;if(_factoryIO)_factoryIO.disconnect();_createFactoryIO();},50);}
-    function _onFactoryVVResize(){_recreateFactoryIO();}
+    function _onFactoryVVResize(){if(_factoryIORaf!==null)return;_factoryIORaf=requestAnimationFrame(function(){_factoryIORaf=null;_recreateFactoryIO();});}
     _createFactoryIO();
     window.addEventListener('resize',_onFactoryVVResize,{passive:true});window.addEventListener('orientationchange',_onFactoryVVResize,{passive:true});
     if(window.visualViewport){window.visualViewport.addEventListener('resize',_onFactoryVVResize,{passive:true});}
-    cleanups.push(function(){_s._killed=true;if(_factoryIODebounce)clearTimeout(_factoryIODebounce);window.removeEventListener('resize',_onFactoryVVResize);window.removeEventListener('orientationchange',_onFactoryVVResize);if(window.visualViewport)window.visualViewport.removeEventListener('resize',_onFactoryVVResize);if(_factoryIO)_factoryIO.disconnect();});
+    cleanups.push(function(){_s._killed=true;if(_factoryIODebounce)clearTimeout(_factoryIODebounce);if(_factoryIORaf!==null){cancelAnimationFrame(_factoryIORaf);_factoryIORaf=null;}window.removeEventListener('resize',_onFactoryVVResize);window.removeEventListener('orientationchange',_onFactoryVVResize);if(window.visualViewport)window.visualViewport.removeEventListener('resize',_onFactoryVVResize);if(_factoryIO)_factoryIO.disconnect();});
 
     // ═══ FACTORY: ST-REFRESH-01 ═══
     var _stIo=new IntersectionObserver(function(entries){if(!entries[0]?.isIntersecting)return;scrollRuntime.requestRefresh('section-in-view');_stIo.disconnect();},{threshold:0,rootMargin:'0px'});
