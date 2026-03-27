@@ -1741,8 +1741,19 @@ const PremiumSlider = React.memo(({ min = 1, max = 50000, defaultValue = 35, uni
 
   useEffect(() => {
     const handleGlobalUp = () => { if (isActiveRef.current) deactivate(); };
-    window.addEventListener('mouseup', handleGlobalUp); window.addEventListener('touchend', handleGlobalUp); window.addEventListener('touchcancel', handleGlobalUp); window.addEventListener('pointerup', handleGlobalUp); window.addEventListener('blur', handleGlobalUp);
-    return () => { window.removeEventListener('mouseup', handleGlobalUp); window.removeEventListener('touchend', handleGlobalUp); window.removeEventListener('touchcancel', handleGlobalUp); window.removeEventListener('pointerup', handleGlobalUp); window.removeEventListener('blur', handleGlobalUp); };
+    const passive = { passive: true };
+    window.addEventListener('mouseup', handleGlobalUp);
+    window.addEventListener('touchend', handleGlobalUp, passive);
+    window.addEventListener('touchcancel', handleGlobalUp, passive);
+    window.addEventListener('pointerup', handleGlobalUp, passive);
+    window.addEventListener('blur', handleGlobalUp);
+    return () => {
+      window.removeEventListener('mouseup', handleGlobalUp);
+      window.removeEventListener('touchend', handleGlobalUp, passive);
+      window.removeEventListener('touchcancel', handleGlobalUp, passive);
+      window.removeEventListener('pointerup', handleGlobalUp, passive);
+      window.removeEventListener('blur', handleGlobalUp);
+    };
   }, [deactivate]);
 
   useEffect(() => {
@@ -2021,15 +2032,18 @@ export default function ConversionCalculator() {
       handleFlipAxisOnResize();
     };
     applyScreenUpdate();
-    window.addEventListener('resize', onWindowResize, { passive: true });
+    const passiveResize = { passive: true };
+    window.addEventListener('resize', onWindowResize, passiveResize);
+    window.addEventListener('orientationchange', onWindowResize, passiveResize);
     const vv = typeof window !== 'undefined' ? window.visualViewport : null;
     if (vv) {
-      vv.addEventListener('resize', onWindowResize, { passive: true });
+      vv.addEventListener('resize', onWindowResize, passiveResize);
     }
     return () => {
-      window.removeEventListener('resize', onWindowResize, { passive: true });
+      window.removeEventListener('resize', onWindowResize, passiveResize);
+      window.removeEventListener('orientationchange', onWindowResize, passiveResize);
       if (vv) {
-        vv.removeEventListener('resize', onWindowResize, { passive: true });
+        vv.removeEventListener('resize', onWindowResize, passiveResize);
       }
       if (resizeRafId !== null) {
         cancelAnimationFrame(resizeRafId);
