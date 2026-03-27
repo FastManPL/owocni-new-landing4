@@ -511,8 +511,8 @@ function init(container) {
                     innerHTML+='<video muted loop playsinline preload="none"'+(VIDEO_CARD.src?' src="'+VIDEO_CARD.src+'"':'')+'></video>';
                     d.innerHTML=innerHTML;
                     d.querySelector('.card__layer').style.backgroundImage=VIDEO_CARD.poster;
-                    var btnSize=Math.round(Math.min(d.offsetWidth||80, 80)*0.55)||44;
-                    var pb=createPlayButton(d, Math.max(54, Math.round(btnSize*1.5)));
+                    /* Avoid forced layout read (offsetWidth) during card creation. */
+                    var pb=createPlayButton(d, 66);
                     d._playBtn=pb;
                     d._fullSrc=VIDEO_CARD.fullSrc;
                     var vid=d.querySelector('video');
@@ -879,12 +879,14 @@ function init(container) {
     /* INIT ASAP: do not block carousel startup on background image decode. */
     engine.init(carouselEl, $id('onas-scene'));
     /* Defer heavy background preload so first carousel frames stay responsive. */
+    var deferredPreloadTimer=0;
+    var deferredPreloadIdleId=0;
     var deferLayerPreload=function(){
         var runPreload=function(){preloadCardImages('.card__layer');};
         if(typeof window.requestIdleCallback==='function'){
-            window.requestIdleCallback(runPreload,{timeout:1500});
+            deferredPreloadIdleId=window.requestIdleCallback(runPreload,{timeout:1500});
         }else{
-            setTimeout(runPreload,1200);
+            deferredPreloadTimer=setTimeout(runPreload,1200);
         }
     };
     deferLayerPreload();
@@ -1087,6 +1089,8 @@ function init(container) {
     function kill(){
         pause();
         syncInlineVideoPlayback(false);
+        if(deferredPreloadTimer){clearTimeout(deferredPreloadTimer);deferredPreloadTimer=0;}
+        if(deferredPreloadIdleId&&typeof window.cancelIdleCallback==='function'){window.cancelIdleCallback(deferredPreloadIdleId);deferredPreloadIdleId=0;}
         for(var i=0;i<cleanups.length;i++){try{cleanups[i]();}catch(e){}}cleanups.length=0;
         if(galleryResizeTimeout)clearTimeout(galleryResizeTimeout);timerIds.forEach(function(id){clearTimeout(id);});timerIds.length=0;
         for(var j=0;j<observers.length;j++){if(observers[j]&&observers[j].disconnect)observers[j].disconnect();}observers.length=0;
