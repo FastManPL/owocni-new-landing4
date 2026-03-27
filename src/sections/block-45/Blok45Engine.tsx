@@ -856,7 +856,8 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         var charIndex = activeTargets[k], bubble = bubbles[k];
         if (charIndex === null || !bubble || !frameCache.valid || !chars[charIndex]) return;
         var s = charStates[charIndex];
-        var x = frameCache.containerLeft + frameCache.containerTransformX + s.baseOffsetLeft + s.finalX + (frameCache.charOffsetWidths[charIndex]||0)*0.5;
+        // frameCache.containerLeft pochodzi z getBoundingClientRect() kontenera i uwzględnia już translateX kontenera.
+        var x = frameCache.containerLeft + s.baseOffsetLeft + s.finalX + (frameCache.charOffsetWidths[charIndex]||0)*0.5;
         var yOff = bubbleTypes[k] === 'thought' ? -55 : -25;
         var y = frameCache.containerTop + frameCache.charOffsetTop + s.finalY + yOff;
         var visScale = bubble.classList.contains('visible') ? 'scale(1) translateY(0)' : 'scale(0.8) translateY(5px)';
@@ -1229,7 +1230,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     if(window.visualViewport){window.visualViewport.addEventListener('resize',onResizeMain,{passive:true});cleanups.push(function(){window.visualViewport!.removeEventListener('resize',onResizeMain);if(resizeMainRaf!==null){cancelAnimationFrame(resizeMainRaf);resizeMainRaf=null;}});}
     window.addEventListener('scroll',handleScrollWalking,{passive:true});cleanups.push(function(){window.removeEventListener('scroll',handleScrollWalking);});
 
-    var stWalking=ScrollTrigger.create({trigger:'#blok-4-5-voidSection',start:"top 35%",once:true,onEnter:function(){hasStarted=true;anchorScrollY=lastScrollY;if((window as any)._blok45Debug)(window as any)._blok45Debug.walkingStarted=true;}});
+    var stWalking=ScrollTrigger.create({trigger:'#blok-4-5-voidSection',start:"top 50%",once:true,onEnter:function(){hasStarted=true;anchorScrollY=lastScrollY;if((window as any)._blok45Debug)(window as any)._blok45Debug.walkingStarted=true;}});
     gsapInstances.push(stWalking);
     gsap.ticker.add(mainLoop);
     var ticking=true,sectionInView=true;

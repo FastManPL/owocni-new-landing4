@@ -733,11 +733,11 @@
 #blok-4-5-section .x-icon { font-size: 0.9em; opacity: 0.7; }
 #blok-4-5-section .morph-ghost { position: fixed; pointer-events: none; z-index: 9998; opacity: 0; border-radius: 0; }
 
-/* Wave wrap — kurtyna jak w blok-4-5.stack.html: position fixed, inset 0, z-index 0, overflow hidden */
+/* Wave wrap — warstwa POD napisami sekcji (napisy mają z-index:25). */
 #blok-4-5-section .blok-4-5-wave-wrap {
     position: fixed;
     inset: 0;
-    z-index: 0;
+    z-index: 22;
     pointer-events: none;
     overflow: hidden;
     background: transparent;
