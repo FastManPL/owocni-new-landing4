@@ -131,6 +131,8 @@ export function CaseStudiesSection() {
       let lazyStTimeout: ReturnType<typeof setTimeout> | null = null;
       let lazyStObserver: IntersectionObserver | null = null;
       let canvasPreloadTimer: ReturnType<typeof setTimeout> | null = null;
+      let firstFrameImg: HTMLImageElement | null = null;
+      let firstFrameLoadHandler: (() => void) | null = null;
 
       function maybeCreateScrollTriggers() {
         if (stCreated) return;
@@ -419,7 +421,9 @@ export function CaseStudiesSection() {
                 lastRenderedFrame = index;
               }
             };
-            images[0]?.addEventListener('load', () => updateCanvas(0));
+            firstFrameImg = images[0] ?? null;
+            firstFrameLoadHandler = () => updateCanvas(0);
+            firstFrameImg?.addEventListener('load', firstFrameLoadHandler);
             const st = gsap.to(
               {},
               {
@@ -457,6 +461,9 @@ export function CaseStudiesSection() {
       return () => {
         if (lazyStTimeout !== null) clearTimeout(lazyStTimeout);
         if (canvasPreloadTimer !== null) clearTimeout(canvasPreloadTimer);
+        if (firstFrameImg && firstFrameLoadHandler) {
+          firstFrameImg.removeEventListener('load', firstFrameLoadHandler);
+        }
         lazyStObserver?.disconnect();
         triggers.forEach((t) => t.kill());
       };
