@@ -10,9 +10,17 @@ interface SmoothScrollProviderProps {
 
 export function SmoothScrollProvider({ children }: SmoothScrollProviderProps) {
   useEffect(() => {
-    scrollRuntime.init();
-
+    let cancelled = false;
+    let innerRaf = 0;
+    const outerRaf = requestAnimationFrame(() => {
+      innerRaf = requestAnimationFrame(() => {
+        if (!cancelled) scrollRuntime.init();
+      });
+    });
     return () => {
+      cancelled = true;
+      cancelAnimationFrame(outerRaf);
+      cancelAnimationFrame(innerRaf);
       scrollRuntime.destroy();
     };
   }, []);

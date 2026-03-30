@@ -16,6 +16,7 @@ const lexend = Lexend({
   display: 'swap',
   variable: '--font-brand',
   adjustFontFallback: true,
+  preload: true,
 });
 
 const fraunces = Fraunces({
@@ -25,6 +26,8 @@ const fraunces = Fraunces({
   style: ['italic'],
   weight: ['400'],
   adjustFontFallback: true,
+  /** Bez preload: nie przedłuża łańcucha krytycznego CSS→font (LCP / PSI). */
+  preload: false,
 });
 
 // === METADATA ===
