@@ -4,10 +4,12 @@
 import { useRef } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
-import lottie from 'lottie-web';
 import { scrollRuntime } from '@/lib/scrollRuntime';
 import type { HeroVariant } from '@/config/heroVariantTypes';
 import './hero-section.css';
+
+/** Jedna obietnica na całą sekcję — lottie-web poza krytycznym parse głównego chunka Hero. */
+const heroLottieLibPromise = import('lottie-web').then((m) => m.default);
 
 /** Kolejność logotypów marquee — assety w `public/LOGOTYPY/` */
 const HERO_MARQUEE_LOGO_SRCS = [
@@ -662,8 +664,16 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
             const containerRight = $id('hero-lottieLaurRight');
             // Source MUSI być w containerRight. Bez niego — brak animacji.
             // containerLeft jest opcjonalny — bez niego brak mirror, source działa solo.
-            if (!containerRight || typeof lottie === 'undefined') return;
-    
+            if (!containerRight) return;
+
+            let laurelLottieCancelled = false;
+            cleanups.push(() => {
+                laurelLottieCancelled = true;
+            });
+
+            heroLottieLibPromise.then(function (lottie) {
+                if (laurelLottieCancelled || !lottie) return;
+
             // Inline animation data (identyczne jak oryginał — ZERO zmian w uassecie)
                     const animationData = {"v":"5.7.14","fr":90,"ip":0,"op":84,"w":372,"h":556,"nm":"Comp 2","ddd":0,"assets":[{"id":"comp_0","nm":"Comp 1","layers":[{"ddd":0,"ind":3,"ty":0,"nm":"laur 2","refId":"comp_1","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":-69.144,"ix":10},"p":{"a":0,"k":[701.112,172.379,0],"ix":2},"a":{"a":0,"k":[66,206.511,0],"ix":1,"l":2},"s":{"a":0,"k":[42.303,42.303,100],"ix":6}},"ao":0,"w":132,"h":223,"ip":53.625,"op":540,"st":53.625,"bm":0},{"ddd":0,"ind":5,"ty":0,"nm":"laur","refId":"comp_2","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":-64.043,"ix":10},"p":{"a":0,"k":[725.08,195.902,0],"ix":2},"a":{"a":0,"k":[102.353,181.936,0],"ix":1,"l":2},"s":{"a":0,"k":[33.273,33.273,100],"ix":6}},"ao":0,"w":240,"h":193,"ip":48.75,"op":540,"st":48.75,"bm":0},{"ddd":0,"ind":7,"ty":0,"nm":"laur","refId":"comp_2","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":-58.591,"ix":10},"p":{"a":0,"k":[761.63,222.881,0],"ix":2},"a":{"a":0,"k":[116.059,178.892,0],"ix":1,"l":2},"s":{"a":0,"k":[43.7,43.7,100],"ix":6}},"ao":0,"w":240,"h":193,"ip":43.875,"op":540,"st":43.875,"bm":0},{"ddd":0,"ind":9,"ty":0,"nm":"laur","refId":"comp_2","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":-50.455,"ix":10},"p":{"a":0,"k":[799.131,267.708,0],"ix":2},"a":{"a":0,"k":[109.287,183.117,0],"ix":1,"l":2},"s":{"a":0,"k":[49.098,49.098,100],"ix":6}},"ao":0,"w":240,"h":193,"ip":39,"op":540,"st":39,"bm":0},{"ddd":0,"ind":11,"ty":0,"nm":"laur","refId":"comp_2","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":-38.357,"ix":10},"p":{"a":0,"k":[827.25,322.397,0],"ix":2},"a":{"a":0,"k":[105.203,181.936,0],"ix":1,"l":2},"s":{"a":0,"k":[54.776,54.776,100],"ix":6}},"ao":0,"w":240,"h":193,"ip":34.125,"op":540,"st":34.125,"bm":0},{"ddd":0,"ind":13,"ty":0,"nm":"laur","refId":"comp_2","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":-21.311,"ix":10},"p":{"a":0,"k":[842.659,388.055,0],"ix":2},"a":{"a":0,"k":[111.795,183.973,0],"ix":1,"l":2},"s":{"a":0,"k":[61.661,61.661,100],"ix":6}},"ao":0,"w":240,"h":193,"ip":29.25,"op":540,"st":29.25,"bm":0},{"ddd":0,"ind":15,"ty":0,"nm":"laur","refId":"comp_2","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":-11.031,"ix":10},"p":{"a":0,"k":[845.941,463.007,0],"ix":2},"a":{"a":0,"k":[115.092,182.064,0],"ix":1,"l":2},"s":{"a":0,"k":[67.195,67.195,100],"ix":6}},"ao":0,"w":240,"h":193,"ip":24.375,"op":540,"st":24.375,"bm":0},{"ddd":0,"ind":17,"ty":0,"nm":"laur","refId":"comp_2","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":1,"k":[{"i":{"x":[0.833],"y":[0.833]},"o":{"x":[0.167],"y":[0.167]},"t":19.875,"s":[-6.437]},{"i":{"x":[0.833],"y":[0.833]},"o":{"x":[0.167],"y":[0.167]},"t":22.5,"s":[-5.437]},{"t":25.125,"s":[-0.437]}],"ix":10},"p":{"a":1,"k":[{"i":{"x":0.833,"y":0.833},"o":{"x":0.167,"y":0.167},"t":19.875,"s":[827.339,556.95,0],"to":[2.833,-2.996,0],"ti":[-0.017,0.034,0]},{"i":{"x":0.833,"y":0.833},"o":{"x":0.167,"y":0.167},"t":22.5,"s":[837.059,541.48,0],"to":[0.083,-0.167,0],"ti":[0.75,0.0,0]},{"t":25.125,"s":[832.559,541.48,0]}],"ix":2,"l":2},"a":{"a":0,"k":[111.646,185.833,0],"ix":1,"l":2},"s":{"a":0,"k":[73.372,73.372,100],"ix":6}},"ao":0,"w":240,"h":193,"ip":19.5,"op":540,"st":19.5,"bm":0},{"ddd":0,"ind":19,"ty":0,"nm":"laur","refId":"comp_2","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":1,"k":[{"i":{"x":[0.833],"y":[0.833]},"o":{"x":[0.167],"y":[0.167]},"t":16.125,"s":[2.443]},{"i":{"x":[0.833],"y":[0.833]},"o":{"x":[0.167],"y":[0.167]},"t":19.125,"s":[-0.057]},{"i":{"x":[0.833],"y":[0.833]},"o":{"x":[0.167],"y":[0.167]},"t":22.125,"s":[13.443]},{"t":25.875,"s":[13.443]}],"ix":10},"p":{"a":1,"k":[{"i":{"x":0.833,"y":0.833},"o":{"x":0.167,"y":0.167},"t":16.125,"s":[801.404,618.905,0],"to":[-0.625,-0.042,0],"ti":[1.563,0.104,0]},{"i":{"x":0.833,"y":0.833},"o":{"x":0.167,"y":0.167},"t":19.125,"s":[803.654,618.655,0],"to":[-1.563,-0.104,0],"ti":[0.625,0.042,0]},{"i":{"x":0.833,"y":0.833},"o":{"x":0.167,"y":0.167},"t":22.125,"s":[793.904,618.405,0],"to":[-1.25,-0.083,0],"ti":[0.625,0.042,0]},{"t":25.875,"s":[793.654,618.405,0]}],"ix":2,"l":2},"a":{"a":0,"k":[107.12,186.933,0],"ix":1,"l":2},"s":{"a":0,"k":[79.401,79.401,100],"ix":6}},"ao":0,"w":240,"h":193,"ip":15.375,"op":540,"st":15.375,"bm":0}]},{"id":"comp_1","nm":"laur 2","layers":[{"ddd":0,"ind":1,"ty":4,"nm":"lewy","parent":2,"sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":38,"ix":10},"p":{"a":0,"k":[0.714,1.969,0],"ix":2,"l":2},"a":{"a":0,"k":[147.714,206.969,0],"ix":1,"l":2},"s":{"a":1,"k":[{"i":{"x":[0.003,0.003,0.003],"y":[1,1,1]},"o":{"x":[0.333,0.333,0.333],"y":[0,0,0]},"t":0,"s":[0,0,100]},{"t":12.375,"s":[100,100,100]}],"ix":6,"l":2}},"ao":0,"shapes":[{"ty":"gr","it":[{"ind":0,"ty":"sh","ix":1,"ks":{"a":0,"k":{"i":[[-38.973,-29.064],[-47.339,99.742],[-24,-12.33],[13.431,-69.798],[17.175,39.633]],"o":[[0,0],[0,0],[24,12.331],[0,0],[0,0]],"v":[[43.046,60.88],[-15.303,-60.88],[17.284,-26.313],[49.211,56.918],[6.275,1.872]],"c":true},"ix":2},"nm":"Path 1","mn":"ADBE Vector Shape - Group","hd":false},{"ty":"fl","c":{"a":0,"k":[0,0,0,1],"ix":4},"o":{"a":0,"k":100,"ix":5},"r":1,"bm":0,"nm":"Fill 1","mn":"ADBE Vector Graphic - Fill","hd":false},{"ty":"tr","p":{"a":0,"k":[100.781,148.469],"ix":2},"a":{"a":0,"k":[0,0],"ix":1},"s":{"a":0,"k":[100,100],"ix":3},"r":{"a":0,"k":0,"ix":6},"o":{"a":0,"k":100,"ix":7},"sk":{"a":0,"k":0,"ix":4},"sa":{"a":0,"k":0,"ix":5},"nm":"Transform"}],"nm":"Group 1","np":2,"cix":2,"bm":0,"ix":1,"mn":"ADBE Vector Group","hd":false}],"ip":0,"op":1152.375,"st":0,"bm":0},{"ddd":0,"ind":2,"ty":3,"nm":"Null 3","sr":1,"ks":{"o":{"a":0,"k":0,"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":0,"k":[61.5,174.5,0],"ix":2,"l":2},"a":{"a":0,"k":[0,0,0],"ix":1,"l":2},"s":{"a":1,"k":[{"i":{"x":[0.859,0.859,0.667],"y":[0.996,0.996,1]},"o":{"x":[1,1,0.333],"y":[0,0,0]},"t":0,"s":[100,100,100]},{"i":{"x":[0,0,0.667],"y":[1.005,1.005,1]},"o":{"x":[0.096,0.096,0.333],"y":[-0.006,-0.006,0]},"t":13.896,"s":[120,120,100]},{"t":35.625,"s":[100,100,100]}],"ix":6,"l":2}},"ao":0,"ip":0,"op":1145.25,"st":0,"bm":0}]},{"id":"comp_2","nm":"laur","layers":[{"ddd":0,"ind":1,"ty":0,"nm":"lisc1","refId":"comp_3","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":0,"k":[108.25,168.25,0],"ix":2,"l":2},"a":{"a":0,"k":[87.75,151.75,0],"ix":1,"l":2},"s":{"a":1,"k":[{"i":{"x":[0.859,0.859,0.667],"y":[0.996,0.996,1]},"o":{"x":[1,1,0.333],"y":[0,0,0]},"t":0,"s":[100,100,100]},{"i":{"x":[0,0,0.667],"y":[1.005,1.005,1]},"o":{"x":[0.096,0.096,0.333],"y":[-0.006,-0.006,0]},"t":13.896,"s":[120,120,100]},{"t":35.625,"s":[100,100,100]}],"ix":6,"l":2}},"ao":0,"w":199,"h":160,"ip":0,"op":990,"st":0,"bm":0}]},{"id":"comp_3","nm":"lisc1","layers":[{"ddd":0,"ind":1,"ty":3,"nm":"Null 1","sr":1,"ks":{"o":{"a":0,"k":0,"ix":11},"r":{"a":0,"k":7.594,"ix":10},"p":{"a":0,"k":[84.5,147,0],"ix":2,"l":2},"a":{"a":0,"k":[0,0,0],"ix":1,"l":2},"s":{"a":0,"k":[100,100,100],"ix":6,"l":2}},"ao":0,"ip":0,"op":1029.375,"st":0,"bm":0},{"ddd":0,"ind":2,"ty":4,"nm":"stem","parent":1,"td":1,"sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":0,"k":[0.65,2.25,0],"ix":2,"l":2},"a":{"a":0,"k":[-14.75,71.75,0],"ix":1,"l":2},"s":{"a":0,"k":[100,100,100],"ix":6,"l":2}},"ao":0,"shapes":[{"ty":"gr","it":[{"ind":0,"ty":"sh","ix":1,"ks":{"a":0,"k":{"i":[[0,0],[0.985,-28.416],[0,0],[0,0],[-0.799,33.315],[0,0]],"o":[[0,0],[-1.176,33.946],[0,0],[0,0],[0.792,-33.036],[0,0]],"v":[[8.333,-67.5],[19.762,-3.414],[8.485,72.25],[-10,67.75],[2.166,-2.914],[-14.794,-87.942]],"c":true},"ix":2},"nm":"Path 1","mn":"ADBE Vector Shape - Group","hd":false},{"ty":"fl","c":{"a":0,"k":[0,0,0,1],"ix":4},"o":{"a":0,"k":100,"ix":5},"r":1,"bm":0,"nm":"Fill 1","mn":"ADBE Vector Graphic - Fill","hd":false},{"ty":"tr","p":{"a":0,"k":[-14.75,4],"ix":2},"a":{"a":0,"k":[0,0],"ix":1},"s":{"a":0,"k":[82.5,100],"ix":3},"r":{"a":0,"k":0,"ix":6},"o":{"a":0,"k":100,"ix":7},"sk":{"a":0,"k":0,"ix":4},"sa":{"a":0,"k":0,"ix":5},"nm":"Transform"}],"nm":"Rectangle 1","np":3,"cix":2,"bm":0,"ix":1,"mn":"ADBE Vector Group","hd":false}],"ip":0.75,"op":1036.5,"st":0,"bm":0},{"ddd":0,"ind":3,"ty":4,"nm":"stemask","parent":1,"tt":1,"sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":1,"k":[{"i":{"x":0.833,"y":0.833},"o":{"x":0.167,"y":0.167},"t":0,"s":[-1.5,185,0],"to":[0,-26.667,0],"ti":[0,26.667,0]},{"t":6.75,"s":[-1.5,25,0]}],"ix":2,"l":2},"a":{"a":0,"k":[-17.5,248.5,0],"ix":1,"l":2},"s":{"a":0,"k":[100,100,100],"ix":6,"l":2}},"ao":0,"shapes":[{"ty":"gr","it":[{"ind":0,"ty":"sh","ix":1,"ks":{"a":0,"k":{"i":[[0,0],[0,0],[0,0],[0,0],[0,0]],"o":[[0,0],[0,0],[0,0],[0,0],[0,0]],"v":[[18,-54.5],[34,88.5],[-34,88.5],[-8,-61.75],[-1.5,-88.5]],"c":true},"ix":2},"nm":"Path 1","mn":"ADBE Vector Shape - Group","hd":false},{"ty":"fl","c":{"a":0,"k":[0,0,0,1],"ix":4},"o":{"a":0,"k":100,"ix":5},"r":1,"bm":0,"nm":"Fill 1","mn":"ADBE Vector Graphic - Fill","hd":false},{"ty":"tr","p":{"a":0,"k":[-17.5,160],"ix":2},"a":{"a":0,"k":[0,0],"ix":1},"s":{"a":0,"k":[100,100],"ix":3},"r":{"a":0,"k":0,"ix":6},"o":{"a":0,"k":100,"ix":7},"sk":{"a":0,"k":0,"ix":4},"sa":{"a":0,"k":0,"ix":5},"nm":"Transform"}],"nm":"Rectangle 1","np":3,"cix":2,"bm":0,"ix":1,"mn":"ADBE Vector Group","hd":false}],"ip":0.75,"op":1036.5,"st":0,"bm":0},{"ddd":0,"ind":4,"ty":4,"nm":"prawy","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":1,"k":[{"i":{"x":0.667,"y":1},"o":{"x":0.333,"y":0},"t":1.5,"s":[88.51,154.616,0],"to":[0.833,0,0],"ti":[-0.833,0,0]},{"t":13.875,"s":[93.51,154.616,0]}],"ix":2,"l":2},"a":{"a":0,"k":[168.01,209.616,0],"ix":1,"l":2},"s":{"a":1,"k":[{"i":{"x":[0.667,0.667,0.667],"y":[1,1,1]},"o":{"x":[0.333,0.333,0.333],"y":[0,0,0]},"t":1.5,"s":[0,0,100]},{"t":13.875,"s":[100,100,100]}],"ix":6,"l":2}},"ao":0,"shapes":[{"ty":"gr","it":[{"ind":0,"ty":"sh","ix":1,"ks":{"a":0,"k":{"i":[[6.385,-55.266],[-84.55,24.44],[-10.129,18.715],[86.312,-11.009],[7.706,-7.926],[-44.477,30.606]],"o":[[0,0],[29.284,-8.808],[0,0],[-20.918,2.422],[0,0],[0,0]],"v":[[-49.982,64.734],[3.963,-36.77],[53.945,-68.697],[-5.725,56.367],[-40.734,68.697],[3.082,0]],"c":true},"ix":2},"nm":"Path 1","mn":"ADBE Vector Shape - Group","hd":false},{"ty":"fl","c":{"a":0,"k":[0,0,0,1],"ix":4},"o":{"a":0,"k":100,"ix":5},"r":1,"bm":0,"nm":"Fill 1","mn":"ADBE Vector Graphic - Fill","hd":false},{"ty":"tr","p":{"a":0,"k":[214.286,144.616],"ix":2},"a":{"a":0,"k":[0,0],"ix":1},"s":{"a":0,"k":[100,100],"ix":3},"r":{"a":0,"k":0,"ix":6},"o":{"a":0,"k":100,"ix":7},"sk":{"a":0,"k":0,"ix":4},"sa":{"a":0,"k":0,"ix":5},"nm":"Transform"}],"nm":"Group 1","np":2,"cix":2,"bm":0,"ix":1,"mn":"ADBE Vector Group","hd":false}],"ip":1.5,"op":1038,"st":1.5,"bm":0},{"ddd":0,"ind":5,"ty":4,"nm":"lewy","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":1,"k":[{"i":{"x":0.667,"y":1},"o":{"x":0.333,"y":0},"t":2.25,"s":[80.714,151.969,0],"to":[-0.833,0,0],"ti":[0.833,0,0]},{"t":14.625,"s":[75.714,151.969,0]}],"ix":2,"l":2},"a":{"a":0,"k":[147.714,206.969,0],"ix":1,"l":2},"s":{"a":1,"k":[{"i":{"x":[0.667,0.667,0.667],"y":[1,1,1]},"o":{"x":[0.333,0.333,0.333],"y":[0,0,0]},"t":2.25,"s":[0,0,100]},{"t":14.625,"s":[100,100,100]}],"ix":6,"l":2}},"ao":0,"shapes":[{"ty":"gr","it":[{"ind":0,"ty":"sh","ix":1,"ks":{"a":0,"k":{"i":[[-38.973,-29.064],[-47.339,99.742],[-24,-12.33],[13.431,-69.798],[17.175,39.633]],"o":[[0,0],[0,0],[24,12.331],[0,0],[0,0]],"v":[[43.046,60.88],[-15.303,-60.88],[17.284,-26.313],[49.211,56.918],[6.275,1.872]],"c":true},"ix":2},"nm":"Path 1","mn":"ADBE Vector Shape - Group","hd":false},{"ty":"fl","c":{"a":0,"k":[0,0,0,1],"ix":4},"o":{"a":0,"k":100,"ix":5},"r":1,"bm":0,"nm":"Fill 1","mn":"ADBE Vector Graphic - Fill","hd":false},{"ty":"tr","p":{"a":0,"k":[100.781,148.469],"ix":2},"a":{"a":0,"k":[0,0],"ix":1},"s":{"a":0,"k":[100,100],"ix":3},"r":{"a":0,"k":0,"ix":6},"o":{"a":0,"k":100,"ix":7},"sk":{"a":0,"k":0,"ix":4},"sa":{"a":0,"k":0,"ix":5},"nm":"Transform"}],"nm":"Group 1","np":2,"cix":2,"bm":0,"ix":1,"mn":"ADBE Vector Group","hd":false}],"ip":2.25,"op":1038.75,"st":2.25,"bm":0}]}],"layers":[{"ddd":0,"ind":1,"ty":0,"nm":"Comp 1","td":1,"refId":"comp_0","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":7.612,"ix":10},"p":{"a":0,"k":[84,26,0],"ix":2,"l":2},"a":{"a":0,"k":[649,135,0],"ix":1,"l":2},"s":{"a":0,"k":[101.426,101.426,100],"ix":6,"l":2}},"ao":0,"w":1000,"h":1000,"ip":0,"op":540,"st":0,"bm":0},{"ddd":0,"ind":2,"ty":4,"nm":"Shape Layer 1","tt":1,"sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":0,"k":[188,287,0],"ix":2,"l":2},"a":{"a":0,"k":[0,0,0],"ix":1,"l":2},"s":{"a":0,"k":[100,99.488,100],"ix":6,"l":2}},"ao":0,"shapes":[{"ty":"gr","it":[{"ty":"rc","d":1,"s":{"a":0,"k":[372,556],"ix":2},"p":{"a":0,"k":[0,0],"ix":3},"r":{"a":0,"k":0,"ix":4},"nm":"Rectangle Path 1","mn":"ADBE Vector Shape - Rect","hd":false},{"ty":"gf","o":{"a":0,"k":100,"ix":10},"r":1,"bm":0,"g":{"p":3,"k":{"a":0,"k":[0,0.957,0.937,0.922,0.525,0.947,0.922,0.898,1,0.937,0.906,0.875,0,0.8,0.505,0.9,1,1],"ix":9}},"s":{"a":0,"k":[26,247.265],"ix":5},"e":{"a":0,"k":[-101,-254.301],"ix":6},"t":3,"nm":"Gradient Fill 1","mn":"ADBE Vector Graphic - G-Fill","hd":false},{"ty":"tr","p":{"a":0,"k":[-2,-8],"ix":2},"a":{"a":0,"k":[0,0],"ix":1},"s":{"a":0,"k":[100,100],"ix":3},"r":{"a":0,"k":0,"ix":6},"o":{"a":0,"k":100,"ix":7},"sk":{"a":0,"k":0,"ix":4},"sa":{"a":0,"k":0,"ix":5},"nm":"Transform"}],"nm":"Rectangle 1","np":3,"cix":2,"bm":0,"ix":1,"mn":"ADBE Vector Group","hd":false}],"ip":0,"op":84,"st":0,"bm":0}],"markers":[]};
             // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -1156,6 +1166,7 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
                 clearLaurelTimers();
                 destroyLottie();
             });
+            }).catch(function () {});
         })();
     }
     // ═════════════════════════════════════════════════════════════════
@@ -3732,11 +3743,26 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
             }
             return;
         }
-        if (typeof lottie === 'undefined') {
-            console.warn('[LOGO LOTTIE] lottie-web not loaded — fallback: logo hidden');
-            logoEl.style.visibility = 'hidden';
+
+        // Guard: file:// protocol blokuje XHR (CORS) — tylko przy lokalnym podglądzie
+        // Produkcja (HTTP) działa normalnie. Uruchom z serwera: python -m http.server
+        if (window.location.protocol === 'file:') {
+            console.warn('[LOGO LOTTIE] file:// — CORS blokuje /animations/LOGO_OWOCNI.json. Uruchom z HTTP (python -m http.server / VS Code Live Server).');
             return;
         }
+
+        let logoLottieCancelled = false;
+        cleanups.push(() => {
+            logoLottieCancelled = true;
+        });
+
+        heroLottieLibPromise
+            .then(function (lottie) {
+                if (logoLottieCancelled) return;
+                if (!lottie) {
+                    logoEl.style.visibility = 'hidden';
+                    return;
+                }
 
         // Hover tylko na urzadzeniach z prawdziwym kursorem (C11)
         // matchMedia guard: blokuje ghost-tap reverse na iOS/Android
@@ -3778,13 +3804,6 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
         // Init lottie-web
         // [A10] autoplay: false — Logo startuje w Fazie 2 (2s) razem z Gradient OKLCH
         // [PERF] Canvas renderer: init 1.07s vs SVG 14.6s (−93%), 1 DOM element vs 1909
-
-        // Guard: file:// protocol blokuje XHR (CORS) — tylko przy lokalnym podglądzie
-        // Produkcja (HTTP) działa normalnie. Uruchom z serwera: python -m http.server
-        if (window.location.protocol === 'file:') {
-            console.warn('[LOGO LOTTIE] file:// — CORS blokuje /animations/LOGO_OWOCNI.json. Uruchom z HTTP (python -m http.server / VS Code Live Server).');
-            return;
-        }
 
         anim = lottie.loadAnimation({
             container: logoEl,
@@ -3844,6 +3863,11 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
                 anim = null;
             }
         });
+
+            })
+            .catch(function () {
+                if (!logoLottieCancelled) logoEl.style.visibility = 'hidden';
+            });
 
     })();
     // ═══ KONIEC LOGO LOTTIE ENGINE ═══
