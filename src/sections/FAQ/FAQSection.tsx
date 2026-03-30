@@ -24,7 +24,7 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useGSAP } from '@gsap/react';
 // TODO: dostosuj ścieżkę do scrollRuntime w projekcie (Shared Core Layer)
-import { scrollRuntime } from '@/lib/scroll-runtime';
+import { scrollRuntime } from '@/lib/scrollRuntime';
 import './faq-section.css';
 
 type FaqItem = { q: string; a: string };
@@ -122,6 +122,7 @@ const FAQMorphingPro = React.memo(function FAQMorphingPro({
   const rafPending = useRef(false);
   const rafFrameCount = useRef(0);
   const pointerPos = useRef({ x: 0, y: 0 });
+  const cachedOpenItem = useRef<HTMLElement | null>(null);
 
   // WARN-05: gsapRef + loadGsap useEffect usunięte — gsap importowany bezpośrednio
 
@@ -165,6 +166,7 @@ const FAQMorphingPro = React.memo(function FAQMorphingPro({
 
     // Resetuj cache rect przy zmianie stanu
     if (cachedRect.current) cachedRect.current = null;
+    cachedOpenItem.current = null;
 
     // Kill glow na wszystkich items (bulletproof reset)
     if (w) {
@@ -222,14 +224,19 @@ const FAQMorphingPro = React.memo(function FAQMorphingPro({
       const t = e.target;
       if (!(t instanceof Element)) return;
       const item = t.closest('.pro-item');
-      if (item && item.classList.contains('open')) {
+      if (item instanceof HTMLElement && item.classList.contains('open')) {
+        cachedOpenItem.current = item;
         cachedRect.current = item.getBoundingClientRect();
         cachedGlow.current = item.querySelector('.faq-glow');
       }
     };
 
     // Invalidate tylko na resize (scroll nie wpływa na dx/dy relatywne do centrum)
-    const invalidateRect = () => { cachedRect.current = null; cachedGlow.current = null; };
+    const invalidateRect = () => {
+      cachedRect.current = null;
+      cachedGlow.current = null;
+      cachedOpenItem.current = null;
+    };
 
     const processGlow = () => {
       rafPending.current = false;
@@ -240,7 +247,12 @@ const FAQMorphingPro = React.memo(function FAQMorphingPro({
         requestAnimationFrame(processGlow);
         return;
       }
-      const item = wrapper.querySelector('.pro-item.open');
+      let item = cachedOpenItem.current;
+      if (!item || !item.classList.contains('open')) {
+        const el = wrapper.querySelector('.pro-item.open');
+        item = el instanceof HTMLElement ? el : null;
+        cachedOpenItem.current = item;
+      }
       if (!item) return;
       const glow = cachedGlow.current || item.querySelector('.faq-glow');
       if (!glow) return;
@@ -279,7 +291,8 @@ const FAQMorphingPro = React.memo(function FAQMorphingPro({
       const t = e.target;
       if (!(t instanceof Element)) return;
       const item = t.closest('.pro-item');
-      if (!item || !item.classList.contains('open')) return;
+      if (!(item instanceof HTMLElement) || !item.classList.contains('open')) return;
+      cachedOpenItem.current = item;
       pointerPos.current.x = e.clientX;
       pointerPos.current.y = e.clientY;
       if (!rafPending.current) {
@@ -288,13 +301,15 @@ const FAQMorphingPro = React.memo(function FAQMorphingPro({
       }
     };
 
-    wrapper.addEventListener('pointerenter', enterHandler, true);
-    wrapper.addEventListener('pointermove', handler);
-    window.addEventListener('resize', invalidateRect);
+    const pointerEnterOpts: AddEventListenerOptions = { capture: true, passive: true };
+    const pointerMoveOpts: AddEventListenerOptions = { passive: true };
+    wrapper.addEventListener('pointerenter', enterHandler, pointerEnterOpts);
+    wrapper.addEventListener('pointermove', handler, pointerMoveOpts);
+    window.addEventListener('resize', invalidateRect, pointerMoveOpts);
     return () => {
-      wrapper.removeEventListener('pointerenter', enterHandler, true);
-      wrapper.removeEventListener('pointermove', handler);
-      window.removeEventListener('resize', invalidateRect);
+      wrapper.removeEventListener('pointerenter', enterHandler, pointerEnterOpts);
+      wrapper.removeEventListener('pointermove', handler, pointerMoveOpts);
+      window.removeEventListener('resize', invalidateRect, pointerMoveOpts);
     };
   }, []);
 
@@ -424,6 +439,7 @@ export default function FAQSection() {
   const overlayRef = useRef<HTMLDivElement>(null);
   const popupRef = useRef<HTMLElement>(null);
   const gsapRefreshTimer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
+  const burstAbortRef = useRef<{ aborted: boolean }>({ aborted: false });
   // WARN-01: cleanupRef usunięty — każdy useEffect ma własny return, GSAP → useGSAP
 
   // BLOCKER-04: registerPlugin wewnątrz useGSAP (BETON GSAP-SSR-01)
@@ -500,6 +516,10 @@ export default function FAQSection() {
     const canvasEl = burstCanvasRef.current;
     if (!overlay || !popup || !canvasEl) return;
 
+    burstAbortRef.current.aborted = true;
+    const burstToken = { aborted: false };
+    burstAbortRef.current = burstToken;
+
     // Confetti burst from viewport center
     const ctxMaybe = canvasEl.getContext('2d');
     if (!ctxMaybe) {
@@ -543,7 +563,7 @@ export default function FAQSection() {
     }
     let running = true, frame = 0;
     function animateBurst() {
-      if (!running) return;
+      if (burstToken.aborted || !running) return;
       ctx.clearRect(0, 0, cvs.width, cvs.height);
       let alive = 0;
       for (const p of particles) {
@@ -558,13 +578,15 @@ export default function FAQSection() {
       }
       ctx.globalAlpha = 1;
       frame++;
-      if (alive > 0 && frame < 60) requestAnimationFrame(animateBurst);
+      if (!burstToken.aborted && alive > 0 && frame < 60) requestAnimationFrame(animateBurst);
       else {
         running = false;
-        ctx.setTransform(1, 0, 0, 1, 0, 0);
-        ctx.clearRect(0, 0, cvs.width, cvs.height);
-        cvs.width = cvs.height = 1;
-        cvs.style.width = ''; cvs.style.height = ''; cvs.style.display = 'none';
+        if (!burstToken.aborted) {
+          ctx.setTransform(1, 0, 0, 1, 0, 0);
+          ctx.clearRect(0, 0, cvs.width, cvs.height);
+          cvs.width = cvs.height = 1;
+          cvs.style.width = ''; cvs.style.height = ''; cvs.style.display = 'none';
+        }
       }
     }
     requestAnimationFrame(animateBurst);
@@ -677,6 +699,7 @@ export default function FAQSection() {
     return () => {
       const t = gsapRefreshTimer.current;
       if (t !== undefined) clearTimeout(t);
+      burstAbortRef.current.aborted = true;
     };
   }, []);
 
