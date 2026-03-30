@@ -27,6 +27,9 @@ const HERO_MARQUEE_LOGO_SRCS = [
   '/LOGOTYPY/12skanska1_new.svg',
 ] as const;
 
+/** Slot .logo-item (desktop) — zgodnie z hero-section.css; mobile 66×33 zachowuje ~ten sam aspect */
+const HERO_MARQUEE_LOGO_BOX = { w: 131, h: 65 };
+
 // ⚠️ GSAP-SSR-01: ZAKAZ gsap.registerPlugin() na module top-level.
 // Next.js pre-renderuje Client Components na serwerze — window/document nie istnieją.
 // Ta sekcja nie używa ScrollTrigger — gsap.registerPlugin() nie jest wymagany.
@@ -1189,6 +1192,8 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
                 const img = document.createElement('img');
                 img.src = HERO_MARQUEE_LOGO_SRCS[index % LOGO_COUNT];
                 img.alt = '';
+                img.width = HERO_MARQUEE_LOGO_BOX.w;
+                img.height = HERO_MARQUEE_LOGO_BOX.h;
                 img.loading = 'eager';
                 img.decoding = 'async';
                 img.setAttribute('fetchpriority', 'low');
@@ -3961,7 +3966,15 @@ export function HeroSection({ variant }: { variant: HeroVariant }) {
                 <div className="marquee-track" id="hero-brandsMarqueeTrack">
                   {HERO_MARQUEE_LOGO_SRCS.map((src) => (
                     <div key={src} className="logo-item">
-                      <img src={src} alt="" loading="eager" decoding="async" fetchPriority="low" />
+                      <img
+                        src={src}
+                        alt=""
+                        width={HERO_MARQUEE_LOGO_BOX.w}
+                        height={HERO_MARQUEE_LOGO_BOX.h}
+                        loading="eager"
+                        decoding="async"
+                        fetchPriority="low"
+                      />
                     </div>
                   ))}
                 </div>
