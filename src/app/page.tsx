@@ -1,4 +1,5 @@
 import dynamic from 'next/dynamic';
+import { DeferredMount } from '@/components/DeferredMount';
 import { HeroSection } from '@/sections/hero/HeroSection';
 import { SectionsClient } from './SectionsClient';
 
@@ -43,16 +44,37 @@ export default function HomePage() {
       <HeroSection />
       <WzrostPrzychodowSection />
       <BookStatsSection />
-      <FaktySection />
-      <BridgeSection />
-      <SectionsClient />
-      <KalkulatorSection />
-      <GwarancjaSectionWrapper />
-      <LoveWallSection />
-      <CaseStudiesSection />
-      <OnasSectionWrapper />
-      <CyfroweWzrostySectionWrapper />
-      <FAQSection />
+      {/* Od Fakty w dół: montaż dopiero blisko viewportu — mniejszy początkowy koszt JS (TBT). BookStats zostaje od razu (LCP / obraz). */}
+      <DeferredMount minHeight="min(120vh, 1100px)">
+        <FaktySection />
+      </DeferredMount>
+      <DeferredMount minHeight="min(100vh, 900px)">
+        <BridgeSection />
+      </DeferredMount>
+      <DeferredMount minHeight="min(100vh, 900px)">
+        <SectionsClient />
+      </DeferredMount>
+      <DeferredMount minHeight="min(110vh, 1000px)">
+        <KalkulatorSection />
+      </DeferredMount>
+      <DeferredMount minHeight="min(140vh, 1200px)">
+        <GwarancjaSectionWrapper />
+      </DeferredMount>
+      <DeferredMount minHeight="min(100vh, 900px)">
+        <LoveWallSection />
+      </DeferredMount>
+      <DeferredMount minHeight="min(90vh, 800px)">
+        <CaseStudiesSection />
+      </DeferredMount>
+      <DeferredMount minHeight="min(100vh, 900px)">
+        <OnasSectionWrapper />
+      </DeferredMount>
+      <DeferredMount minHeight="min(110vh, 950px)">
+        <CyfroweWzrostySectionWrapper />
+      </DeferredMount>
+      <DeferredMount minHeight="min(80vh, 700px)">
+        <FAQSection />
+      </DeferredMount>
     </main>
   );
 }
