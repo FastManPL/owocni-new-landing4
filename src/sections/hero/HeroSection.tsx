@@ -970,6 +970,9 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
                 img.alt = '';
                 img.loading = 'lazy';
                 img.draggable = false;
+                /* Rezerwacja slotu layoutu (Lighthouse unsized-images) — zgodne z .logo-item 131×65 / mobile 66×33 */
+                img.width = 131;
+                img.height = 65;
                 div.appendChild(img);
                 return div;
             }
@@ -2629,8 +2632,24 @@ export function HeroSection() {
       }
       return;
     }
-    const inst = heroSectionInit(el);
-    return () => inst?.kill?.();
+    /** Dwa rAF: pozwalają przeglądarce wykonać pierwsze malowanie (tekst hero / LCP na mobile)
+     * zanim uruchomi się ciężki heroSectionInit — skraca elementRenderDelay w LCP breakdown. */
+    let inst: ReturnType<typeof heroSectionInit> | undefined;
+    let cancelled = false;
+    let raf2Id: number | null = null;
+    const raf1 = requestAnimationFrame(() => {
+      raf2Id = requestAnimationFrame(() => {
+        raf2Id = null;
+        if (cancelled || !rootRef.current) return;
+        inst = heroSectionInit(rootRef.current);
+      });
+    });
+    return () => {
+      cancelled = true;
+      cancelAnimationFrame(raf1);
+      if (raf2Id !== null) cancelAnimationFrame(raf2Id);
+      inst?.kill?.();
+    };
     // scope: useGSAP Context revertuje instancje GSAP z init() automatycznie
     // inst.kill() revertuje je powtórnie + czyści observers/timers/listeners
     // Double cleanup nie jest problemem — bezpieczeństwo wynika z:
