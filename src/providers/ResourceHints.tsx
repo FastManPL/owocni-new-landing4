@@ -18,6 +18,9 @@ export function ResourceHints() {
 
       {/* book-stats — LCP/obraz powyżej foldu */}
       <link rel="preload" href="/books/Statystyki-stron.png" as="image" />
+
+      {/* hero — perf.preloadCandidates (SECTION_MANIFEST): logo Lottie JSON, same-origin fetch */}
+      <link rel="preload" href="/animations/LOGO_OWOCNI.json" as="fetch" />
     </>
   );
 }
