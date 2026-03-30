@@ -669,17 +669,28 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
   // ═══════════════════════════════════════════════════════════════
   var lastWindowWidth  = window.innerWidth;
   var lastWindowHeight = window.innerHeight;
+  var resizeGeomTimer: ReturnType<typeof setTimeout> | null = null;
   function onResize() {
-    var ww = window.innerWidth;
-    var wh = window.innerHeight;
-    if (ww === lastWindowWidth && wh === lastWindowHeight) return;
-    lastWindowWidth  = ww;
-    lastWindowHeight = wh;
-    cacheGeometry();
-    wakeUp();
+    if (resizeGeomTimer != null) clearTimeout(resizeGeomTimer);
+    resizeGeomTimer = setTimeout(function() {
+      resizeGeomTimer = null;
+      var ww = window.innerWidth;
+      var wh = window.innerHeight;
+      if (ww === lastWindowWidth && wh === lastWindowHeight) return;
+      lastWindowWidth  = ww;
+      lastWindowHeight = wh;
+      cacheGeometry();
+      wakeUp();
+    }, 80);
   }
-  window.addEventListener('resize', onResize);
-  cleanups.push(function() { window.removeEventListener('resize', onResize); });
+  window.addEventListener('resize', onResize, { passive: true });
+  cleanups.push(function() {
+    if (resizeGeomTimer != null) {
+      clearTimeout(resizeGeomTimer);
+      resizeGeomTimer = null;
+    }
+    window.removeEventListener('resize', onResize);
+  });
 
   // LENIS SCROLL → wake section tick
   var lenisInst = scrollRuntime.getLenis();
@@ -694,6 +705,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
   // MOUSEMOVE — fine pointer only, with proximity gate
   if (hasHover) {
     var MOUSE_PROXIMITY = 400;
+    var mouseWakeRaf: number | null = null;
     function onMouseMove(e: MouseEvent) {
       ptrX = e.clientX;
       ptrY = e.clientY;
@@ -701,13 +713,28 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       var stageScreenBottom = cachedStageBottom - scroll;
       if (ptrY < stageScreenBottom + MOUSE_PROXIMITY && ptrY > -MOUSE_PROXIMITY) {
         mouseActive = true;
-        wakeUp();
+        if (mouseWakeRaf == null) {
+          mouseWakeRaf = requestAnimationFrame(function() {
+            mouseWakeRaf = null;
+            wakeUp();
+          });
+        }
       } else {
         mouseActive = false;
+        if (mouseWakeRaf != null) {
+          cancelAnimationFrame(mouseWakeRaf);
+          mouseWakeRaf = null;
+        }
       }
     }
     window.addEventListener('mousemove', onMouseMove, { passive: true });
-    cleanups.push(function() { window.removeEventListener('mousemove', onMouseMove); });
+    cleanups.push(function() {
+      if (mouseWakeRaf != null) {
+        cancelAnimationFrame(mouseWakeRaf);
+        mouseWakeRaf = null;
+      }
+      window.removeEventListener('mousemove', onMouseMove);
+    });
   }
 
   function findIdx(target: EventTarget | null): number {
