@@ -2,19 +2,15 @@
 
 import { memo, type ReactNode } from 'react';
 import { SmoothScrollProvider } from '@/components/SmoothScrollProvider';
-import { DelayedContent } from '@/components/DelayedContent';
 
 /**
- * 1) DelayedContent — treść pojawia się po 2 rAF; drugi commit (np. Strict Mode)
- *    dzieje się na placeholderze, nie na sekcjach, więc brak konfliktu z mutacjami DOM.
- * 2) memo(..., () => true) — po pierwszym mountcie drzewo nie re-renderuje się.
+ * memo(..., () => true) — po pierwszym mountcie drzewo nie re-renderuje się.
+ * Treść renderuje się od razu (bez DelayedContent / 2× rAF), żeby nie opóźniać LCP.
+ * Jeśli w dev (Strict Mode) pojawią się błędy insertBefore przy sekcjach z mutacjami DOM,
+ * wtedy rozważyć wąski workaround tylko dla problematycznego segmentu.
  */
 function StableTreeInner({ children }: { children: ReactNode }) {
-  return (
-    <SmoothScrollProvider>
-      <DelayedContent>{children}</DelayedContent>
-    </SmoothScrollProvider>
-  );
+  return <SmoothScrollProvider>{children}</SmoothScrollProvider>;
 }
 
 export const StableTree = memo(StableTreeInner, () => true);
