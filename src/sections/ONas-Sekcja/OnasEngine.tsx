@@ -355,6 +355,7 @@ function init(container) {
                     }
 
                     self._wakeTicker(); self.isDragging=true;
+                    self._invalidateHoverRectCache();
                     self._sectionEl.classList.add('is-dragging');
                     self.isSnapping=false; self._radiusTarget=self._radiusExpand;
                     document.body.style.userSelect='none';
@@ -376,7 +377,9 @@ function init(container) {
                     }
                 },
                 onRelease:function(){
-                    self.isDragging=false; self._sectionEl.classList.remove('is-dragging');
+                    self.isDragging=false;
+                    self._invalidateHoverRectCache();
+                    self._sectionEl.classList.remove('is-dragging');
                     document.body.style.userSelect=''; self._radiusTarget=self._radiusBase;
 
                     /* === TAP VS DRAG: 15px threshold === */
@@ -594,6 +597,13 @@ function init(container) {
             section.addEventListener('pointermove',onMove,passivePointerOpts); section.addEventListener('pointerleave',onLeave);
             this._hoverListeners.push({el:section,enter:onMove,leave:onLeave,type:'pointermove'},{el:section,enter:null,leave:onLeave,type:'pointerleave'});
             hfListeners.push({el:section,type:'pointermove',fn:onMove,options:passivePointerOpts},{el:section,type:'pointerleave',fn:onLeave,options:undefined});
+        };
+
+        E.prototype._invalidateHoverRectCache=function(){
+            this._hoverRectCacheTs=0;
+            if(this._hoverRectCache&&this._hoverRectCache.length){
+                for(var hi=0;hi<this._hoverRectCache.length;hi++) this._hoverRectCache[hi]=null;
+            }
         };
 
         E.prototype._processHover=function(){
