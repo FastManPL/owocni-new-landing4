@@ -3935,13 +3935,13 @@ export function HeroSection({ variant }: { variant: HeroVariant }) {
             <div className="pill-wrap">
               <span className="pill-avatars pill-avatars-left">
                 <span className="pill-av pill-av-plus"></span>
-                <img className="pill-av" src="/avatars/Klient1.avif" alt="" loading="eager" decoding="async" fetchPriority="low" />
-                <img className="pill-av" src="/avatars/Klient2.avif" alt="" loading="eager" decoding="async" fetchPriority="low" />
-                <img className="pill-av" src="/avatars/Klient3.avif" alt="" loading="eager" decoding="async" fetchPriority="low" />
-                <img className="pill-av" src="/avatars/Klient4.avif" alt="" loading="eager" decoding="async" fetchPriority="low" />
-                <img className="pill-av" src="/avatars/Klient5.avif" alt="" loading="eager" decoding="async" fetchPriority="low" />
-                <img className="pill-av" src="/avatars/Klient6.avif" alt="" loading="eager" decoding="async" fetchPriority="low" />
-                <img className="pill-av" src="/avatars/Klient7.avif" alt="" loading="eager" decoding="async" fetchPriority="low" />
+                <img className="pill-av" src="/avatars/Klient1.avif" alt="" width={39} height={39} loading="eager" decoding="async" fetchPriority="low" />
+                <img className="pill-av" src="/avatars/Klient2.avif" alt="" width={39} height={39} loading="eager" decoding="async" fetchPriority="low" />
+                <img className="pill-av" src="/avatars/Klient3.avif" alt="" width={39} height={39} loading="eager" decoding="async" fetchPriority="low" />
+                <img className="pill-av" src="/avatars/Klient4.avif" alt="" width={39} height={39} loading="eager" decoding="async" fetchPriority="low" />
+                <img className="pill-av" src="/avatars/Klient5.avif" alt="" width={39} height={39} loading="eager" decoding="async" fetchPriority="low" />
+                <img className="pill-av" src="/avatars/Klient6.avif" alt="" width={39} height={39} loading="eager" decoding="async" fetchPriority="low" />
+                <img className="pill-av" src="/avatars/Klient7.avif" alt="" width={39} height={39} loading="eager" decoding="async" fetchPriority="low" />
               </span>
               <span className="pill">
                 <span className="pill-badge"><span className="ponad">Ponad&nbsp;</span>3500+</span>
