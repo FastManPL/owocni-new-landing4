@@ -1,12 +1,22 @@
 import dynamic from 'next/dynamic';
 import { HeroSection } from '@/sections/hero/HeroSection';
-import { WzrostPrzychodowSection } from '@/sections/wzrost-przychodow/WzrostPrzychodowSection';
-import { BookStatsSection } from '@/sections/books/BookStatsSection';
-import { FaktySection } from '@/sections/fakty/FaktySection';
-import { BridgeSection } from '@/app/BridgeSection';
 import { SectionsClient } from './SectionsClient';
 
-/** Sekcje pod foldem — osobne chunki JS; SSR domyślny = ten sam HTML co wcześniej, mniejszy początkowy bundle (TBT). */
+const WzrostPrzychodowSection = dynamic(() =>
+  import('@/sections/wzrost-przychodow/WzrostPrzychodowSection').then((m) => ({
+    default: m.WzrostPrzychodowSection,
+  }))
+);
+const BookStatsSection = dynamic(() =>
+  import('@/sections/books/BookStatsSection').then((m) => ({ default: m.BookStatsSection }))
+);
+const FaktySection = dynamic(() =>
+  import('@/sections/fakty/FaktySection').then((m) => ({ default: m.FaktySection }))
+);
+const BridgeSection = dynamic(() =>
+  import('@/app/BridgeSection').then((m) => ({ default: m.BridgeSection }))
+);
+
 const KalkulatorSection = dynamic(() =>
   import('@/sections/kalkulator/KalkulatorSection').then((m) => ({ default: m.KalkulatorSection }))
 );

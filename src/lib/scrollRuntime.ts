@@ -1,8 +1,6 @@
 import Lenis from 'lenis';
-import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-
-gsap.registerPlugin(ScrollTrigger);
+import type gsap from 'gsap';
+import type { ScrollTrigger as ScrollTriggerType } from 'gsap/ScrollTrigger';
 
 // === TYPES ===
 interface ScrollToOptions {
@@ -11,9 +9,7 @@ interface ScrollToOptions {
   duration?: number;
   easing?: (t: number) => number;
   onComplete?: () => void;
-  /** Lenis: blokada scrollu do czasu zakończenia animacji (np. snap Kinetic). */
   lock?: boolean;
-  /** Lenis: scroll mimo zatrzymanej instancji. */
   force?: boolean;
 }
 
@@ -41,37 +37,37 @@ let refreshTimeout: ReturnType<typeof setTimeout> | null = null;
 let rafId: number | null = null;
 let resizeTimeout: ReturnType<typeof setTimeout> | null = null;
 
-// Pending refresh queue — dla requestRefresh() przed init()
 let pendingRefresh: string | null = null;
 
-// Event handlers (dla cleanup)
 let tickerCallback: ((time: number) => void) | null = null;
 let visibilityHandler: (() => void) | null = null;
 let resizeHandler: (() => void) | null = null;
 
-// Ostatnie wymiary do wykrycia „tylko toolbar” resize (height-only, mała delta)
+/** Po dynamic import('gsap') — tylko gdy lenis aktywny. */
+let gsapRuntime: typeof gsap | null = null;
+let ScrollTriggerRuntime: typeof ScrollTriggerType | null = null;
+
+/** Unieważnia async init po destroy / kolejny cykl. */
+let initGeneration = 0;
+let initInFlight = false;
+
 let lastResizeW = 0;
 let lastResizeH = 0;
 
-// === CONSTANTS ===
 const REFRESH_DEBOUNCE_MS = 120;
 const RESIZE_DEBOUNCE_MS = 250;
-// Wysokość zmiany viewportu (px) — poniżej uznajemy za „mobile toolbar” (chowanie paska adresu).
-// Refresh przy takim resize psuł pozycje ST w sekcji fakty przy scrolle do góry (book-stats).
 const MOBILE_TOOLBAR_RESIZE_THRESHOLD_PX = 150;
 
-// === INIT ===
-function init(): void {
-  if (typeof window === 'undefined' || lenis) {
-    return;
-  }
+function runBoot(gen: number, G: typeof gsap, ST: typeof ScrollTriggerType): void {
+  if (gen !== initGeneration) return;
 
-  // ScrollTrigger config (Konstytucja C5)
-  ScrollTrigger.config({
+  gsapRuntime = G;
+  ScrollTriggerRuntime = ST;
+
+  ST.config({
     ignoreMobileResize: true,
   });
 
-  // Lenis init (Konstytucja C3)
   lenis = new Lenis({
     autoRaf: false,
     lerp: 0.1,
@@ -81,11 +77,7 @@ function init(): void {
     touchMultiplier: 1,
   });
 
-  // === SCROLLER PROXY (Lenis + ScrollTrigger) ===
-  // ScrollTrigger domyślnie czyta window.scrollY; Lenis używa własnej wartości .scroll.
-  // Bez proxy ST widzi złą pozycję → animacje scrub (np. sekcja fakty) są przesunięte/na końcu.
-  // Źródło: GSAP + Lenis integration (scrollerProxy).
-  ScrollTrigger.scrollerProxy(document.body, {
+  ST.scrollerProxy(document.body, {
     scrollTop(value?: number): number {
       if (value !== undefined && lenis) {
         lenis.scrollTo(value, { immediate: true });
@@ -98,24 +90,16 @@ function init(): void {
     fixedMarkers: true,
   });
 
-  // === GSAP TICKER (Konstytucja C3) ===
-  // Sygnatura: add(callback, once?, prioritize?)
-  // false = nie jednorazowo, true = priorytet Lenisa przed ST/sekcjami
   tickerCallback = (time: number) => {
     lenis?.raf(time * 1000);
   };
-  gsap.ticker.add(tickerCallback, false, true);
+  G.ticker.add(tickerCallback, false, true);
 
-  // ScrollTrigger update on scroll
-  lenis.on('scroll', ScrollTrigger.update);
+  lenis.on('scroll', ST.update);
 
   lastResizeW = window.innerWidth;
   lastResizeH = window.innerHeight;
 
-  // === RESIZE HANDLER (Desktop) ===
-  // ignoreMobileResize w ST nie blokuje naszego listenera — resize i tak się odpala.
-  // Przy „mobile toolbar” (tylko height, mała delta) pomijamy refresh — inaczej
-  // przy scrolle do góry (np. do book-stats) pozycje ST w sekcji fakty się rozjeżdżają.
   resizeHandler = () => {
     clearTimeout(resizeTimeout ?? undefined);
     resizeTimeout = setTimeout(() => {
@@ -139,8 +123,6 @@ function init(): void {
   };
   window.addEventListener('resize', resizeHandler, { passive: true });
 
-  // === VISIBILITY CHANGE (Konstytucja C12) ===
-  // stop/start bez automatycznego refresh
   visibilityHandler = () => {
     if (document.hidden) {
       lenis?.stop();
@@ -150,13 +132,10 @@ function init(): void {
   };
   document.addEventListener('visibilitychange', visibilityHandler);
 
-  // === DEV DEBUG ===
   if (process.env.NODE_ENV === 'development') {
     (window as Window & { __scroll?: ScrollRuntime }).__scroll = scrollRuntime;
   }
 
-  // === FLUSH PENDING REFRESH ===
-  // Jeśli ktoś wołał requestRefresh() przed init()
   if (pendingRefresh) {
     const reason = pendingRefresh;
     pendingRefresh = null;
@@ -164,13 +143,34 @@ function init(): void {
   }
 }
 
-// === DESTROY ===
+function init(): void {
+  if (typeof window === 'undefined' || lenis || initInFlight) {
+    return;
+  }
+  initInFlight = true;
+  const gen = initGeneration;
+  void Promise.all([import('gsap'), import('gsap/ScrollTrigger')])
+    .then(([{ default: G }, { ScrollTrigger: ST }]) => {
+      G.registerPlugin(ST);
+      runBoot(gen, G, ST);
+    })
+    .catch(() => {})
+    .finally(() => {
+      initInFlight = false;
+    });
+}
+
 function destroy(): void {
+  initGeneration++;
+
   if (!lenis) {
+    pendingRefresh = null;
+    if (process.env.NODE_ENV === 'development') {
+      delete (window as Window & { __scroll?: ScrollRuntime }).__scroll;
+    }
     return;
   }
 
-  // Clear timeouts
   if (refreshTimeout) {
     clearTimeout(refreshTimeout);
     refreshTimeout = null;
@@ -184,13 +184,11 @@ function destroy(): void {
     resizeTimeout = null;
   }
 
-  // Remove ticker
-  if (tickerCallback) {
-    gsap.ticker.remove(tickerCallback);
-    tickerCallback = null;
+  if (tickerCallback && gsapRuntime) {
+    gsapRuntime.ticker.remove(tickerCallback);
   }
+  tickerCallback = null;
 
-  // Remove event listeners (orientation in SmoothScrollProvider)
   if (resizeHandler) {
     window.removeEventListener('resize', resizeHandler);
     resizeHandler = null;
@@ -201,21 +199,22 @@ function destroy(): void {
     visibilityHandler = null;
   }
 
-  // Destroy Lenis (scrollerProxy pozostaje — przy następnym init() zostanie nadpisany)
-  lenis.off('scroll', ScrollTrigger.update);
-  lenis.destroy();
+  const ST = ScrollTriggerRuntime;
+  if (lenis && ST) {
+    lenis.off('scroll', ST.update);
+  }
+  lenis?.destroy();
   lenis = null;
 
-  // Clear pending
+  gsapRuntime = null;
+  ScrollTriggerRuntime = null;
   pendingRefresh = null;
 
-  // Clear DEV debug
   if (process.env.NODE_ENV === 'development') {
     delete (window as Window & { __scroll?: ScrollRuntime }).__scroll;
   }
 }
 
-// === GET SCROLL (interpolowana pozycja) ===
 function getScroll(): number {
   if (!lenis) {
     return typeof window !== 'undefined' ? window.scrollY : 0;
@@ -223,7 +222,6 @@ function getScroll(): number {
   return lenis.scroll;
 }
 
-// === GET RAW SCROLL (surowy target — dla velocity) ===
 function getRawScroll(): number {
   if (!lenis) {
     return typeof window !== 'undefined' ? window.scrollY : 0;
@@ -233,10 +231,7 @@ function getRawScroll(): number {
   return lenisAny.targetScroll ?? lenisAny.scroll ?? window.scrollY;
 }
 
-// === REQUEST REFRESH (Konstytucja C6) ===
-// Debounced, double-rAF, safe refresh
 function requestRefresh(reason?: string): void {
-  // Pending queue: jeśli runtime nie gotowy, zapisz i wykonaj po init
   if (!lenis) {
     if (reason) {
       pendingRefresh = reason;
@@ -248,17 +243,14 @@ function requestRefresh(reason?: string): void {
     console.debug(`[scrollRuntime] requestRefresh: ${reason}`);
   }
 
-  // Debounce
   if (refreshTimeout) {
     clearTimeout(refreshTimeout);
   }
 
   refreshTimeout = setTimeout(() => {
-    // Double rAF dla stabilności layoutu
     rafId = requestAnimationFrame(() => {
       rafId = requestAnimationFrame(() => {
-        // Safe refresh (Konstytucja C6)
-        ScrollTrigger.refresh(true);
+        ScrollTriggerRuntime?.refresh(true);
 
         if (process.env.NODE_ENV === 'development' && reason) {
           console.debug(`[scrollRuntime] refresh executed: ${reason}`);
@@ -268,7 +260,6 @@ function requestRefresh(reason?: string): void {
   }, REFRESH_DEBOUNCE_MS);
 }
 
-// === REQUEST REFRESH IMMEDIATE (orientationchange — bez debounce) ===
 function requestRefreshImmediate(): void {
   if (!lenis) return;
   if (refreshTimeout) {
@@ -277,7 +268,7 @@ function requestRefreshImmediate(): void {
   }
   rafId = requestAnimationFrame(() => {
     rafId = requestAnimationFrame(() => {
-      ScrollTrigger.refresh(true);
+      ScrollTriggerRuntime?.refresh(true);
       if (process.env.NODE_ENV === 'development') {
         console.debug('[scrollRuntime] refresh executed: immediate');
       }
@@ -285,7 +276,6 @@ function requestRefreshImmediate(): void {
   });
 }
 
-// === SCROLL TO ===
 function scrollTo(
   target: number | string | HTMLElement,
   options?: ScrollToOptions
@@ -311,12 +301,10 @@ function scrollTo(
   });
 }
 
-// === START (wznawia Lenis — np. po snap lock w Kinetic) ===
 function start(): void {
   lenis?.start();
 }
 
-// === EVENT SUBSCRIPTION (Lenis scroll — dla sekcji np. Kinetic snap) ===
 function on(event: string, handler: (...args: unknown[]) => void): void {
   lenis?.on(event as 'scroll', handler as (e: unknown) => void);
 }
@@ -325,7 +313,6 @@ function off(event: string, handler: (...args: unknown[]) => void): void {
   lenis?.off(event as 'scroll', handler as (e: unknown) => void);
 }
 
-// === GETTERS ===
 function getLenis(): Lenis | null {
   return lenis;
 }
@@ -334,7 +321,6 @@ function isReady(): boolean {
   return lenis !== null;
 }
 
-// === EXPORT ===
 export const scrollRuntime: ScrollRuntime = {
   init,
   destroy,
