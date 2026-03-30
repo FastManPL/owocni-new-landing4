@@ -1,33 +1,23 @@
 /**
- * Resource hints z SECTION_MANIFEST (P4 — tylko z manifestów).
- * book-stats: perf.preloadCandidates, perf.prefetchCandidates, perf.preconnectDomains.
- * fakty: perf.preconnectDomains (fonts).
- * kinetic: perf.preconnectDomains (fonts — wspólne z fakty).
- * blok-4-5: perf.preconnectDomains (cdn.jsdelivr.net dla Three.js).
+ * Resource hints — tylko to, co realnie idzie z zewnętrznych originów.
+ * Fonty: next/font w layout.tsx (brak requestów do fonts.googleapis w runtime) → bez preconnect do Google Fonts.
+ * Preconnect ≤ 4 (Lighthouse): zostawiamy tylko najcięższe third-party używane wcześnie.
  */
 
 export function ResourceHints() {
   return (
     <>
-      {/* fakty / kinetic — preconnect (perf.preconnectDomains) */}
-      <link rel="preconnect" href="https://fonts.googleapis.com" />
-      <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
-
-      {/* blok-4-5 — preconnect (perf.preconnectDomains, Three.js CDN) */}
+      {/* blok-4-5 — Three.js z CDN */}
       <link rel="preconnect" href="https://cdn.jsdelivr.net" />
 
-      {/* love-wall — preconnect (perf.resourceHints.preconnectDomains) */}
-      <link rel="preconnect" href="https://i.pravatar.cc" />
-
-      {/* Wistia — book-stats + O nas (osadzone playery) */}
+      {/* Wistia — book-stats + O nas */}
       <link rel="preconnect" href="https://fast.wistia.com" />
 
-      {/* book-stats — preload tylko Statystyki-stron (użyty wcześniej); frame-001 prefetch (sekcja poniżej foldu, preload = „nie użyty w kilka s”) */}
-      <link rel="preload" href="/books/Statystyki-stron.png" as="image" />
-      <link rel="prefetch" href="/books/Ksiazka-Klatki/frame-001.webp" as="image" type="image/webp" />
+      {/* Love-wall: avatary lazy — wystarczy dns-prefetch (bez zajmowania slotu preconnect) */}
+      <link rel="dns-prefetch" href="https://i.pravatar.cc" />
 
-      {/* book-stats — prefetch WARM (użyty w sekcji: video w piętrze obrazów) */}
-      <link rel="prefetch" href="/books/banner-konwersja-strony.mp4" as="video" type="video/mp4" />
+      {/* book-stats — LCP/obraz powyżej foldu */}
+      <link rel="preload" href="/books/Statystyki-stron.png" as="image" />
     </>
   );
 }
