@@ -1931,12 +1931,13 @@ const RadioGroup = React.memo(({ value, onChange, dotGradient, dotShadow, font }
 ));
 
 export default function ConversionCalculator() {
-  const [screenSize, setScreenSize] = useState(() => ({ w: typeof window !== 'undefined' ? window.innerWidth : 0, h: typeof window !== 'undefined' ? window.innerHeight : 0 }));
+  /** Zawsze 0,0 na pierwszym renderze (SSR + hydracja) — wymiary ustawia efekt resize; inaczej #418. */
+  const [screenSize, setScreenSize] = useState(() => ({ w: 0, h: 0 }));
   const [isAmbitious, setIsAmbitious] = useState(false);
   const [period1, setPeriod1] = useState('yearly');
   const [period2, setPeriod2] = useState('yearly');
   const [sharedPeriod, setSharedPeriod] = useState('yearly');
-  const [showDebug] = useState(() => typeof window !== 'undefined' && new URLSearchParams(window.location.search).has('debug'));
+  const [showDebug, setShowDebug] = useState(false);
   const [dotSize] = useState(750);
   const [whiteStop] = useState(37);
   const [transparentStop] = useState(74);
@@ -1949,6 +1950,11 @@ export default function ConversionCalculator() {
   const lastWidthRef = useRef(0);
   const rootRef = useRef(null);
   const [sectionInView, setSectionInView] = useState(true);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    setShowDebug(new URLSearchParams(window.location.search).has('debug'));
+  }, []);
 
   // [PIPELINE] Style injection with cleanup
   useEffect(() => {
