@@ -2541,8 +2541,14 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
             }
 
             /* ═══ INPUT ═══ */
+            /** Lenis ustawia html.lenis-scrolling podczas smooth scroll — omijamy trail (manifest: is-scrolling guard). */
+            function isHeroLenisScrolling() {
+                return document.documentElement.classList.contains('lenis-scrolling');
+            }
+
             function onTrailPointerMove(e) {
                 if (e.pointerType && e.pointerType !== 'mouse') return;
+                if (isHeroLenisScrolling()) return;
 
                 const sx = window.scrollX || window.pageXOffset || 0;
                 const sy = window.scrollY || window.pageYOffset || 0;
@@ -2576,6 +2582,7 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
             }
 
             listen(document, "mouseover", function init(e) {
+                if (isHeroLenisScrolling()) return;
                 const sx = window.scrollX || window.pageXOffset || 0;
                 const sy = window.scrollY || window.pageYOffset || 0;
 
@@ -2660,6 +2667,7 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
                     addHfListener(document, 'pointermove', onTrailPointerMove, { passive: true });
                 } else {
                     addHfListener(document, 'mousemove', (e) => {
+                        if (isHeroLenisScrolling()) return;
                         const sx = window.scrollX || window.pageXOffset || 0;
                         const sy = window.scrollY || window.pageYOffset || 0;
                         const x = e.clientX + sx;
