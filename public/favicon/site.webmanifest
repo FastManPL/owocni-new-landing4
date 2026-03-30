@@ -1,0 +1,15 @@
+{
+  "name": "Owocni",
+  "short_name": "Owocni",
+  "icons": [
+    {
+      "src": "/favicon/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "theme_color": "#fec500",
+  "background_color": "#fec500",
+  "display": "standalone"
+}

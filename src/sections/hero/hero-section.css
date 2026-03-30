@@ -1,3 +1,9 @@
+/* hero-section.css
+ * IDENTYCZNA KOPIA z P2A (hero.reference.html) — zero modyfikacji
+ * Źródło prawdy: hero.reference.html (Factory golden master)
+ * Generowane przez: Factory P3
+ */
+
 /* ==========================================================================
            HOUDINI API - ANIMACJA STARTOWA (Wymagane do interpolacji zmiennych)
            ========================================================================== */
@@ -24,7 +30,6 @@
             --text-main: #050505;
             --text-secondary: #252525;
             --cta-color: #FFC600;
-            --blob-mask-color: #fdfcfb;
             
             /* Logo height — synchronizowane z .main-logo height clamp */
             --logo-height: clamp(3.4rem, 3.062rem + 1.739vw, 4rem);
@@ -43,16 +48,18 @@
             /* Animacja startowa */
             --start-hue1: 47; 
             --start-hue2: 260;
-            --anim-duration: 5s;
+            --anim-duration: 4s;
             
             /* ═══════════════════════════════════════════════════════════
                CENTRALNE OPÓŹNIENIA BADGE'ÓW
-               Zmiana tych wartości przesuwa cały badge + jego podpis
+               [A10] NOWA CHOREOGRAFIA — minimalizacja peak:
+               Faza 1 (0.2s): Badge'e + Laurel Lottie
+               Faza 2 (2.0s): Gradient OKLCH + Logo Lottie
                ═══════════════════════════════════════════════════════════ */
-            --badge-satysfakcji-delay: 1.75s;
-            --badge-google-delay: 1.25s;
-            --badge-20lat-delay: 1.25;
-            --lottie-delay: 1750;
+            --badge-satysfakcji-delay: 0.8s;
+            --badge-google-delay: 0.3s;
+            --badge-20lat-delay: 0.3;
+            --lottie-delay: 300;
             --marquee-offset: 2.0;
             
             /* Silk Pulse CTA */
@@ -264,9 +271,9 @@
             position: absolute;
             top: 0;
             left: 0;
-            width: 50%;
-            height: 50%;
-            transform: scale(2);
+            width: 25%;
+            height: 25%;
+            transform: scale(4);
             transform-origin: top left;
         }
         
@@ -532,68 +539,6 @@
             }
         }
 
-        /* ==========================================================================
-           BLOBY - SEKWENCJA WEJŚCIA
-           Biały blob (blob-mask): wchodzi po 3s
-           Kolorowe bloby: USUNIĘTE (martwy kod — elementy .blob nigdy nie istniały w DOM)
-           ========================================================================== */
-        
-        /* BLOB MASK (under text) - statyczny, tylko opacity fade */
-        /* blob-mask: radial-gradient replaces filter: blur(30px) on static ellipse
-           Stops computed from Gaussian erf: α(d) = 0.5·erfc((d-R)/(σ√2)), σ=30px
-           Method 1 (analytical): erf at 1440/1600/1920px → f_edge ≈ 0.915-0.935
-           Method 2 (averaged): stops below = mean α across 3 viewports
-           Method 3 (smooth-step): transition 79-104% (confirms range)
-           Element enlarged by 120px (2σ/side) to contain full fade extent */
-        #hero-section .blob-mask {
-            position: absolute;
-            top: 46%;
-            left: 50%;
-            transform: translate3d(-50%, -50%, 0);
-            width: calc(90% + 120px);
-            height: calc(78.2% + 120px);
-            background: radial-gradient(ellipse closest-side at 50% 50%,
-                #fdfcfb 85%,
-                rgba(253,252,251,0.874) 88%,
-                rgba(253,252,251,0.742) 90%,
-                rgba(253,252,251,0.555) 92%,
-                rgba(253,252,251,0.350) 94%,
-                rgba(253,252,251,0.178) 96%,
-                rgba(253,252,251,0.072) 98%,
-                rgba(253,252,251,0) 100%
-            );
-            z-index: 3;
-            pointer-events: none;
-            animation: hero-blobMaskGrow 3s cubic-bezier(0.45, 0, 0.55, 1) forwards;
-        }
-        @keyframes hero-blobMaskGrow {
-            from { transform: translate3d(-50%, -50%, 0) scale(0.3); opacity: 0; }
-            to   { transform: translate3d(-50%, -50%, 0) scale(1); opacity: 0.85; }
-        }
-        @keyframes hero-blobMaskPulse {
-            0%      { transform: translate3d(-50%, -50%, 0) scale(1);   opacity: 0.85; }
-            14.3%   { transform: translate3d(-50%, -50%, 0) scale(0.3); opacity: 0; }
-            100%    { transform: translate3d(-50%, -50%, 0) scale(1);   opacity: 0.85; }
-        }
-        
-        /* Tablet 600-1200px — blob-mask 20% węższy, 30% niższy niż desktop (od środka) */
-        @media (max-width: 1200px) {
-            #hero-section .blob-mask {
-                top: 48%;
-                width: calc(50.4% + 120px);
-                height: calc(54.74% + 120px);
-            }
-        }
-        
-        /* Mobile ≤600px — dodatkowe: -15% width, -25% height, top +10% w dół */
-        @media (max-width: 600px) {
-            #hero-section .blob-mask {
-                top: 14.55%;
-                width: calc(31.21% + 120px);
-                height: calc(20.98% + 120px);
-            }
-        }
-
         /* WHITE BANNER (visual card at bottom) */
         /* white-banner USUNIĘTY — sekcja fullscreen, biały kontener przeniesiony do osobnej sekcji */
 
@@ -628,14 +573,14 @@
             top: calc(var(--center-padding-top) - var(--content-lift));
             left: 50%;
             transform: translateX(-50%);
-            z-index: 1; /* below trail (z:2) — images appear over logo */
+            z-index: 7; /* above marquee (z:6) — logo must overlay brand logos */
         }
         /*
          * LOGO LOTTIE — zastąpił inline SVG .main-logo
          * Kontener div działa identycznie jak SVG: height=var(--logo-height),
          * width auto przez aspect-ratio (504:196 = oryginalne viewBox SVG).
-         * Lottie SVG renderer renderuje wewnątrz → wypełnia kontener przez
-         * preserveAspectRatio="xMidYMid meet" ustawione w rendererSettings.
+         * Canvas renderer wstawia <canvas> — CSS rządzi rozmiarem.
+         * [PERF] Canvas vs SVG: init −93% (1.07s vs 14.6s), DOM −99.9%.
          * UWAGA FORMAT: lottie-web@5.12.2 obsługuje tylko JSON.
          * LOGO_OWOCNI.lottie (DotLottie/ZIP) wymaga albo:
          *   a) Konwersji → LOGO_OWOCNI.json (narzędzie: lottiefiles.com/tools)
@@ -662,9 +607,12 @@
             display: block;
             transform: translateY(clamp(-48px, 67.33px - 6.767vw, 20px));
             cursor: default;
+            /* FACTORY:DEGRADATION-01 — fallback gdy LOGO_OWOCNI.json nie załaduje */
+            background-color: transparent;
         }
-        /* viewBoxOnly:true w rendererSettings sprawia że Lottie NIE wstrzykuje
-           atrybutów width/height na <svg> — CSS rządzi rozmiarem bez !important */
+        /* Canvas renderer wstawia <canvas> zamiast <svg>.
+           Zachowujemy oba selektory jako fallback. */
+        #hero-section .logo-lottie canvas,
         #hero-section .logo-lottie svg {
             display: block;
             width: 100%;
@@ -693,11 +641,6 @@
          * min-height w em gwarantuje stały wymiar niezależnie od font swap.
          * Font swap zmienia glify, nie font-size — więc em pozostaje stałe.
          * Eliminuje to drgania przy ładowaniu fontów (CLS = 0.00).
-         *
-         * PUNKT ODNIESIENIA DLA BLOB-MASK
-         * blob-mask jest wewnątrz hero-content (ruchome bloby usunięte).
-         * Dzięki temu jej pozycja (top %) odnosi się do tekstu, nie ekranu.
-         * Przy zmianie rozdzielczości blob-mask "podąża" za tekstem automatycznie.
          */
         #hero-section .hero-content {
             position: relative;
@@ -736,6 +679,57 @@
 
         #hero-section .hero-title strong { font-weight: 800; }
 
+        /* ═══════════════════════════════════════════════════════════════════
+           RAINBOW LETTERS — Dual-layer opacity animation
+           
+           ARCHITEKTURA:
+           1. .hero-title-wrapper: position:relative (anchor dla overlay)
+           2. .hero-title (base): gradient text, NIGDY nie modyfikowany
+           3. .hero-title.hero-overlay: kolorowe litery, animowane przez opacity
+           
+           opacity jest compositor-animatable (GPU blend, ~0.1ms/frame).
+           text-fill-color NIE jest (main thread paint, ~3ms/frame).
+           
+           GATE: ≥600px + hover:hover (touch/mobile = zero kosztów)
+           INIT: Faza 2 (2s delay) — po LCP, zero CLS
+           ═══════════════════════════════════════════════════════════════════ */
+        
+        /* Base H1 letter spans — zwykłe inline, BEZ position:relative */
+        #hero-section .hero-title .letter {
+            -webkit-text-fill-color: transparent;
+        }
+        
+        /* Overlay H1 — kolorowe litery, animowane przez opacity */
+        #hero-section .hero-title.hero-overlay {
+            position: absolute;
+            /* Margin collapse: H1 margin-top 'wylewa się' na zewnątrz wrappera.
+               H1 content zaczyna się od TOP wrappera → overlay też top: 0. */
+            top: 0;
+            left: 0;
+            right: 0;
+            margin: 0; /* Reset inherited margin — absolute positioning */
+            /* Reset gradient — overlay nie ma tła, tylko kolorowe litery */
+            background-image: none;
+            -webkit-background-clip: initial;
+            background-clip: initial;
+            /* Nie blokuj mouse events na base H1 pod spodem */
+            pointer-events: none;
+            user-select: none;
+        }
+        
+        /* Override transparent — overlay pokazuje kolor */
+        #hero-section .hero-title.hero-overlay .letter {
+            -webkit-text-fill-color: var(--lc);
+            opacity: 0;
+            transition: opacity 1.2s cubic-bezier(0.22, 1, 0.36, 1);
+        }
+        
+        /* .lit = hover aktywny. Instant pojawienie (0s), smooth fade (1.2s) */
+        #hero-section .hero-title.hero-overlay .letter.lit {
+            opacity: 1;
+            transition-duration: 0s;
+        }
+
         #hero-section .hero-description {
             position: relative;
             z-index: 6; /* above trail */
@@ -746,6 +740,193 @@
             color: var(--text-secondary);
             font-weight: 300;
             text-wrap: balance;
+        }
+        #hero-section .hero-description strong {
+            font-weight: 600; /* +300 od bazowego 300 */
+        }
+        
+        /* Desktop-only line breaks - hidden by default, shown >1200px */
+        #hero-section .br-desktop { display: none; }
+        @media (min-width: 1201px) {
+            #hero-section .br-desktop { display: block; }
+        }
+        
+        /* ═══════════════════════════════════════════════════════════════
+           PILL BADGE — "3500+ zadowolonych klientów"
+           Między H1 a H2, tylko desktop >600px
+           ═══════════════════════════════════════════════════════════════ */
+        
+        #hero-section .pill-wrap {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0.5rem 0 1rem 0;
+        }
+        
+        @media (min-width: 751px) {
+            #hero-section .pill-wrap {
+                margin: -0.3rem 0 2.1rem 0;
+            }
+        }
+        
+        
+        #hero-section .pill {
+            position: relative;
+            display: inline-flex;
+            align-items: center;
+            gap: 7px;
+            padding: 5px 20px 5px 9px;
+            border-radius: 999px;
+            background: rgba(251,251,250,.92);
+            border: 1px solid rgba(0,0,0,.09);
+            color: #171717;
+            text-decoration: none;
+            line-height: 1;
+            white-space: nowrap;
+            box-shadow:
+                0 12px 30px rgba(0,0,0,.06),
+                0 1px 0 rgba(255,255,255,.9) inset;
+            z-index: 6;
+        }
+        
+        #hero-section .pill-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            height: 26px;
+            padding: 0 12px;
+            border-radius: 999px;
+            background: linear-gradient(180deg, #eb703e, #d84616);
+            color: #fff;
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: .06em;
+            text-shadow:
+                0 -1px 0 rgba(0,0,0,0.30);
+            box-shadow:
+                0 8px 18px rgba(216,70,22,.32),
+                0 1px 0 rgba(255,255,255,.18) inset;
+        }
+        
+        #hero-section .pill-txt {
+            font-size: 20px;
+            font-weight: 500;
+            color: rgba(0,0,0,.72);
+        }
+        
+        /* Avatars */
+        #hero-section .pill-avatars {
+            display: flex;
+            align-items: center;
+            flex-shrink: 0;
+        }
+        
+        #hero-section .pill-av {
+            border-radius: 50%;
+            object-fit: cover;
+            border: 3px solid #f7f6f4;
+            background: linear-gradient(135deg, #C8C5BE 0%, #D8D5CE 100%);
+            flex-shrink: 0;
+        }
+        /* Ukryj broken image icon — pokaż tylko tło gdy img nie załaduje */
+        #hero-section img.pill-av {
+            color: transparent; /* ukrywa alt text */
+        }
+        #hero-section img.pill-av:-moz-broken {
+            opacity: 0; /* Firefox broken image */
+        }
+        #hero-section img.pill-av::before {
+            content: '';
+            display: block;
+            width: 100%;
+            height: 100%;
+            background: inherit;
+            border-radius: inherit;
+        }
+        
+        #hero-section .pill-av-plus {
+            position: relative;
+            background: #dbd3c7 !important;
+            border: 3px solid #f7f6f4 !important;
+        }
+        #hero-section .pill-av-plus::before,
+        #hero-section .pill-av-plus::after {
+            content: '';
+            position: absolute;
+            background: #fff;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            border-radius: 1px;
+        }
+        #hero-section .pill-av-plus::before {
+            width: 14px;
+            height: 4px;
+        }
+        #hero-section .pill-av-plus::after {
+            width: 4px;
+            height: 14px;
+        }
+        
+        /* Left avatars: 8 avatars, same size, equal overlap */
+        #hero-section .pill-avatars-left { margin-right: -20px; z-index: 0; }
+        #hero-section .pill-avatars-left .pill-av { width: 39px !important; height: 39px !important; margin-left: -12px; }
+        #hero-section .pill-avatars-left .pill-av:nth-child(1) { margin-left: 0; z-index: 8; }
+        #hero-section .pill-avatars-left .pill-av:nth-child(2) { z-index: 7; }
+        #hero-section .pill-avatars-left .pill-av:nth-child(3) { z-index: 6; }
+        #hero-section .pill-avatars-left .pill-av:nth-child(4) { z-index: 5; }
+        #hero-section .pill-avatars-left .pill-av:nth-child(5) { z-index: 4; }
+        #hero-section .pill-avatars-left .pill-av:nth-child(6) { z-index: 3; }
+        #hero-section .pill-avatars-left .pill-av:nth-child(7) { z-index: 2; }
+        #hero-section .pill-avatars-left .pill-av:nth-child(8) { z-index: 1; }
+        
+        #hero-section .pill-av-plus { cursor: pointer; }
+        #hero-section .pill-avatars-right { display: none; }
+        
+        /* ═══ PILL MOBILE (<750px) ═══ */
+        @media (max-width: 750px) {
+            #hero-section .pill-avatars {
+                display: none !important;
+            }
+            
+            #hero-section .ponad {
+                display: none;
+            }
+            
+            /* FLEX ORDER dla całego mobile <750px */
+            #hero-section .hero-content {
+                display: flex;
+                flex-direction: column;
+            }
+            #hero-section .hero-title-wrapper { order: 1 !important; }
+            #hero-section .hero-title { margin-bottom: 0.7rem !important; }
+            #hero-section .pill-wrap { order: 2 !important; }
+            #hero-section .hero-description { order: 4 !important; }
+            #hero-section .hero-brands-marquee { order: 3 !important; margin-top: 0 !important; margin-bottom: 0.8rem !important; }
+            
+            #hero-section .pill-wrap {
+                width: 100%;
+                padding: 0 24px;
+                box-sizing: border-box;
+                justify-content: center;
+                margin: 0.2rem 0 0.8rem 0 !important;
+            }
+            
+            #hero-section .pill {
+                --s: clamp(14px, 3.33vw, 20px);
+                padding: calc(var(--s) * 0.25) calc(var(--s) * 1) calc(var(--s) * 0.25) calc(var(--s) * 0.45);
+                gap: calc(var(--s) * 0.35);
+            }
+            
+            #hero-section .pill-badge {
+                font-size: var(--s);
+                height: calc(var(--s) * 1.3);
+                padding: 0 calc(var(--s) * 0.6);
+            }
+            
+            #hero-section .pill-txt {
+                font-size: var(--s);
+            }
         }
         
         /* Marquee logotypów pod hero-description (>600px) */
@@ -763,68 +944,45 @@
         }
         
         #hero-section .hero-brands-text {
-            font-size: 0.8rem;
+            font-size: 1.15rem;
             line-height: 1.4;
-            color: #dcd3c7;
+            color: #cdc3b3;
             font-weight: 300;
             margin: 0 0 0.2rem 0;
         }
         #hero-section .hero-brands-text strong {
-            font-weight: 400;
+            font-weight: 500;
         }
         #hero-section .hero-brands-text--mobile { display: none; }
         
         @media (max-width: 600px) {
             #hero-section .hero-brands-text--desktop { display: none; }
             #hero-section .hero-brands-text--mobile { display: block; }
+            #hero-section .hero-brands-text {
+                font-size: var(--lead-size); /* same as H2 */
+            }
         }
         
-        /* ═══════════════════════════════════════════════════════════════════════════
-           HAAT: CSS TIER SYSTEM
-           Selektory reagują na atrybuty ustawione na <html> przez script w <head>
-           ═══════════════════════════════════════════════════════════════════════════ */
+        /* Desktop typography uses root defaults on #hero-section.
+           No runtime HAAT, no tier selectors, no post-render correction. */
         
-        /* --- H1 TIERS (Desktop: max 2 linie) --- */
-        #hero-section[data-h1-tier="L"] .hero-title { --h1-size: clamp(2.8rem, 4.1vw, 5.1rem); }
-        #hero-section[data-h1-tier="M"] .hero-title { --h1-size: clamp(2.5rem, 3.7vw, 4.6rem); }
-        #hero-section[data-h1-tier="S"] .hero-title { --h1-size: clamp(2.2rem, 3.2vw, 4.0rem); }
-        
-        /* --- DESCRIPTION TIERS (Desktop: max 3 linie) --- */
-        #hero-section[data-desc-tier="L"] .hero-description { --lead-size: clamp(1.32rem, 1.67vw, 2.06rem); }
-        #hero-section[data-desc-tier="M"] .hero-description { --lead-size: clamp(1.22rem, 1.55vw, 1.9rem); }
-        #hero-section[data-desc-tier="S"] .hero-description { --lead-size: clamp(1.15rem, 1.45vw, 1.79rem); }
-        
-        /* --- FALLBACK: jeśli tier nie ustawiony --- */
-        #hero-section:not([data-h1-tier]) .hero-title { --h1-size: clamp(2.5rem, 3.7vw, 4.6rem); }
-        #hero-section:not([data-desc-tier]) .hero-description { --lead-size: clamp(1.15rem, 1.45vw, 1.79rem); }
-        
-        /* ═══════════════════════════════════════════════════════════════════════════
-           HAAT: MOBILE OVERRIDES
-           Na mobile: brak limitu linii, tylko limit wysokości pudełka
-           Font może być większy bo pudełko jest wyższe (więcej linii OK)
-           ═══════════════════════════════════════════════════════════════════════════ */
+        /* ═══════════════════════════════════════════════════════════════
+           MOBILE TYPOGRAPHY
+           ≤1200px: override root defaults, zero tier selectors
+           ═══════════════════════════════════════════════════════════════ */
         @media (max-width: 1200px) {
-            /* Mobile: fluid fonts z niższym minimum */
-            #hero-section[data-h1-tier="L"] .hero-title,
-            #hero-section[data-h1-tier="M"] .hero-title,
-            #hero-section[data-h1-tier="S"] .hero-title {
+            #hero-section {
                 --h1-size: clamp(1.4rem, 4.5vw, 2.8rem);
-            }
-            
-            #hero-section[data-desc-tier="L"] .hero-description,
-            #hero-section[data-desc-tier="M"] .hero-description,
-            #hero-section[data-desc-tier="S"] .hero-description {
                 --lead-size: clamp(0.75rem, 3.5vw, 1.25rem);
             }
-            
-            /* Tekst widoczny w całości - brak obcinania */
+
             #hero-section .hero-title {
                 min-height: auto;
                 max-height: none;
                 overflow: visible;
                 padding: 0 5vw;
             }
-            
+
             #hero-section .hero-description {
                 min-height: auto;
                 max-height: none;
@@ -837,6 +995,9 @@
             #hero-section .hero-title {
                 margin-top: 0;
                 padding: 0 5vw 0 5vw;
+            }
+            #hero-section .hero-description {
+                padding: 0 1.5rem;
             }
         }
 
@@ -921,30 +1082,42 @@
                 text-align: center;
                 margin-bottom: -2px;
             }
-            #hero-section .blob-mask { order: 0; }
             #hero-section .hero-title-wrapper { order: 1; margin-top: clamp(0.8rem, 3vw, 1.5rem); }
+            #hero-section .pill-wrap { order: 2; margin: 0.8rem 0 0.4rem 0; }
             #hero-section .hero-description { order: 3; margin-top: 0.5rem; }
             
             /* Badge Google: góra badge = góra hero-content
                Od góry center-wrapper: padding-top + logo + logo-margin-bottom
                Używamy zmiennych CSS dla stabilności
                
-               zoom zmienia fizyczny rozmiar elementu, co przesuwa go w dół
-               (bo top jest stałe, ale element jest mniejszy).
-               Kompensujemy to przeliczając top: top_base / zoom */
+               [FIX #10] Firefox ≤125 nie wspiera zoom — używamy @supports fallback */
+            
+            /* BASELINE: Firefox ≤125 fallback (transform: scale) */
             #hero-section .badge-google-wrapper,
             #hero-section .badge-google-wrapper.active,
             #hero-section .badge-google-wrapper.anim-finished {
                 --badge-zoom: 0.65;
                 position: absolute;
-                top: calc((var(--center-padding-top) + var(--logo-height) + var(--logo-margin-bottom) - 8px - 0.4rem - var(--content-lift) - 4px) / var(--badge-zoom));
+                top: calc(var(--center-padding-top) + var(--logo-height) + var(--logo-margin-bottom) - 8px - 0.4rem - var(--content-lift) - 4px);
                 left: 0;
                 right: 0;
                 margin: 0 auto;
-                margin-left: auto; /* override desktop margin-left: -10px */
+                margin-left: auto;
                 width: fit-content;
                 z-index: 10;
-                zoom: var(--badge-zoom);
+                transform: scale(var(--badge-zoom));
+                transform-origin: center top;
+            }
+            
+            /* ENHANCEMENT: Safari/Chrome (zoom supported) */
+            @supports (zoom: 1) {
+                #hero-section .badge-google-wrapper,
+                #hero-section .badge-google-wrapper.active,
+                #hero-section .badge-google-wrapper.anim-finished {
+                    top: calc((var(--center-padding-top) + var(--logo-height) + var(--logo-margin-bottom) - 8px - 0.4rem - var(--content-lift) - 4px) / var(--badge-zoom));
+                    transform: none;
+                    zoom: var(--badge-zoom);
+                }
             }
             
             #hero-section .badge-google-wrapper .badge-caption {
@@ -1023,33 +1196,55 @@
             transition: none !important;
         }
         
-        /* CTA skalowanie na małych ekranach - płynne skoki co ~30px */
+        /* CTA skalowanie na małych ekranach - płynne skoki co ~30px 
+           [FIX #10] Firefox ≤125 nie wspiera zoom — @supports fallback */
+        
+        /* BASELINE: Firefox ≤125 fallback (transform: scale) */
         @media (max-width: 450px) {
-            #hero-section .cta-group { zoom: 0.85; }
+            #hero-section .cta-group { transform: scale(0.85); transform-origin: center top; }
         }
-        
         @media (max-width: 420px) {
-            #hero-section .cta-group { zoom: 0.80; }
+            #hero-section .cta-group { transform: scale(0.80); transform-origin: center top; }
         }
-        
         @media (max-width: 390px) {
-            #hero-section .cta-group { zoom: 0.75; }
+            #hero-section .cta-group { transform: scale(0.75); transform-origin: center top; }
         }
-        
         @media (max-width: 360px) {
-            #hero-section .cta-group { zoom: 0.70; }
+            #hero-section .cta-group { transform: scale(0.70); transform-origin: center top; }
         }
-        
         @media (max-width: 330px) {
-            #hero-section .cta-group { zoom: 0.65; }
+            #hero-section .cta-group { transform: scale(0.65); transform-origin: center top; }
         }
-        
         @media (max-width: 300px) {
-            #hero-section .cta-group { zoom: 0.60; }
+            #hero-section .cta-group { transform: scale(0.60); transform-origin: center top; }
+        }
+        @media (max-width: 270px) {
+            #hero-section .cta-group { transform: scale(0.50); transform-origin: center top; }
         }
         
-        @media (max-width: 270px) {
-            #hero-section .cta-group { zoom: 0.50; }
+        /* ENHANCEMENT: Safari/Chrome (zoom supported — better layout flow) */
+        @supports (zoom: 1) {
+            @media (max-width: 450px) {
+                #hero-section .cta-group { transform: none; zoom: 0.85; }
+            }
+            @media (max-width: 420px) {
+                #hero-section .cta-group { transform: none; zoom: 0.80; }
+            }
+            @media (max-width: 390px) {
+                #hero-section .cta-group { transform: none; zoom: 0.75; }
+            }
+            @media (max-width: 360px) {
+                #hero-section .cta-group { transform: none; zoom: 0.70; }
+            }
+            @media (max-width: 330px) {
+                #hero-section .cta-group { transform: none; zoom: 0.65; }
+            }
+            @media (max-width: 300px) {
+                #hero-section .cta-group { transform: none; zoom: 0.60; }
+            }
+            @media (max-width: 270px) {
+                #hero-section .cta-group { transform: none; zoom: 0.50; }
+            }
         }
 
         /* Badge caption - wspólne style */
@@ -1086,6 +1281,7 @@
             flex-direction: column;
             align-items: center;
             margin-left: -10px;
+            min-width: 190px; /* CLS hardening — stały footprint [+15px] */
             opacity: 0;
             transform: scale(0.6);
             backface-visibility: hidden;
@@ -1111,19 +1307,25 @@
         
         #hero-section .badge-google {
             height: 48px;
-            width: 48px;
+            width: 190px; /* CLS hardening — stały footprint od pierwszej klatki [+15px spacing] */
             border-radius: 24px;
             position: relative;
             background: linear-gradient(180deg, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.1) 100%);
             box-shadow: inset 0 1px 1px rgba(255,255,255,0.8), inset 0 -1px 1px rgba(0,0,0,0.06), 0 1px 3px rgba(0,0,0,0.04);
             display: flex;
             align-items: center;
-            padding-left: 10.5px;
+            padding-left: 14.5px; /* [+4px] G dalej od lewej krawędzi */
             overflow: hidden;
             cursor: pointer;
             user-select: none;
             backface-visibility: hidden;
             -webkit-backface-visibility: hidden;
+
+            /* start wizualny = kółko 48px wyśrodkowane w 190px */
+            /* translateX kompensuje brak re-centrowania przez wrapper */
+            transform: translateX(71px); /* (190-48)/2 = 71 */
+            -webkit-clip-path: inset(0 142px 0 0 round 24px); /* 190-48 = 142 */
+            clip-path: inset(0 142px 0 0 round 24px);
         }
         
         #hero-section .badge-google::before {
@@ -1140,22 +1342,32 @@
             pointer-events: none;
         }
 
-        /* Animacja wejścia (rozszerzanie width) */
+        /* Animacja wejścia — reveal + slide symulujący rozszerzanie od środka */
         #hero-section .badge-google-wrapper.active .badge-google {
-            animation: hero-badgeGoogleAspectWarp 1.0s cubic-bezier(0.5, 0, 0.1, 1) calc(var(--badge-google-delay) + 0.5s) forwards;
-            will-change: width;
+            animation: hero-badgeGoogleReveal 1.0s cubic-bezier(0.5, 0, 0.1, 1) calc(var(--badge-google-delay) + 0.5s) forwards;
+            will-change: transform, clip-path;
         }
 
-        /* Stan 'zapieczętowany' po animacji wejścia */
+        /* Stan końcowy */
         #hero-section .badge-google.anim-finished {
             animation: none;
-            width: 175px;
+            transform: translateX(0);
+            -webkit-clip-path: none;
+            clip-path: none;
             will-change: auto;
         }
 
-        @keyframes hero-badgeGoogleAspectWarp { 
-            0% { width: 48px; } 
-            100% { width: 175px; } 
+        @keyframes hero-badgeGoogleReveal {
+            0% {
+                transform: translateX(71px); /* (190-48)/2 = 71 */
+                -webkit-clip-path: inset(0 142px 0 0 round 24px); /* 190-48 = 142 */
+                clip-path: inset(0 142px 0 0 round 24px);
+            }
+            100% {
+                transform: translateX(0);
+                -webkit-clip-path: inset(0 0 0 0 round 24px);
+                clip-path: inset(0 0 0 0 round 24px);
+            }
         }
 
         /* ════════════ SZARFA 'VERIFIED' (RIBBON-INVERTED) ════════════ */
@@ -1163,7 +1375,7 @@
             content: 'VERIFIED';
             position: absolute;
             top: 13px;
-            right: -69px;
+            right: -65px; /* [adjusted] +7px od gwiazdek przy nowej szerokości badge */
             width: 180px;
             height: 14px;
             line-height: 14px;
@@ -1241,7 +1453,7 @@
         }
         #hero-section .badge-google-wrapper.active .google-icon path:nth-child(1) { animation-delay: calc(var(--badge-google-delay) + 0.1s); stroke: #4285F4; fill: #4285F4; }
         #hero-section .badge-google-wrapper.active .google-icon path:nth-child(2) { animation-delay: calc(var(--badge-google-delay) + 0.2s); stroke: #34A853; fill: #34A853; }
-        #hero-section .badge-google-wrapper.active .google-icon path:nth-child(3) { animation-delay: calc(var(--badge-google-delay) + 0.3s); stroke: #FBBC05; fill: #FBBC05; }
+        #hero-section .badge-google-wrapper.active .google-icon path:nth-child(3) { animation-delay: calc(var(--badge-google-delay) + 0.2s); stroke: #FBBC05; fill: #FBBC05; }
         #hero-section .badge-google-wrapper.active .google-icon path:nth-child(4) { animation-delay: calc(var(--badge-google-delay) + 0.4s); stroke: #EA4335; fill: #EA4335; }
 
         #hero-section .badge-google-wrapper.anim-finished .google-icon path {
@@ -1366,10 +1578,10 @@
             to { clip-path: inset(0 0 0 0); -webkit-clip-path: inset(0 0 0 0); } 
         }
         
-        /* Podpis - integralna część animacji Badge Google */
+        /* Podpis - widoczny od 0ms (bez animacji) */
         #hero-section .badge-google-wrapper .badge-caption {
-            animation: hero-badgeGoogleCaptionFadeIn 2.9s cubic-bezier(0.25, 0.1, 0.25, 1) calc(var(--badge-google-delay) + 1.35s) backwards;
-            /* GPU Hack - zapobiega "pyknięciu" po animacji */
+            /* animation removed — instant visibility for LCP */
+            /* GPU Hack - zapobiega "pyknięciu" */
             transform: translateZ(0);
             -webkit-backface-visibility: hidden;
             backface-visibility: hidden;
@@ -1420,6 +1632,7 @@
             width: fit-content;
             position: relative;
             z-index: 1;
+            transform: translateZ(0); /* [FIX R3] Safari stacking context stability */
             transform-origin: center center;
         }
 
@@ -1646,7 +1859,7 @@
         }
         
         #hero-section .badge-wrapper .main {
-            animation: hero-badgeMainSlide 0.6s ease-out calc(var(--badge-satysfakcji-delay) + 0.3s) backwards;
+            animation: hero-badgeMainSlide 0.6s ease-out calc(var(--badge-satysfakcji-delay) + 0.2s) backwards;
         }
         
         #hero-section .badge-wrapper .sub {
@@ -1657,10 +1870,10 @@
             animation: hero-badgeShine 0.9s ease-in-out calc(var(--badge-satysfakcji-delay) + 0.5s) both;
         }
         
-        /* Podpis - integralna część animacji Badge Satysfakcji */
+        /* Podpis - widoczny od 0ms (bez animacji) */
         #hero-section .badge-wrapper .badge-caption {
-            animation: hero-badgeCaptionFadeIn 2.9s cubic-bezier(0.25, 0.1, 0.25, 1) calc(var(--badge-satysfakcji-delay) + 0.85s) backwards;
-            /* GPU Hack - zapobiega "pyknięciu" po animacji */
+            /* animation removed — instant visibility for LCP */
+            /* GPU Hack - zapobiega "pyknięciu" */
             transform: translateZ(0);
             -webkit-backface-visibility: hidden;
             backface-visibility: hidden;
@@ -1758,7 +1971,10 @@
             position: absolute;
             
             /* Przezroczystość */
-            opacity: 0.5;
+            opacity: 0.9;
+            
+            /* FACTORY:DEGRADATION-01 — fallback gdy Laurel animationData nie załaduje */
+            background-color: transparent;
             
             /* Dodatkowy lift mobilny — 0 na desktop */
             --laur-mobile-lift: 0px;
@@ -1804,6 +2020,14 @@
             
             /* Optymalizacja GPU */
             will-change: transform;
+            
+            /* Fix: composition boundary artifact (pionowe linie na krawędziach)
+               Kompozycja 372×556 w kontenerze 402×525 → 25.4px margin.
+               Gradient-fill (472×766) ścięty na x=372 → ostra linia.
+               clip-path: inset(0 6.5%) = 26.1px → przycina 0.7px głębiej.
+               GPU-promoted layer → darmowa operacja. */
+            -webkit-clip-path: inset(0 6.5%);
+            clip-path: inset(0 6.5%);
         }
         
         /* WIDOK MOBILNY (Poniżej 1200px) — top:0, laury ~10% nad hero-title */
@@ -1930,6 +2154,7 @@
         }
 
         #hero-section .badge-20lat {
+            -webkit-appearance: none; /* [FIX #6] Safari ≤15.3 */
             appearance: none;
             border: none;
             outline: none;
@@ -2163,12 +2388,14 @@
             height: 65px; 
             display: flex; 
             align-items: center; 
-            isolation: isolate; 
+            isolation: isolate;
+            transform: translateZ(0); /* [FIX R2] Safari mask + 3D children compositing */
             contain: layout paint;
             box-sizing: border-box;
             margin-top: 0.5rem;
             mask-image: linear-gradient(to right, transparent 7.5%, black 27.5%, black 72.5%, transparent 92.5%); 
-            -webkit-mask-image: linear-gradient(to right, transparent 7.5%, black 27.5%, black 72.5%, transparent 92.5%); 
+            -webkit-mask-image: linear-gradient(to right, transparent 7.5%, black 27.5%, black 72.5%, transparent 92.5%);
+            touch-action: pan-y; /* [FIX #3] moved from .marquee-track — drag bound to viewport */
         }
 
         #hero-section .marquee-track {
@@ -2179,7 +2406,8 @@
             will-change: transform;
             -webkit-backface-visibility: hidden;
             backface-visibility: hidden;
-            animation: none; 
+            animation: none;
+            touch-action: inherit; /* [FIX #3] inherits from .luxury-wrapper */
         }
 
         /* Logo Item Box */
@@ -2197,7 +2425,29 @@
             backface-visibility: hidden;
         }
 
-        .logo-item svg, 
+        /* ═══ DRAG STATE (A8) ═══ */
+        #hero-section .luxury-wrapper {
+            cursor: grab;
+        }
+
+        #hero-section .luxury-wrapper.is-dragging {
+            cursor: grabbing;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        /* Logo scale podczas drag — optyczne zwiększenie odstępów */
+        #hero-section .luxury-wrapper.is-dragging .logo-item {
+            transform: translate3d(0, 0, 0) scale(0.95) rotateY(0deg);
+            transition: transform 0.2s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        /* Powrót po puszczeniu */
+        #hero-section .luxury-wrapper:not(.is-dragging) .logo-item:not(.with-entry) {
+            transition: transform 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+        }
+
+        #hero-section .logo-item svg, 
         #hero-section .logo-item img {
             display: block;
             max-width: 100%;
@@ -2535,12 +2785,12 @@
         #hero-section .cta-royal-canvas { width: 16px; height: 16px; background: #000; border-radius: 50%; position: relative; z-index: 3; }
         #hero-section .aura {
             position: absolute; width: 16px; height: 16px; border-radius: 50%;
-            background: #fec708; z-index: 1;
+            background: #fec708; z-index: 1; will-change: opacity;
             animation: hero-aura-core 3s ease-in-out infinite;
         }
         #hero-section .aura::before {
             content: ''; position: absolute; top: -4px; right: -4px; bottom: -4px; left: -4px; inset: -4px; border-radius: 50%;
-            background: #fec708; opacity: 0;
+            background: #fec708; opacity: 0; will-change: transform, opacity;
             animation: hero-aura-ring 3s ease-out infinite; z-index: -1;
         }
         @keyframes hero-aura-core { 0%, 100% { opacity: 0.9; } 50% { opacity: 1; } }
@@ -2549,13 +2799,13 @@
         #hero-section .sonar {
             position: absolute; width: 60px; height: 60px;
             display: flex; justify-content: center; align-items: center;
-            z-index: 2; opacity: 0;
+            z-index: 2; opacity: 0; will-change: opacity;
             animation: hero-sonar-fadein 0.2s ease-out forwards; pointer-events: none;
         }
         #hero-section .sonar::after {
             content: ''; position: absolute; width: 16px; height: 16px;
             border: none; box-shadow: inset 0 0 0 0.5px #ffc800; border-radius: 50%;
-            opacity: 0;
+            opacity: 0; will-change: transform, opacity;
             animation: hero-sonar-ping 2s ease-out 0.2s infinite;
         }
         @keyframes hero-sonar-fadein { 0% { opacity: 0; } 100% { opacity: 1; } }
@@ -2626,12 +2876,20 @@
                 z-index: 6; /* above trail — only needed on desktop where trail is visible */
             }
         }
+        /* ═══ TRAIL — POOL-BASED RUNTIME (A2) ═══ */
         #hero-section .trail-wrap {
             position: absolute;
             pointer-events: none;
+            visibility: hidden;
+            opacity: 0;
+        }
+        /* Slot widoczny TYLKO gdy ma klasę .img-ready (dodawaną przez JS po onload) */
+        #hero-section .trail-wrap:not(.img-ready) {
+            visibility: hidden !important;
+            opacity: 0 !important;
         }
         #hero-section .trail-wrap.hw-hint {
-            /* will-change usunięte — budżet dokumentu */
+            will-change: transform, opacity;
         }
         #hero-section .trail-block {
             transform-origin: center;
@@ -2643,31 +2901,32 @@
         }
         #hero-section .trail-block.is-photo {
             overflow: hidden;
+            background: var(--background-color, #f7f6f4); /* placeholder = kolor tła */
         }
         #hero-section .trail-block.is-photo img {
-            /* will-change usunięte — budżet dokumentu */
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            display: block;
+            will-change: transform;
+            opacity: 0; /* domyślnie ukryty — pokazuje się po załadowaniu */
         }
+        #hero-section .trail-block.is-photo img.loaded {
+            opacity: 1;
+        }
+        /* FLASH = osobny div (nie pseudo-element) — animowany przez GSAP */
         #hero-section .trail-flash {
             position: absolute;
+            top: 0; right: 0; bottom: 0; left: 0; /* [FIX #7] Safari <14.1 fallback */
             inset: 0;
             background: #fff;
             opacity: 0;
             pointer-events: none;
             mix-blend-mode: overlay;
+            border-radius: inherit;
+            will-change: opacity;
         }
-        #hero-section .trail-block.is-photo .photo-inner {
-            position: absolute;
-            background-color: #d4a373; /* fallback gdy img nie załadowany */
-        }
-        #hero-section .trail-block.is-photo .photo-inner img {
-            display: block;
-            width: 100%;
-            height: 100%;
-            object-fit: cover;
-            object-position: center;
-            /* draggable=false ustawiony w JS */
-        }
-        /* Gdy img nie załaduje — ukryj, fallback-color zostaje */
-        #hero-section .load-failed {
-            opacity: 0;
+        /* Gdy img nie załaduje — zostaje ukryty (brak klasy .loaded) */
+        #hero-section .trail-block.is-photo img.load-failed {
+            opacity: 0 !important;
         }

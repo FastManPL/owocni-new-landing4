@@ -38,6 +38,11 @@ export const metadata: Metadata = {
   },
   description:
     'Profesjonalne tworzenie stron internetowych dla firm. Strony WWW, które konwertują.',
+  icons: {
+    icon: [{ url: '/favicon/favicon.svg', type: 'image/svg+xml' }],
+    apple: '/favicon/favicon.svg',
+  },
+  manifest: '/favicon/site.webmanifest',
 };
 
 export const viewport: Viewport = {

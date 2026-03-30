@@ -1,5 +1,8 @@
+import type { Metadata } from 'next';
 import dynamic from 'next/dynamic';
+import { Suspense } from 'react';
 import { DeferredMount } from '@/components/DeferredMount';
+import { resolveHeroVariant } from '@/config/heroVariants.generated';
 import { HeroSection } from '@/sections/hero/HeroSection';
 import { SectionsClient } from './SectionsClient';
 
@@ -38,10 +41,44 @@ const CyfroweWzrostySectionWrapper = dynamic(() =>
 );
 const FAQSection = dynamic(() => import('@/sections/FAQ/FAQSection'));
 
-export default function HomePage() {
+function pickHeroParams(sp: Record<string, string | string[] | undefined>) {
+  const out: { kw?: string | string[]; agid?: string | string[] } = {};
+  if (sp.kw !== undefined) out.kw = sp.kw;
+  if (sp.agid !== undefined) out.agid = sp.agid;
+  return out;
+}
+
+export async function generateMetadata({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}): Promise<Metadata> {
+  const variant = resolveHeroVariant(pickHeroParams(await searchParams));
+
+  return {
+    title: variant.metaTitle,
+    description: variant.metaDescription,
+    openGraph: {
+      title: variant.ogTitle,
+      description: variant.ogDescription,
+    },
+  };
+}
+
+function HomePageFallback() {
+  return <main className="min-h-screen bg-canvas" aria-busy="true" />;
+}
+
+async function HomePageContent({
+  searchParams,
+}: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  const variant = resolveHeroVariant(pickHeroParams(await searchParams));
+
   return (
     <main>
-      <HeroSection />
+      <HeroSection variant={variant} />
       <WzrostPrzychodowSection />
       <BookStatsSection />
       {/* Od Fakty w dół: montaż dopiero blisko viewportu — mniejszy początkowy koszt JS (TBT). BookStats zostaje od razu (LCP / obraz). */}
@@ -76,5 +113,16 @@ export default function HomePage() {
         <FAQSection />
       </DeferredMount>
     </main>
+  );
+}
+
+/** Suspense: `searchParams` + cacheComponents (Next 16) — bez tego blokowany jest cały layout. */
+export default function HomePage(props: {
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
+}) {
+  return (
+    <Suspense fallback={<HomePageFallback />}>
+      <HomePageContent searchParams={props.searchParams} />
+    </Suspense>
   );
 }

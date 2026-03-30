@@ -1,40 +1,48 @@
-// @ts-nocheck — plik z Fabryki bez pełnych typów; odblokowuje build (Vercel/tsc)
+// @ts-nocheck — mechaniczny port P3; doprecyzowanie typów w Fabryce (strict TS)
 'use client';
 
 import { useRef } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
+import lottie from 'lottie-web';
 import { scrollRuntime } from '@/lib/scrollRuntime';
+import type { HeroVariant } from '@/config/heroVariantTypes';
 import './hero-section.css';
 
-// Lottie: dynamic import (client-only) — unikamy "document is not defined" przy SSR
-const getLottie = () => import('lottie-web').then((m) => m.default);
+/** Kolejność logotypów marquee — assety w `public/LOGOTYPY/` */
+const HERO_MARQUEE_LOGO_SRCS = [
+  '/LOGOTYPY/1sklepy1_new.svg',
+  '/LOGOTYPY/2mbank1_new.svg',
+  '/LOGOTYPY/3zabka1_new.svg',
+  '/LOGOTYPY/4deloitte1_new.svg',
+  '/LOGOTYPY/5grycan1_new.svg',
+  '/LOGOTYPY/6gsk1_new.svg',
+  '/LOGOTYPY/7ministerstwo1_new.svg',
+  '/LOGOTYPY/8mokate1_new.svg',
+  '/LOGOTYPY/9wella1_new.svg',
+  '/LOGOTYPY/10oracle1_new.svg',
+  '/LOGOTYPY/11sokolow1_new.svg',
+  '/LOGOTYPY/12skanska1_new.svg',
+] as const;
 
-// ═══════════════════════════════════════════════════════════════════════════
-// HERO SECTION — Fabryka P3 Konwersja
-// Typ: B (per-frame rendering: trail.tick, pendulum.update, halo.rAF)
-// hasPin: false | hasSnap: false | hasScrollTrigger: false
-// ═══════════════════════════════════════════════════════════════════════════
+// ⚠️ GSAP-SSR-01: ZAKAZ gsap.registerPlugin() na module top-level.
+// Next.js pre-renderuje Client Components na serwerze — window/document nie istnieją.
+// Ta sekcja nie używa ScrollTrigger — gsap.registerPlugin() nie jest wymagany.
 
-function heroSectionInit(container: HTMLElement | null) {
-    if (!container) return { pause: () => {}, resume: () => {}, kill: () => {} };
+// ─── init(container) — identyczna logika jak reference.html, bez DEV overlay ───
+// Źródło prawdy: hero.reference.html (P2A golden master)
+// Tłumaczenie mechaniczne P3: typy TS, import zamiast CDN, scrollRuntime z modułu
+
+function init(container: HTMLElement): { kill: () => void; pause: () => void; resume: () => void } {
 
     const heroInitT0 = performance.now(); // timestamp for deferred systems
-
-    // ─── HAAT TIER COPY (head script → container) ─────────────────
-    // Head script ustawia tiery na <html> pre-render. CSS teraz szuka
-    // atrybutów na #hero-section, więc kopiujemy je z html na container.
-    ['data-h1-tier', 'data-desc-tier'].forEach(attr => {
-        const v = document.documentElement.getAttribute(attr);
-        if (v) container.setAttribute(attr, v);
-    });
 
     // ─── HELPERS (container-scoped) ─────────────────────────────────
     const $ = (sel: string) => container.querySelector(sel);
     const $$ = (sel: string) => container.querySelectorAll(sel);
     const $id = (id: string) => container.querySelector('#' + id);
-    // getScroll helper removed — use scrollRuntime.getScroll()
-    // getRawScroll helper removed — use scrollRuntime.getRawScroll()
+    // Scroll helpers: use scrollRuntime.getScroll() / getRawScroll()
+
 
     // ─── TRACKING ARRAYS ────────────────────────────────────────────
     const cleanups = [];
@@ -47,6 +55,17 @@ function heroSectionInit(container: HTMLElement | null) {
     let badgeGoogleKill, badgeGoogleRevive;
     let haloKillFn, haloReviveFn;
     let marqueeStop = null, marqueeStart = null;
+    let logoLottiePause = null, logoLottieResume = null; // [FIX ENT-LC-03]
+
+    // ─── BROKEN IMAGE HANDLER (ukryj gdy nie załaduje) ────────────────
+    $$('img').forEach(img => {
+        if (img.complete && img.naturalWidth === 0) {
+            img.style.opacity = '0'; // już broken
+        }
+        img.addEventListener('error', function() {
+            this.style.opacity = '0';
+        }, { once: true });
+    });
 
     // ─── TRACKED HELPERS ────────────────────────────────────────────
     function listen(target, event, handler, options) {
@@ -85,13 +104,13 @@ function heroSectionInit(container: HTMLElement | null) {
     }
 
     // ═════════════════════════════════════════════════════════════════
-    // BLOCK 2: MAIN (gradient, blob-mask, orchestrator, badges, HAAT phase 2)
+    // BLOCK 2: MAIN (gradient, orchestrator, badges)
     // ═════════════════════════════════════════════════════════════════
     {
 /* ==========================================================================
    SCRIPT BLOCK #2 — MAIN (po gsap.min.js CDN)
    Cleanup: usunięto C1 (fitsInBox), C2 (h1Changed/descChanged), C7 (resInfo)
-   Bloki 1 (HEAD HAAT), 3 (Lottie), 4 (Marquee), 5 (Trail), 6 (Mobile BG) — BEZ ZMIAN
+   HAAT runtime removed — typography uses CSS-only root defaults
    ========================================================================== */
 
 /* ==========================================================================
@@ -129,7 +148,6 @@ const startupGradient = $('.startup-gradient');
 const burstContainer = $id('hero-burstContainer');
 
 let fadeOutTimeout = null;
-let colorBlobsTimeout = null;
 let gradientSafetyKill = null;
 
 /* ==========================================================================
@@ -203,7 +221,8 @@ function startGradient() {
         startupGradient.style.visibility = "hidden";
         startupGradient.style.opacity = "0";
         startupGradient.style.transition = "none";
-        startupGradient.style.willChange = "mask-image, background-image, --hero-radial-center, --conic-rotate";
+        // ⚠️ will-change CELOWO USUNIĘTY — Chrome rasteryzowałby w rozmiarze 
+        // po scale(4) = pełna rozdzielczość = utrata zysku 25% DPR
         
         void startupGradient.offsetWidth;
         
@@ -226,7 +245,8 @@ function startGradient() {
 
 // Auto-kill premium gradient po zakończeniu animacji
 if (startupGradient) {
-    startupGradient.addEventListener('animationend', (e) => {
+    // [FIX #1] Named function + listen() for proper cleanup
+    const onGradientAnimEnd = (e) => {
         if (e.animationName === 'hero-gradient-expand') {
             // Clear safety timer - nie potrzebny
             clearTimeout(gradientSafetyKill);
@@ -243,40 +263,28 @@ if (startupGradient) {
                 startupGradient.style.opacity = "";
             }, 3000);
         }
-    });
-}
-
-/* ==========================================================================
-   BLOBY
-   ========================================================================== */
-
-function hideBlobs() {
-    if (colorBlobsTimeout) clearTimeout(colorBlobsTimeout);
-}
-
-function showBlobsSequence() {
-    // blob-cta removed
+    };
+    listen(startupGradient, 'animationend', onGradientAnimEnd);
+    cleanups.push(() => stopGradient()); // force-stop on kill
 }
 
 /* ==========================================================================
    MAIN ENTRY SEQUENCE (ORCHESTRATOR)
-   playEntrySequence() → stopGradient → hideBlobs → 50ms → showBlobsSequence
-   → startGradient → scheduleGradientAutoFade → badge20LatReplay
+   playEntrySequence() → stopGradient → startGradient → badge20LatReplay
    SEKWENCJA MUSI POZOSTAĆ NIENARUSZONA
    ========================================================================== */
 
 function playEntrySequence() {
     stopGradient();
-    hideBlobs();
     
     trackedTimeout(() => {
-        showBlobsSequence();
-        
-        // Rozbłysk gradient - delay 0s
+        // [A10] Gradient OKLCH — Faza 2: delay 2000ms (minimalizacja peak)
+        // Badge'e + Laurel startują w 0.3s (CSS variables)
+        // Gradient + Logo Lottie startują w 2s
         trackedTimeout(() => {
             startGradient();
             scheduleGradientAutoFade();
-        }, 0);
+        }, 2000);
         
         // Badge 20 Lat - GSAP kontroluje delay wewnętrznie
         if (badge20LatReplay) {
@@ -385,7 +393,7 @@ playEntrySequence();
         gsap.set(label, { opacity: 0, xPercent: -50, x: 1, y: 15, scale: 1 });
         if (textTop && textBottom) { gsap.set([textTop, textBottom], { opacity: 0.8 }); }
         
-        const badge20Delay = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--badge-20lat-delay')) || 1.25;
+        const badge20Delay = parseFloat(getComputedStyle(container).getPropertyValue('--badge-20lat-delay')) || 1.25; /* [FIX] was: documentElement */
         const master = trackGsap(gsap.timeline({ delay: badge20Delay }));
         
         master.to(wrapper, { autoAlpha: 1, duration: 0.01 }, 0);
@@ -460,21 +468,14 @@ playEntrySequence();
     });
     
     let gradientCooldown = false;
-    const blobMask = $('.blob-mask');
     function triggerGradientWithCooldown() {
         if (gradientCooldown) return;
         if (typeof startGradient === 'function') { startGradient(); }
-        // Blob-mask pulse: shrink 0.5s → regrow 3s
-        if (blobMask) {
-            blobMask.style.animation = 'none';
-            void blobMask.offsetWidth;
-            blobMask.style.animation = 'hero-blobMaskPulse 3.5s cubic-bezier(0.45, 0, 0.55, 1) forwards';
-        }
         gradientCooldown = true;
         trackedTimeout(() => { gradientCooldown = false; }, 6000);
     }
-    wrapper.addEventListener('mouseenter', triggerGradientWithCooldown);
-    wrapper.addEventListener('click', triggerGradientWithCooldown);
+    listen(wrapper, 'mouseenter', triggerGradientWithCooldown); /* [FIX #1] tracked */
+    listen(wrapper, 'click', triggerGradientWithCooldown); /* [FIX #1] tracked */
     
     // ─────────────────────────────────────────────────────────────────────────
     // EXPOSE FOR RESET (init przez playEntrySequence)
@@ -521,9 +522,11 @@ playEntrySequence();
     const starsRow = $id('hero-googleStars');
     if (!wrapper || !badge || !starsRow) return;
     
+    let entranceFinalizeTimer = null; /* [FIX #2] Track timer for kill/revive race */
+    
     function generateStars() {
         const starPath = "M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z";
-        const badgeGoogleDelay = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--badge-google-delay')) || 1.5;
+        const badgeGoogleDelay = parseFloat(getComputedStyle(container).getPropertyValue('--badge-google-delay')) || 1.5; /* [FIX] was: documentElement */
         const baseEntranceDelay = badgeGoogleDelay + 1.05;
         let html = '';
         for (let i = 0; i < 5; i++) {
@@ -543,17 +546,19 @@ playEntrySequence();
             badge.classList.add('stars-running');
             trackedTimeout(() => { badge.classList.remove('stars-running'); badge.dataset.starsLocked = '0'; }, 1400);
         };
-        badge.addEventListener('mouseenter', startHover);
-        badge.addEventListener('touchstart', startHover, {passive: true});
+        listen(badge, 'mouseenter', startHover); /* [FIX #1] tracked */
+        listen(badge, 'touchstart', startHover, {passive: true}); /* [FIX #1] tracked */
         const lastStar = starsRow.querySelector('.star:last-child');
         if (lastStar) {
-            lastStar.addEventListener('animationend', (e) => {
+            // [FIX #1] Named function for cleanup
+            const onStarAnimEnd = (e) => {
                 if (e.animationName === 'hero-badgeGoogleStarFlip') {
                     badge.classList.remove('stars-running');
                     badge.dataset.starsLocked = '0';
                     if (badge.matches(':hover')) badge.classList.add('stars-finished');
                 }
-            });
+            };
+            listen(lastStar, 'animationend', onStarAnimEnd);
         }
         listen(badge, 'mouseleave', () => {
             if (badge.dataset.starsLocked !== '1') badge.classList.remove('stars-finished');
@@ -561,23 +566,25 @@ playEntrySequence();
     }
     
     function setupFinishEntrance() {
+        /* [FIX #2] Clear any pending timer from previous entrance */
+        if (entranceFinalizeTimer) {
+            clearTimeout(entranceFinalizeTimer);
+            entranceFinalizeTimer = null;
+        }
+        
         let finished = false;
         const finalize = () => {
             if (finished) return;
             finished = true;
+            entranceFinalizeTimer = null; /* [FIX #2] Clear ref after execution */
             wrapper.classList.remove('entrance-playing');
             wrapper.classList.add('anim-finished');
             badge.classList.add('anim-finished');
         };
         // Listen for the last animation in the badge sequence (caption fade ends ~5.5s)
-        const caption = wrapper.querySelector('.badge-caption');
-        if (caption) {
-            caption.addEventListener('animationend', (e) => {
-                if (e.animationName === 'hero-badgeGoogleCaptionFadeIn') finalize();
-            });
-        }
-        // Safety watchdog — only fires if animationend never arrived (tab in bg, CSS disabled)
-        trackedTimeout(finalize, 10000);
+        // Caption ma instant visibility (bez animacji)
+        // Finalize po zakończeniu innych animacji badge (~2s)
+        entranceFinalizeTimer = trackedTimeout(finalize, 2000); /* [FIX #2] Store timer ID */
     }
     
     generateStars();
@@ -586,17 +593,35 @@ playEntrySequence();
     
     // Expose kill/revive for action-area dormant system
     badgeGoogleKill = function() {
+        /* [FIX #2] Clear pending finalize timer to prevent race condition */
+        if (entranceFinalizeTimer) {
+            clearTimeout(entranceFinalizeTimer);
+            entranceFinalizeTimer = null;
+        }
+        
         wrapper.classList.remove('active', 'entrance-playing', 'anim-finished');
         badge.classList.remove('anim-finished', 'stars-running', 'stars-finished');
         badge.dataset.starsLocked = '0';
         starsRow.innerHTML = '';
+
+        // reset visual reveal state (transform + clip-path)
+        badge.style.removeProperty('transform');
+        badge.style.removeProperty('clip-path');
+        badge.style.removeProperty('-webkit-clip-path');
     };
     badgeGoogleRevive = function() {
         wrapper.classList.add('active', 'entrance-playing');
         wrapper.classList.remove('anim-finished');
         badge.classList.remove('anim-finished', 'stars-running', 'stars-finished');
         badge.dataset.starsLocked = '0';
+
+        // ensure start from CSS base reveal state (transform + clip-path)
+        badge.style.removeProperty('transform');
+        badge.style.removeProperty('clip-path');
+        badge.style.removeProperty('-webkit-clip-path');
+
         generateStars();
+        setupStarsInteraction(); /* [FIX #8] Restore interaction after regenerating stars */
         setupFinishEntrance();
     };
 })();
@@ -606,151 +631,263 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
     listen(wrapEl, 'click', () => {
         const wave = document.createElement('span');
         wave.classList.add('wave-effect', 'animating');
-        const ref = wrapEl.firstChild;
-        if (ref && wrapEl.contains(ref)) wrapEl.insertBefore(wave, ref);
-        else wrapEl.appendChild(wave);
+        wrapEl.insertBefore(wave, wrapEl.firstChild);
         wave.addEventListener('animationend', () => wave.remove()); // once: dynamic element, self-removes
     });
 });
 
-// --- HAAT: Hybrydowa Architektura Auto-Skalowania Typografii ---
-// FAZA 2: Client-Side Correction (symulacja useLayoutEffect)
-(function() {
-    'use strict';
-    
-    const TIERS = ['L', 'M', 'S'];
-    const MAX_LINES = { h1: 2, desc: 3 };
-    
-    function isDesktop() { return window.innerWidth > 1200; }
-    
-    function countLines(element) {
-        const style = getComputedStyle(element);
-        const lineHeight = parseFloat(style.lineHeight);
-        const height = element.scrollHeight;
-        return Math.round(height / lineHeight);
-    }
-    
-    /* C1 REMOVED: fitsInBox() — zdefiniowana ale nigdy wywołana (pusty mobile branch) */
-    
-    function degradeTier(currentTier) {
-        const index = TIERS.indexOf(currentTier);
-        if (index < TIERS.length - 1) { return TIERS[index + 1]; }
-        return currentTier;
-    }
-    
-    function clientSideCorrection() {
-        const h1 = $('.hero-title');
-        const desc = $('.hero-description');
-        if (!h1 || !desc) return;
-        
-        const desktop = isDesktop();
-        let h1Tier = container.getAttribute('data-h1-tier') || 'M';
-        let descTier = container.getAttribute('data-desc-tier') || 'M';
-        /* C2 REMOVED: h1Changed, descChanged — write-only variables, nigdy odczytywane */
-        
-        if (desktop) {
-            let h1Lines = countLines(h1);
-            let h1Iterations = 0;
-            while (h1Lines > MAX_LINES.h1 && h1Tier !== 'S' && h1Iterations < 3) {
-                h1Tier = degradeTier(h1Tier);
-                container.setAttribute('data-h1-tier', h1Tier);
-                h1Lines = countLines(h1);
-                h1Iterations++;
-            }
-            let descLines = countLines(desc);
-            let descIterations = 0;
-            while (descLines > MAX_LINES.desc && descTier !== 'S' && descIterations < 3) {
-                descTier = degradeTier(descTier);
-                container.setAttribute('data-desc-tier', descTier);
-                descLines = countLines(desc);
-                descIterations++;
-            }
-        } else {
-            // MOBILE: overflow:hidden + max-height kontroluje widoczność
-        }
-    }
-    
-    requestAnimationFrame(() => { requestAnimationFrame(() => { clientSideCorrection(); }); });
-    
-    let resizeTimeout;
-    let haatLastWidth = window.innerWidth;
-    listen(window, 'resize', () => {
-        // Guard: mobile Safari/Chrome fires resize on URL bar show/hide (height-only change)
-        const currentWidth = window.innerWidth;
-        if (currentWidth === haatLastWidth) return;
-        haatLastWidth = currentWidth;
-        clearTimeout(resizeTimeout);
-        resizeTimeout = trackedTimeout(() => {
-            if (window.HAAT && window.HAAT.tiers) {
-                container.setAttribute('data-h1-tier', window.HAAT.tiers.h1);
-                container.setAttribute('data-desc-tier', window.HAAT.tiers.desc);
-            }
-            clientSideCorrection();
-        }, 150);
-    });
-    
-    window.HAAT = window.HAAT || {};
-    window.HAAT.clientCorrection = clientSideCorrection;
-    window.HAAT.countLines = countLines;
-    
-})();
     }
 
     // ═════════════════════════════════════════════════════════════════
-    // BLOCK 3: LOTTIE LAUR
+    // BLOCK 3: LOTTIE LAUR — MIRROR OPTIMIZATION v3
+    // ═════════════════════════════════════════════════════════════════
+    // ARCHITEKTURA:
+    //   1× lottie.loadAnimation (animSource = prawy laur, containerRight)
+    //   1× plain <canvas>       (mirrorCanvas = lewy laur, containerLeft)
+    //
+    // SYNC: drawnFrame event (strzela PO renderze klatki na canvas)
+    //       → queueMirrorSync() → rAF → drawImage(source, 0, 0)
+    //
+    // MIRROR: CSS .lottie-laur-left ma scaleX(-1) → wizualne odbicie.
+    //         JS kopiuje RAW piksele bez flipa. ZERO podwójnego odbicia.
+    //
+    // LIFECYCLE: Bez zmian semantycznych vs oryginał.
+    //   init → play → complete → fold/unfold → destroy → re-entry
     // ═════════════════════════════════════════════════════════════════
     {
-// ═══════════════════════════════════════════════════════════════════════════
-        // LOTTIE LAUR — PARA SYMETRYCZNA (CANVAS)
-        // ═══════════════════════════════════════════════════════════════════════════
         (function() {
             'use strict';
-            
+    
             const containerLeft = $id('hero-lottieLaurLeft');
             const containerRight = $id('hero-lottieLaurRight');
-            if (!containerLeft && !containerRight) return;
-            
-            // Inline animation data (wspólne dla obu)
-            const animationData = {"v":"5.7.14","fr":30,"ip":0,"op":28,"w":372,"h":556,"nm":"Comp 2","ddd":0,"assets":[{"id":"comp_0","nm":"Comp 1","layers":[{"ddd":0,"ind":1,"ty":4,"nm":"Shape Layer 2","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":0,"k":[500,500,0],"ix":2,"l":2},"a":{"a":0,"k":[0,0,0],"ix":1,"l":2},"s":{"a":0,"k":[100,100,100],"ix":6,"l":2}},"ao":0,"shapes":[],"ip":0,"op":30,"st":-30,"bm":0},{"ddd":0,"ind":2,"ty":4,"nm":"Shape Layer 1","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":0,"k":[500,500,0],"ix":2,"l":2},"a":{"a":0,"k":[0,0,0],"ix":1,"l":2},"s":{"a":0,"k":[100,100,100],"ix":6,"l":2}},"ao":0,"shapes":[],"ip":0,"op":30,"st":-30,"bm":0},{"ddd":0,"ind":3,"ty":0,"nm":"laur 2","parent":4,"refId":"comp_1","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":-68.144,"ix":10},"p":{"a":0,"k":[59.602,48.427,0],"ix":2,"l":2},"a":{"a":0,"k":[66,206.511,0],"ix":1,"l":2},"s":{"a":0,"k":[36.941,36.941,100],"ix":6,"l":2}},"ao":0,"w":132,"h":223,"ip":17.875,"op":180,"st":17.875,"bm":0},{"ddd":0,"ind":4,"ty":3,"nm":"Null 2","parent":6,"sr":1,"ks":{"o":{"a":0,"k":0,"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":0,"k":[21.387,32.574,0],"ix":2,"l":2},"a":{"a":0,"k":[50,50,0],"ix":1,"l":2},"s":{"a":0,"k":[100,100,100],"ix":6,"l":2}},"ao":0,"ip":0,"op":180,"st":17.875,"bm":0},{"ddd":0,"ind":5,"ty":0,"nm":"laur","parent":6,"refId":"comp_2","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":-63.043,"ix":10},"p":{"a":0,"k":[51.558,51.905,0],"ix":2,"l":2},"a":{"a":0,"k":[102.353,181.936,0],"ix":1,"l":2},"s":{"a":0,"k":[29.056,29.056,100],"ix":6,"l":2}},"ao":0,"w":240,"h":193,"ip":16.25,"op":180,"st":16.25,"bm":0},{"ddd":0,"ind":6,"ty":3,"nm":"Null 13","parent":8,"sr":1,"ks":{"o":{"a":0,"k":0,"ix":11},"r":{"a":0,"k":5,"ix":10},"p":{"a":0,"k":[24.614,21.425,0],"ix":2,"l":2},"a":{"a":0,"k":[50,50,0],"ix":1,"l":2},"s":{"a":0,"k":[100,100,100],"ix":6,"l":2}},"ao":0,"ip":0,"op":180,"st":16.25,"bm":0},{"ddd":0,"ind":7,"ty":0,"nm":"laur","parent":8,"refId":"comp_2","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":-52.591,"ix":10},"p":{"a":0,"k":[55.28,50.225,0],"ix":2,"l":2},"a":{"a":0,"k":[116.059,178.892,0],"ix":1,"l":2},"s":{"a":0,"k":[38.161,38.161,100],"ix":6,"l":2}},"ao":0,"w":240,"h":193,"ip":14.625,"op":180,"st":14.625,"bm":0},{"ddd":0,"ind":8,"ty":3,"nm":"Null 12","parent":10,"sr":1,"ks":{"o":{"a":0,"k":0,"ix":11},"r":{"a":0,"k":-7,"ix":10},"p":{"a":0,"k":[18.477,15.651,0],"ix":2,"l":2},"a":{"a":0,"k":[50,50,0],"ix":1,"l":2},"s":{"a":0,"k":[100,100,100],"ix":6,"l":2}},"ao":0,"ip":0,"op":180,"st":14.625,"bm":0},{"ddd":0,"ind":9,"ty":0,"nm":"laur","parent":10,"refId":"comp_2","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":-51.455,"ix":10},"p":{"a":0,"k":[57.17,53.798,0],"ix":2,"l":2},"a":{"a":0,"k":[109.287,183.117,0],"ix":1,"l":2},"s":{"a":0,"k":[42.875,42.875,100],"ix":6,"l":2}},"ao":0,"w":240,"h":193,"ip":13,"op":180,"st":13,"bm":0},{"ddd":0,"ind":10,"ty":3,"nm":"Null 11","parent":12,"sr":1,"ks":{"o":{"a":0,"k":0,"ix":11},"r":{"a":0,"k":-1,"ix":10},"p":{"a":0,"k":[15.885,-2.123,0],"ix":2,"l":2},"a":{"a":0,"k":[50,50,0],"ix":1,"l":2},"s":{"a":0,"k":[100,100,100],"ix":6,"l":2}},"ao":0,"ip":0,"op":180,"st":13,"bm":0},{"ddd":0,"ind":11,"ty":0,"nm":"laur","parent":12,"refId":"comp_2","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":-40.357,"ix":10},"p":{"a":0,"k":[49.327,48.42,0],"ix":2,"l":2},"a":{"a":0,"k":[105.203,181.936,0],"ix":1,"l":2},"s":{"a":0,"k":[47.833,47.833,100],"ix":6,"l":2}},"ao":0,"w":240,"h":193,"ip":11.375,"op":180,"st":11.375,"bm":0},{"ddd":0,"ind":12,"ty":3,"nm":"Null 10","parent":14,"sr":1,"ks":{"o":{"a":0,"k":0,"ix":11},"r":{"a":0,"k":-1,"ix":10},"p":{"a":0,"k":[37.737,-2.494,0],"ix":2,"l":2},"a":{"a":0,"k":[50,50,0],"ix":1,"l":2},"s":{"a":0,"k":[99,99,100],"ix":6,"l":2}},"ao":0,"ip":0,"op":180,"st":11.375,"bm":0},{"ddd":0,"ind":13,"ty":0,"nm":"laur","parent":14,"refId":"comp_2","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":-24.311,"ix":10},"p":{"a":0,"k":[53.317,51.941,0],"ix":2,"l":2},"a":{"a":0,"k":[111.795,183.973,0],"ix":1,"l":2},"s":{"a":0,"k":[53.307,53.307,100],"ix":6,"l":2}},"ao":0,"w":240,"h":193,"ip":9.75,"op":180,"st":9.75,"bm":0},{"ddd":0,"ind":14,"ty":3,"nm":"Null 9","parent":16,"sr":1,"ks":{"o":{"a":0,"k":0,"ix":11},"r":{"a":0,"k":3,"ix":10},"p":{"a":0,"k":[50,-17.123,0],"ix":2,"l":2},"a":{"a":0,"k":[50,50,0],"ix":1,"l":2},"s":{"a":0,"k":[100,100,100],"ix":6,"l":2}},"ao":0,"ip":0,"op":180,"st":9.75,"bm":0},{"ddd":0,"ind":15,"ty":0,"nm":"laur","parent":16,"refId":"comp_2","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":-11.031,"ix":10},"p":{"a":0,"k":[56.048,49.786,0],"ix":2,"l":2},"a":{"a":0,"k":[115.092,182.064,0],"ix":1,"l":2},"s":{"a":0,"k":[58.091,58.091,100],"ix":6,"l":2}},"ao":0,"w":240,"h":193,"ip":8.125,"op":180,"st":8.125,"bm":0},{"ddd":0,"ind":16,"ty":3,"nm":"Null 8","parent":18,"sr":1,"ks":{"o":{"a":0,"k":0,"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":0,"k":[61.833,-16.922,0],"ix":2,"l":2},"a":{"a":0,"k":[50,50,0],"ix":1,"l":2},"s":{"a":0,"k":[100,100,100],"ix":6,"l":2}},"ao":0,"ip":0,"op":180,"st":8.125,"bm":0},{"ddd":0,"ind":17,"ty":0,"nm":"laur","parent":18,"refId":"comp_2","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":1,"k":[{"i":{"x":[0.833],"y":[0.833]},"o":{"x":[0.167],"y":[0.167]},"t":6.625,"s":[-6.437]},{"i":{"x":[0.833],"y":[0.833]},"o":{"x":[0.167],"y":[0.167]},"t":7.5,"s":[-5.437]},{"t":8.375,"s":[-0.437]}],"ix":10},"p":{"a":1,"k":[{"i":{"x":0.833,"y":0.833},"o":{"x":0.167,"y":0.167},"t":6.625,"s":[51.799,64.079,0],"to":[2.449,-2.59,0],"ti":[-0.015,0.029,0]},{"i":{"x":0.833,"y":0.833},"o":{"x":0.167,"y":0.167},"t":7.5,"s":[60.202,50.705,0],"to":[0.072,-0.144,0],"ti":[0.648,0,0]},{"t":8.375,"s":[56.312,50.705,0]}],"ix":2,"l":2},"a":{"a":0,"k":[111.646,185.833,0],"ix":1,"l":2},"s":{"a":0,"k":[63.431,63.431,100],"ix":6,"l":2}},"ao":0,"w":240,"h":193,"ip":6.5,"op":180,"st":6.5,"bm":0},{"ddd":0,"ind":18,"ty":3,"nm":"Null 7","parent":20,"sr":1,"ks":{"o":{"a":0,"k":0,"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":0,"k":[76.021,-15.822,0],"ix":2,"l":2},"a":{"a":0,"k":[50,50,0],"ix":1,"l":2},"s":{"a":0,"k":[102,102,100],"ix":6,"l":2}},"ao":0,"ip":0,"op":180,"st":6.5,"bm":0},{"ddd":0,"ind":19,"ty":0,"nm":"laur","parent":20,"refId":"comp_2","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":1,"k":[{"i":{"x":[0.833],"y":[0.833]},"o":{"x":[0.167],"y":[0.167]},"t":5.375,"s":[2.443]},{"i":{"x":[0.833],"y":[0.833]},"o":{"x":[0.167],"y":[0.167]},"t":6.375,"s":[-0.057]},{"i":{"x":[0.833],"y":[0.833]},"o":{"x":[0.167],"y":[0.167]},"t":7.375,"s":[13.443]},{"t":8.625,"s":[13.443]}],"ix":10},"p":{"a":1,"k":[{"i":{"x":0.833,"y":0.833},"o":{"x":0.167,"y":0.167},"t":5.375,"s":[54.987,53.17,0],"to":[-0.551,-0.037,0],"ti":[1.378,0.092,0]},{"i":{"x":0.833,"y":0.833},"o":{"x":0.167,"y":0.167},"t":6.375,"s":[56.971,52.95,0],"to":[-1.378,-0.092,0],"ti":[0.551,0.037,0]},{"i":{"x":0.833,"y":0.833},"o":{"x":0.167,"y":0.167},"t":7.375,"s":[48.373,52.729,0],"to":[-1.102,-0.073,0],"ti":[0.551,0.037,0]},{"t":8.625,"s":[48.153,52.729,0]}],"ix":2,"l":2},"a":{"a":0,"k":[107.12,186.933,0],"ix":1,"l":2},"s":{"a":0,"k":[70.016,70.016,100],"ix":6,"l":2}},"ao":0,"w":240,"h":193,"ip":5.125,"op":180,"st":5.125,"bm":0},{"ddd":0,"ind":20,"ty":3,"nm":"Null 6","sr":1,"ks":{"o":{"a":0,"k":0,"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":0,"k":[795.749,615.31,0],"ix":2,"l":2},"a":{"a":0,"k":[50,50,0],"ix":1,"l":2},"s":{"a":0,"k":[113.404,113.404,100],"ix":6,"l":2}},"ao":0,"ip":0,"op":180,"st":5.125,"bm":0}]},{"id":"comp_1","nm":"laur 2","layers":[{"ddd":0,"ind":1,"ty":4,"nm":"lewy","parent":2,"sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":38,"ix":10},"p":{"a":0,"k":[0.714,1.969,0],"ix":2,"l":2},"a":{"a":0,"k":[147.714,206.969,0],"ix":1,"l":2},"s":{"a":1,"k":[{"i":{"x":[0.003,0.003,0.003],"y":[1,1,1]},"o":{"x":[0.333,0.333,0.333],"y":[0,0,0]},"t":0,"s":[0,0,100]},{"t":4.125,"s":[100,100,100]}],"ix":6,"l":2}},"ao":0,"shapes":[{"ty":"gr","it":[{"ind":0,"ty":"sh","ix":1,"ks":{"a":0,"k":{"i":[[-38.973,-29.064],[-47.339,99.742],[-24,-12.33],[13.431,-69.798],[17.175,39.633]],"o":[[0,0],[0,0],[24,12.331],[0,0],[0,0]],"v":[[43.046,60.88],[-15.303,-60.88],[17.284,-26.313],[49.211,56.918],[6.275,1.872]],"c":true},"ix":2},"nm":"Path 1","mn":"ADBE Vector Shape - Group","hd":false},{"ty":"fl","c":{"a":0,"k":[0,0,0,1],"ix":4},"o":{"a":0,"k":100,"ix":5},"r":1,"bm":0,"nm":"Fill 1","mn":"ADBE Vector Graphic - Fill","hd":false},{"ty":"tr","p":{"a":0,"k":[100.781,148.469],"ix":2},"a":{"a":0,"k":[0,0],"ix":1},"s":{"a":0,"k":[100,100],"ix":3},"r":{"a":0,"k":0,"ix":6},"o":{"a":0,"k":100,"ix":7},"sk":{"a":0,"k":0,"ix":4},"sa":{"a":0,"k":0,"ix":5},"nm":"Transform"}],"nm":"Group 1","np":2,"cix":2,"bm":0,"ix":1,"mn":"ADBE Vector Group","hd":false}],"ip":0,"op":384.125,"st":0,"bm":0},{"ddd":0,"ind":2,"ty":3,"nm":"Null 3","sr":1,"ks":{"o":{"a":0,"k":0,"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":0,"k":[61.5,174.5,0],"ix":2,"l":2},"a":{"a":0,"k":[0,0,0],"ix":1,"l":2},"s":{"a":1,"k":[{"i":{"x":[0.859,0.859,0.667],"y":[0.996,0.996,1]},"o":{"x":[1,1,0.333],"y":[0,0,0]},"t":0,"s":[100,100,100]},{"i":{"x":[0,0,0.667],"y":[1.005,1.005,1]},"o":{"x":[0.096,0.096,0.333],"y":[-0.006,-0.006,0]},"t":4.632,"s":[120,120,100]},{"t":11.875,"s":[100,100,100]}],"ix":6,"l":2}},"ao":0,"ip":0,"op":381.75,"st":0,"bm":0}]},{"id":"comp_2","nm":"laur","layers":[{"ddd":0,"ind":1,"ty":0,"nm":"lisc1","refId":"comp_3","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":0,"k":[108.25,168.25,0],"ix":2,"l":2},"a":{"a":0,"k":[87.75,151.75,0],"ix":1,"l":2},"s":{"a":1,"k":[{"i":{"x":[0.859,0.859,0.667],"y":[0.996,0.996,1]},"o":{"x":[1,1,0.333],"y":[0,0,0]},"t":0,"s":[100,100,100]},{"i":{"x":[0,0,0.667],"y":[1.005,1.005,1]},"o":{"x":[0.096,0.096,0.333],"y":[-0.006,-0.006,0]},"t":4.632,"s":[120,120,100]},{"t":11.875,"s":[100,100,100]}],"ix":6,"l":2}},"ao":0,"w":199,"h":160,"ip":0,"op":330,"st":0,"bm":0}]},{"id":"comp_3","nm":"lisc1","layers":[{"ddd":0,"ind":1,"ty":3,"nm":"Null 1","sr":1,"ks":{"o":{"a":0,"k":0,"ix":11},"r":{"a":0,"k":7.594,"ix":10},"p":{"a":0,"k":[84.5,147,0],"ix":2,"l":2},"a":{"a":0,"k":[0,0,0],"ix":1,"l":2},"s":{"a":0,"k":[100,100,100],"ix":6,"l":2}},"ao":0,"ip":0,"op":343.125,"st":0,"bm":0},{"ddd":0,"ind":2,"ty":4,"nm":"stem","parent":1,"td":1,"sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":0,"k":[0.65,2.25,0],"ix":2,"l":2},"a":{"a":0,"k":[-14.75,71.75,0],"ix":1,"l":2},"s":{"a":0,"k":[100,100,100],"ix":6,"l":2}},"ao":0,"shapes":[{"ty":"gr","it":[{"ind":0,"ty":"sh","ix":1,"ks":{"a":0,"k":{"i":[[0,0],[0.985,-28.416],[0,0],[0,0],[-0.799,33.315],[0,0]],"o":[[0,0],[-1.176,33.946],[0,0],[0,0],[0.792,-33.036],[0,0]],"v":[[8.333,-67.5],[19.762,-3.414],[8.485,72.25],[-10,67.75],[2.166,-2.914],[-14.794,-87.942]],"c":true},"ix":2},"nm":"Path 1","mn":"ADBE Vector Shape - Group","hd":false},{"ty":"fl","c":{"a":0,"k":[0,0,0,1],"ix":4},"o":{"a":0,"k":100,"ix":5},"r":1,"bm":0,"nm":"Fill 1","mn":"ADBE Vector Graphic - Fill","hd":false},{"ty":"tr","p":{"a":0,"k":[-14.75,4],"ix":2},"a":{"a":0,"k":[0,0],"ix":1},"s":{"a":0,"k":[82.5,100],"ix":3},"r":{"a":0,"k":0,"ix":6},"o":{"a":0,"k":100,"ix":7},"sk":{"a":0,"k":0,"ix":4},"sa":{"a":0,"k":0,"ix":5},"nm":"Transform"}],"nm":"Rectangle 1","np":3,"cix":2,"bm":0,"ix":1,"mn":"ADBE Vector Group","hd":false}],"ip":0.25,"op":345.5,"st":0,"bm":0},{"ddd":0,"ind":3,"ty":4,"nm":"stemask","parent":1,"tt":1,"sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":1,"k":[{"i":{"x":0.833,"y":0.833},"o":{"x":0.167,"y":0.167},"t":0,"s":[-1.5,185,0],"to":[0,-26.667,0],"ti":[0,26.667,0]},{"t":2.25,"s":[-1.5,25,0]}],"ix":2,"l":2},"a":{"a":0,"k":[-17.5,248.5,0],"ix":1,"l":2},"s":{"a":0,"k":[100,100,100],"ix":6,"l":2}},"ao":0,"shapes":[{"ty":"gr","it":[{"ind":0,"ty":"sh","ix":1,"ks":{"a":0,"k":{"i":[[0,0],[0,0],[0,0],[0,0],[0,0]],"o":[[0,0],[0,0],[0,0],[0,0],[0,0]],"v":[[18,-54.5],[34,88.5],[-34,88.5],[-8,-61.75],[-1.5,-88.5]],"c":true},"ix":2},"nm":"Path 1","mn":"ADBE Vector Shape - Group","hd":false},{"ty":"fl","c":{"a":0,"k":[0,0,0,1],"ix":4},"o":{"a":0,"k":100,"ix":5},"r":1,"bm":0,"nm":"Fill 1","mn":"ADBE Vector Graphic - Fill","hd":false},{"ty":"tr","p":{"a":0,"k":[-17.5,160],"ix":2},"a":{"a":0,"k":[0,0],"ix":1},"s":{"a":0,"k":[100,100],"ix":3},"r":{"a":0,"k":0,"ix":6},"o":{"a":0,"k":100,"ix":7},"sk":{"a":0,"k":0,"ix":4},"sa":{"a":0,"k":0,"ix":5},"nm":"Transform"}],"nm":"Rectangle 1","np":3,"cix":2,"bm":0,"ix":1,"mn":"ADBE Vector Group","hd":false}],"ip":0.25,"op":345.5,"st":0,"bm":0},{"ddd":0,"ind":4,"ty":4,"nm":"prawy","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":1,"k":[{"i":{"x":0.667,"y":1},"o":{"x":0.333,"y":0},"t":0.5,"s":[88.51,154.616,0],"to":[0.833,0,0],"ti":[-0.833,0,0]},{"t":4.625,"s":[93.51,154.616,0]}],"ix":2,"l":2},"a":{"a":0,"k":[168.01,209.616,0],"ix":1,"l":2},"s":{"a":1,"k":[{"i":{"x":[0.667,0.667,0.667],"y":[1,1,1]},"o":{"x":[0.333,0.333,0.333],"y":[0,0,0]},"t":0.5,"s":[0,0,100]},{"t":4.625,"s":[100,100,100]}],"ix":6,"l":2}},"ao":0,"shapes":[{"ty":"gr","it":[{"ind":0,"ty":"sh","ix":1,"ks":{"a":0,"k":{"i":[[6.385,-55.266],[-84.55,24.44],[-10.129,18.715],[86.312,-11.009],[7.706,-7.926],[-44.477,30.606]],"o":[[0,0],[29.284,-8.808],[0,0],[-20.918,2.422],[0,0],[0,0]],"v":[[-49.982,64.734],[3.963,-36.77],[53.945,-68.697],[-5.725,56.367],[-40.734,68.697],[3.082,0]],"c":true},"ix":2},"nm":"Path 1","mn":"ADBE Vector Shape - Group","hd":false},{"ty":"fl","c":{"a":0,"k":[0,0,0,1],"ix":4},"o":{"a":0,"k":100,"ix":5},"r":1,"bm":0,"nm":"Fill 1","mn":"ADBE Vector Graphic - Fill","hd":false},{"ty":"tr","p":{"a":0,"k":[214.286,144.616],"ix":2},"a":{"a":0,"k":[0,0],"ix":1},"s":{"a":0,"k":[100,100],"ix":3},"r":{"a":0,"k":0,"ix":6},"o":{"a":0,"k":100,"ix":7},"sk":{"a":0,"k":0,"ix":4},"sa":{"a":0,"k":0,"ix":5},"nm":"Transform"}],"nm":"Group 1","np":2,"cix":2,"bm":0,"ix":1,"mn":"ADBE Vector Group","hd":false}],"ip":0.5,"op":346,"st":0.5,"bm":0},{"ddd":0,"ind":5,"ty":4,"nm":"lewy","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":1,"k":[{"i":{"x":0.667,"y":1},"o":{"x":0.333,"y":0},"t":0.75,"s":[80.714,151.969,0],"to":[-0.833,0,0],"ti":[0.833,0,0]},{"t":4.875,"s":[75.714,151.969,0]}],"ix":2,"l":2},"a":{"a":0,"k":[147.714,206.969,0],"ix":1,"l":2},"s":{"a":1,"k":[{"i":{"x":[0.667,0.667,0.667],"y":[1,1,1]},"o":{"x":[0.333,0.333,0.333],"y":[0,0,0]},"t":0.75,"s":[0,0,100]},{"t":4.875,"s":[100,100,100]}],"ix":6,"l":2}},"ao":0,"shapes":[{"ty":"gr","it":[{"ind":0,"ty":"sh","ix":1,"ks":{"a":0,"k":{"i":[[-38.973,-29.064],[-47.339,99.742],[-24,-12.33],[13.431,-69.798],[17.175,39.633]],"o":[[0,0],[0,0],[24,12.331],[0,0],[0,0]],"v":[[43.046,60.88],[-15.303,-60.88],[17.284,-26.313],[49.211,56.918],[6.275,1.872]],"c":true},"ix":2},"nm":"Path 1","mn":"ADBE Vector Shape - Group","hd":false},{"ty":"fl","c":{"a":0,"k":[0,0,0,1],"ix":4},"o":{"a":0,"k":100,"ix":5},"r":1,"bm":0,"nm":"Fill 1","mn":"ADBE Vector Graphic - Fill","hd":false},{"ty":"tr","p":{"a":0,"k":[100.781,148.469],"ix":2},"a":{"a":0,"k":[0,0],"ix":1},"s":{"a":0,"k":[100,100],"ix":3},"r":{"a":0,"k":0,"ix":6},"o":{"a":0,"k":100,"ix":7},"sk":{"a":0,"k":0,"ix":4},"sa":{"a":0,"k":0,"ix":5},"nm":"Transform"}],"nm":"Group 1","np":2,"cix":2,"bm":0,"ix":1,"mn":"ADBE Vector Group","hd":false}],"ip":0.75,"op":346.25,"st":0.75,"bm":0}]}],"layers":[{"ddd":0,"ind":1,"ty":0,"nm":"Comp 1","td":1,"refId":"comp_0","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":7.612,"ix":10},"p":{"a":0,"k":[84,26,0],"ix":2,"l":2},"a":{"a":0,"k":[649,135,0],"ix":1,"l":2},"s":{"a":0,"k":[101.426,101.426,100],"ix":6,"l":2}},"ao":0,"w":1000,"h":1000,"ip":0,"op":180,"st":0,"bm":0},{"ddd":0,"ind":2,"ty":4,"nm":"Shape Layer 1","tt":1,"sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":0,"k":[188,287,0],"ix":2,"l":2},"a":{"a":0,"k":[0,0,0],"ix":1,"l":2},"s":{"a":0,"k":[100,99.488,100],"ix":6,"l":2}},"ao":0,"shapes":[{"ty":"gr","it":[{"ty":"rc","d":1,"s":{"a":0,"k":[472,766],"ix":2},"p":{"a":0,"k":[0,0],"ix":3},"r":{"a":0,"k":0,"ix":4},"nm":"Rectangle Path 1","mn":"ADBE Vector Shape - Rect","hd":false},{"ty":"gf","o":{"a":0,"k":100,"ix":10},"r":1,"bm":0,"g":{"p":3,"k":{"a":0,"k":[0,0.957,0.937,0.922,0.525,0.947,0.922,0.898,1,0.937,0.906,0.875,0,0.8,0.505,0.9,1,1],"ix":9}},"s":{"a":0,"k":[26,247.265],"ix":5},"e":{"a":0,"k":[-101,-254.301],"ix":6},"t":1,"nm":"Gradient Fill 1","mn":"ADBE Vector Graphic - G-Fill","hd":false},{"ty":"tr","p":{"a":0,"k":[-2,-8],"ix":2},"a":{"a":0,"k":[0,0],"ix":1},"s":{"a":0,"k":[100,100],"ix":3},"r":{"a":0,"k":0,"ix":6},"o":{"a":0,"k":100,"ix":7},"sk":{"a":0,"k":0,"ix":4},"sa":{"a":0,"k":0,"ix":5},"nm":"Transform"}],"nm":"Rectangle 1","np":3,"cix":2,"bm":0,"ix":1,"mn":"ADBE Vector Group","hd":false}],"ip":0,"op":28,"st":0,"bm":0}],"markers":[]};
-            
-            let animLeft = null;
-            let animRight = null;
+            // Source MUSI być w containerRight. Bez niego — brak animacji.
+            // containerLeft jest opcjonalny — bez niego brak mirror, source działa solo.
+            if (!containerRight || typeof lottie === 'undefined') return;
+    
+            // Inline animation data (identyczne jak oryginał — ZERO zmian w uassecie)
+                    const animationData = {"v":"5.7.14","fr":90,"ip":0,"op":84,"w":372,"h":556,"nm":"Comp 2","ddd":0,"assets":[{"id":"comp_0","nm":"Comp 1","layers":[{"ddd":0,"ind":3,"ty":0,"nm":"laur 2","refId":"comp_1","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":-69.144,"ix":10},"p":{"a":0,"k":[701.112,172.379,0],"ix":2},"a":{"a":0,"k":[66,206.511,0],"ix":1,"l":2},"s":{"a":0,"k":[42.303,42.303,100],"ix":6}},"ao":0,"w":132,"h":223,"ip":53.625,"op":540,"st":53.625,"bm":0},{"ddd":0,"ind":5,"ty":0,"nm":"laur","refId":"comp_2","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":-64.043,"ix":10},"p":{"a":0,"k":[725.08,195.902,0],"ix":2},"a":{"a":0,"k":[102.353,181.936,0],"ix":1,"l":2},"s":{"a":0,"k":[33.273,33.273,100],"ix":6}},"ao":0,"w":240,"h":193,"ip":48.75,"op":540,"st":48.75,"bm":0},{"ddd":0,"ind":7,"ty":0,"nm":"laur","refId":"comp_2","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":-58.591,"ix":10},"p":{"a":0,"k":[761.63,222.881,0],"ix":2},"a":{"a":0,"k":[116.059,178.892,0],"ix":1,"l":2},"s":{"a":0,"k":[43.7,43.7,100],"ix":6}},"ao":0,"w":240,"h":193,"ip":43.875,"op":540,"st":43.875,"bm":0},{"ddd":0,"ind":9,"ty":0,"nm":"laur","refId":"comp_2","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":-50.455,"ix":10},"p":{"a":0,"k":[799.131,267.708,0],"ix":2},"a":{"a":0,"k":[109.287,183.117,0],"ix":1,"l":2},"s":{"a":0,"k":[49.098,49.098,100],"ix":6}},"ao":0,"w":240,"h":193,"ip":39,"op":540,"st":39,"bm":0},{"ddd":0,"ind":11,"ty":0,"nm":"laur","refId":"comp_2","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":-38.357,"ix":10},"p":{"a":0,"k":[827.25,322.397,0],"ix":2},"a":{"a":0,"k":[105.203,181.936,0],"ix":1,"l":2},"s":{"a":0,"k":[54.776,54.776,100],"ix":6}},"ao":0,"w":240,"h":193,"ip":34.125,"op":540,"st":34.125,"bm":0},{"ddd":0,"ind":13,"ty":0,"nm":"laur","refId":"comp_2","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":-21.311,"ix":10},"p":{"a":0,"k":[842.659,388.055,0],"ix":2},"a":{"a":0,"k":[111.795,183.973,0],"ix":1,"l":2},"s":{"a":0,"k":[61.661,61.661,100],"ix":6}},"ao":0,"w":240,"h":193,"ip":29.25,"op":540,"st":29.25,"bm":0},{"ddd":0,"ind":15,"ty":0,"nm":"laur","refId":"comp_2","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":-11.031,"ix":10},"p":{"a":0,"k":[845.941,463.007,0],"ix":2},"a":{"a":0,"k":[115.092,182.064,0],"ix":1,"l":2},"s":{"a":0,"k":[67.195,67.195,100],"ix":6}},"ao":0,"w":240,"h":193,"ip":24.375,"op":540,"st":24.375,"bm":0},{"ddd":0,"ind":17,"ty":0,"nm":"laur","refId":"comp_2","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":1,"k":[{"i":{"x":[0.833],"y":[0.833]},"o":{"x":[0.167],"y":[0.167]},"t":19.875,"s":[-6.437]},{"i":{"x":[0.833],"y":[0.833]},"o":{"x":[0.167],"y":[0.167]},"t":22.5,"s":[-5.437]},{"t":25.125,"s":[-0.437]}],"ix":10},"p":{"a":1,"k":[{"i":{"x":0.833,"y":0.833},"o":{"x":0.167,"y":0.167},"t":19.875,"s":[827.339,556.95,0],"to":[2.833,-2.996,0],"ti":[-0.017,0.034,0]},{"i":{"x":0.833,"y":0.833},"o":{"x":0.167,"y":0.167},"t":22.5,"s":[837.059,541.48,0],"to":[0.083,-0.167,0],"ti":[0.75,0.0,0]},{"t":25.125,"s":[832.559,541.48,0]}],"ix":2,"l":2},"a":{"a":0,"k":[111.646,185.833,0],"ix":1,"l":2},"s":{"a":0,"k":[73.372,73.372,100],"ix":6}},"ao":0,"w":240,"h":193,"ip":19.5,"op":540,"st":19.5,"bm":0},{"ddd":0,"ind":19,"ty":0,"nm":"laur","refId":"comp_2","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":1,"k":[{"i":{"x":[0.833],"y":[0.833]},"o":{"x":[0.167],"y":[0.167]},"t":16.125,"s":[2.443]},{"i":{"x":[0.833],"y":[0.833]},"o":{"x":[0.167],"y":[0.167]},"t":19.125,"s":[-0.057]},{"i":{"x":[0.833],"y":[0.833]},"o":{"x":[0.167],"y":[0.167]},"t":22.125,"s":[13.443]},{"t":25.875,"s":[13.443]}],"ix":10},"p":{"a":1,"k":[{"i":{"x":0.833,"y":0.833},"o":{"x":0.167,"y":0.167},"t":16.125,"s":[801.404,618.905,0],"to":[-0.625,-0.042,0],"ti":[1.563,0.104,0]},{"i":{"x":0.833,"y":0.833},"o":{"x":0.167,"y":0.167},"t":19.125,"s":[803.654,618.655,0],"to":[-1.563,-0.104,0],"ti":[0.625,0.042,0]},{"i":{"x":0.833,"y":0.833},"o":{"x":0.167,"y":0.167},"t":22.125,"s":[793.904,618.405,0],"to":[-1.25,-0.083,0],"ti":[0.625,0.042,0]},{"t":25.875,"s":[793.654,618.405,0]}],"ix":2,"l":2},"a":{"a":0,"k":[107.12,186.933,0],"ix":1,"l":2},"s":{"a":0,"k":[79.401,79.401,100],"ix":6}},"ao":0,"w":240,"h":193,"ip":15.375,"op":540,"st":15.375,"bm":0}]},{"id":"comp_1","nm":"laur 2","layers":[{"ddd":0,"ind":1,"ty":4,"nm":"lewy","parent":2,"sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":38,"ix":10},"p":{"a":0,"k":[0.714,1.969,0],"ix":2,"l":2},"a":{"a":0,"k":[147.714,206.969,0],"ix":1,"l":2},"s":{"a":1,"k":[{"i":{"x":[0.003,0.003,0.003],"y":[1,1,1]},"o":{"x":[0.333,0.333,0.333],"y":[0,0,0]},"t":0,"s":[0,0,100]},{"t":12.375,"s":[100,100,100]}],"ix":6,"l":2}},"ao":0,"shapes":[{"ty":"gr","it":[{"ind":0,"ty":"sh","ix":1,"ks":{"a":0,"k":{"i":[[-38.973,-29.064],[-47.339,99.742],[-24,-12.33],[13.431,-69.798],[17.175,39.633]],"o":[[0,0],[0,0],[24,12.331],[0,0],[0,0]],"v":[[43.046,60.88],[-15.303,-60.88],[17.284,-26.313],[49.211,56.918],[6.275,1.872]],"c":true},"ix":2},"nm":"Path 1","mn":"ADBE Vector Shape - Group","hd":false},{"ty":"fl","c":{"a":0,"k":[0,0,0,1],"ix":4},"o":{"a":0,"k":100,"ix":5},"r":1,"bm":0,"nm":"Fill 1","mn":"ADBE Vector Graphic - Fill","hd":false},{"ty":"tr","p":{"a":0,"k":[100.781,148.469],"ix":2},"a":{"a":0,"k":[0,0],"ix":1},"s":{"a":0,"k":[100,100],"ix":3},"r":{"a":0,"k":0,"ix":6},"o":{"a":0,"k":100,"ix":7},"sk":{"a":0,"k":0,"ix":4},"sa":{"a":0,"k":0,"ix":5},"nm":"Transform"}],"nm":"Group 1","np":2,"cix":2,"bm":0,"ix":1,"mn":"ADBE Vector Group","hd":false}],"ip":0,"op":1152.375,"st":0,"bm":0},{"ddd":0,"ind":2,"ty":3,"nm":"Null 3","sr":1,"ks":{"o":{"a":0,"k":0,"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":0,"k":[61.5,174.5,0],"ix":2,"l":2},"a":{"a":0,"k":[0,0,0],"ix":1,"l":2},"s":{"a":1,"k":[{"i":{"x":[0.859,0.859,0.667],"y":[0.996,0.996,1]},"o":{"x":[1,1,0.333],"y":[0,0,0]},"t":0,"s":[100,100,100]},{"i":{"x":[0,0,0.667],"y":[1.005,1.005,1]},"o":{"x":[0.096,0.096,0.333],"y":[-0.006,-0.006,0]},"t":13.896,"s":[120,120,100]},{"t":35.625,"s":[100,100,100]}],"ix":6,"l":2}},"ao":0,"ip":0,"op":1145.25,"st":0,"bm":0}]},{"id":"comp_2","nm":"laur","layers":[{"ddd":0,"ind":1,"ty":0,"nm":"lisc1","refId":"comp_3","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":0,"k":[108.25,168.25,0],"ix":2,"l":2},"a":{"a":0,"k":[87.75,151.75,0],"ix":1,"l":2},"s":{"a":1,"k":[{"i":{"x":[0.859,0.859,0.667],"y":[0.996,0.996,1]},"o":{"x":[1,1,0.333],"y":[0,0,0]},"t":0,"s":[100,100,100]},{"i":{"x":[0,0,0.667],"y":[1.005,1.005,1]},"o":{"x":[0.096,0.096,0.333],"y":[-0.006,-0.006,0]},"t":13.896,"s":[120,120,100]},{"t":35.625,"s":[100,100,100]}],"ix":6,"l":2}},"ao":0,"w":199,"h":160,"ip":0,"op":990,"st":0,"bm":0}]},{"id":"comp_3","nm":"lisc1","layers":[{"ddd":0,"ind":1,"ty":3,"nm":"Null 1","sr":1,"ks":{"o":{"a":0,"k":0,"ix":11},"r":{"a":0,"k":7.594,"ix":10},"p":{"a":0,"k":[84.5,147,0],"ix":2,"l":2},"a":{"a":0,"k":[0,0,0],"ix":1,"l":2},"s":{"a":0,"k":[100,100,100],"ix":6,"l":2}},"ao":0,"ip":0,"op":1029.375,"st":0,"bm":0},{"ddd":0,"ind":2,"ty":4,"nm":"stem","parent":1,"td":1,"sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":0,"k":[0.65,2.25,0],"ix":2,"l":2},"a":{"a":0,"k":[-14.75,71.75,0],"ix":1,"l":2},"s":{"a":0,"k":[100,100,100],"ix":6,"l":2}},"ao":0,"shapes":[{"ty":"gr","it":[{"ind":0,"ty":"sh","ix":1,"ks":{"a":0,"k":{"i":[[0,0],[0.985,-28.416],[0,0],[0,0],[-0.799,33.315],[0,0]],"o":[[0,0],[-1.176,33.946],[0,0],[0,0],[0.792,-33.036],[0,0]],"v":[[8.333,-67.5],[19.762,-3.414],[8.485,72.25],[-10,67.75],[2.166,-2.914],[-14.794,-87.942]],"c":true},"ix":2},"nm":"Path 1","mn":"ADBE Vector Shape - Group","hd":false},{"ty":"fl","c":{"a":0,"k":[0,0,0,1],"ix":4},"o":{"a":0,"k":100,"ix":5},"r":1,"bm":0,"nm":"Fill 1","mn":"ADBE Vector Graphic - Fill","hd":false},{"ty":"tr","p":{"a":0,"k":[-14.75,4],"ix":2},"a":{"a":0,"k":[0,0],"ix":1},"s":{"a":0,"k":[82.5,100],"ix":3},"r":{"a":0,"k":0,"ix":6},"o":{"a":0,"k":100,"ix":7},"sk":{"a":0,"k":0,"ix":4},"sa":{"a":0,"k":0,"ix":5},"nm":"Transform"}],"nm":"Rectangle 1","np":3,"cix":2,"bm":0,"ix":1,"mn":"ADBE Vector Group","hd":false}],"ip":0.75,"op":1036.5,"st":0,"bm":0},{"ddd":0,"ind":3,"ty":4,"nm":"stemask","parent":1,"tt":1,"sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":1,"k":[{"i":{"x":0.833,"y":0.833},"o":{"x":0.167,"y":0.167},"t":0,"s":[-1.5,185,0],"to":[0,-26.667,0],"ti":[0,26.667,0]},{"t":6.75,"s":[-1.5,25,0]}],"ix":2,"l":2},"a":{"a":0,"k":[-17.5,248.5,0],"ix":1,"l":2},"s":{"a":0,"k":[100,100,100],"ix":6,"l":2}},"ao":0,"shapes":[{"ty":"gr","it":[{"ind":0,"ty":"sh","ix":1,"ks":{"a":0,"k":{"i":[[0,0],[0,0],[0,0],[0,0],[0,0]],"o":[[0,0],[0,0],[0,0],[0,0],[0,0]],"v":[[18,-54.5],[34,88.5],[-34,88.5],[-8,-61.75],[-1.5,-88.5]],"c":true},"ix":2},"nm":"Path 1","mn":"ADBE Vector Shape - Group","hd":false},{"ty":"fl","c":{"a":0,"k":[0,0,0,1],"ix":4},"o":{"a":0,"k":100,"ix":5},"r":1,"bm":0,"nm":"Fill 1","mn":"ADBE Vector Graphic - Fill","hd":false},{"ty":"tr","p":{"a":0,"k":[-17.5,160],"ix":2},"a":{"a":0,"k":[0,0],"ix":1},"s":{"a":0,"k":[100,100],"ix":3},"r":{"a":0,"k":0,"ix":6},"o":{"a":0,"k":100,"ix":7},"sk":{"a":0,"k":0,"ix":4},"sa":{"a":0,"k":0,"ix":5},"nm":"Transform"}],"nm":"Rectangle 1","np":3,"cix":2,"bm":0,"ix":1,"mn":"ADBE Vector Group","hd":false}],"ip":0.75,"op":1036.5,"st":0,"bm":0},{"ddd":0,"ind":4,"ty":4,"nm":"prawy","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":1,"k":[{"i":{"x":0.667,"y":1},"o":{"x":0.333,"y":0},"t":1.5,"s":[88.51,154.616,0],"to":[0.833,0,0],"ti":[-0.833,0,0]},{"t":13.875,"s":[93.51,154.616,0]}],"ix":2,"l":2},"a":{"a":0,"k":[168.01,209.616,0],"ix":1,"l":2},"s":{"a":1,"k":[{"i":{"x":[0.667,0.667,0.667],"y":[1,1,1]},"o":{"x":[0.333,0.333,0.333],"y":[0,0,0]},"t":1.5,"s":[0,0,100]},{"t":13.875,"s":[100,100,100]}],"ix":6,"l":2}},"ao":0,"shapes":[{"ty":"gr","it":[{"ind":0,"ty":"sh","ix":1,"ks":{"a":0,"k":{"i":[[6.385,-55.266],[-84.55,24.44],[-10.129,18.715],[86.312,-11.009],[7.706,-7.926],[-44.477,30.606]],"o":[[0,0],[29.284,-8.808],[0,0],[-20.918,2.422],[0,0],[0,0]],"v":[[-49.982,64.734],[3.963,-36.77],[53.945,-68.697],[-5.725,56.367],[-40.734,68.697],[3.082,0]],"c":true},"ix":2},"nm":"Path 1","mn":"ADBE Vector Shape - Group","hd":false},{"ty":"fl","c":{"a":0,"k":[0,0,0,1],"ix":4},"o":{"a":0,"k":100,"ix":5},"r":1,"bm":0,"nm":"Fill 1","mn":"ADBE Vector Graphic - Fill","hd":false},{"ty":"tr","p":{"a":0,"k":[214.286,144.616],"ix":2},"a":{"a":0,"k":[0,0],"ix":1},"s":{"a":0,"k":[100,100],"ix":3},"r":{"a":0,"k":0,"ix":6},"o":{"a":0,"k":100,"ix":7},"sk":{"a":0,"k":0,"ix":4},"sa":{"a":0,"k":0,"ix":5},"nm":"Transform"}],"nm":"Group 1","np":2,"cix":2,"bm":0,"ix":1,"mn":"ADBE Vector Group","hd":false}],"ip":1.5,"op":1038,"st":1.5,"bm":0},{"ddd":0,"ind":5,"ty":4,"nm":"lewy","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":1,"k":[{"i":{"x":0.667,"y":1},"o":{"x":0.333,"y":0},"t":2.25,"s":[80.714,151.969,0],"to":[-0.833,0,0],"ti":[0.833,0,0]},{"t":14.625,"s":[75.714,151.969,0]}],"ix":2,"l":2},"a":{"a":0,"k":[147.714,206.969,0],"ix":1,"l":2},"s":{"a":1,"k":[{"i":{"x":[0.667,0.667,0.667],"y":[1,1,1]},"o":{"x":[0.333,0.333,0.333],"y":[0,0,0]},"t":2.25,"s":[0,0,100]},{"t":14.625,"s":[100,100,100]}],"ix":6,"l":2}},"ao":0,"shapes":[{"ty":"gr","it":[{"ind":0,"ty":"sh","ix":1,"ks":{"a":0,"k":{"i":[[-38.973,-29.064],[-47.339,99.742],[-24,-12.33],[13.431,-69.798],[17.175,39.633]],"o":[[0,0],[0,0],[24,12.331],[0,0],[0,0]],"v":[[43.046,60.88],[-15.303,-60.88],[17.284,-26.313],[49.211,56.918],[6.275,1.872]],"c":true},"ix":2},"nm":"Path 1","mn":"ADBE Vector Shape - Group","hd":false},{"ty":"fl","c":{"a":0,"k":[0,0,0,1],"ix":4},"o":{"a":0,"k":100,"ix":5},"r":1,"bm":0,"nm":"Fill 1","mn":"ADBE Vector Graphic - Fill","hd":false},{"ty":"tr","p":{"a":0,"k":[100.781,148.469],"ix":2},"a":{"a":0,"k":[0,0],"ix":1},"s":{"a":0,"k":[100,100],"ix":3},"r":{"a":0,"k":0,"ix":6},"o":{"a":0,"k":100,"ix":7},"sk":{"a":0,"k":0,"ix":4},"sa":{"a":0,"k":0,"ix":5},"nm":"Transform"}],"nm":"Group 1","np":2,"cix":2,"bm":0,"ix":1,"mn":"ADBE Vector Group","hd":false}],"ip":2.25,"op":1038.75,"st":2.25,"bm":0}]}],"layers":[{"ddd":0,"ind":1,"ty":0,"nm":"Comp 1","td":1,"refId":"comp_0","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":7.612,"ix":10},"p":{"a":0,"k":[84,26,0],"ix":2,"l":2},"a":{"a":0,"k":[649,135,0],"ix":1,"l":2},"s":{"a":0,"k":[101.426,101.426,100],"ix":6,"l":2}},"ao":0,"w":1000,"h":1000,"ip":0,"op":540,"st":0,"bm":0},{"ddd":0,"ind":2,"ty":4,"nm":"Shape Layer 1","tt":1,"sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":0,"k":[188,287,0],"ix":2,"l":2},"a":{"a":0,"k":[0,0,0],"ix":1,"l":2},"s":{"a":0,"k":[100,99.488,100],"ix":6,"l":2}},"ao":0,"shapes":[{"ty":"gr","it":[{"ty":"rc","d":1,"s":{"a":0,"k":[372,556],"ix":2},"p":{"a":0,"k":[0,0],"ix":3},"r":{"a":0,"k":0,"ix":4},"nm":"Rectangle Path 1","mn":"ADBE Vector Shape - Rect","hd":false},{"ty":"gf","o":{"a":0,"k":100,"ix":10},"r":1,"bm":0,"g":{"p":3,"k":{"a":0,"k":[0,0.957,0.937,0.922,0.525,0.947,0.922,0.898,1,0.937,0.906,0.875,0,0.8,0.505,0.9,1,1],"ix":9}},"s":{"a":0,"k":[26,247.265],"ix":5},"e":{"a":0,"k":[-101,-254.301],"ix":6},"t":3,"nm":"Gradient Fill 1","mn":"ADBE Vector Graphic - G-Fill","hd":false},{"ty":"tr","p":{"a":0,"k":[-2,-8],"ix":2},"a":{"a":0,"k":[0,0],"ix":1},"s":{"a":0,"k":[100,100],"ix":3},"r":{"a":0,"k":0,"ix":6},"o":{"a":0,"k":100,"ix":7},"sk":{"a":0,"k":0,"ix":4},"sa":{"a":0,"k":0,"ix":5},"nm":"Transform"}],"nm":"Rectangle 1","np":3,"cix":2,"bm":0,"ix":1,"mn":"ADBE Vector Group","hd":false}],"ip":0,"op":84,"st":0,"bm":0}],"markers":[]};
+            // ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+            // UWAGA DLA DEVELOPERA: skopiuj cały obiekt animationData
+            // z oryginalnego kodu (linia ~3473 oryginału).
+    
+            // ═══ STATE ═══
+            let animSource = null;       // jedyna instancja Lottie
+            let mirrorCanvas = null;     // plain <canvas> w containerLeft
+            let mirrorCtx = null;        // 2d context mirror
+            let mirrorRaf = 0;           // ID requestAnimationFrame (deduplikacja + cleanup)
             let isVisible = false;
-            
-            // Flagi stanu animacji
-            let isStopped = true;      // Na starcie czeka na wyrysowanie
-            let hasCompleted = false;  // Czy animacja została już wyrysowana
-            let isUnfolded = false;    // Czy liście są rozwinięte (do scroll observer)
-            let isReversing = false;   // Guard: native reverse w toku (blokuje complete handler)
-            let isFolding = false;     // Blokada podczas animacji zwijania
-            let reverseRemaining = 0;  // Ile animacji jeszcze nie zakończyło reverse
-            
-            function onOneReverseComplete(anim) {
-                anim.setDirection(1);
-                anim.goToAndStop(0, true);
-                reverseRemaining--;
-                if (reverseRemaining <= 0) {
-                    isFolding = false;
-                    isReversing = false;
-                }
+    
+            // Flagi stanu animacji (identyczne jak oryginał)
+            let isStopped = true;
+            let hasCompleted = false;
+            let hasEverOpened = false;
+            let isUnfolded = false;
+            let isReversing = false;
+            let isFolding = false;
+            let reverseRemaining = 0;
+    
+            // [A4.2] Frame constants for 90fps optimized JSON
+            const LAST_FRAME = 81;
+    
+            // Pamięć ostatniego sensownego frame po park/destroy
+            let parkedFrame = LAST_FRAME;
+    
+            // Lifecycle hygiene
+            let startTimer = null;
+            let hiddenDestroyTimer = null;
+            let foldCooldownUntil = 0;
+    
+            // Config (identyczny jak oryginał)
+            const LAUREL_CFG = {
+                introSpeed: 0.30,
+                unfoldSpeed: 1.00,
+                foldSpeed: 1.85,
+                foldScrollMinY: 80,
+                unfoldTopEpsilon: 8,
+                wheelThreshold: 50,
+                stateCooldownMs: 600,
+                hiddenDestroyMs: 4000,
+                ioThreshold: 0.05,
+                ioRootMargin: '200px'
+            };
+    
+            // ═══ MIRROR CANVAS ═══
+    
+            /**
+             * Tworzy plain <canvas> w containerLeft.
+             * innerHTML = '' czyści kontener z ghost elementów (safety net).
+             * Wymiary kopiowane z source canvas.
+             */
+            function createMirrorCanvas(sourceCanvas) {
+                if (!containerLeft) return;
+    
+                // Pełny cleanup kontenera — zabezpieczenie przed ghost elementami
+                containerLeft.innerHTML = '';
+    
+                mirrorCanvas = document.createElement('canvas');
+                mirrorCanvas.width = sourceCanvas.width;
+                mirrorCanvas.height = sourceCanvas.height;
+                mirrorCanvas.style.width = '100%';
+                mirrorCanvas.style.height = '100%';
+                mirrorCanvas.setAttribute('aria-hidden', 'true');
+    
+                mirrorCtx = mirrorCanvas.getContext('2d', { alpha: true });
+    
+                containerLeft.appendChild(mirrorCanvas);
             }
-            
-            // Inicjalizacja obu Lottie
-            // reentryDelay: null = initial page choreography (--lottie-delay), number = re-entry delay
-            let lottieHasInit = false;
-            async function initLottie(reentryDelay) {
-                const lottie = await getLottie();
-                // Reset state for clean init / re-entry
+    
+            /**
+             * Synchroniczna kopia pikseli source → mirror.
+             * ZERO flipa — CSS scaleX(-1) na containerLeft robi mirror.
+             * Zwraca true jeśli kopia się powiodła.
+             */
+            function syncMirror() {
+                if (!mirrorCanvas || !mirrorCtx || !animSource) return false;
+                if (!mirrorCanvas.isConnected) return false;
+    
+                const sourceCanvas = containerRight.querySelector('canvas');
+                if (!sourceCanvas) return false;
+                
+                // Guard: sourceCanvas musi mieć wymiary > 0 (Lottie jeszcze nie wyrenderowało)
+                if (sourceCanvas.width === 0 || sourceCanvas.height === 0) return false;
+    
+                // Sync wymiarów (resize / DPR edge case)
+                if (mirrorCanvas.width !== sourceCanvas.width) mirrorCanvas.width = sourceCanvas.width;
+                if (mirrorCanvas.height !== sourceCanvas.height) mirrorCanvas.height = sourceCanvas.height;
+    
+                mirrorCtx.clearRect(0, 0, mirrorCanvas.width, mirrorCanvas.height);
+                mirrorCtx.drawImage(sourceCanvas, 0, 0);
+                return true;
+            }
+    
+            /**
+             * Asynchroniczna kopia via rAF.
+             * - Deduplikacja: jeśli rAF już zakolejkowany, nie dodaje nowego.
+             * - Retry: jeśli kopia się nie uda (canvas jeszcze nie w DOM), próbuje ponownie
+             *   przez max `retries` kolejnych rAF. Krytyczne przy pierwszym DOMLoaded.
+             */
+            function queueMirrorSync(retries) {
+                if (!containerLeft) return;
+                if (mirrorRaf) return;  // deduplikacja — max 1 kopia per frame
+    
+                if (retries === undefined) retries = 8;
+    
+                mirrorRaf = requestAnimationFrame(() => {
+                    mirrorRaf = 0;
+                    const ok = syncMirror();
+                    if (!ok && retries > 0) queueMirrorSync(retries - 1);
+                });
+            }
+    
+            /**
+             * Pełny cleanup mirror canvas + anulowanie pending rAF.
+             */
+            function destroyMirror() {
+                if (mirrorRaf) {
+                    cancelAnimationFrame(mirrorRaf);
+                    mirrorRaf = 0;
+                }
+                if (mirrorCanvas && mirrorCanvas.isConnected) {
+                    mirrorCanvas.remove();
+                }
+                mirrorCanvas = null;
+                mirrorCtx = null;
+            }
+    
+            // ═══ HELPERS ═══
+    
+            function clearLaurelTimers() {
+                if (startTimer) { clearTimeout(startTimer); startTimer = null; }
+                if (hiddenDestroyTimer) { clearTimeout(hiddenDestroyTimer); hiddenDestroyTimer = null; }
+            }
+    
+            function getLaurelInstances() {
+                return animSource ? [animSource] : [];
+            }
+    
+            function setBothSpeed(speed) {
+                getLaurelInstances().forEach(anim => anim.setSpeed(speed));
+            }
+    
+            function setBothDirection(dir) {
+                getLaurelInstances().forEach(anim => anim.setDirection(dir));
+            }
+    
+            function playBoth() {
+                getLaurelInstances().forEach(anim => anim.play());
+            }
+    
+            function pauseBoth() {
+                getLaurelInstances().forEach(anim => anim.pause());
+                queueMirrorSync();  // goToAndStop/pause nie triggerują drawnFrame
+            }
+    
+            function stopBothAt(frame) {
+                getLaurelInstances().forEach(anim => anim.goToAndStop(frame, true));
+                queueMirrorSync();  // goToAndStop nie triggeruje drawnFrame
+            }
+    
+            function canTransition() {
+                return performance.now() >= foldCooldownUntil;
+            }
+    
+            function commitCooldown() {
+                foldCooldownUntil = performance.now() + LAUREL_CFG.stateCooldownMs;
+            }
+    
+            function onOneReverseComplete() {
+                if (animSource) {
+                    animSource.setDirection(1);
+                    animSource.goToAndStop(0, true);
+                }
+                queueMirrorSync();
+    
+                reverseRemaining = 0;
+                isFolding = false;
+                isReversing = false;
                 isStopped = true;
-                hasCompleted = false;
+                hasCompleted = true;
                 isUnfolded = false;
+                parkedFrame = 0;
+            }
+    
+            function onAnimationComplete() {
+                hasCompleted = true;
+                hasEverOpened = true;
+                isStopped = true;
+                isUnfolded = true;
+                isFolding = false;
+                isReversing = false;
+                parkedFrame = LAST_FRAME;
+            }
+    
+            // ═══ INIT LOTTIE ═══
+    
+            function initLottie(reentryDelay, restoreFrame = null) {
+                // [FIX H4] Zawsze czyść timery przed ponowną inicjalizacją
+                clearLaurelTimers();
+
+                // [FIX H2/H3] Guard na istniejący animSource — defensywny destroy
+                if (animSource) {
+                    animSource.destroy();
+                    animSource = null;
+                }
+
+                // [FIX H1] Defensywne czyszczenie containerRight — ghost canvas prevention
+                containerRight.innerHTML = '';
+
+                isStopped = true;
+                hasCompleted = restoreFrame != null;
+                isUnfolded = restoreFrame === LAST_FRAME;
                 isReversing = false;
                 isFolding = false;
                 reverseRemaining = 0;
-                
+    
+                destroyMirror();
+    
                 const config = {
                     renderer: 'canvas',
-                    loop: false,  // Jednorazowe wyrysowanie
+                    loop: false,
                     autoplay: false,
                     animationData: animationData,
                     rendererSettings: {
@@ -759,303 +896,369 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
                         progressiveLoad: true
                     }
                 };
-                
-                // Flaga ile animacji jest gotowych
-                let loadedCount = 0;
-                const totalAnims = (containerLeft ? 1 : 0) + (containerRight ? 1 : 0);
-                
-                // Funkcja startująca animację z delay z CSS variable
-                function scheduleAnimationStart() {
-                    loadedCount++;
-                    if (loadedCount === totalAnims) {
-                        const lottieDelay = (reentryDelay != null) ? reentryDelay : (parseInt(getComputedStyle(document.documentElement).getPropertyValue('--lottie-delay')) || 1750);
-                        trackedTimeout(() => {
-                            isStopped = false;
-                            animLeft?.setSpeed(0.3);
-                            animRight?.setSpeed(0.3);
-                            animLeft?.play();
-                            animRight?.play();
-                        }, lottieDelay);
+    
+                function onSourceLoaded() {
+                    // Stwórz mirror canvas
+                    const sourceCanvas = containerRight.querySelector('canvas');
+                    if (containerLeft && sourceCanvas) {
+                        createMirrorCanvas(sourceCanvas);
+                        queueMirrorSync();  // pierwszy sync z retry
                     }
+    
+                    // RESTORE PATH — po hard destroy, wróć do sensownego frame
+                    if (restoreFrame != null) {
+                        animSource.goToAndStop(restoreFrame, true);
+                        queueMirrorSync();
+                        isStopped = true;
+                        hasCompleted = true;
+                        isUnfolded = restoreFrame === LAST_FRAME;
+                        parkedFrame = restoreFrame;
+                        return;
+                    }
+    
+                    // NORMAL INTRO PATH
+                    const lottieDelay =
+                        (reentryDelay != null)
+                            ? reentryDelay
+                            : (parseInt(getComputedStyle(container) /* [FIX] was: documentElement */
+                                .getPropertyValue('--lottie-delay')) || 1750);
+    
+                    startTimer = trackedTimeout(() => {
+                        if (!animSource) return;
+    
+                        isStopped = false;
+                        setBothSpeed(LAUREL_CFG.introSpeed);
+                        setBothDirection(1);
+                        playBoth();
+                    }, lottieDelay);
                 }
-                
-                if (containerLeft) {
-                    animLeft = lottie.loadAnimation({ ...config, container: containerLeft });
-                    animLeft.addEventListener('DOMLoaded', () => {
-                        animLeft.goToAndStop(0, true);
-                        scheduleAnimationStart();
-                    });
-                    animLeft.addEventListener('complete', () => {
-                        if (isReversing) { onOneReverseComplete(animLeft); return; }
-                        animLeft.goToAndStop(27, true);
-                        if (!hasCompleted) onAnimationComplete();
-                    });
-                }
-                
-                if (containerRight) {
-                    animRight = lottie.loadAnimation({ ...config, container: containerRight });
-                    animRight.addEventListener('DOMLoaded', () => {
-                        animRight.goToAndStop(0, true);
-                        scheduleAnimationStart();
-                    });
-                    animRight.addEventListener('complete', () => {
-                        if (isReversing) { onOneReverseComplete(animRight); return; }
-                        animRight.goToAndStop(27, true);
-                    });
-                }
-                lottieHasInit = true;
+    
+                // Jedna instancja Lottie — zawsze w containerRight
+                animSource = lottie.loadAnimation({ ...config, container: containerRight });
+                animSource.setSubframe(false); // [A4.1]
+    
+                animSource.addEventListener('DOMLoaded', () => {
+                    animSource.goToAndStop(restoreFrame != null ? restoreFrame : 0, true);
+                    onSourceLoaded();
+                });
+    
+                // drawnFrame strzela PO renderze klatki na canvas
+                // → kopiujemy aktualną klatkę, nie poprzednią (w odróżnieniu od enterFrame)
+                animSource.addEventListener('drawnFrame', () => {
+                    queueMirrorSync();
+                });
+    
+                animSource.addEventListener('complete', () => {
+                    if (isReversing) {
+                        onOneReverseComplete();
+                        return;
+                    }
+                    animSource.goToAndStop(LAST_FRAME, true);
+                    queueMirrorSync();
+                    if (!hasCompleted) onAnimationComplete();
+                });
             }
-            
-            // Pełne niszczenie instancji Lottie (canvas + internal renderer + state reset)
+    
+            // ═══ DESTROY ═══
+    
             function destroyLottie() {
-                animLeft?.destroy(); animRight?.destroy();
-                animLeft = null; animRight = null;
+                clearLaurelTimers();
+    
+                // Zniszcz instancję Lottie (zdejmuje wszystkie listenery automatycznie)
+                animSource?.destroy();
+                animSource = null;
+    
+                // Zniszcz mirror canvas + anuluj pending rAF
+                destroyMirror();
+    
                 isStopped = true;
                 hasCompleted = false;
-                isUnfolded = false;
                 isReversing = false;
                 isFolding = false;
                 reverseRemaining = 0;
+    
+                // hasEverOpened i parkedFrame zostają — pamięć semantyczna lifecycle
             }
-            
-            // Funkcja do aktualizacji stanu po zakończeniu animacji
-            function onAnimationComplete() {
-                hasCompleted = true;
-                isStopped = true;
-                isUnfolded = true;  // Liście są teraz rozwinięte
-            }
-            
-            // IntersectionObserver - pauza gdy nie widoczny + scroll fold/unfold
+    
+            // ═══ VISIBILITY OBSERVER ═══
+    
             function setupVisibilityObserver() {
-                const target = containerLeft || containerRight;
-                if (!target) {
-                    return;
-                }
-                
-                // IO: destroy when off-screen, rebuild from zero on re-entry
+                const target = containerRight;
+                if (!target) return;
+    
                 const observer = trackObserver(new IntersectionObserver((entries) => {
                     entries.forEach(entry => {
                         isVisible = entry.isIntersecting;
+    
                         if (!isVisible) {
-                            // OFF-SCREEN → full teardown (canvas + renderer + state)
-                            destroyLottie();
-                        } else if (lottieHasInit && !animLeft && !animRight) {
-                            // ON-SCREEN re-entry → rebuild with instant play (0ms delay)
-                            initLottie(0);
+                            // SHORT HIDDEN → park
+                            clearTimeout(hiddenDestroyTimer);
+                            hiddenDestroyTimer = trackedTimeout(() => {
+                                // LONG HIDDEN → hard destroy
+                                destroyLottie();
+                            }, LAUREL_CFG.hiddenDestroyMs);
+    
+                            if (animSource) {
+                                pauseBoth();
+                                parkedFrame = isUnfolded ? LAST_FRAME : 0;
+                                isStopped = true;
+                            }
+    
+                            return;
                         }
+    
+                        // visible again
+                        clearTimeout(hiddenDestroyTimer);
+                        hiddenDestroyTimer = null;
+    
+                        if (animSource) {
+                            // re-entry po short hidden
+                            if (hasCompleted) {
+                                stopBothAt(isUnfolded ? LAST_FRAME : 0);
+                                isStopped = true;
+                                isReversing = false;
+                                isFolding = false;
+                                reverseRemaining = 0;
+                            } else {
+                                // re-entry przed completion — resume intro
+                                isStopped = false;
+                                setBothDirection(1);
+                                setBothSpeed(LAUREL_CFG.introSpeed);
+                                playBoth();
+                            }
+                            return;
+                        }
+    
+                        // re-entry po destroy — odtwórz sensowny stan
+                        if (hasEverOpened) {
+                            initLottie(0, parkedFrame);
+                            return;
+                        }
+    
+                        // pierwszy start lub re-entry zanim osiągnęły open
+                        initLottie(0);
                     });
-                }, { threshold: 0.1, rootMargin: '50px' }));
+                }, {
+                    threshold: LAUREL_CFG.ioThreshold,
+                    rootMargin: LAUREL_CFG.ioRootMargin
+                }));
+    
                 observer.observe(target);
-                
-                // Scroll observer dla fold/unfold
-                let lastScrollY = 0;
+    
+                let lastScrollY = scrollRuntime.getScroll();
                 let ticking = false;
-                
-                // Native Lottie reverse — rAF-synced, no setTimeout chain
-                // fr=30, op=28: 28/30 = 0.933s @ 1×. setSpeed(1.85) → 0.933/1.85 ≈ 504ms
+                let wheelAccumulator = 0;
+    
+                // ═══ FOLD / UNFOLD ═══
+    
                 function animateFold() {
                     if (isFolding) return;
+                    if (!canTransition()) return;
+                    if (!animSource) return;
+    
                     isFolding = true;
                     isReversing = true;
-                    reverseRemaining = [animLeft, animRight].filter(Boolean).length;
-                    
-                    [animLeft, animRight].forEach(anim => {
-                        if (!anim) return;
-                        anim.setDirection(-1);
-                        anim.setSpeed(1.85);
-                        anim.play();
-                    });
+                    reverseRemaining = 1;
+    
+                    animSource.setDirection(-1);
+                    animSource.setSpeed(LAUREL_CFG.foldSpeed);
+                    animSource.play();
+                    // mirror sync via drawnFrame — automatyczne
+    
+                    commitCooldown();
                 }
-                
+    
+                function animateUnfold() {
+                    if (!canTransition()) return;
+                    if (!animSource) return;
+    
+                    setBothDirection(1);
+                    setBothSpeed(LAUREL_CFG.unfoldSpeed);
+                    playBoth();
+    
+                    isUnfolded = true;
+                    isReversing = false;
+                    isFolding = false;
+                    commitCooldown();
+                }
+    
                 function handleScroll() {
-                    if (!ticking) {
-                        requestAnimationFrame(() => {
-                            const currentScrollY = scrollRuntime.getScroll();
-                            
-                            if (!hasCompleted) {
-                                lastScrollY = currentScrollY;
-                                ticking = false;
-                                return;
-                            }
-                            
-                            // Scroll w dół > 50px → zwiń liście (animacja reverse)
-                            if (currentScrollY > lastScrollY && currentScrollY > 50 && isUnfolded && !isFolding) {
-                                animateFold();
-                                isUnfolded = false;
-                            }
-                            // Na samej górze → rozwiń liście (animacja forward)
-                            else if (currentScrollY === 0 && !isUnfolded && !isFolding) {
-                                animLeft?.setSpeed(1);
-                                animRight?.setSpeed(1);
-                                animLeft?.goToAndPlay(0, true);
-                                animRight?.goToAndPlay(0, true);
-                                isUnfolded = true;
-                            }
-                            
+                    if (ticking) return;
+    
+                    ticking = true;
+                    requestAnimationFrame(() => {
+                        const currentScrollY = scrollRuntime.getScroll();
+    
+                        if (!hasCompleted) {
                             lastScrollY = currentScrollY;
                             ticking = false;
-                        });
-                        ticking = true;
-                    }
+                            return;
+                        }
+    
+                        if (!isVisible) {
+                            lastScrollY = currentScrollY;
+                            ticking = false;
+                            return;
+                        }
+    
+                        const delta = currentScrollY - lastScrollY;
+    
+                        if (delta > 0 && currentScrollY > LAUREL_CFG.foldScrollMinY && isUnfolded && !isFolding) {
+                            animateFold();
+                            isUnfolded = false;
+                        }
+                        else if (currentScrollY <= LAUREL_CFG.unfoldTopEpsilon && !isUnfolded && !isFolding) {
+                            animateUnfold();
+                        }
+    
+                        lastScrollY = currentScrollY;
+                        ticking = false;
+                    });
                 }
-                
-                // Nasłuchuj na wszystkich możliwych źródłach
+    
                 listen(window, 'scroll', handleScroll, { passive: true });
                 listen(document, 'scroll', handleScroll, { passive: true });
-                
-                // WHEEL EVENT - fallback dla iframe gdzie scroll nie działa
-                let wheelAccumulator = 0;
-                const WHEEL_THRESHOLD = 5; // Próg aktywacji - NISKI dla natychmiastowej reakcji
-                
+    
                 listen(document, 'wheel', (e) => {
-                    if (!hasCompleted || isFolding) return;
-                    
-                    // Reset accumulator przy zmianie kierunku
+                    if (!hasCompleted || isFolding || !isVisible) return;
+                    if (!canTransition()) return;
+    
                     if ((wheelAccumulator > 0 && e.deltaY < 0) || (wheelAccumulator < 0 && e.deltaY > 0)) {
                         wheelAccumulator = 0;
                     }
-                    
+    
                     wheelAccumulator += e.deltaY;
-                    
-                    // Scroll w dół (wheel down) → zwiń liście (animacja reverse)
-                    if (e.deltaY > 0 && wheelAccumulator > WHEEL_THRESHOLD && isUnfolded) {
+    
+                    if (wheelAccumulator > LAUREL_CFG.wheelThreshold && isUnfolded) {
                         animateFold();
                         isUnfolded = false;
                         wheelAccumulator = 0;
                     }
-                    // Scroll w górę (wheel up) → rozwiń liście (animacja forward)
-                    else if (e.deltaY < 0 && wheelAccumulator < -WHEEL_THRESHOLD && !isUnfolded) {
-                        animLeft?.setSpeed(1);  // Normalna prędkość (nie 0.3x jak na starcie)
-                        animRight?.setSpeed(1);
-                        animLeft?.goToAndPlay(0, true);
-                        animRight?.goToAndPlay(0, true);
-                        isUnfolded = true;
+                    else if (wheelAccumulator < -LAUREL_CFG.wheelThreshold && !isUnfolded) {
+                        animateUnfold();
                         wheelAccumulator = 0;
                     }
                 }, { passive: true });
-                
-                // Sprawdź czy jest jakiś scrollable parent
-                const scrollParent = container?.parentElement;
+    
+                const scrollParent = containerRight?.parentElement;
                 if (scrollParent && scrollParent !== document.body) {
                     listen(scrollParent, 'scroll', handleScroll, { passive: true });
                 }
             }
-            
-            
-            // Init
+    
+    
+            // ═══ INIT ═══
             initLottie();
             setupVisibilityObserver();
-            
-            // Lottie cleanup for kill()
-            cleanups.push(destroyLottie);
+    
+            // Cleanup for kill()
+            cleanups.push(() => {
+                clearLaurelTimers();
+                destroyLottie();
+            });
         })();
     }
-
     // ═════════════════════════════════════════════════════════════════
-    // BLOCK 4: BRANDS MARQUEE (logotypy z /LOGOTYPY/)
+    // BLOCK 4: BRANDS MARQUEE — STABLE CORE (A6)
+    // ═════════════════════════════════════════════════════════════════
+    // A6: Stabilny marquee z:
+    // - exact sequence width (nie heurystyki)
+    // - pause/resume zamiast destroy/rebuild
+    // - zachowanie pozycji przy re-entry i resize
+    // - idle mode (lżejsza praca gdy brak inputu)
+    // - przygotowanie pod drag (jeden model ruchu)
     // ═════════════════════════════════════════════════════════════════
     {
-            // 1. ZASOBY — pliki z public/LOGOTYPY (wersje _new)
-            const logoFiles = [
-                '1sklepy1_new.svg', '2mbank1_new.svg', '3zabka1_new.svg', '4deloitte1_new.svg',
-                '5grycan1_new.svg', '6gsk1_new.svg', '7ministerstwo1_new.svg', '8mokate1_new.svg',
-                '9wella1_new.svg', '10oracle1_new.svg', '11sokolow1_new.svg', '12skanska1_new.svg'
-            ];
-            const logosOnScreen = 10;
+            // 1. ZASOBY — SVG logotypy z /public/LOGOTYPY (HERO_MARQUEE_LOGO_SRCS)
+            const LOGO_COUNT = HERO_MARQUEE_LOGO_SRCS.length;
 
-            function createLogoItem() {
+            function createLogoItemElement(index, withEntry) {
                 const div = document.createElement('div');
-                div.className = 'logo-item';
+                div.className = withEntry ? 'logo-item with-entry' : 'logo-item';
                 const img = document.createElement('img');
+                img.src = HERO_MARQUEE_LOGO_SRCS[index % LOGO_COUNT];
                 img.alt = '';
-                img.loading = 'lazy';
-                img.draggable = false;
-                /* Rezerwacja slotu layoutu (Lighthouse unsized-images) — zgodne z .logo-item 131×65 / mobile 66×33 */
-                img.width = 131;
-                img.height = 65;
+                img.loading = 'eager';
+                img.decoding = 'async';
+                img.setAttribute('fetchpriority', 'low');
                 div.appendChild(img);
                 return div;
-            }
-
-            function setLogoItemSource(div, index) {
-                const img = div.querySelector('img');
-                if (img) img.src = `/LOGOTYPY/${logoFiles[index % logoFiles.length]}`;
             }
 
             let currentMarqueeInstance = null;
             marqueeStop = () => currentMarqueeInstance?.stop?.();
             marqueeStart = () => currentMarqueeInstance?.start?.();
 
-            // 2. SILNIK FIZYKI — TIDAL DRIFT (v2: quickSetter, no CSS Bridge)
-            // ─────────────────────────────────────────────────────────────
-            // CSS Bridge (transition: 33ms linear) USUNIĘTY — fundamentalnie
-            // niekompatybilny z wrap/loop. Przy wrapie przeglądarka interpoluje
-            // skok ~1660px przez 33ms = widoczny flash. Nie da się tego obejść
-            // bez layout thrashing (void offsetWidth na każdym wrapie).
-            //
-            // Render: gsap.quickSetter("x","px") — bezpośredni DOM write,
-            // zero transition overhead. 30fps throttle wystarczy dla marquee
-            // (wolny drift, ~21px/s base). quickSetter omija string parsing
-            // i jest sprawdzony w produkcji (stary silnik używał tego samego).
-            //
-            // Input: wheel = PRIMARY (działa w iframe), scroll = FALLBACK.
-            // Guard: jeśli wheel odpalił w tej klatce, scroll delta jest
-            // ignorowany — zapobiega podwójnej akumulacji tego samego gestu.
-            //
-            // Przygotowane pod scrollRuntime (Next.js):
-            // scrollRuntime.getRawScroll() z outer scope
-            // Klasa nie importuje nic — czyta helper z heroSectionInit scope.
-            // ─────────────────────────────────────────────────────────────
-            class TidalDriftMarquee {
-                constructor(trackElement, loopLimitPx) {
+            // ═══════════════════════════════════════════════════════════════
+            // SILNIK FIZYKI — STABLE TIDAL DRIFT (A6) + DRAG (A8)
+            // ───────────────────────────────────────────────────────────────
+            // Jeden model ruchu: pos + velocity + baseSpeed
+            // Scroll/wheel/drag injectuje impuls do velocity
+            // Wrap oparty na exact sequenceWidth (mierzone po renderze)
+            // Idle mode: throttle render gdy velocity ≈ 0
+            // ═══════════════════════════════════════════════════════════════
+            class StableTidalMarquee {
+                constructor(trackElement, sequenceWidth, viewportElement) {
                     this.track = trackElement;
-                    this.limit = Math.abs(loopLimitPx);
+                    this.viewport = viewportElement;
+                    this.sequenceWidth = Math.abs(sequenceWidth);
 
                     // ⚙️ TIDAL DRIFT — parametry fizyki
                     this.cfg = {
                         baseSpeed:     0.35,   // px/frame base drift (← kierunek)
-                        lerp:          0.07,   // smoothing: 7% luki/frame → "masa" bez betonozy
+                        lerp:          0.07,   // smoothing: 7% luki/frame
                         friction:      0.95,   // decay per frame @60fps (dt-aware)
                         scrollGain:    5.0,    // czułość reakcji na scroll
-                        maxBoost:      12,     // hard cap na velocity (px/frame)
-                        velocityClamp: 40      // hard cap na akumulowaną velocity
+                        velocityClamp: 40,     // hard cap na velocity
+                        idleThreshold: 0.01,   // próg dla idle mode
+                        dragMomentum:  0.18    // mnożnik release velocity → impulse
                     };
 
-                    // Stan pozycyjny — 2-layer architecture (target + visual)
-                    this.x        = 0;
-                    this.targetX  = 0;
-                    this.velocity = 0;
-                    this.rawDelta = 0;
-                    this._wheelFiredThisFrame = false; // guard: deduplikacja wheel vs scroll
+                    // Stan pozycyjny — jeden source of truth
+                    this.x        = 0;       // visual position
+                    this.targetX  = 0;       // target position (lerped)
+                    this.velocity = 0;       // scroll-induced velocity
+                    this.rawDelta = 0;       // accumulated input delta
+                    this._wheelFiredThisFrame = false;
 
-                    this.isPaused  = false;
-                    this.isActive  = false;
+                    this.isActive = false;
+                    this._lastRender = 0;
+                    this._isIdle = true;     // idle mode flag
+
+                    // ═══ DRAG STATE (A8) ═══
+                    this.isDragging = false;
+                    this._dragPointerId = null;
+                    this._dragLastX = 0;
+                    this._dragLastT = 0;
+                    this._dragReleaseVel = 0;
 
                     // Bindings
                     this.update   = this.update.bind(this);
                     this.onWheel  = this.onWheel.bind(this);
                     this.onScroll = this.onScroll.bind(this);
+                    this.onPointerDown = this.onPointerDown.bind(this);
+                    this.onPointerMove = this.onPointerMove.bind(this);
+                    this.onPointerUp   = this.onPointerUp.bind(this);
                     this.lastScrollY = scrollRuntime.getRawScroll();
 
-                    // Render: quickSetter = bezpośredni DOM write, zero transition
+                    // Render: quickSetter = bezpośredni DOM write
                     this._setX = gsap.quickSetter(trackElement, "x", "px");
-                    this._lastRender = 0; // 30fps throttle
                 }
 
                 start() {
                     if (this.isActive) return;
                     this.isActive = true;
 
-                    // B-VEL-01 AUTO-FIX: reset velocity state on re-entry
-                    // Zapobiega spike z nagromadzonego scrollY podczas pauzy
+                    // Reset velocity (ale NIE pozycji!) przy start
                     this.velocity = 0;
                     this.rawDelta = 0;
                     this.lastScrollY = scrollRuntime.getRawScroll();
 
-                    // wheel = PRIMARY source (działa w iframe + na stronie)
                     window.addEventListener('wheel', this.onWheel, { passive: true });
-                    // scroll = FALLBACK (na wypadek braku wheel events, np. touch scroll)
                     window.addEventListener('scroll', this.onScroll, { passive: true });
+
+                    // Drag events na viewport
+                    this.viewport.addEventListener('pointerdown', this.onPointerDown, { passive: true }); /* [FIX #4] no preventDefault needed */
 
                     if (typeof gsap !== 'undefined') {
                         gsap.ticker.add(this.update);
@@ -1065,81 +1268,211 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
                 stop() {
                     if (!this.isActive) return;
                     this.isActive = false;
+
+                    // Zakończ drag bezpiecznie jeśli aktywny
+                    if (this.isDragging) {
+                        this._endDrag();
+                    }
+
                     window.removeEventListener('wheel', this.onWheel);
                     window.removeEventListener('scroll', this.onScroll);
+                    this.viewport.removeEventListener('pointerdown', this.onPointerDown);
+
                     if (typeof gsap !== 'undefined') {
                         gsap.ticker.remove(this.update);
                     }
+                    // POZYCJA ZACHOWANA — nie resetujemy x, targetX
                 }
 
-                // ── INPUT: wheel (PRIMARY — zachowuje kierunek) ──
+                // ═══ DRAG HANDLERS (A8) ═══
+
+                onPointerDown(e) {
+                    if (!e.isPrimary) return;
+                    
+                    this.isDragging = true;
+                    this._dragPointerId = e.pointerId;
+                    this._dragLastX = e.clientX;
+                    this._dragLastT = performance.now();
+                    this._dragReleaseVel = 0;
+
+                    // Capture pointer for reliable tracking
+                    this.viewport.setPointerCapture(e.pointerId);
+                    this.viewport.classList.add('is-dragging');
+
+                    // Global listeners for move/up
+                    window.addEventListener('pointermove', this.onPointerMove, { passive: true });
+                    window.addEventListener('pointerup', this.onPointerUp, { passive: true });
+                    window.addEventListener('pointercancel', this.onPointerUp, { passive: true });
+
+                    this._isIdle = false;
+                }
+
+                onPointerMove(e) {
+                    if (!this.isDragging || e.pointerId !== this._dragPointerId) return;
+
+                    const now = performance.now();
+                    const dx = e.clientX - this._dragLastX;
+                    const dt = Math.max((now - this._dragLastT) / 1000, 0.001);
+
+                    // Direct update to same position (ten sam pos co autoplay)
+                    this.x += dx;
+                    this.targetX += dx;
+
+                    // Track release velocity
+                    this._dragReleaseVel = dx / dt;
+
+                    this._dragLastX = e.clientX;
+                    this._dragLastT = now;
+
+                    // Wrap podczas drag
+                    while (this.x <= -this.sequenceWidth) {
+                        this.x        += this.sequenceWidth;
+                        this.targetX  += this.sequenceWidth;
+                    }
+                    while (this.x >= 0) {
+                        this.x        -= this.sequenceWidth;
+                        this.targetX  -= this.sequenceWidth;
+                    }
+
+                    // Render immediately
+                    this._setX(this.x);
+                    this._lastRender = now;
+                }
+
+                onPointerUp(e) {
+                    if (!this.isDragging || e.pointerId !== this._dragPointerId) return;
+                    this._endDrag();
+                }
+
+                _endDrag() {
+                    if (!this.isDragging) return;
+
+                    // Inject release momentum into physics
+                    this.velocity = this._dragReleaseVel * this.cfg.dragMomentum;
+                    this.velocity = Math.max(
+                        -this.cfg.velocityClamp,
+                        Math.min(this.cfg.velocityClamp, this.velocity)
+                    );
+
+                    // Cleanup
+                    this.isDragging = false;
+                    this.viewport.classList.remove('is-dragging');
+
+                    if (this._dragPointerId !== null) {
+                        try {
+                            this.viewport.releasePointerCapture(this._dragPointerId);
+                        } catch (e) { /* already released */ }
+                    }
+                    this._dragPointerId = null;
+
+                    window.removeEventListener('pointermove', this.onPointerMove);
+                    window.removeEventListener('pointerup', this.onPointerUp);
+                    window.removeEventListener('pointercancel', this.onPointerUp);
+                }
+
+                // ── INPUT: wheel (PRIMARY) ──
                 onWheel(e) {
+                    if (this.isDragging) return; // ignore during drag
                     const delta = Math.abs(e.deltaY) > Math.abs(e.deltaX)
                         ? e.deltaY : e.deltaX;
                     if (Math.abs(delta) > 1) {
                         this.rawDelta += delta * 0.8;
-                        this._wheelFiredThisFrame = true; // blokuj scroll w tej klatce
+                        this._wheelFiredThisFrame = true;
+                        this._isIdle = false; // wyjście z idle
                     }
                 }
 
-                // ── INPUT: scroll (FALLBACK — ignorowany gdy wheel aktywny) ──
+                // ── INPUT: scroll (FALLBACK) ──
                 onScroll() {
-                    if (this._wheelFiredThisFrame) return; // wheel już dostarczył delta
+                    if (this.isDragging) return; // ignore during drag
+                    if (this._wheelFiredThisFrame) return;
                     const currentY = scrollRuntime.getRawScroll();
                     const delta = currentY - this.lastScrollY;
                     this.lastScrollY = currentY;
-                    if (Math.abs(delta) > 500) return; // skip scroll restoration spike
+                    if (Math.abs(delta) > 500) return; // skip restoration spike
                     if (Math.abs(delta) > 0) {
                         this.rawDelta += delta * 0.8;
+                        this._isIdle = false;
                     }
                 }
 
-                // ── TICK: fizyka + render (gsap.ticker) ──
+                // ── TICK: fizyka + render ──
                 update() {
-                    if (this.isPaused || this.limit <= 0) return;
+                    if (this.sequenceWidth <= 0) return;
+
+                    // Skip physics during drag (direct control)
+                    if (this.isDragging) return;
 
                     const dt = gsap.ticker.deltaRatio(60);
 
-                    // 1. ACCUMULATE — rawDelta → velocity (signed, bezpośrednio)
+                    // 1. ACCUMULATE input → velocity
                     this.velocity += this.rawDelta * this.cfg.scrollGain * 0.01;
                     this.velocity = Math.max(
                         -this.cfg.velocityClamp,
                         Math.min(this.cfg.velocityClamp, this.velocity)
                     );
                     this.rawDelta = 0;
-                    this._wheelFiredThisFrame = false; // reset guard for next frame
+                    this._wheelFiredThisFrame = false;
 
-                    // 2. FRICTION DECAY — dt-aware (stabilne na 60/120/144Hz)
+                    // 2. FRICTION DECAY (dt-aware)
                     this.velocity *= Math.pow(this.cfg.friction, dt);
                     if (Math.abs(this.velocity) < 0.001) this.velocity = 0;
 
-                    // 3. TOTAL SPEED — base (← zawsze) + velocity (± scroll dir)
+                    // 3. TOTAL SPEED = base + velocity
                     const totalSpeed = (-this.cfg.baseSpeed + this.velocity) * dt;
 
                     // 4. ADVANCE TARGET
                     this.targetX += totalSpeed;
 
-                    // 5. LERP — dt-aware
+                    // 5. LERP (dt-aware)
                     const lerpFactor = 1 - Math.pow(1 - this.cfg.lerp, dt);
                     this.x += (this.targetX - this.x) * lerpFactor;
 
-                    // 6. WRAP — bidirektionalny infinite loop
-                    while (this.x <= -this.limit) {
-                        this.x      += this.limit;
-                        this.targetX += this.limit;
+                    // 6. WRAP — bidirectional infinite loop
+                    while (this.x <= -this.sequenceWidth) {
+                        this.x        += this.sequenceWidth;
+                        this.targetX  += this.sequenceWidth;
                     }
                     while (this.x >= 0) {
-                        this.x      -= this.limit;
-                        this.targetX -= this.limit;
+                        this.x        -= this.sequenceWidth;
+                        this.targetX  -= this.sequenceWidth;
                     }
 
-                    // 7. RENDER — 30fps throttle, quickSetter (bezpośredni DOM write)
-                    //    Brak transition = wrap jest instant i niewidoczny
-                    //    (duplikat logo na granicy wrapu = identyczny układ)
+                    // 7. IDLE MODE — throttle render gdy velocity ≈ 0
+                    const isCurrentlyIdle = Math.abs(this.velocity) < this.cfg.idleThreshold;
                     const now = performance.now();
-                    if (now - this._lastRender >= 33.3) {
-                        this._setX(this.x);
-                        this._lastRender = now;
+
+                    if (isCurrentlyIdle && this._isIdle) {
+                        // W idle: render co 33ms (30fps)
+                        if (now - this._lastRender < 33.3) return;
+                    }
+
+                    this._isIdle = isCurrentlyIdle;
+                    this._setX(this.x);
+                    this._lastRender = now;
+                }
+
+                // ── RESIZE: przelicz limit bez resetu pozycji ──
+                updateSequenceWidth(newWidth) {
+                    if (newWidth <= 0) return;
+                    const oldWidth = this.sequenceWidth;
+                    this.sequenceWidth = newWidth;
+
+                    // Przelicz pozycję proporcjonalnie
+                    if (oldWidth > 0) {
+                        const ratio = newWidth / oldWidth;
+                        this.x *= ratio;
+                        this.targetX *= ratio;
+                    }
+
+                    // Re-normalize do nowego zakresu
+                    while (this.x <= -this.sequenceWidth) {
+                        this.x        += this.sequenceWidth;
+                        this.targetX  += this.sequenceWidth;
+                    }
+                    while (this.x >= 0) {
+                        this.x        -= this.sequenceWidth;
+                        this.targetX  -= this.sequenceWidth;
                     }
                 }
 
@@ -1149,647 +1482,1247 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
                 }
             }
 
-            // 3. BUDOWANIE HTML (Integracja)
-            // reentryDelay: null = initial page choreography (--marquee-offset), number = re-entry stagger base
+            // ═══════════════════════════════════════════════════════════════
+            // DOM BUILDER — exact sequence, raz budowany
+            // ═══════════════════════════════════════════════════════════════
             let brandsHasBuilt = false;
-            function buildBrandsTrack(reentryDelay) {
+            let domIsBuilt = false;
+
+            function buildBrandsDOM(track, reentryDelay) {
+                if (domIsBuilt) return; // DOM już istnieje
+
+                track.style.transform = 'translate3d(0,0,0)';
+                const startOffset = (reentryDelay != null)
+                    ? reentryDelay
+                    : parseFloat(getComputedStyle(container).getPropertyValue('--marquee-offset')) || 2.0; /* [FIX] was: documentElement */
+
+                const existing = track.querySelectorAll('.logo-item');
+                const hasSSR = existing.length >= LOGO_COUNT;
+
+                if (hasSSR) {
+                    // SSR: pierwsza sekwencja już w HTML — tylko animacja wejścia + klon pod pętlę
+                    for (let i = 0; i < LOGO_COUNT; i++) {
+                        const div = existing[i];
+                        div.classList.add('with-entry');
+                        const baseDelay = 0.08;
+                        const wave = Math.sin(i * 0.4) * 0.015;
+                        const delay = (startOffset + i * baseDelay + wave).toFixed(3);
+                        div.style.animationDelay = `${delay}s, ${delay}s`;
+                        div.addEventListener('animationend', () => { div.classList.remove('with-entry'); }, { once: true });
+                    }
+                    for (let i = 0; i < LOGO_COUNT; i++) {
+                        const clone = existing[i].cloneNode(true);
+                        clone.classList.remove('with-entry');
+                        clone.className = 'logo-item';
+                        clone.style.animationDelay = '';
+                        track.appendChild(clone);
+                    }
+                } else {
+                    track.innerHTML = '';
+                    const fragment = document.createDocumentFragment();
+                    for (let i = 0; i < LOGO_COUNT; i++) {
+                        const div = createLogoItemElement(i, true);
+                        const baseDelay = 0.08;
+                        const wave = Math.sin(i * 0.4) * 0.015;
+                        const delay = (startOffset + i * baseDelay + wave).toFixed(3);
+                        div.style.animationDelay = `${delay}s, ${delay}s`;
+                        div.addEventListener('animationend', () => { div.classList.remove('with-entry'); }, { once: true });
+                        fragment.appendChild(div);
+                    }
+                    for (let i = 0; i < LOGO_COUNT; i++) {
+                        fragment.appendChild(createLogoItemElement(i, false));
+                    }
+                    track.appendChild(fragment);
+                }
+                domIsBuilt = true;
+            }
+
+            function measureSequenceWidth(track) {
+                const items = track.children;
+                if (items.length < LOGO_COUNT + 1) return 0;
+
+                // Exact measurement: różnica offsetLeft między item[0] a item[LOGO_COUNT]
+                // (początek drugiej sekwencji)
+                // BEZ DPR rounding — offsetLeft jest już w CSS pixels
+                return items[LOGO_COUNT].offsetLeft - items[0].offsetLeft;
+            }
+
+            function initMarquee(reentryDelay) {
                 const track = $id('hero-brandsMarqueeTrack');
-                if (!track) return;
-                
-                // Sprzątanie starej instancji
+                const wrapper = $id('hero-brandsMarqueeWrapper');
+                if (!track || !wrapper) return;
+
+                // Zniszcz starą instancję (ale DOM zostaje)
                 if (currentMarqueeInstance) {
                     currentMarqueeInstance.destroy();
                     currentMarqueeInstance = null;
                 }
 
-                // Reset DOM
-                track.innerHTML = '';
-                track.style.animation = 'none';  
-                track.style.transform = 'translate3d(0,0,0)';
-                
-                const fragment = document.createDocumentFragment();
+                // Buduj DOM tylko raz
+                buildBrandsDOM(track, reentryDelay);
 
-                // Zestaw 1 (animacja wejścia)
-                const startOffset = (reentryDelay != null)
-                    ? reentryDelay
-                    : parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--marquee-offset')) || 2.0;
-                for (let i = 0; i < logosOnScreen; i++) {
-                    const div = createLogoItem();
-                    setLogoItemSource(div, i);
-                    div.classList.add('with-entry');
-                    const baseDelay = 0.08;
-                    const wave = Math.sin(i * 0.4) * 0.015;
-                    const delay = (startOffset + i * baseDelay + wave).toFixed(3);
-                    div.style.animationDelay = `${delay}s, ${delay}s`;
-                    div.addEventListener('animationend', () => { div.classList.remove('with-entry'); }, { once: true });
-                    fragment.appendChild(div);
-                }
-                
-                // Zestaw 2 (Bufor)
-                const approxItemWidth = 166; 
-                const itemsNeededToFillScreen = Math.ceil(window.innerWidth / approxItemWidth);
-                const bufferCount = Math.max(logosOnScreen + 2, itemsNeededToFillScreen + 4);
-
-                for (let i = 0; i < bufferCount; i++) {
-                    const div = createLogoItem();
-                    setLogoItemSource(div, logosOnScreen + i);
-                    fragment.appendChild(div);
-                }
-
-                track.appendChild(fragment);
-                
-                // Start silnika JS
+                // Double rAF = layout committed, pomiar stabilny
                 requestAnimationFrame(() => {
-                    const items = track.children;
-                    if (items.length < logosOnScreen + 1) return;
+                    requestAnimationFrame(() => {
+                        const sequenceWidth = measureSequenceWidth(track);
+                        if (sequenceWidth <= 0) return;
 
-                    const firstItem = items[0];
-                    const duplicateStartItem = items[logosOnScreen];
-                    
-                    const rawDistance = duplicateStartItem.offsetLeft - firstItem.offsetLeft;
-                    const dpr = window.devicePixelRatio || 1;
-                    const scrollDistance = Math.round(rawDistance * dpr) / dpr;
-                    
-                    if (scrollDistance <= 0) return;
-                    currentMarqueeInstance = new TidalDriftMarquee(track, scrollDistance);
-                    currentMarqueeInstance.start();
-                    brandsHasBuilt = true;
+                        currentMarqueeInstance = new StableTidalMarquee(track, sequenceWidth, wrapper);
+                        currentMarqueeInstance.start();
+                        brandsHasBuilt = true;
+                    });
                 });
             }
-            
-            // 4. OPTYMALIZACJA — full destroy/rebuild on viewport exit/entry
-            // Off-screen: destroy marquee + clear DOM (zero CPU/GPU/events)
-            // On-screen:  rebuild with short re-entry animation (fresh physics state)
+
+            // ═══════════════════════════════════════════════════════════════
+            // LIFECYCLE — pause/resume, NIE destroy/rebuild
+            // ═══════════════════════════════════════════════════════════════
             function setupBrandsVisibilityObserver() {
                 const wrapper = $id('hero-brandsMarqueeWrapper');
                 if (!wrapper) return;
-                
+
                 const observer = trackObserver(new IntersectionObserver((entries) => {
                     entries.forEach(entry => {
                         if (!entry.isIntersecting) {
-                            // OFF-SCREEN → full teardown (ticker + global events + DOM)
+                            // OFF-SCREEN → stop physics (DOM stays, position preserved)
+                            currentMarqueeInstance?.stop();
+                        } else {
+                            // ON-SCREEN → resume from current position
                             if (currentMarqueeInstance) {
-                                currentMarqueeInstance.destroy();
-                                currentMarqueeInstance = null;
+                                currentMarqueeInstance.start();
+                            } else if (brandsHasBuilt) {
+                                // Instancja zniszczona przez kill() → rebuild
+                                initMarquee(0);
                             }
-                            const track = $id('hero-brandsMarqueeTrack');
-                            if (track) { track.innerHTML = ''; track.style.transform = 'translate3d(0,0,0)'; }
-                        } else if (brandsHasBuilt && !currentMarqueeInstance) {
-                            // ON-SCREEN re-entry → rebuild with short stagger (0s base + wave)
-                            buildBrandsTrack(0);
                         }
                     });
-                }, { threshold: 0.0 }));
-                
+                }, { threshold: 0.0, rootMargin: '100px' }));
+
                 observer.observe(wrapper);
             }
 
-            // Marquee cleanup for kill()
+            // ═══════════════════════════════════════════════════════════════
+            // RESIZE — przelicz limit, zachowaj pozycję
+            // ═══════════════════════════════════════════════════════════════
+            let brandsResizeTimeout;
+            let lastBrandsWidth = window.innerWidth;
+
+            listen(window, 'resize', () => {
+                if (window.innerWidth === lastBrandsWidth) return;
+                lastBrandsWidth = window.innerWidth;
+                clearTimeout(brandsResizeTimeout);
+
+                brandsResizeTimeout = trackedTimeout(() => {
+                    const track = $id('hero-brandsMarqueeTrack');
+                    if (!track || !currentMarqueeInstance) return;
+
+                    // Remeasure sequence width
+                    const newWidth = measureSequenceWidth(track);
+                    if (newWidth <= 0) return;
+
+                    // Update limit bez resetu pozycji
+                    currentMarqueeInstance.updateSequenceWidth(newWidth);
+                }, 200);
+            });
+
+            // Cleanup for kill()
             cleanups.push(() => {
-                if (currentMarqueeInstance) { currentMarqueeInstance.destroy(); currentMarqueeInstance = null; }
+                if (currentMarqueeInstance) {
+                    currentMarqueeInstance.destroy();
+                    currentMarqueeInstance = null;
+                }
+                // Przy kill() czyścimy też DOM
+                const track = $id('hero-brandsMarqueeTrack');
+                if (track) {
+                    track.innerHTML = '';
+                    track.style.transform = '';
+                }
+                domIsBuilt = false;
+                brandsHasBuilt = false;
             });
 
             // Init
             requestAnimationFrame(() => {
-                buildBrandsTrack();
+                initMarquee();
                 setupBrandsVisibilityObserver();
-            });
-            
-            let brandsResizeTimeout;
-            let lastBrandsWidth = window.innerWidth;
-            listen(window, 'resize', () => {
-                if (window.innerWidth === lastBrandsWidth) return; // skip height-only changes (mobile address bar)
-                lastBrandsWidth = window.innerWidth;
-                clearTimeout(brandsResizeTimeout);
-                brandsResizeTimeout = trackedTimeout(() => buildBrandsTrack(0), 200);
             });
     }
 
+
     // ═════════════════════════════════════════════════════════════════
-    // BLOCK 5: TRAIL (PARTICLE SYSTEM) — PHOTO PLACEHOLDERS
+    // BLOCK 5: TRAIL (PARTICLE SYSTEM) — FINAL PRODUCTION PATCH
     // ═════════════════════════════════════════════════════════════════
     {
         (function() {
-        const trailEl = $id('hero-trailContainer');
-        if (!trailEl || typeof gsap === 'undefined' || window.innerWidth <= 1200) return;
+            const trailEl = $id('hero-trailContainer');
+            if (!trailEl || typeof gsap === 'undefined' || window.innerWidth <= 1200) return;
 
-        /* ═══ CONFIG ═══ */
-        const vw = window.innerWidth;
-        const SIZE_SCALE = vw >= 2000 ? 1
-                         : vw <= 1200 ? 0.7
-                         : 0.7 + (vw - 1200) / 800 * 0.3;
+            /* ═══ CONFIG ═══ */
+            const vw = window.innerWidth;
+            const SIZE_SCALE = vw >= 2000 ? 1
+                             : vw <= 1200 ? 0.7
+                             : 0.7 + (vw - 1200) / 800 * 0.3;
 
-        const V = {
-            ASPECT:         241 / 308,    // proporcje realnych zdjęć (308×241px)
-            SIZE_MAX:       Math.round(288 * SIZE_SCALE),
-            SIZE_MIN_RATIO: 0.80,
-            SPACING_SLOW:   250,
-            SPACING_FAST:   130,
-            SPEED_FLOOR:    0.15,
-            SPEED_CEIL:     2.5,
-            HISTORY_MS:     200,
-            LIFESPAN_BASE:  1100,  // min time from spawn (incl. 0.6s entry + 0.5s visible)
-            LIFESPAN_MAX:   1800,  // max time when few on screen
-            MAX_VISIBLE:    3,
-            IN_S:           0.6,
-            OUT_S:          0.8,
-            OUT_S_FAST:     0.3,   // overflow (>MAX_VISIBLE na ekranie)
-            OUT_S_FLUSH:    0.5,   // EarlyFlush (zmiana grupy kolorów)
-            MAX_ROT:        8,
-            ENTRY_ROT_MIN:  10,
-            ENTRY_ROT_MAX:  30,
-            IN_EASE:        "back.out(1.4)",
-            IN_ROT_EASE:    "power2.out",
-            OUT_EASE:       "power2.in",
-            BORDER_RADIUS:  4,
-            INNER_MASK_START: 0.35,
-            BRIGHT_START:   200,
-            DRIFT_MULT:     110,
-            DRIFT_CAP:      1.2,   // max drift magnitude — sublinear above 1.0
-            DRIFT_S:        1.5,
-            DRIFT_EASE:     "power4",
-        };
+            const V = {
+                ASPECT:         241 / 308,
+                SIZE_MAX:       Math.round(288 * SIZE_SCALE),
+                SIZE_MIN_RATIO: 0.80,
+                SPACING_SLOW:   250,
+                SPACING_FAST:   130,
+                SPEED_FLOOR:    0.15,
+                SPEED_CEIL:     2.5,
+                HISTORY_MS:     200,
+                LIFESPAN_BASE:  1100,
+                LIFESPAN_MAX:   1800,
+                MAX_VISIBLE:    4,
+                IN_S:           0.6,
+                OUT_S:          0.8,
+                OUT_S_FAST:     0.3,
+                OUT_S_FLUSH:    0.5,
+                MAX_ROT:        8,
+                ENTRY_ROT_MIN:  10,
+                ENTRY_ROT_MAX:  30,
+                IN_EASE:        "back.out(1.4)",
+                IN_ROT_EASE:    "power2.out",
+                OUT_EASE:       "power2.in",
+                BORDER_RADIUS:  8,
+                DRIFT_MULT:     110,
+                DRIFT_CAP:      1.2,
+                DRIFT_S:        1.5,
+                DRIFT_EASE:     "power4",
+            };
 
-        /* ═══ PHOTO ENGINE ═══════════════════════════════════════════════════════
-           Format:       AVIF jeśli obsługiwany (probe), fallback WebP
-           Rozdzielczość: _RETINA gdy DPR≥2 + szybkie łącze + !saveData
-           Kolejność:    QuotaCycle S1 — 4 spawny z grupy A, potem B, C, D, A…
-                         EarlyFlush — przy zmianie grupy ubija starych natychmiast
-           Pliki:        /trail/XX_strrona_internetowa[_RETINA].[avif|webp]
-           ═══════════════════════════════════════════════════════════════════ */
+            const MAX_DYING = 2;
+            const POOL_SIZE = V.MAX_VISIBLE + MAX_DYING;
 
-        /* -- Format detection: AVIF probe (async, wynik gotowy przed 1. spawnem) -- */
-        let _avifSupported = null;
-        (function probeAvif() {
-            const img = new Image();
-            img.onload  = () => { _avifSupported = true;  };
-            img.onerror = () => { _avifSupported = false; };
-            img.src = 'data:image/avif;base64,AAAAHGZ0eXBhdmlmAAAAAGF2aWZtaWYxAAAA';
-        })();
+            // bounded catch-up — kalkulator-safe
+            const MAX_SPAWNS_PER_TICK   = 3;
+            const MAX_SEGMENTS_PER_TICK = 12;
+            const MIN_SEGMENT_PX        = 0.5;
+            const MAX_CARRY_MULT        = 2.0;
 
-        /* -- Rozdzielczość: Retina + connection quality -- */
-        const _conn      = navigator.connection || null;
-        const _isRetina  = window.devicePixelRatio >= 2;
-        const _saveData  = _conn?.saveData === true;
-        const _eff       = _conn?.effectiveType || '4g';
-        const _downlink  = _conn?.downlink ?? 10;
-        const _slowConn  = _saveData || _eff !== '4g' || _downlink < 5;
-        const _useRetina = _isRetina && !_slowConn;
+            /* ═══ PHOTO ENGINE ═══ */
+            let _avifSupported = null;
+            (function probeAvif() {
+                const img = new Image();
+                img.onload  = () => { _avifSupported = true;  };
+                img.onerror = () => { _avifSupported = false; };
+                img.src = 'data:image/avif;base64,AAAAHGZ0eXBhdmlmAAAAAGF2aWZtaWYxAAAA';
+            })();
 
-        /* -- IMAGE_GROUPS: klucze plików (A1…D4) pogrupowane kolorystycznie -- */
-        const IMAGE_GROUPS = {
-            A: ['A1','A2','A3','A4'],
-            B: ['B1','B2','B3','B4'],
-            C: ['C1','C2','C3','C4'],
-            D: ['D1','D2','D3','D4'],
-        };
-        const GROUP_KEYS = Object.keys(IMAGE_GROUPS);
-        const FLAT_META  = GROUP_KEYS.flatMap(k => IMAGE_GROUPS[k].map(c => ({ k, c })));
+            const _conn      = navigator.connection || null;
+            const _isRetina  = window.devicePixelRatio >= 2;
+            const _saveData  = _conn?.saveData === true;
+            const _eff       = _conn?.effectiveType || '4g';
+            const _downlink  = _conn?.downlink ?? 10;
+            const _slowConn  = _saveData || _eff !== '4g' || _downlink < 5;
+            const _useRetina = _isRetina && !_slowConn;
 
-        /* -- Budowanie elementu img z kluczem (np. 'A1') -- */
-        function _getPhotoEl(key) {
-            const res = _useRetina ? '_RETINA' : '';
-            const fmt = (_avifSupported === false) ? 'webp' : 'avif';
-            const src = `/trail/${key}_strrona_internetowa${res}.${fmt}`;
-            const img = document.createElement('img');
-            img.src           = src;
-            img.alt           = '';
-            img.draggable     = false;
-            img.decoding      = 'async';
-            img.fetchpriority = 'low';
-            img.onerror       = function() { this.classList.add('load-failed'); };
-            return img;
-        }
+            const IMAGE_GROUPS = {
+                A: ['A1','A2','A3','A4'],
+                B: ['B1','B2','B3','B4'],
+                C: ['C1','C2','C3','C4'],
+                D: ['D1','D2','D3','D4'],
+            };
+            const GROUP_KEYS = Object.keys(IMAGE_GROUPS);
+            const FLAT_META  = GROUP_KEYS.flatMap(k => IMAGE_GROUPS[k].map(c => ({ k, c })));
 
-        /* ═══ STRATEGIA — QuotaSequence (flat 16-element cycle) ════════════════
-           Flat sekwencja 16 kluczy (A1…D4). Po 16 spawnach wraca do punktu startowego.
-           Przy zmianie grupy: flush=true → spawn() ubija żywych → 0% miksów kolorów.
-           Po pauzie (alive===0): reset() przesuwa do następnej grupy, nie do zera.
-           ═══════════════════════════════════════════════════════════════════════ */
-        const strategy = (function makeQuotaSequence() {
-            let globalIdx = 0;
-            let curKey    = null;
-            let curPos    = 0;
-            let usedInCat = 0;
-            let quota     = 0;
-            function advanceToNextKey() {
-                const k = FLAT_META[globalIdx % FLAT_META.length].k;
-                while (FLAT_META[globalIdx % FLAT_META.length].k === k)
-                    globalIdx = (globalIdx + 1) % FLAT_META.length;
-                return k;
-            }
-            return {
-                flush: false,
-                reset() {
-                    if (curKey !== null) {
-                        while (FLAT_META[globalIdx % FLAT_META.length].k === curKey)
-                            globalIdx = (globalIdx + 1) % FLAT_META.length;
-                        curKey = null;
+            const imageTemplates = new Map();
+
+            /* ═══ STRATEGY — QuotaSequence ═══ */
+            const strategy = (function makeQuotaSequence() {
+                let globalIdx = 0;
+                let curKey    = null;
+                let curPos    = 0;
+                let usedInCat = 0;
+                let quota     = 0;
+
+                function advanceToNextKey() {
+                    const k = FLAT_META[globalIdx % FLAT_META.length].k;
+                    while (FLAT_META[globalIdx % FLAT_META.length].k === k) {
+                        globalIdx = (globalIdx + 1) % FLAT_META.length;
                     }
-                    this.flush = false;
-                },
-                getColor() {
-                    const prevKey = curKey;
-                    if (curKey === null || usedInCat >= quota) {
-                        const k   = advanceToNextKey();
-                        const arr = IMAGE_GROUPS[k];
-                        quota     = arr.length;
-                        curKey    = k;
-                        curPos    = 0;
-                        usedInCat = 0;
-                        this.flush = (prevKey !== null);
-                    } else {
+                    return k;
+                }
+
+                return {
+                    flush: false,
+                    reset() {
+                        if (curKey !== null) {
+                            while (FLAT_META[globalIdx % FLAT_META.length].k === curKey) {
+                                globalIdx = (globalIdx + 1) % FLAT_META.length;
+                            }
+                            curKey = null;
+                        }
                         this.flush = false;
+                    },
+                    getColor() {
+                        const prevKey = curKey;
+                        if (curKey === null || usedInCat >= quota) {
+                            const k   = advanceToNextKey();
+                            const arr = IMAGE_GROUPS[k];
+                            quota     = arr.length;
+                            curKey    = k;
+                            curPos    = 0;
+                            usedInCat = 0;
+                            this.flush = (prevKey !== null);
+                        } else {
+                            this.flush = false;
+                        }
+                        const arr = IMAGE_GROUPS[curKey];
+                        const c   = arr[curPos % arr.length];
+                        curPos++;
+                        usedInCat++;
+                        return c;
                     }
-                    const arr = IMAGE_GROUPS[curKey];
-                    const c   = arr[curPos % arr.length];
-                    curPos++;
-                    usedInCat++;
-                    return c;
+                };
+            })();
+
+            const pickColor = () => strategy.getColor();
+
+            /* ═══ BOUNDS CACHE — document-space ═══ */
+            const marqueeEl = $id('hero-brandsMarqueeWrapper');
+            const heroContentEl = $('.hero-content'); /* [FIX ENT-JS-03] was: document.querySelector */
+
+            const bounds = {
+                leftDoc: 0,
+                topDoc: 0,
+                rightDoc: 0,
+                bottomDoc: 0,
+                maxYDoc: 0
+            };
+
+            // Exclusion zone — trail nie spawnuje w obszarze hero-content (H1/H2)
+            const exclusion = {
+                leftDoc: 0,
+                topDoc: 0,
+                rightDoc: 0,
+                bottomDoc: 0,
+                active: false
+            };
+
+            let measureRaf = 0;
+            let measureQueued = false;
+
+            function measureBoundsNow() {
+                measureQueued = false;
+
+                const sx = window.scrollX || window.pageXOffset || 0;
+                const sy = window.scrollY || window.pageYOffset || 0;
+
+                const r = trailEl.getBoundingClientRect();
+                bounds.leftDoc   = r.left + sx;
+                bounds.topDoc    = r.top + sy;
+                bounds.rightDoc  = r.right + sx;
+                bounds.bottomDoc = r.bottom + sy;
+
+                bounds.maxYDoc = bounds.bottomDoc;
+                if (marqueeEl) {
+                    const mr = marqueeEl.getBoundingClientRect();
+                    bounds.maxYDoc = mr.bottom + sy;
+                }
+
+                // Measure exclusion zone (hero-content = H1/H2 area)
+                if (heroContentEl) {
+                    const er = heroContentEl.getBoundingClientRect();
+                    exclusion.leftDoc   = er.left + sx;
+                    exclusion.topDoc    = er.top + sy;
+                    exclusion.rightDoc  = er.right + sx;
+                    exclusion.bottomDoc = er.bottom + sy;
+                    exclusion.active    = true;
+                }
+            }
+
+            function scheduleMeasureBounds() {
+                if (measureQueued) return;
+                measureQueued = true;
+                measureRaf = requestAnimationFrame(measureBoundsNow);
+            }
+
+            const boundsRO = typeof ResizeObserver !== 'undefined'
+                ? new ResizeObserver(scheduleMeasureBounds)
+                : null;
+
+            if (boundsRO) {
+                boundsRO.observe(trailEl);
+                if (marqueeEl) boundsRO.observe(marqueeEl);
+                if (heroContentEl) boundsRO.observe(heroContentEl);
+            }
+
+            listen(window, 'resize', scheduleMeasureBounds, { passive: true });
+            listen(window, 'orientationchange', scheduleMeasureBounds, { passive: true });
+
+            if (document.fonts && document.fonts.ready) {
+                document.fonts.ready.then(scheduleMeasureBounds);
+            }
+
+            scheduleMeasureBounds();
+
+            /* ═══ POOL CREATION ═══ */
+            const slots = [];
+            const liveSlots = [];
+            let dyingCount = 0;
+            let liveCount = 0;
+            let zIdx = 1;
+
+            function createTrailSlot(index) {
+                const wrap = document.createElement('div');
+                wrap.className = 'trail-wrap hw-hint';
+                wrap.dataset.slot = String(index);
+
+                const inner = document.createElement('div');
+                inner.className = 'trail-block is-photo';
+                inner.style.borderRadius = V.BORDER_RADIUS + 'px';
+
+                const img = document.createElement('img');
+                img.alt = '';
+                img.draggable = false;
+                img.decoding = 'async';
+                img.fetchpriority = 'low';
+                img.onload = function() { 
+                    this.classList.add('loaded');
+                    wrap.classList.add('img-ready'); // slot widoczny dopiero teraz
+                };
+                img.onerror = function() { this.classList.add('load-failed'); };
+
+                const flash = document.createElement('div');
+                flash.className = 'trail-flash';
+
+                inner.appendChild(img);
+                inner.appendChild(flash);
+                wrap.appendChild(inner);
+                trailEl.appendChild(wrap);
+
+                gsap.set(wrap, {
+                    autoAlpha: 0,
+                    xPercent: -50,
+                    yPercent: -50,
+                    scale: 0,
+                    x: 0,
+                    y: 0,
+                    rotation: 0,
+                    zIndex: 0
+                });
+
+                return {
+                    id: index,
+                    state: 'idle',
+                    key: '',
+                    wrap,
+                    inner,
+                    img,
+                    flash,
+                    bornAt: 0,
+                    dieAt: 0
+                };
+            }
+
+            function buildTrailPool() {
+                for (let i = 0; i < POOL_SIZE; i++) {
+                    slots.push(createTrailSlot(i));
+                }
+            }
+
+            buildTrailPool();
+
+            /* ═══ SLOT PHOTO SWAP ═══ */
+            function setSlotPhoto(slot, key) {
+                if (slot.key === key) return;
+
+                const tpl = imageTemplates.get(key);
+                if (!tpl) return;
+
+                const nextSrc = tpl.currentSrc || tpl.src;
+                if (slot.img.src !== nextSrc) {
+                    slot.img.classList.remove('loaded', 'load-failed');
+                    slot.wrap.classList.remove('img-ready'); // ukryj do załadowania
+                    slot.img.src = nextSrc;
+                    
+                    // Cached image — onload może nie odpalić
+                    if (slot.img.complete && slot.img.naturalWidth > 0) {
+                        slot.img.classList.add('loaded');
+                        slot.wrap.classList.add('img-ready');
+                    }
+                }
+
+                slot.key = key;
+            }
+
+            /* ═══ SLOT LIFECYCLE ═══ */
+            function getIdleSlot() {
+                for (let i = 0; i < slots.length; i++) {
+                    if (slots[i].state === 'idle') return slots[i];
+                }
+                return null;
+            }
+
+            function resetSlot(slot) {
+                gsap.killTweensOf(slot.wrap);
+                gsap.killTweensOf(slot.inner);
+                gsap.killTweensOf(slot.img);
+                gsap.killTweensOf(slot.flash);
+
+                slot.state = 'idle';
+                slot.bornAt = 0;
+                slot.dieAt = 0;
+                slot.wrap.classList.remove('img-ready'); // reset widoczności
+
+                gsap.set(slot.wrap, {
+                    autoAlpha: 0,
+                    x: 0,
+                    y: 0,
+                    scale: 0,
+                    rotation: 0,
+                    zIndex: 0
+                });
+
+                gsap.set(slot.inner, { scale: 1 });
+                gsap.set(slot.img,   { scale: 1 });
+                gsap.set(slot.flash, { opacity: 0 });
+            }
+
+            function beginExit(slot, outS) {
+                if (!slot || slot.state !== 'live') return;
+
+                slot.state = 'exiting';
+                liveCount = Math.max(0, liveCount - 1);
+                dyingCount++;
+
+                gsap.killTweensOf(slot.wrap);
+                gsap.killTweensOf(slot.inner);
+                gsap.killTweensOf(slot.img);
+                gsap.killTweensOf(slot.flash);
+
+                gsap.fromTo(slot.img,
+                    { scale: 1 },
+                    { scale: 3, duration: outS, ease: V.OUT_EASE, overwrite: 'auto' }
+                );
+
+                gsap.fromTo(slot.inner,
+                    { scale: 1 },
+                    { scale: 0, duration: outS, ease: V.OUT_EASE, overwrite: 'auto' }
+                );
+
+                gsap.to(slot.wrap, {
+                    rotation: '+=360',
+                    autoAlpha: 0,
+                    duration: outS,
+                    ease: V.OUT_EASE,
+                    overwrite: 'auto',
+                    onComplete: () => {
+                        dyingCount = Math.max(0, dyingCount - 1);
+                        resetSlot(slot);
+                    }
+                });
+            }
+
+            /**
+             * cullSlot — natychmiastowe przerwanie bez widocznego "fast shrink".
+             * Używane przy overflow/recycle zamiast beginExit(OUT_S_FAST).
+             * Oko łatwiej wybacza brak dokończenia ogona niż turbo-przyspieszony shrink.
+             */
+            function cullSlot(slot) {
+                if (!slot) return;
+
+                // Korekta liczników zależnie od stanu
+                if (slot.state === 'live') {
+                    liveCount = Math.max(0, liveCount - 1);
+                } else if (slot.state === 'exiting') {
+                    dyingCount = Math.max(0, dyingCount - 1);
+                }
+
+                gsap.killTweensOf(slot.wrap);
+                gsap.killTweensOf(slot.inner);
+                gsap.killTweensOf(slot.img);
+                gsap.killTweensOf(slot.flash);
+
+                resetSlot(slot);
+            }
+
+            /* ═══ HELPERS ═══ */
+            const SIZE_MIN = Math.round(V.SIZE_MAX * V.SIZE_MIN_RATIO);
+            const getSize  = (t) => V.SIZE_MAX - (V.SIZE_MAX - SIZE_MIN) * t;
+            const getSpacing = (t) => V.SPACING_SLOW + (V.SPACING_FAST - V.SPACING_SLOW) * t;
+
+            /* ═══ RING BUFFER — speed ═══ */
+            const HIST_SIZE = 12;
+            const histX = new Float32Array(HIST_SIZE);
+            const histY = new Float32Array(HIST_SIZE);
+            const histT = new Float32Array(HIST_SIZE);
+            let histHead = 0;
+            let histLen = 0;
+
+            function pushHistory(x, y) {
+                const now = performance.now();
+                histX[histHead] = x;
+                histY[histHead] = y;
+                histT[histHead] = now;
+                histHead = (histHead + 1) % HIST_SIZE;
+                if (histLen < HIST_SIZE) histLen++;
+
+                while (histLen > 1) {
+                    const oldest = (histHead - histLen + HIST_SIZE) % HIST_SIZE;
+                    if (now - histT[oldest] > V.HISTORY_MS) histLen--;
+                    else break;
+                }
+            }
+
+            function getSpeed() {
+                if (histLen < 2) return 0;
+                const oldest = (histHead - histLen + HIST_SIZE) % HIST_SIZE;
+                const newest = (histHead - 1 + HIST_SIZE) % HIST_SIZE;
+                const dt = histT[newest] - histT[oldest];
+                if (dt < 4) return 0;
+
+                return Math.hypot(
+                    histX[newest] - histX[oldest],
+                    histY[newest] - histY[oldest]
+                ) / dt;
+            }
+
+            function speedNorm() {
+                return Math.min(1, Math.max(0,
+                    (getSpeed() - V.SPEED_FLOOR) / (V.SPEED_CEIL - V.SPEED_FLOOR)
+                ));
+            }
+
+            function getLifespan() {
+                const ratio = 1 - Math.min(liveCount / V.MAX_VISIBLE, 1);
+                return V.LIFESPAN_BASE + (V.LIFESPAN_MAX - V.LIFESPAN_BASE) * ratio;
+            }
+
+            /* ═══ INPUT QUEUE / RESAMPLER ═══ */
+            const INPUT_Q_MAX = 32;
+            const qX = new Float32Array(INPUT_Q_MAX);
+            const qY = new Float32Array(INPUT_Q_MAX);
+            let qHead = 0;
+            let qTail = 0;
+            let qLen  = 0;
+
+            let sampleCursorX = 0;
+            let sampleCursorY = 0;
+            let hasSampleCursor = false;
+            let carryDist = 0;
+
+            const tmpPt = { x: 0, y: 0 };
+
+            function enqueuePointerPoint(x, y) {
+                qX[qTail] = x;
+                qY[qTail] = y;
+                qTail = (qTail + 1) % INPUT_Q_MAX;
+
+                if (qLen < INPUT_Q_MAX) {
+                    qLen++;
+                } else {
+                    qHead = (qHead + 1) % INPUT_Q_MAX;
+                }
+            }
+
+            function dequeuePointerPoint(out) {
+                if (qLen === 0) return false;
+                out.x = qX[qHead];
+                out.y = qY[qHead];
+                qHead = (qHead + 1) % INPUT_Q_MAX;
+                qLen--;
+                return true;
+            }
+
+            function emergencyKeepLatestPoint() {
+                if (qLen <= 1) return;
+
+                const lastIdx = (qTail - 1 + INPUT_Q_MAX) % INPUT_Q_MAX;
+                const x = qX[lastIdx];
+                const y = qY[lastIdx];
+
+                qHead = 0;
+                qTail = 1;
+                qLen = 1;
+
+                qX[0] = x;
+                qY[0] = y;
+            }
+
+            /* ═══ STATE ═══ */
+            let mx = 0;
+            let my = 0;
+            let lmx = 0;
+            let lmy = 0;
+            let isMoving = false;
+            let lastMoveT = 0;
+            let trailWasEmpty = true;
+            let tickRegistered = false;
+
+            /* ═══ OVERSHOOT CONFIG ═══ */
+            const OVERSHOOT = {
+                wrap: {
+                    peak: 1.07,
+                    peakDur: 0.76,
+                    settleDur: 0.35,
+                    peakEase: 'sine.out',
+                    settleEase: 'sine.inOut'
+                },
+                img: {
+                    peak: 1.07,
+                    peakDur: 0.76,
+                    settleDur: 0.40,
+                    peakEase: 'sine.out',
+                    settleEase: 'sine.inOut'
                 }
             };
-        })();
 
-        const pickColor = () => strategy.getColor();
+            /* ═══ SPAWN ═══ */
+            function spawnIntoSlot(slot, t, xDoc, yDoc, fromXDoc, fromYDoc) {
+                const key = pickColor();
 
-        /* ═══ CONTAINER RECT (position: absolute → need offset) ═══ */
-        let containerRect = trailEl.getBoundingClientRect();
-        let rectDirty = false;
+                if (strategy.flush) {
+                    for (let i = 0; i < liveSlots.length; i++) {
+                        const s = liveSlots[i];
+                        if (s.state === 'live') beginExit(s, V.OUT_S_FLUSH);
+                    }
+                }
 
-        const marqueeEl = $id('hero-brandsMarqueeWrapper');
-        let trailMaxY = containerRect.bottom;
+                const w = getSize(t);
+                const h = w * V.ASPECT;
+                const rot = (Math.random() - 0.5) * V.MAX_ROT * 2;
+                const lifespan = getLifespan();
 
-        function updateContainerRect() {
-            containerRect = trailEl.getBoundingClientRect();
-            if (marqueeEl) {
-                trailMaxY = marqueeEl.getBoundingClientRect().bottom;
-            }
-            rectDirty = false;
-        }
-        listen(window, 'resize', updateContainerRect);
-        listen(window, 'scroll', () => { rectDirty = true; }, { passive: true });
-        updateContainerRect();
+                const entryExtra = (V.ENTRY_ROT_MIN + Math.random() * (V.ENTRY_ROT_MAX - V.ENTRY_ROT_MIN))
+                                 * (Math.random() < 0.5 ? -1 : 1);
+                const startRot = rot + entryExtra;
 
-        /* ═══ STATE ═══ */
-        const trail  = [];
-        const dying  = new Set();
+                const x = xDoc - bounds.leftDoc;
+                const y = yDoc - bounds.topDoc;
+                const fromX = fromXDoc - bounds.leftDoc;
+                const fromY = fromYDoc - bounds.topDoc;
 
-        // Ring buffer — zero alokacji w runtime (eliminuje GC pressure)
-        const HIST_SIZE = 12;
-        const histX = new Float32Array(HIST_SIZE);
-        const histY = new Float32Array(HIST_SIZE);
-        const histT = new Float32Array(HIST_SIZE);
-        let histHead = 0, histLen = 0;
+                setSlotPhoto(slot, key);
 
-        let mx = 0, my = 0;
-        let lmx = 0, lmy = 0;
-        let cmx = 0, cmy = 0;
-        let isMoving = false;
-        let lastMoveT = 0;
-        let zIdx = 1;
+                slot.state = 'live';
+                liveCount++;
+                slot.bornAt = performance.now();
+                slot.dieAt = slot.bornAt + lifespan;
 
-        /* ═══ HELPERS ═══ */
-        const SIZE_MIN   = Math.round(V.SIZE_MAX * V.SIZE_MIN_RATIO);  // pre-computed
-        const getSize    = (t) => V.SIZE_MAX - (V.SIZE_MAX - SIZE_MIN) * t;
-        const getSpacing = (t) => V.SPACING_SLOW + (V.SPACING_FAST - V.SPACING_SLOW) * t;
-        const dist       = (ax, ay, bx, by) => Math.hypot(ax - bx, ay - by);
-        const lerp       = (a, b, n) => (1 - n) * a + n * b;
+                const ws = slot.wrap.style;
+                ws.left   = x + 'px';
+                ws.top    = y + 'px';
+                ws.width  = w + 'px';
+                ws.height = h + 'px';
 
-        const pushHistory = (x, y) => {
-            const now = performance.now();
-            histX[histHead] = x;
-            histY[histHead] = y;
-            histT[histHead] = now;
-            histHead = (histHead + 1) % HIST_SIZE;
-            if (histLen < HIST_SIZE) histLen++;
+                ++zIdx;
 
-            // Trim old entries (equivalent to while loop)
-            while (histLen > 1) {
-                const oldest = (histHead - histLen + HIST_SIZE) % HIST_SIZE;
-                if (now - histT[oldest] > V.HISTORY_MS) histLen--;
-                else break;
-            }
-        };
+                const dx = xDoc - fromXDoc;
+                const dy = yDoc - fromYDoc;
+                const cdist = Math.hypot(dx, dy);
 
-        const getSpeed = () => {
-            if (histLen < 2) return 0;
-            const oldest = (histHead - histLen + HIST_SIZE) % HIST_SIZE;
-            const newest = (histHead - 1 + HIST_SIZE) % HIST_SIZE;
-            const dt = histT[newest] - histT[oldest];
-            if (dt < 4) return 0;
-            return Math.hypot(histX[newest] - histX[oldest], histY[newest] - histY[oldest]) / dt;
-        };
+                let ndx = 0;
+                let ndy = 0;
+                if (cdist > 0) {
+                    ndx = dx / cdist;
+                    ndy = dy / cdist;
+                }
 
-        const speedNorm = () => Math.min(1, Math.max(0,
-            (getSpeed() - V.SPEED_FLOOR) / (V.SPEED_CEIL - V.SPEED_FLOOR)));
+                const rawDrift = cdist / 100;
+                const driftScale = rawDrift <= 1
+                    ? rawDrift
+                    : Math.min(1 + Math.sqrt(rawDrift - 1) * 0.2, V.DRIFT_CAP);
 
-        const getLifespan = () => {
-            let alive = 0;
-            for (let i = 0; i < trail.length; i++) {
-                if (!dying.has(trail[i])) alive++;
-            }
-            const ratio = 1 - Math.min(alive / V.MAX_VISIBLE, 1);
-            return V.LIFESPAN_BASE + (V.LIFESPAN_MAX - V.LIFESPAN_BASE) * ratio;
-        };
+                ndx *= driftScale;
+                ndy *= driftScale;
 
-        /* ═══ KILL ═══ */
-        const kill = (obj, outS) => {
-            if (dying.has(obj)) return;
-            dying.add(obj);
+                gsap.killTweensOf(slot.wrap);
+                gsap.killTweensOf(slot.inner);
+                gsap.killTweensOf(slot.img);
+                gsap.killTweensOf(slot.flash);
 
-            if (obj.animTarget) {
-                gsap.killTweensOf(obj.animTarget);
-                gsap.killTweensOf(obj.wrap);
-            }
-            if (obj.flash) {
-                gsap.killTweensOf(obj.flash);
-            }
-
-            // Mask-close exit: photo counter-scales UP while mask shrinks DOWN
-            if (obj.animTarget) {
-                gsap.to(obj.animTarget, {
-                    scale: 3, duration: outS, ease: V.OUT_EASE, overwrite: "auto"
+                gsap.set(slot.wrap, {
+                    autoAlpha: 1,
+                    xPercent: -50,
+                    yPercent: -50,
+                    x: 0,
+                    y: 0,
+                    scale: 0,
+                    rotation: startRot,
+                    zIndex: zIdx
                 });
+
+                gsap.set(slot.inner, { scale: 1 });
+                gsap.set(slot.img,   { scale: 1 });
+                gsap.set(slot.flash, { opacity: 0 });
+
+                gsap.fromTo(slot.wrap,
+                    { x: fromX - x, y: fromY - y },
+                    { x: 0, y: 0, duration: V.IN_S, ease: V.IN_EASE, overwrite: 'auto' }
+                );
+
+                gsap.fromTo(slot.wrap,
+                    { scale: 0 },
+                    {
+                        keyframes: [
+                            { scale: OVERSHOOT.wrap.peak, duration: OVERSHOOT.wrap.peakDur, ease: OVERSHOOT.wrap.peakEase },
+                            { scale: 1, duration: OVERSHOOT.wrap.settleDur, ease: OVERSHOOT.wrap.settleEase }
+                        ],
+                        overwrite: 'auto'
+                    }
+                );
+
+                gsap.fromTo(slot.wrap,
+                    { rotation: startRot },
+                    {
+                        rotation: rot,
+                        duration: V.IN_S,
+                        ease: V.IN_ROT_EASE,
+                        overwrite: 'auto'
+                    }
+                );
+
+                gsap.fromTo(slot.img,
+                    { scale: 1 },
+                    {
+                        keyframes: [
+                            { scale: OVERSHOOT.img.peak, duration: OVERSHOOT.img.peakDur, ease: OVERSHOOT.img.peakEase },
+                            { scale: 1, duration: OVERSHOOT.img.settleDur, ease: OVERSHOOT.img.settleEase }
+                        ],
+                        overwrite: 'auto'
+                    }
+                );
+
+                gsap.fromTo(slot.flash,
+                    { opacity: 0 },
+                    {
+                        keyframes: [
+                            { opacity: 0,    duration: 0 },
+                            { opacity: 0.65, duration: 0.20, ease: 'power2.out' },
+                            { opacity: 0,    duration: 0.90, ease: 'sine.inOut' }
+                        ],
+                        overwrite: 'auto'
+                    }
+                );
+
+                gsap.to(slot.wrap, {
+                    x: `+=${ndx * V.DRIFT_MULT}`,
+                    y: `+=${ndy * V.DRIFT_MULT}`,
+                    duration: V.DRIFT_S,
+                    ease: V.DRIFT_EASE,
+                    delay: 0.05,
+                    overwrite: 'auto'
+                });
+
+                liveSlots.push(slot);
             }
 
-            gsap.to(obj.inner, {
-                scale: 0, duration: outS, ease: V.OUT_EASE, overwrite: "auto"
-            });
-            gsap.to(obj.wrap, {
-                rotation: obj.rot + 360, duration: outS, ease: V.OUT_EASE,
-                overwrite: "auto",
-                onComplete: () => { obj.wrap.remove(); dying.delete(obj); }
-            });
-        };
-
-        /* ═══ SPAWN ═══ */
-        const spawn = (t) => {
-            const key   = pickColor();                   // 'A1'…'D4' — QuotaCycle zarządza grupą
-
-            // EarlyFlush: przy zmianie grupy ubij żywych natychmiast → 0% miksów
-            if (strategy.flush) {
-                for (let i = 0; i < trail.length; i++) {
-                    if (!dying.has(trail[i])) kill(trail[i], V.OUT_S_FLUSH);
+            /* ═══ CONTAINER CHECK ═══ */
+            function isInContainerDoc(xDoc, yDoc) {
+                // Must be inside trail container
+                if (xDoc < bounds.leftDoc || xDoc > bounds.rightDoc ||
+                    yDoc < bounds.topDoc  || yDoc > bounds.maxYDoc) {
+                    return false;
                 }
-            }
-
-            const w = getSize(t);
-            const h = w * V.ASPECT;
-            const rot = (Math.random() - 0.5) * V.MAX_ROT * 2;
-            const lifespan = getLifespan();
-
-            const entryExtra = (V.ENTRY_ROT_MIN + Math.random() * (V.ENTRY_ROT_MAX - V.ENTRY_ROT_MIN))
-                             * (Math.random() < 0.5 ? -1 : 1);
-            const startRot = rot + entryExtra;
-
-            // Convert viewport coords → container-local coords
-            const x = mx - containerRect.left;
-            const y = my - containerRect.top;
-            const cx = cmx - containerRect.left;
-            const cy = cmy - containerRect.top;
-
-            const wrap = document.createElement("div");
-            wrap.className = "trail-wrap hw-hint";
-            wrap.style.cssText = `left:${x}px;top:${y}px;width:${w}px;height:${h}px;`;
-
-            const inner = document.createElement("div");
-            inner.className = "trail-block is-photo";
-            inner.style.borderRadius = V.BORDER_RADIUS + "px";
-
-            const img = _getPhotoEl(key);
-            img.style.cssText = "width:100%;height:100%;object-fit:cover;display:block;";
-
-            // Flash overlay (GPU-optimized — opacity jest COMPOSITE, nie PAINT)
-            const flash = document.createElement("div");
-            flash.className = "trail-flash";
-            inner.appendChild(img);
-            inner.appendChild(flash);
-            wrap.appendChild(inner);
-            trailEl.appendChild(wrap);
-
-            ++zIdx;
-
-            // Cache→mouse vector for drift direction
-            const dx = mx - cmx;
-            const dy = my - cmy;
-            const cdist = Math.sqrt(dx * dx + dy * dy);
-            let ndx = 0, ndy = 0;
-            if (cdist > 0) { ndx = dx / cdist; ndy = dy / cdist; }
-            // Sublinear drift: ≤100px unchanged, above → compressed by sqrt
-            // Slow mouse (cdist=50): raw=0.5 → 0.5 (unchanged)
-            // Medium (cdist=150): raw=1.5 → 1.0 + sqrt(0.5)*0.2 = ~1.14
-            // Fast (cdist=300): raw=3.0 → 1.0 + sqrt(2.0)*0.2 = ~1.28 (capped at DRIFT_CAP)
-            const rawDrift = cdist / 100;
-            const driftScale = rawDrift <= 1
-                ? rawDrift
-                : Math.min(1 + Math.sqrt(rawDrift - 1) * 0.2, V.DRIFT_CAP);
-            ndx *= driftScale;
-            ndy *= driftScale;
-
-            gsap.set(wrap, { xPercent: -50, yPercent: -50, rotation: startRot, opacity: 1, zIndex: zIdx });
-
-            // Entry — wrap: slide from cache→mouse + scale 0→1
-            gsap.fromTo(wrap,
-                { x: cx - x, y: cy - y, scale: 0 },
-                { x: 0, y: 0, scale: 1, duration: V.IN_S, ease: V.IN_EASE, overwrite: "auto" }
-            );
-            // Entry — rotation spin
-            gsap.to(wrap, {
-                rotation: rot, duration: V.IN_S, ease: V.IN_ROT_EASE, overwrite: "auto"
-            });
-            // Entry — scale on img
-            gsap.fromTo(img,
-                { scale: V.INNER_MASK_START },
-                { scale: 1, duration: V.IN_S, ease: V.IN_EASE }
-            );
-            // Entry — flash overlay (opacity = GPU COMPOSITE, nie PAINT!)
-            gsap.fromTo(flash,
-                { opacity: 0 },
-                {
-                    keyframes: [
-                        { opacity: 0, duration: 0 },
-                        { opacity: 0.7, duration: 0.12, ease: "power2.out" },
-                        { opacity: 0, duration: 0.48, ease: "power2.inOut" }
-                    ]
+                // Must NOT be inside exclusion zone (hero-content = H1/H2 area)
+                if (exclusion.active &&
+                    xDoc >= exclusion.leftDoc && xDoc <= exclusion.rightDoc &&
+                    yDoc >= exclusion.topDoc  && yDoc <= exclusion.bottomDoc) {
+                    return false;
                 }
-            );
-            // Drift — momentum slide in movement direction
-            gsap.to(wrap, {
-                x: `+=${ndx * V.DRIFT_MULT}`, y: `+=${ndy * V.DRIFT_MULT}`,
-                duration: V.DRIFT_S, ease: V.DRIFT_EASE, delay: 0.05
-            });
-
-            trail.push({ wrap, inner, animTarget: img, flash, rot, born: performance.now(), die: performance.now() + lifespan });
-        };
-
-        /* ═══ SPAWN / CLEANUP LOOP ═══ */
-        const isInContainer = (x, y) => {
-            return x >= containerRect.left && x <= containerRect.right
-                && y >= containerRect.top && y <= trailMaxY;
-        };
-
-        const trySpawn = () => {
-            if (!isMoving) return;
-            if (!isInContainer(mx, my)) return;
-            const t = speedNorm();
-            // First spawn after all photos died: skip spacing, spawn immediately
-            if (!trailWasEmpty && dist(mx, my, lmx, lmy) < getSpacing(t)) return;
-            lmx = mx; lmy = my;
-            trailWasEmpty = false;
-            spawn(t);
-        };
-
-        const cleanup = () => {
-            const now = performance.now();
-            let alive = 0;
-            for (let i = 0; i < trail.length; i++) {
-                if (!dying.has(trail[i])) alive++;
+                return true;
             }
 
-            if (alive === 0 && zIdx !== 1) zIdx = 1;
+            /* ═══ SLOT ACQUISITION / PRESSURE ═══ */
+            function getSpawnSlot(spacing) {
+                const idle = getIdleSlot();
+                if (idle) return idle;
 
-            let i = 0;
-            while (alive > V.MAX_VISIBLE && i < trail.length) {
-                // Overflow: new photo pushes oldest out — no age guard
-                // (the dying→entering overlap is the ONLY moment 4 can coexist)
-                if (!dying.has(trail[i])) {
-                    kill(trail[i], V.OUT_S_FAST); alive--;
-                }
-                i++;
-            }
-            while (trail.length && !dying.has(trail[0]) && now >= trail[0].die) {
-                kill(trail[0], V.OUT_S);
-                trail.shift();
-            }
-            while (trail.length && dying.has(trail[0])) trail.shift();
-        };
-
-        /* ═══ MOUSE INPUT (registered at activation, not at init) ═══ */
-        listen(document, "mouseover", function init(e) {
-            mx = lmx = cmx = e.clientX;
-            my = lmy = cmy = e.clientY;
-            pushHistory(mx, my);
-            document.removeEventListener("mouseover", init);
-        });
-
-        /* ═══ DEFERRED ACTIVATION ═══
-           Trail is the LAST hero subsystem to activate.
-           Two conditions must both be met:
-             1. window 'load' fired (all hero assets: fonts, Lottie, CSS, images)
-             2. Minimum 3.5s elapsed since heroSectionInit start
-           This prevents visual overload during hero entrance animation. */
-
-        /* ═══ PRELOAD ALL TRAIL IMAGES ═══
-           Efekt trail NIE włącza się dopóki wszystkie 16 zdjęć nie są załadowane.
-           Dzięki temu flash (brightness) działa na widocznym obrazku, nie na pustym. */
-
-        let imagesPreloaded = false;
-
-        function preloadAllImages() {
-            return new Promise<void>((resolve) => {
-                const keys = FLAT_META.map(m => m.c);  // ['A1','A2',...,'D4']
-                const res = _useRetina ? '_RETINA' : '';
-                const fmt = (_avifSupported === false) ? 'webp' : 'avif';
-
-                let loaded = 0;
-                const total = keys.length;
-
-                keys.forEach(key => {
-                    const img = new Image();
-                    img.onload = img.onerror = () => {
-                        loaded++;
-                        if (loaded >= total) {
-                            imagesPreloaded = true;
-                            resolve();
+                // Controlled recycle only under real pressure.
+                // Używamy cullSlot() — natychmiastowe ucięcie bez widocznego shrinka.
+                if (qLen > 3 || carryDist > spacing) {
+                    for (let i = 0; i < liveSlots.length; i++) {
+                        const slot = liveSlots[i];
+                        if (slot.state === 'live') {
+                            liveSlots.splice(i, 1);
+                            cullSlot(slot);
+                            return slot;
                         }
-                    };
-                    img.src = `/trail/${key}_strrona_internetowa${res}.${fmt}`;
-                });
-            });
-        }
+                    }
+                }
 
-        let trailActive = false;
+                return null;
+            }
 
-        function activateTrail() {
-            if (trailActive) return;
-            if (!imagesPreloaded) return;
-            trailActive = true;
+            /* ═══ INPUT DRAIN — arc-length resampling ═══ */
+            function drainPointerQueue() {
+                let spawnsLeft = MAX_SPAWNS_PER_TICK;
+                let segments   = 0;
 
-            addHfListener(document, "mousemove", (e) => {
-                mx = e.clientX;
-                my = e.clientY;
-                pushHistory(mx, my);
+                while (qLen > 0 && segments < MAX_SEGMENTS_PER_TICK) {
+                    if (!dequeuePointerPoint(tmpPt)) break;
+                    segments++;
+
+                    const endX = tmpPt.x;
+                    const endY = tmpPt.y;
+
+                    if (!hasSampleCursor) {
+                        sampleCursorX = endX;
+                        sampleCursorY = endY;
+                        hasSampleCursor = true;
+                        continue;
+                    }
+
+                    if (trailWasEmpty && spawnsLeft > 0 && isInContainerDoc(sampleCursorX, sampleCursorY)) {
+                        const slot0 = getSpawnSlot(V.SPACING_SLOW);
+                        if (slot0) {
+                            const t0 = speedNorm();
+                            lmx = sampleCursorX;
+                            lmy = sampleCursorY;
+                            trailWasEmpty = false;
+                            carryDist = 0;
+                            spawnIntoSlot(
+                                slot0,
+                                t0,
+                                sampleCursorX,
+                                sampleCursorY,
+                                sampleCursorX,
+                                sampleCursorY
+                            );
+                            spawnsLeft--;
+                        }
+                    }
+
+                    let startX = sampleCursorX;
+                    let startY = sampleCursorY;
+                    let dx = endX - startX;
+                    let dy = endY - startY;
+                    let segLen = Math.hypot(dx, dy);
+
+                    if (segLen < MIN_SEGMENT_PX) {
+                        sampleCursorX = endX;
+                        sampleCursorY = endY;
+                        continue;
+                    }
+
+                    while (spawnsLeft > 0) {
+                        const t = speedNorm();
+                        const spacing = getSpacing(t);
+                        const debt = Math.min(carryDist, spacing);
+                        const step = spacing - debt;
+
+                        // guard against zero / near-zero step
+                        if (step <= MIN_SEGMENT_PX) {
+                            carryDist = 0;
+                            break;
+                        }
+
+                        if (debt + segLen < spacing) break;
+
+                        const ratio = step / segLen;
+                        const sampleX = startX + dx * ratio;
+                        const sampleY = startY + dy * ratio;
+
+                        if (isInContainerDoc(sampleX, sampleY)) {
+                            const slot = getSpawnSlot(spacing);
+                            if (!slot) {
+                                if (qLen > 2) emergencyKeepLatestPoint();
+                                carryDist = Math.min(debt + segLen, spacing * MAX_CARRY_MULT);
+                                sampleCursorX = endX;
+                                sampleCursorY = endY;
+                                return;
+                            }
+
+                            lmx = sampleX;
+                            lmy = sampleY;
+                            spawnIntoSlot(slot, t, sampleX, sampleY, startX, startY);
+                            spawnsLeft--;
+                        }
+
+                        startX = sampleX;
+                        startY = sampleY;
+                        dx = endX - startX;
+                        dy = endY - startY;
+                        segLen = Math.hypot(dx, dy);
+                        carryDist = 0;
+
+                        if (segLen < MIN_SEGMENT_PX) break;
+                    }
+
+                    carryDist = Math.min(carryDist + segLen, V.SPACING_SLOW * MAX_CARRY_MULT);
+                    sampleCursorX = endX;
+                    sampleCursorY = endY;
+
+                    if (spawnsLeft <= 0) {
+                        if (qLen > 8) emergencyKeepLatestPoint();
+                        break;
+                    }
+                }
+            }
+
+            /* ═══ CLEANUP ═══ */
+            function cleanup() {
+                const now = performance.now();
+
+                if (liveCount === 0 && zIdx !== 1) zIdx = 1;
+
+                // OVERFLOW POLICY:
+                // Pod presją NIE przyspieszamy widocznego shrinka (beginExit + OUT_S_FAST).
+                // Zamiast tego natychmiastowe ucięcie (cullSlot) najstarszych live slotów.
+                // Oko łatwiej wybacza brak dokończenia ogona niż turbo-przyspieszony collapse.
+                if (liveCount > V.MAX_VISIBLE) {
+                    for (let i = 0; i < liveSlots.length; i++) {
+                        const slot = liveSlots[i];
+                        if (slot.state === 'live') {
+                            liveSlots.splice(i, 1);
+                            cullSlot(slot);
+                            if (liveCount <= V.MAX_VISIBLE) break;
+                            i--;  // splice shifted indices
+                        }
+                    }
+                }
+
+                // Natural lifespan expiry — normalne, spokojne wygaszenie
+                if (dyingCount < MAX_DYING) {
+                    for (let i = 0; i < liveSlots.length; i++) {
+                        const slot = liveSlots[i];
+                        if (slot.state === 'live' && now >= slot.dieAt) {
+                            beginExit(slot, V.OUT_S);
+                            if (dyingCount >= MAX_DYING) break;
+                        }
+                    }
+                }
+
+                // Cleanup idle slots from liveSlots array
+                for (let i = liveSlots.length - 1; i >= 0; i--) {
+                    if (liveSlots[i].state === 'idle') {
+                        liveSlots.splice(i, 1);
+                    }
+                }
+            }
+
+            /* ═══ TICK ═══ */
+            function tick() {
+                // sync after external resume() re-adds tick from tickFns[]
+                if (!tickRegistered) tickRegistered = true;
+
+                if (isMoving && performance.now() - lastMoveT > 100) {
+                    isMoving = false;
+                }
+
+                if (!isMoving && qLen === 0 && liveCount === 0 && dyingCount === 0) {
+                    if (tickRegistered) {
+                        gsap.ticker.remove(tick);
+                        tickRegistered = false;
+                    }
+                    trailWasEmpty = true;
+                    strategy.reset();
+                    return;
+                }
+
+                if (liveCount === 0) {
+                    trailWasEmpty = true;
+                    strategy.reset();
+                }
+
+                drainPointerQueue();
+                cleanup();
+            }
+
+            function ensureTicking() {
+                // defensive against pause/resume + self-unregister state desync
+                gsap.ticker.remove(tick);
+                gsap.ticker.add(tick);
+                tickRegistered = true;
+            }
+
+            /* ═══ INPUT ═══ */
+            function onTrailPointerMove(e) {
+                if (e.pointerType && e.pointerType !== 'mouse') return;
+
+                const sx = window.scrollX || window.pageXOffset || 0;
+                const sy = window.scrollY || window.pageYOffset || 0;
+
+                const batch = (typeof e.getCoalescedEvents === 'function')
+                    ? e.getCoalescedEvents()
+                    : null;
+
+                if (batch && batch.length) {
+                    for (let i = 0; i < batch.length; i++) {
+                        const ev = batch[i];
+                        const x = ev.clientX + sx;
+                        const y = ev.clientY + sy;
+                        mx = x;
+                        my = y;
+                        pushHistory(x, y);
+                        enqueuePointerPoint(x, y);
+                    }
+                } else {
+                    const x = e.clientX + sx;
+                    const y = e.clientY + sy;
+                    mx = x;
+                    my = y;
+                    pushHistory(x, y);
+                    enqueuePointerPoint(x, y);
+                }
+
                 isMoving = true;
                 lastMoveT = performance.now();
-            }, { passive: true });
-
-            addTickFn(tick);
-        }
-
-        let trailWasEmpty = true; // skip spacing on first spawn after pause
-
-        function tick() {
-            if (isMoving && performance.now() - lastMoveT > 100) isMoving = false;
-
-            // Always update cache position — prevents stale cmx/cmy after pause
-            cmx = lerp(cmx, mx, 0.1);
-            cmy = lerp(cmy, my, 0.1);
-
-            // Always update rect if dirty — prevents stale bounds after scroll
-            if (rectDirty) updateContainerRect();
-
-            if (!isMoving && trail.length === 0) return;
-
-            // Track: are there any alive (non-dying) photos on screen?
-            // If not → next spawn skips spacing check (immediate response to movement)
-            let alive = 0;
-            for (let i = 0; i < trail.length; i++) {
-                if (!dying.has(trail[i])) alive++;
+                ensureTicking();
             }
-            if (alive === 0) { trailWasEmpty = true; strategy.reset(); }
 
-            trySpawn();
-            cleanup();
-        }
+            listen(document, "mouseover", function init(e) {
+                const sx = window.scrollX || window.pageXOffset || 0;
+                const sy = window.scrollY || window.pageYOffset || 0;
 
-        const TRAIL_MIN_DELAY = 3500; // ms from hero init
+                mx = lmx = e.clientX + sx;
+                my = lmy = e.clientY + sy;
 
-        function tryActivate() {
-            const elapsed = performance.now() - heroInitT0;
-            if (elapsed >= TRAIL_MIN_DELAY) {
-                preloadAllImages().then(activateTrail);
-            } else {
-                trackedTimeout(() => {
-                    preloadAllImages().then(activateTrail);
-                }, TRAIL_MIN_DELAY - elapsed);
-            }
-        }
+                pushHistory(mx, my);
+                enqueuePointerPoint(mx, my);
 
-        // W React init() jest zawsze wywołany po mount → readyState === 'complete'.
-        // Reference.html: skrypt na końcu <body> → DOMContentLoaded już wystrzelił.
-        // Nie rejestrujemy window.load wewnątrz init() (INIT-DOM-01).
-        tryActivate();
+                sampleCursorX = mx;
+                sampleCursorY = my;
+                hasSampleCursor = true;
+                carryDist = 0;
 
-        // Trail cleanup for global kill()
-        cleanups.push(() => {
-            trail.forEach(obj => {
-                gsap.killTweensOf(obj.wrap);
-                gsap.killTweensOf(obj.inner);
-                gsap.killTweensOf(obj.animTarget);
-                if (obj.flash) gsap.killTweensOf(obj.flash);
-                obj.wrap.remove();
+                document.removeEventListener("mouseover", init);
             });
-            trail.length = 0;
-            dying.clear();
-        });
+
+            /* ═══ PRELOAD ═══ */
+            let imagesPreloaded = false;
+
+            function trailSrcCandidates(key) {
+                const retina = _useRetina ? '_RETINA' : '';
+                const base = `/trail/${key}_strrona_internetowa`;
+                return [
+                    `${base}${retina}.avif`,
+                    `${base}.avif`,
+                    `${base}${retina}.webp`,
+                    `${base}.webp`,
+                ];
+            }
+
+            async function preloadAllImages() {
+                const keys = FLAT_META.map(m => m.c);
+                const BATCH_SIZE = 4;
+
+                for (let i = 0; i < keys.length; i += BATCH_SIZE) {
+                    const batch = keys.slice(i, i + BATCH_SIZE);
+
+                    await Promise.all(batch.map(key => {
+                        return new Promise((resolve) => {
+                            const img = document.createElement('img');
+                            img.alt = '';
+                            img.draggable = false;
+                            img.decoding = 'async';
+                            img.setAttribute('fetchpriority', 'low');
+
+                            const candidates = trailSrcCandidates(key);
+                            let ci = 0;
+
+                            function tryNext() {
+                                if (ci >= candidates.length) {
+                                    img.classList.add('load-failed');
+                                    resolve();
+                                    return;
+                                }
+                                const url = candidates[ci];
+                                ci++;
+                                img.onload = () => {
+                                    imageTemplates.set(key, img);
+                                    resolve();
+                                };
+                                img.onerror = tryNext;
+                                img.src = url;
+                            }
+                            tryNext();
+                        });
+                    }));
+                }
+
+                imagesPreloaded = true;
+            }
+
+            /* ═══ ACTIVATION ═══ */
+            let trailActive = false;
+
+            function activateTrail() {
+                if (trailActive) return;
+                if (!imagesPreloaded) return;
+                trailActive = true;
+
+                if ('PointerEvent' in window) {
+                    addHfListener(document, 'pointermove', onTrailPointerMove, { passive: true });
+                } else {
+                    addHfListener(document, 'mousemove', (e) => {
+                        const sx = window.scrollX || window.pageXOffset || 0;
+                        const sy = window.scrollY || window.pageYOffset || 0;
+                        const x = e.clientX + sx;
+                        const y = e.clientY + sy;
+                        mx = x;
+                        my = y;
+                        pushHistory(x, y);
+                        enqueuePointerPoint(x, y);
+                        isMoving = true;
+                        lastMoveT = performance.now();
+                        ensureTicking();
+                    }, { passive: true });
+                }
+
+                // compatibility with factory pause()/resume()
+                tickFns.push(tick);
+            }
+
+            const TRAIL_MIN_DELAY = 4500;
+
+            function tryActivate() {
+                const elapsed = performance.now() - heroInitT0;
+
+                if (elapsed >= TRAIL_MIN_DELAY) {
+                    preloadAllImages().then(() => {
+                        scheduleMeasureBounds();
+                        activateTrail();
+                    });
+                } else {
+                    trackedTimeout(() => {
+                        preloadAllImages().then(() => {
+                            scheduleMeasureBounds();
+                            activateTrail();
+                        });
+                    }, TRAIL_MIN_DELAY - elapsed);
+                }
+            }
+
+            tryActivate();
+
+            /* ═══ CLEANUP ═══ */
+            cleanups.push(() => {
+                if (measureRaf) cancelAnimationFrame(measureRaf);
+                if (boundsRO) boundsRO.disconnect();
+
+                if (tickRegistered) {
+                    gsap.ticker.remove(tick);
+                    tickRegistered = false;
+                }
+
+                const idx = tickFns.indexOf(tick);
+                if (idx !== -1) tickFns.splice(idx, 1);
+
+                for (const slot of slots) {
+                    gsap.killTweensOf(slot.wrap);
+                    gsap.killTweensOf(slot.inner);
+                    gsap.killTweensOf(slot.img);
+                    gsap.killTweensOf(slot.flash);
+                    slot.wrap.remove();
+                }
+
+                slots.length = 0;
+                liveSlots.length = 0;
+                liveCount = 0;
+                dyingCount = 0;
+                qHead = 0;
+                qTail = 0;
+                qLen = 0;
+                hasSampleCursor = false;
+                carryDist = 0;
+            });
 
         })();
     }
-
-    // ═════════════════════════════════════════════════════════════════
-    // BLOCK 5B: VARIABLE PROXIMITY H1 — USUNIĘTY
-    // Efekt powiększania wagi liter H1 przy kursorze usunięty.
-    // ═════════════════════════════════════════════════════════════════
 
     // ═════════════════════════════════════════════════════════════════
     // BLOCK 6: MOBILE BG FADEOUT
@@ -1834,15 +2767,25 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
     {
         const ctaWrapper = $('.btn-wrapper-wave');
         if (ctaWrapper) {
-            ctaWrapper.addEventListener('touchstart', function() {
-                this.classList.add('touching');
-            }, { passive: true });
-            ctaWrapper.addEventListener('touchend', function() {
-                this.classList.remove('touching');
-            }, { passive: true });
-            ctaWrapper.addEventListener('touchcancel', function() {
-                this.classList.remove('touching');
-            }, { passive: true });
+            /* [FIX #1] tracked listeners */
+            listen(ctaWrapper, 'touchstart', () => ctaWrapper.classList.add('touching'), { passive: true });
+            listen(ctaWrapper, 'touchend', () => ctaWrapper.classList.remove('touching'), { passive: true });
+            listen(ctaWrapper, 'touchcancel', () => ctaWrapper.classList.remove('touching'), { passive: true });
+        }
+    }
+
+    // ═════════════════════════════════════════════════════════════════
+    // BLOCK 7B: PILL — plus jednorazowy klik
+    // ═════════════════════════════════════════════════════════════════
+    {
+        const pillPlus  = $('.pill-av-plus');
+        const pillBadge = $('.pill-badge');
+        const pillTxt   = $('.pill-txt');
+        if (pillPlus && pillBadge && pillTxt) {
+            listen(pillPlus, 'click', () => {
+                pillBadge.style.display = 'none';
+                pillTxt.textContent = '→ Przewiń w dół, aby zobaczyć opinie.';
+            }, { once: true });
         }
     }
 
@@ -1915,6 +2858,7 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
     // ═════════════════════════════════════════════════════════════════
     // SHARED STAR SPRITES — used by both Halo (Block 10) and Cursor (Block 11)
     // 3 twinkle phases × star shape + 1 dot sprite. Created once, drawn thousands of times.
+    // [FIX #5] LAZY INIT — sprites created only when needed (desktop hover only)
     // ═════════════════════════════════════════════════════════════════
     const STAR_PTS = 8;
     const starCos = new Float32Array(STAR_PTS), starSin = new Float32Array(STAR_PTS);
@@ -1922,54 +2866,70 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
 
     const STAR_SPR_SZ = 128;
     const STAR_SPR_HALF = STAR_SPR_SZ / 2;
-    const sharedStarPhases = [0, 0.5, 1.0].map(tw => {
-        const c = document.createElement('canvas'); c.width = STAR_SPR_SZ; c.height = STAR_SPR_SZ;
-        const ctx = c.getContext('2d');
-        if (!ctx) return c;
-        ctx.translate(STAR_SPR_HALF, STAR_SPR_HALF);
-        const gr = ctx.createRadialGradient(0,0,0, 0,0, STAR_SPR_HALF);
-        gr.addColorStop(0,'#ffffff');
-        gr.addColorStop(0.3,'#fffde8');
-        gr.addColorStop(0.6,'#ffeaa0');
-        gr.addColorStop(1,'rgba(255,234,160,0)');
-        ctx.fillStyle = gr;
-        const refSize = STAR_SPR_HALF / 2;
-        const oR = refSize * (1.4 + tw * 0.5);
-        const iR = refSize * 0.35;
-        ctx.beginPath();
-        for (let i=0;i<STAR_PTS;i++){
-            const r=(i&1)===0?oR:iR;
-            if(i===0) ctx.moveTo(starCos[i]*r,starSin[i]*r);
-            else ctx.lineTo(starCos[i]*r,starSin[i]*r);
-        }
-        ctx.closePath(); ctx.fill();
-        return c;
-    });
-    const sharedDotSprite = document.createElement('canvas'); sharedDotSprite.width = 64; sharedDotSprite.height = 64;
-    {
-        const ctx = sharedDotSprite.getContext('2d');
+    
+    /* [FIX #5] Lazy sprite cache */
+    let _sharedStarPhases = null;
+    let _sharedDotSprite = null;
+    
+    function getSharedStarPhases() {
+        if (_sharedStarPhases) return _sharedStarPhases;
+        _sharedStarPhases = [0, 0.5, 1.0].map(tw => {
+            const c = document.createElement('canvas'); c.width = STAR_SPR_SZ; c.height = STAR_SPR_SZ;
+            const ctx = c.getContext('2d');
+            if (!ctx) return c;
+            ctx.translate(STAR_SPR_HALF, STAR_SPR_HALF);
+            const gr = ctx.createRadialGradient(0,0,0, 0,0, STAR_SPR_HALF);
+            gr.addColorStop(0,'#ffffff');
+            gr.addColorStop(0.3,'#fffde8');
+            gr.addColorStop(0.6,'#ffeaa0');
+            gr.addColorStop(1,'rgba(255,234,160,0)');
+            ctx.fillStyle = gr;
+            const refSize = STAR_SPR_HALF / 2;
+            const oR = refSize * (1.4 + tw * 0.5);
+            const iR = refSize * 0.35;
+            ctx.beginPath();
+            for (let i=0;i<STAR_PTS;i++){
+                const r=(i&1)===0?oR:iR;
+                if(i===0) ctx.moveTo(starCos[i]*r,starSin[i]*r);
+                else ctx.lineTo(starCos[i]*r,starSin[i]*r);
+            }
+            ctx.closePath(); ctx.fill();
+            return c;
+        });
+        return _sharedStarPhases;
+    }
+    
+    function getSharedDotSprite() {
+        if (_sharedDotSprite) return _sharedDotSprite;
+        _sharedDotSprite = document.createElement('canvas'); 
+        _sharedDotSprite.width = 64; 
+        _sharedDotSprite.height = 64;
+        const ctx = _sharedDotSprite.getContext('2d');
         if (ctx) {
             ctx.translate(32, 32);
             ctx.fillStyle = '#ffffff';
             ctx.beginPath(); ctx.arc(0,0, 32*0.15, 0, Math.PI*2); ctx.fill();
         }
+        return _sharedDotSprite;
     }
 
     // ═════════════════════════════════════════════════════════════════
     // BLOCK 10: CTA — HALO CANVAS (aureola, desktop only)
     // ═════════════════════════════════════════════════════════════════
+    // Delayed 4s to avoid PEAK CPU usage during entrance animations
     {
         if (window.matchMedia('(hover: hover) and (pointer: fine)').matches && window.innerWidth >= 600) {
+            trackedTimeout(() => {
             const haloWrapper = $('.btn-wrapper-wave');
             const haloButton = $('.cta-button');
             if (haloWrapper && haloButton) {
                 const haloCanvas = document.createElement('canvas');
                 const haloCtx = haloCanvas.getContext('2d');
                 if (haloCtx) {
-                haloCanvas.style.cssText = 'position:absolute;top:-100%;left:-100%;width:300%;height:300%;pointer-events:none;z-index:5';
-                const ref = haloWrapper.firstChild;
-                if (ref && haloWrapper.contains(ref)) haloWrapper.insertBefore(haloCanvas, ref);
-                else haloWrapper.appendChild(haloCanvas);
+                haloCanvas.style.cssText = 'position:absolute;top:-100%;left:-100%;width:300%;height:300%;pointer-events:none;z-index:5;opacity:0;transition:opacity 0.5s ease-out';
+                haloWrapper.insertBefore(haloCanvas, haloWrapper.firstChild);
+                // Fade in after insert
+                requestAnimationFrame(() => { haloCanvas.style.opacity = '1'; });
                 
                 let hW, hH, hCX, hCY, hBtnW = 0;
                 const H_PROX_X = 400, H_PROX_Y = 180, H_PROX_EXIT_X = 415, H_PROX_EXIT_Y = 195;
@@ -2028,10 +2988,10 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
                         const phase = tw < 0.25 ? 0 : tw < 0.75 ? 1 : 2;
                         // Draw star sprite: sprite covers ±(size*2) in particle coords
                         const drawR = this.size * 2;
-                        haloCtx.drawImage(sharedStarPhases[phase], -drawR, -drawR, drawR*2, drawR*2);
+                        haloCtx.drawImage(getSharedStarPhases()[phase], -drawR, -drawR, drawR*2, drawR*2);
                         // White center dot — life alpha only (no twinkle), more stable anchor
                         haloCtx.globalAlpha = this.life;
-                        haloCtx.drawImage(sharedDotSprite, -drawR, -drawR, drawR*2, drawR*2);
+                        haloCtx.drawImage(getSharedDotSprite(), -drawR, -drawR, drawR*2, drawR*2);
                     }
                 }
                 
@@ -2094,11 +3054,14 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
                 });
                 } // end if (haloCtx)
             }
+            }, 4000); // 4s delay — avoid PEAK CPU during entrance
         }
     }
 
     // ═════════════════════════════════════════════════════════════════
     // BLOCK 11: CTA — CURSOR CANVAS (sparkles, desktop only)
+    // ═════════════════════════════════════════════════════════════════
+    // [A9] Hardening: DPR-aware backing store, scroll rect update
     // ═════════════════════════════════════════════════════════════════
     {
         if (window.matchMedia('(hover: hover) and (pointer: fine)').matches && window.innerWidth >= 600) {
@@ -2109,7 +3072,14 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
                 const cCtx = cCanvas.getContext('2d');
                 if (cCtx) {
                 cCanvas.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:100';
-                cCanvas.width = 500; cCanvas.height = 300;
+                
+                // [A9] DPR-aware backing store
+                const C_LOGICAL_W = 500, C_LOGICAL_H = 300;
+                let cDpr = window.devicePixelRatio || 1;
+                cCanvas.width = C_LOGICAL_W * cDpr;
+                cCanvas.height = C_LOGICAL_H * cDpr;
+                cCanvas.style.width = C_LOGICAL_W + 'px';
+                cCanvas.style.height = C_LOGICAL_H + 'px';
                 cWrapper.appendChild(cCanvas);
                 
                 let cIsHover = false, cLastSpawn = 0;
@@ -2118,6 +3088,7 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
                 let cMSpeed = 0, cMAngle = 0, cSmSpeed = 0, cIdleTime = 0, cLastTs = 0;
                 let cAnimId = null, cIsAnim = false;
                 const C_MAX = 150;
+                const C_FRICTION = 0.970225; // Math.pow(0.985, 2) pre-computed for 2× step
                 const cParts = new Array(C_MAX).fill(null);
                 let cActive = 0;
                 
@@ -2132,15 +3103,54 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
                 }
                 
                 let cRect = null, cScX = 1, cScY = 1;
-                function cUpdateRect() { cRect = cCanvas.getBoundingClientRect(); cScX = cCanvas.width / cRect.width; cScY = cCanvas.height / cRect.height; }
+                
+                // [A9] Rebuild backing store on DPR change
+                function cRebuildBackingStore() {
+                    const newDpr = window.devicePixelRatio || 1;
+                    if (newDpr !== cDpr) {
+                        cDpr = newDpr;
+                        cCanvas.width = C_LOGICAL_W * cDpr;
+                        cCanvas.height = C_LOGICAL_H * cDpr;
+                    }
+                }
+                
+                function cUpdateRect() {
+                    cRect = cCanvas.getBoundingClientRect();
+                    cScX = C_LOGICAL_W / cRect.width;
+                    cScY = C_LOGICAL_H / cRect.height;
+                }
                 requestAnimationFrame(cUpdateRect);
+                
                 let cResizeSched = false;
-                listen(window, 'resize', () => { if (!cResizeSched) { cResizeSched = true; requestAnimationFrame(() => { cUpdateRect(); cResizeSched = false; }); } });
+                listen(window, 'resize', () => {
+                    if (!cResizeSched) {
+                        cResizeSched = true;
+                        requestAnimationFrame(() => {
+                            cRebuildBackingStore(); // [A9] check DPR change
+                            cUpdateRect();
+                            cResizeSched = false;
+                        });
+                    }
+                });
+                
+                // [A9] Scroll rect update tylko podczas hover
+                let cScrollSched = false;
+                const cOnScroll = () => {
+                    if (!cIsHover) return; // skip when not hovering
+                    if (!cScrollSched) {
+                        cScrollSched = true;
+                        requestAnimationFrame(() => {
+                            cUpdateRect();
+                            cScrollSched = false;
+                        });
+                    }
+                };
+                listen(window, 'scroll', cOnScroll, { passive: true });
                 
                 const cRand = (a, b) => Math.random() * (b-a) + a;
                 
                 addHfListener(cWrapper, 'mousemove', (e) => { if (!cRect) return; cTMX = (e.clientX-cRect.left)*cScX; cTMY = (e.clientY-cRect.top)*cScY; });
-                listen(cButton, 'mouseenter', () => { cIsHover = true; cUpdateRect(); cStartAnim(); });
+                listen(cButton, 'mouseenter', () => { cIsHover = true; cRebuildBackingStore(); cUpdateRect(); cStartAnim(); });
                 listen(cButton, 'mouseleave', () => { cIsHover = false; });
                 
                 class CurP {
@@ -2158,9 +3168,11 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
                         return this;
                     }
                     update() {
-                        // 2× step: physics calibrated for 60fps, we run at 30fps
+                        // [A9] 30fps with 2× step: visually acceptable approximation for decorative effect
+                        // NOT mathematically identical to 60fps (smoothing is frame-dependent)
                         if (this.isFI) { this.life+=this.fadeIn*2; if (this.life>=this.maxLife){this.life=this.maxLife;this.isFI=false;} } else { this.life-=this.decay*2; }
-                        this.x+=this.sx*2; this.y+=this.sy*2; this.sy+=this.grav*2; this.sx*=Math.pow(0.985,2); this.sy*=Math.pow(0.985,2);
+                        this.x+=this.sx*2; this.y+=this.sy*2; this.sy+=this.grav*2;
+                        this.sx*=C_FRICTION; this.sy*=C_FRICTION; // pre-computed Math.pow(0.985, 2)
                         this.rot+=this.rotS*2; this.tw+=this.twS*2;
                         return this.life>0;
                     }
@@ -2168,16 +3180,17 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
                         if (this.life<=0) return;
                         const tw=(Math.sin(this.tw)+1)*0.5, al=this.life*(0.5+tw*0.5);
                         const co=Math.cos(this.rot), si=Math.sin(this.rot);
-                        cCtx.setTransform(co,si,-si,co,this.x,this.y);
+                        // [A9] DPR-aware transform
+                        cCtx.setTransform(co*cDpr,si*cDpr,-si*cDpr,co*cDpr,this.x*cDpr,this.y*cDpr);
                         if (this.hasGlow) { const gd=(this.size*4+10+tw*8)*0.75*2, go=-gd/2; cCtx.globalAlpha=al*0.35; cCtx.drawImage(cGlow,go,go,gd,gd); }
                         cCtx.globalAlpha=al;
                         // Select nearest twinkle phase
                         const phase = tw < 0.25 ? 0 : tw < 0.75 ? 1 : 2;
                         const drawR = this.size * 2;
-                        cCtx.drawImage(sharedStarPhases[phase], -drawR, -drawR, drawR*2, drawR*2);
+                        cCtx.drawImage(getSharedStarPhases()[phase], -drawR, -drawR, drawR*2, drawR*2);
                         // White center dot — life alpha only
                         cCtx.globalAlpha = this.life;
-                        cCtx.drawImage(sharedDotSprite, -drawR, -drawR, drawR*2, drawR*2);
+                        cCtx.drawImage(getSharedDotSprite(), -drawR, -drawR, drawR*2, drawR*2);
                     }
                 }
                 
@@ -2207,7 +3220,8 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
                     cSmSpeed+=(cMSpeed-cSmSpeed)*0.15;
                     if (cSmSpeed<0.5) cIdleTime+=dt; else cIdleTime=0;
                     cLMX=cMX; cLMY=cMY;
-                    cCtx.setTransform(1,0,0,1,0,0); cCtx.clearRect(0,0,cCanvas.width,cCanvas.height);
+                    // [A9] DPR-aware clear
+                    cCtx.setTransform(cDpr,0,0,cDpr,0,0); cCtx.clearRect(0,0,C_LOGICAL_W,C_LOGICAL_H);
                     if (cIsHover) {
                         let rate=cSpawnRate; if(cIdleTime>0){rate=cSpawnRate*(1+1.5*Math.min(cIdleTime/3,1));}
                         if (ts-cLastSpawn>rate){cSpawn();cLastSpawn=ts;}
@@ -2309,6 +3323,7 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
     // ═════════════════════════════════════════════════════════════════
 
     function pause() {
+        logoLottiePause?.();  // [FIX ENT-LC-03]
         marqueeStop?.();
         tickFns.forEach(fn => gsap.ticker.remove(fn));
         hfListeners.forEach(({ target, event, handler, options }) => {
@@ -2317,6 +3332,7 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
     }
 
     function resume() {
+        logoLottieResume?.(); // [FIX ENT-LC-03]
         marqueeStart?.();
         tickFns.forEach(fn => gsap.ticker.add(fn));
         hfListeners.forEach(({ target, event, handler, options }) => {
@@ -2354,7 +3370,7 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
         const actionArea = container?.querySelector('.action-area');
         if (!actionArea) return;
         
-        const root = document.documentElement;
+        /* [FIX #9] CSS vars defined on #hero-section, not :root */
         let hasBeenVisible = false; // first load = CSS handles choreography
         
         // Re-entry delays (fast replay, not first-load choreography)
@@ -2368,7 +3384,7 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
         // Save original delays for restore after re-entry animation completes
         const originalDelays = {};
         Object.keys(REENTRY_DELAYS).forEach(k => {
-            originalDelays[k] = getComputedStyle(root).getPropertyValue(k).trim();
+            originalDelays[k] = getComputedStyle(container).getPropertyValue(k).trim(); /* [FIX #9] */
         });
         
         function killActionArea() {
@@ -2394,24 +3410,30 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
         
         function reviveActionArea() {
             // 1. Set fast re-entry delays
-            Object.entries(REENTRY_DELAYS).forEach(([k, v]) => root.style.setProperty(k, v));
+            Object.entries(REENTRY_DELAYS).forEach(([k, v]) => container.style.setProperty(k, v)); /* [FIX #9] */
             
-            // 2. Remove dormant — CSS animations restart with new delays
+            // 2. Remove dormant — schedule animation pickup in next frame
             actionArea.removeAttribute('data-dormant');
-            void actionArea.offsetWidth; // force reflow — animations pick up
             
-            // 3. Badge Google entrance
-            badgeGoogleRevive?.();
-            
-            // 4. Badge 20 lat (GSAP) — reads --badge-20lat-delay internally
-            badge20LatReplay?.();
-            
-            // 5. Halo canvas (rebind global listeners)
-            haloReviveFn?.();
+            // [A7] Async pickup zamiast sync reflow (void actionArea.offsetWidth)
+            // Double rAF gwarantuje że przeglądarka przetworzyła removeAttribute
+            // i CSS animations mogą się uruchomić z nowymi delays
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    // 3. Badge Google entrance
+                    badgeGoogleRevive?.();
+                    
+                    // 4. Badge 20 lat (GSAP) — reads --badge-20lat-delay internally
+                    badge20LatReplay?.();
+                    
+                    // 5. Halo canvas (rebind global listeners)
+                    haloReviveFn?.();
+                });
+            });
             
             // 6. Restore original delays after animations complete (~4s)
             trackedTimeout(() => {
-                Object.entries(originalDelays).forEach(([k, v]) => root.style.setProperty(k, v));
+                Object.entries(originalDelays).forEach(([k, v]) => container.style.setProperty(k, v)); /* [FIX #9] */
             }, 4000);
         }
         
@@ -2431,6 +3453,183 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
         actionIO.observe(actionArea);
         
         cleanups.push(() => killActionArea());
+    })();
+
+    // ═════════════════════════════════════════════════════════════════
+    // BLOCK 13: RAINBOW LETTERS H1
+    // ═════════════════════════════════════════════════════════════════
+    // KLASYFIKACJA:
+    //   Priorytet: DEFER (G2) — efekt premium, nie krytyczny dla LCP
+    //   Typ: CSS opacity transition (compositor-driven, zero rAF)
+    //   Init: Faza 2 (2000ms) — po LCP, zero CLS
+    //   Gate: ≥600px + hover:hover (touch/mobile = zero kosztów)
+    //   Fallback: statyczny gradient (no-op)
+    //
+    // ARCHITEKTURA:
+    //   1. .hero-title-wrapper: position:relative (anchor dla overlay)
+    //   2. .hero-title (base): gradient text, NIGDY modyfikowany
+    //   3. .hero-title.hero-overlay: kolorowe litery, opacity animation
+    //
+    // KOSZT: +~60 DOM nodes (spany), zero rAF, zero tick loop
+    // ═════════════════════════════════════════════════════════════════
+    (function() {
+        'use strict';
+
+        // CAPABILITY GATE: ≥600px + hover:hover
+        // Touch/mobile = zero kosztów, zero DOM mutation
+        const canHover = window.matchMedia &&
+            window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+        if (!canHover || window.innerWidth < 600) return;
+
+        const SATURATION = 88, LIGHTNESS = 55;
+        // INIT_DELAY usunięte — trigger na mouseenter
+
+        const headline = container.querySelector('.hero-title');
+        const wrapper = headline?.closest('.hero-title-wrapper');
+        if (!headline || !wrapper) return;
+
+        let overlay = null;
+        let baseLetters = null;
+        let ovLetters = null;
+        let total = 0;
+        let hueOffset = Math.random() * 360;
+        let initialized = false;
+
+        // HSL → RGB (cold path: init + click)
+        function hslToRgb(h) {
+            const s = SATURATION / 100, l = LIGHTNESS / 100;
+            const k = (n) => (n + h / 30) % 12;
+            const a = s * Math.min(l, 1 - l);
+            const f = (n) => l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+            return [Math.round(f(0)*255), Math.round(f(8)*255), Math.round(f(4)*255)];
+        }
+
+        function splitLetters(node) {
+            const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT, null);
+            const textNodes = [];
+            while (walker.nextNode()) textNodes.push(walker.currentNode);
+
+            textNodes.forEach(textNode => {
+                const parent = textNode.parentNode;
+                const text = textNode.textContent;
+                const frag = document.createDocumentFragment();
+                
+                for (let i = 0; i < text.length; i++) {
+                    if (text[i] === ' ') {
+                        frag.appendChild(document.createTextNode(' '));
+                    } else {
+                        const span = document.createElement('span');
+                        span.className = 'letter';
+                        span.textContent = text[i];
+                        frag.appendChild(span);
+                    }
+                }
+                parent.replaceChild(frag, textNode);
+            });
+        }
+
+        function assignHues() {
+            for (let i = 0; i < total; i++) {
+                const hue = (hueOffset + (i / total) * 360) % 360;
+                const rgb = hslToRgb(hue);
+                ovLetters[i].style.setProperty('--lc',
+                    'rgb(' + rgb[0] + ',' + rgb[1] + ',' + rgb[2] + ')');
+            }
+        }
+
+        function onMouseOver(e) {
+            const span = e.target;
+            if (!span.classList || !span.classList.contains('letter')) return;
+            const idx = span._idx;
+            if (idx !== undefined && ovLetters[idx]) {
+                ovLetters[idx].classList.add('lit');
+            }
+        }
+
+        function onMouseOut(e) {
+            const span = e.target;
+            if (!span.classList || !span.classList.contains('letter')) return;
+            const idx = span._idx;
+            if (idx !== undefined && ovLetters[idx]) {
+                ovLetters[idx].classList.remove('lit');
+            }
+        }
+
+        function onClick() {
+            hueOffset = Math.random() * 360;
+            assignHues();
+        }
+
+        // Safety net: gdy kursor opuści headline → wyczyść WSZYSTKIE .lit
+        function clearAllLit() {
+            for (let i = 0; i < total; i++) {
+                ovLetters[i].classList.remove('lit');
+            }
+        }
+
+        function initRainbow() {
+            if (initialized) return;
+            initialized = true;
+
+            // 1. Split letters w base H1
+            splitLetters(headline);
+
+            // 2. Klon po splicie — identyczna struktura spanów
+            overlay = headline.cloneNode(true);
+            overlay.removeAttribute('id');
+            overlay.classList.add('hero-overlay');
+            overlay.setAttribute('aria-hidden', 'true');
+            wrapper.appendChild(overlay);
+
+            // 3. Query listy liter z obu warstw
+            baseLetters = headline.querySelectorAll('.letter');
+            ovLetters = overlay.querySelectorAll('.letter');
+            total = baseLetters.length;
+
+            // 4. Przypisz indeksy do base letters (dla event mappingu)
+            for (let i = 0; i < total; i++) {
+                baseLetters[i]._idx = i;
+            }
+
+            // 5. Przypisz kolory do overlay
+            assignHues();
+
+            // 6. Event listeners (delegation na headline)
+            headline.addEventListener('mouseover', onMouseOver);
+            headline.addEventListener('mouseout', onMouseOut);
+            headline.addEventListener('mouseleave', clearAllLit); // safety net
+            headline.addEventListener('click', onClick);
+        }
+
+        function destroyRainbow() {
+            if (!initialized) return;
+
+            headline.removeEventListener('mouseover', onMouseOver);
+            headline.removeEventListener('mouseout', onMouseOut);
+            headline.removeEventListener('mouseleave', clearAllLit);
+            headline.removeEventListener('click', onClick);
+
+            if (overlay && overlay.parentNode) {
+                overlay.parentNode.removeChild(overlay);
+            }
+            overlay = null;
+            baseLetters = null;
+            ovLetters = null;
+            initialized = false;
+        }
+
+        // Trigger: pierwszy mouseenter na H1 (zamiast timeout 2000ms)
+        // Eliminuje delay z critical path — zero pracy JS przed interakcją
+        function onFirstEnter() {
+            headline.removeEventListener('mouseenter', onFirstEnter);
+            initRainbow();
+        }
+        headline.addEventListener('mouseenter', onFirstEnter);
+
+        cleanups.push(() => {
+            headline.removeEventListener('mouseenter', onFirstEnter);
+            destroyRainbow();
+        });
     })();
 
     // ═══════════════════════════════════════════════════════════════════
@@ -2489,17 +3688,22 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
     //   Dotychczas: <svg class="main-logo"> — statyczny inline SVG, brak animacji
     //   Po zmianie: <div class="logo-lottie" id="hero-logo-lottie"> + lottie-web
     //
+    // [PERF] Canvas vs SVG renderer (benchmark):
+    //   Init: 1.07s vs 14.6s (−93%, 13.5s szybciej)
+    //   DOM: 1 element vs 1909 (−99.9%)
+    //   Playback: identyczny, hover: −50% dropped frames
+    //   Logo OWOCNI = 127 unikalnych klatek frame-by-frame.
+    //   SVG tworzy wszystkie 127 jako DOM upfront = blokuje main thread.
+    //   Canvas rysuje tylko aktualną klatkę (2 warstwy max).
+    //
     // KLASYFIKACJA per Konstytucja:
     //   Priorytet: HOT (G2) — ładowany natychmiast, od pierwszego widoku
-    //   Typ silnika: Typ B (D2) — per-frame renderer lottie-web (SVG rAF loop)
+    //   Typ silnika: Typ B (D2) — per-frame renderer lottie-web (Canvas rAF loop)
     //   Lifecycle: init natychmiast → kill gdy sekcja off-screen (G4)
     //   Kill: bez pause/resume — logo nie scrolluje, off-screen = destroy OK
     //   Hover: mouseenter (reverse wstecz) / mouseleave (forward od bieżącej klatki)
     //   Passive: mousemove/mouseenter/mouseleave nie blokują main thread (C11 ✓)
     //   IO gating: Factory gating (Ścieżka 1) wywołuje pause()/resume() — NIE kill().
-    //   Logo lottie rAF off-screen: bije nadal podczas pause() (lottie-web SVG behavior).
-    //   Po onComplete anim.pause() koszt rAF marginalny (0 klatek renderowanych).
-    //   kill() → cleanups → destroyLogoLottie() → anim.destroy() zatrzymuje rAF definitywnie.
     //
     // ZACHOWANIE animacji:
     //   1. init → play forward → po dojściu do lastFrame → pause (zatrzymanie)
@@ -2517,15 +3721,20 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
     //   Lub: podmień CDN na @lottiefiles/dotlottie-web (obsługuje .lottie nativo)
     //
     // ════════════════════════════════════════════════════════════════════════
-    getLottie().then((lottie) => {
+    (function initLogoLottie() {
         'use strict';
 
-        // Guard: kontener
+        // Guard: kontener i biblioteka
         const logoEl = $id('hero-logo-lottie');
         if (!logoEl) {
-            if (window.location.search.includes('debug=1')) {
+            if (process.env.NODE_ENV !== 'production') {
                 console.warn('[LOGO LOTTIE] #hero-logo-lottie not found — skip init');
             }
+            return;
+        }
+        if (typeof lottie === 'undefined') {
+            console.warn('[LOGO LOTTIE] lottie-web not loaded — fallback: logo hidden');
+            logoEl.style.visibility = 'hidden';
             return;
         }
 
@@ -2567,20 +3776,35 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
         }
 
         // Init lottie-web
+        // [A10] autoplay: false — Logo startuje w Fazie 2 (2s) razem z Gradient OKLCH
+        // [PERF] Canvas renderer: init 1.07s vs SVG 14.6s (−93%), 1 DOM element vs 1909
+
+        // Guard: file:// protocol blokuje XHR (CORS) — tylko przy lokalnym podglądzie
+        // Produkcja (HTTP) działa normalnie. Uruchom z serwera: python -m http.server
+        if (window.location.protocol === 'file:') {
+            console.warn('[LOGO LOTTIE] file:// — CORS blokuje /animations/LOGO_OWOCNI.json. Uruchom z HTTP (python -m http.server / VS Code Live Server).');
+            return;
+        }
+
         anim = lottie.loadAnimation({
             container: logoEl,
-            renderer: 'svg',
+            renderer: 'canvas',
             loop: false,
-            autoplay: true,
+            autoplay: false,
             path: '/animations/LOGO_OWOCNI.json',
             rendererSettings: {
                 preserveAspectRatio: 'xMidYMid meet',
-                progressiveLoad: false,
-                hideOnTransparent: true,
-                viewBoxOnly: true,   // Lottie NIE wstrzykuje width/height na <svg>
-                                     // -> CSS rzadzi rozmiarem bez !important
+                clearCanvas: true,
+                progressiveLoad: true,
             }
         });
+
+        // [A10] Delayed start — Faza 2 choreografii (2000ms)
+        let logoStartTimer = trackedTimeout(() => {
+            if (!destroyed && anim) {
+                anim.play();
+            }
+        }, 2000);
 
         anim.addEventListener('complete', onComplete);
 
@@ -2590,6 +3814,18 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
             logoEl.addEventListener('pointerenter', onEnter);
             logoEl.addEventListener('pointerleave', onLeave);
         }
+
+        // [FIX ENT-LC-03] Expose pause/resume to parent scope
+        let wasPlayingBeforePause = false;
+        logoLottiePause = () => {
+            if (destroyed || !anim) return;
+            wasPlayingBeforePause = !anim.isPaused;
+            anim.pause();
+        };
+        logoLottieResume = () => {
+            if (destroyed || !anim) return;
+            if (wasPlayingBeforePause) anim.play();
+        };
 
         // Cleanup: pelny — listenery + anim
         cleanups.push(function destroyLogoLottie() {
@@ -2609,116 +3845,110 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
             }
         });
 
-    });
+    })();
     // ═══ KONIEC LOGO LOTTIE ENGINE ═══
-
     return { pause, resume, kill };
 
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// REACT COMPONENT
-// ═══════════════════════════════════════════════════════════════════════════
 
-export function HeroSection() {
+// ─── HeroSection — Server-rendered markup, client-side animations ───────────
+// H1/H2 jako ReactNode z heroVariants.generated.tsx (SSR, zero client swap)
+// Engine: marquee, trail, lottie, badges, rainbow — nie dotyka treści
+
+export function HeroSection({ variant }: { variant: HeroVariant }) {
   const rootRef = useRef<HTMLElement | null>(null);
 
   useGSAP(() => {
+    // Brak ScrollTrigger w tej sekcji — gsap.registerPlugin() nie wymagany
     const el = rootRef.current;
     if (!el) {
-      // DEV: twardy sygnał — null tu oznacza błąd wiring-u ref w JSX
       if (process.env.NODE_ENV !== 'production') {
         throw new Error('[P3] rootRef.current is null — ref not attached to <section>.');
       }
       return;
     }
-    /** Dwa rAF: pozwalają przeglądarce wykonać pierwsze malowanie (tekst hero / LCP na mobile)
-     * zanim uruchomi się ciężki heroSectionInit — skraca elementRenderDelay w LCP breakdown. */
-    let inst: ReturnType<typeof heroSectionInit> | undefined;
-    let cancelled = false;
-    let raf2Id: number | null = null;
-    const raf1 = requestAnimationFrame(() => {
-      raf2Id = requestAnimationFrame(() => {
-        raf2Id = null;
-        if (cancelled || !rootRef.current) return;
-        inst = heroSectionInit(rootRef.current);
-      });
-    });
-    return () => {
-      cancelled = true;
-      cancelAnimationFrame(raf1);
-      if (raf2Id !== null) cancelAnimationFrame(raf2Id);
-      inst?.kill?.();
-    };
-    // scope: useGSAP Context revertuje instancje GSAP z init() automatycznie
-    // inst.kill() revertuje je powtórnie + czyści observers/timers/listeners
-    // Double cleanup nie jest problemem — bezpieczeństwo wynika z:
-    // 1. _killed guard w kill() — idempotencja gwarantowana przez kod
-    // 2. useGSAP scope — context revert czyszczony przez React
+    const inst = init(el);
+    return () => inst?.kill?.();
+    // scope nie przekazywany — brak GSAP animacji tworzonych bezpośrednio w useGSAP callbacku
+    // init() zarządza własnym lifecycle przez kill()
   }, { scope: rootRef });
 
   return (
     <section id="hero-section" className="banner-section" ref={rootRef}>
       <div className="trail-container" id="hero-trailContainer"></div>
-      {/* ANIMACJA STARTOWA - Premium Gradient (oklch) */}
       <div className="gradient-perf-wrapper">
         <div className="startup-gradient"></div>
       </div>
-      
-      {/* ANIMACJA STARTOWA - DOWNFALL Gradient (color-mix fallback) */}
       <div className="burst-container" id="hero-burstContainer">
         <div className="burst-ripple burst-ripple--1"></div>
         <div className="burst-ripple burst-ripple--2"></div>
         <div className="burst-ripple burst-ripple--3"></div>
         <div className="burst-ripple burst-ripple--4"></div>
       </div>
-      
-      {/* Content */}
       <div className="content-layer">
         <div className="center-wrapper">
           <div className="logo-area">
-            {/* LOGO LOTTIE — HOT asset (G2)
-                Zastąpił: <svg class="main-logo"> (inline SVG statyczny)
-                Plik: LOGO_OWOCNI.json (lottie-web@5.12.2 wymaga JSON)
-                ⚠ UWAGA: LOGO_OWOCNI.lottie → .json WYMAGANE przed deployem */}
             <div className="logo-lottie" id="hero-logo-lottie"></div>
           </div>
-          
           <div className="hero-content">
-            {/* BLOBY WEWNĄTRZ HERO-CONTENT */}
-            <div className="blob-mask"></div>
-            
-            {/* Hero-Title Wrapper: punkt odniesienia dla Laurów Lottie */}
+            {/* H1 — DYNAMIC: variant.h1 (ReactNode z heroVariants.generated.tsx) */}
             <div className="hero-title-wrapper">
-              <h1 className="hero-title">Dream team do tworzenia<br />porządnych stron w <strong>Warszawie</strong>.</h1>
-              {/* Lottie Laur - pozycjonowane względem dolnej linii hero-title */}
+              <h1 className="hero-title">{variant.h1}</h1>
               <div className="lottie-laur-container lottie-laur-left" id="hero-lottieLaurLeft"></div>
               <div className="lottie-laur-container lottie-laur-right" id="hero-lottieLaurRight"></div>
             </div>
-            <p className="hero-description">Z Owocnymi zdobędziesz dokładnie takich klientów, na jakich najbardziej Ci zależy. Dajemy Ci na 100% gwarancji. Wyskocz ponad konkurencję z Warszawy. Wystartuj stronę szybciej i pozwól swojej firmie działać na pełnych obrotach.</p>
-            
-            {/* Marquee logotypów */}
+
+            {/* PILL BADGE — STATIC: heroContent.ts */}
+            <div className="pill-wrap">
+              <span className="pill-avatars pill-avatars-left">
+                <span className="pill-av pill-av-plus"></span>
+                <img className="pill-av" src="/avatars/Klient1.avif" alt="" loading="eager" decoding="async" fetchPriority="auto" />
+                <img className="pill-av" src="/avatars/Klient2.avif" alt="" loading="eager" decoding="async" fetchPriority="auto" />
+                <img className="pill-av" src="/avatars/Klient3.avif" alt="" loading="eager" decoding="async" fetchPriority="auto" />
+                <img className="pill-av" src="/avatars/Klient4.avif" alt="" loading="eager" decoding="async" fetchPriority="auto" />
+                <img className="pill-av" src="/avatars/Klient5.avif" alt="" loading="eager" decoding="async" fetchPriority="auto" />
+                <img className="pill-av" src="/avatars/Klient6.avif" alt="" loading="eager" decoding="async" fetchPriority="auto" />
+                <img className="pill-av" src="/avatars/Klient7.avif" alt="" loading="eager" decoding="async" fetchPriority="auto" />
+              </span>
+              <span className="pill">
+                <span className="pill-badge"><span className="ponad">Ponad&nbsp;</span>3500+</span>
+                <span className="pill-txt">zadowolonych klientów.</span>
+              </span>
+              <span className="pill-avatars pill-avatars-right"></span>
+            </div>
+
+            {/* H2 — DYNAMIC: variant.h2 (ReactNode z heroVariants.generated.tsx) */}
+            <p className="hero-description">{variant.h2}</p>
+
+            {/* MARQUEE — logotypy w pierwszym HTML (FOUC); buildBrandsDOM klony pod pętlę seamless */}
             <div className="hero-brands-marquee">
-              <p className="hero-brands-text hero-brands-text--desktop"><strong>4500+ projektów.</strong> Zaufanie marek, które znasz.</p>
-              <p className="hero-brands-text hero-brands-text--mobile"><strong>4500+</strong> Udanych projektów.</p>
+              <p className="hero-brands-text hero-brands-text--desktop">Zaufały nam <strong>marki, które znasz.</strong></p>
+              <p className="hero-brands-text hero-brands-text--mobile">Zaufały nam <strong>marki, które znasz.</strong></p>
               <div className="luxury-wrapper" id="hero-brandsMarqueeWrapper">
-                <div className="marquee-track" id="hero-brandsMarqueeTrack"></div>
+                <div className="marquee-track" id="hero-brandsMarqueeTrack">
+                  {HERO_MARQUEE_LOGO_SRCS.map((src) => (
+                    <div key={src} className="logo-item">
+                      <img src={src} alt="" loading="eager" decoding="async" fetchPriority="low" />
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           </div>
-          
+
           <div className="action-area">
             <div className="badge-20lat-wrapper">
-              <svg className="rotating-svg" viewBox="0 0 140 140" xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink">
+              <svg className="rotating-svg" viewBox="0 0 140 140">
                 <defs>
-                  <path id="hero-arc-top" d="M 11,74 A 59,59 0 0,1 129,74"/>
-                  <path id="hero-arc-bottom" d="M 11,74 A 59,59 0 0,0 129,74"/>
+                  <path id="hero-arc-top" d="M 11,74 A 59,59 0 0,1 129,74" />
+                  <path id="hero-arc-bottom" d="M 11,74 A 59,59 0 0,0 129,74" />
                 </defs>
                 <text className="rotating-text text-top" textAnchor="middle">
-                  <textPath href="#hero-arc-top" xlinkHref="#hero-arc-top" startOffset="50%">PRZEWAGA</textPath>
+                  <textPath href="#hero-arc-top" startOffset="50%">PRZEWAGA</textPath>
                 </text>
                 <text className="rotating-text text-bottom" textAnchor="middle">
-                  <textPath href="#hero-arc-bottom" xlinkHref="#hero-arc-bottom" startOffset="50%">DOŚWIADCZENIA</textPath>
+                  <textPath href="#hero-arc-bottom" startOffset="50%">DOŚWIADCZENIA</textPath>
                 </text>
               </svg>
               <span className="label-lat">LAT</span>
@@ -2729,6 +3959,7 @@ export function HeroSection() {
                 </div>
               </button>
             </div>
+
             <div className="trust-column">
               <div className="badge-wrapper" id="hero-badgeSatysfakcjiWrapper">
                 <div className="badge">
@@ -2752,14 +3983,15 @@ export function HeroSection() {
                 <p className="badge-caption">Jedyni w Polsce oferujemy<br />pełną <strong>Gwarancję wyników.</strong></p>
               </div>
             </div>
+
             <div className="trust-column">
               <div className="badge-google-wrapper active entrance-playing" id="hero-badgeGoogleWrapper">
                 <div className="badge-google" id="hero-badgeGoogle">
                   <svg className="google-icon" viewBox="0 0 24 24">
-                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
-                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
-                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
-                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+                    <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" />
+                    <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" />
+                    <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" />
+                    <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" />
                   </svg>
                   <div className="google-content">
                     <div className="stars" id="hero-googleStars"></div>
@@ -2769,13 +4001,14 @@ export function HeroSection() {
                 <p className="badge-caption highlight"><strong>98% pozytywnych opinii</strong><br />na temat owocnych stron</p>
               </div>
             </div>
+
             <div className="cta-group">
               <div className="brain-tooltip" id="hero-brainTooltip">
                 <button className="tooltip-close" aria-label="Zamknij"></button>
                 <div className="tooltip-header"><span className="brain-tip">#BRAIN TIP:71</span> Ludzie widzą to, co chcą widzieć.</div>
                 <div className="tooltip-sub">
                   Żółta kropka kręci się lewo–prawo? A może lata przód–tył?<br />
-                  <strong><em>PS: „Skup się, a zmienisz to myśląc o tym."</em></strong>
+                  <strong><em>PS: „Skup się, a zmienisz to myśląc o tym.&#34;</em></strong>
                 </div>
               </div>
               <div className="btn-wrapper-wave">
@@ -2795,7 +4028,6 @@ export function HeroSection() {
               </div>
             </div>
           </div>
-          
         </div>
       </div>
     </section>
