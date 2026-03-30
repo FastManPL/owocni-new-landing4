@@ -266,21 +266,28 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
   var tilesCachedStride    = 0;
   var tilesCachedMaxScroll = 0;
   var tilesCount           = tiles.length;
+  /** Odczyty getComputedStyle (--gap, root font) tylko przy zmianie szerokości — cacheGeometry często leci 2× (resize + visualViewport). */
+  var tilesGeomInnerW = -1;
+  var tilesGeomCachedRootFs = 0;
+  var tilesGeomCachedGapPx = 32;
 
   function tilesRecalcGeometry() {
     if (!tilesTrackEl || !tiles.length) return;
     var firstTile = tiles[0];
     if (!firstTile) return;
-    var tileW     = firstTile.offsetWidth;
-    var gapRaw = (getComputedStyle(container).getPropertyValue('--gap') || '').trim();
-    var gapVal: number;
-    if (gapRaw.slice(-3) === 'rem') {
-      var rootFs = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-      gapVal = parseFloat(gapRaw) * rootFs;
-    } else {
-      gapVal = parseFloat(gapRaw) || 32;
+    var tileW = firstTile.offsetWidth;
+    var iw = window.innerWidth;
+    if (iw !== tilesGeomInnerW || tilesGeomCachedRootFs <= 0) {
+      tilesGeomInnerW = iw;
+      tilesGeomCachedRootFs = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+      var gapRaw = (getComputedStyle(container).getPropertyValue('--gap') || '').trim();
+      if (gapRaw.slice(-3) === 'rem') {
+        tilesGeomCachedGapPx = parseFloat(gapRaw) * tilesGeomCachedRootFs;
+      } else {
+        tilesGeomCachedGapPx = parseFloat(gapRaw) || 32;
+      }
     }
-    tilesCachedStride    = tileW + gapVal;
+    tilesCachedStride    = tileW + tilesGeomCachedGapPx;
     tilesCachedMaxScroll = tilesTrackEl.scrollWidth - tilesTrackEl.clientWidth;
   }
 
@@ -488,7 +495,6 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       tilesScrollTicking = false;
       tilesUpdateActive();
     });
-    timerIds.push(tilesScrollRafId);
   }
 
   if (tilesTrackEl) {
@@ -593,6 +599,12 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     return window.visualViewport ? window.visualViewport.height : window.innerHeight;
   };
 
+  /** Jak scrollRuntime: unikamy przełączania IO przy samym pasku adresu (tylko wysokość, mała delta). */
+  var MOBILE_TOOLBAR_RESIZE_THRESHOLD_PX = 150;
+  var _factoryLastIW = window.innerWidth;
+  var _factoryLastIH = window.innerHeight;
+  var _factoryViewportTimer: ReturnType<typeof setTimeout> | null = null;
+
   var _factoryGatingObserver = _factoryCreateGating(Math.round(0.5 * _factoryGetVH()));
 
   function _factoryCreateGating(m: number) {
@@ -613,9 +625,24 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
   }
 
   var _factoryOnViewportChange = function() {
-    var newMargin = Math.round(0.5 * _factoryGetVH());
-    _factoryGatingObserver.disconnect();
-    _factoryGatingObserver = _factoryCreateGating(newMargin);
+    var w = window.innerWidth;
+    var h = window.innerHeight;
+    var heightOnly = w === _factoryLastIW;
+    var smallH = Math.abs(h - _factoryLastIH) <= MOBILE_TOOLBAR_RESIZE_THRESHOLD_PX;
+    if (heightOnly && smallH) {
+      _factoryLastIH = h;
+      return;
+    }
+    _factoryLastIW = w;
+    _factoryLastIH = h;
+    if (_factoryViewportTimer != null) clearTimeout(_factoryViewportTimer);
+    _factoryViewportTimer = setTimeout(function() {
+      _factoryViewportTimer = null;
+      var newMargin = Math.round(0.5 * _factoryGetVH());
+      _factoryGatingObserver.disconnect();
+      _factoryGatingObserver = _factoryCreateGating(newMargin);
+      observers[_factoryObsIndex] = _factoryGatingObserver;
+    }, 120);
   };
   window.addEventListener('resize', _factoryOnViewportChange, { passive: true });
   window.addEventListener('orientationchange', _factoryOnViewportChange, { passive: true });
@@ -623,12 +650,17 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     window.visualViewport.addEventListener('resize', _factoryOnViewportChange, { passive: true });
   }
   cleanups.push(function() {
+    if (_factoryViewportTimer != null) {
+      clearTimeout(_factoryViewportTimer);
+      _factoryViewportTimer = null;
+    }
     window.removeEventListener('resize', _factoryOnViewportChange);
     window.removeEventListener('orientationchange', _factoryOnViewportChange);
     if (window.visualViewport) {
       window.visualViewport.removeEventListener('resize', _factoryOnViewportChange);
     }
   });
+  var _factoryObsIndex = observers.length;
   observers.push(_factoryGatingObserver);
   // ═══ KONIEC FACTORY CPU GATING ═══
 
@@ -765,6 +797,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
   // FONT LOAD
   if (document.fonts && document.fonts.ready) {
     document.fonts.ready.then(function() {
+      tilesGeomInnerW = -1;
       cacheGeometry();
     });
   }
