@@ -10,7 +10,6 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { scrollRuntime } from '@/lib/scrollRuntime';
 import imgTlo from './TLO-Monitor.jpg';
 import imgMonitor from './Monitor1.webp';
-import imgPoster from './Pierwsza-klatka.jpg';
 import './wyniki-section.css';
 
 /** Ten sam media-id co sekcja „wzrost przychodów” (hero2) — demo w Wistii zamiast MP4 w popupie. */
@@ -618,14 +617,15 @@ export function WynikiSection() {
                     fetchPriority="high"
                     onError={(e) => e.currentTarget.classList.add('load-failed')}
                   />
-                  <img
+                  <video
                     className="mockup-video"
-                    src={imgPoster.src}
-                    alt=""
-                    width={2176}
-                    height={1792}
-                    draggable={false}
-                    onError={(e) => e.currentTarget.classList.add('load-failed')}
+                    src="Video.mp4"
+                    preload="auto"
+                    autoPlay
+                    loop
+                    muted
+                    playsInline
+                    disablePictureInPicture
                   />
                   <div className="mockup-video-overlay" id="wyniki-video-overlay" />
                 </div>
