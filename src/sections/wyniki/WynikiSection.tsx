@@ -10,6 +10,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { scrollRuntime } from '@/lib/scrollRuntime';
 import imgTlo from './TLO-Monitor.jpg';
 import imgMonitor from './Monitor1.webp';
+import videoPlaceholder from './Video.mp4';
 import './wyniki-section.css';
 
 /** Ten sam media-id co sekcja „wzrost przychodów” (hero2) — demo w Wistii zamiast MP4 w popupie. */
@@ -619,7 +620,7 @@ export function WynikiSection() {
                   />
                   <video
                     className="mockup-video"
-                    src="Video.mp4"
+                    src={videoPlaceholder}
                     preload="auto"
                     autoPlay
                     loop
