@@ -40,6 +40,9 @@ const CyfroweWzrostySectionWrapper = dynamic(() =>
   import('./CyfroweWzrostySectionWrapper').then((m) => ({ default: m.CyfroweWzrostySectionWrapper }))
 );
 const FAQSection = dynamic(() => import('@/sections/FAQ/FAQSection'));
+const FinalSection = dynamic(() =>
+  import('@/sections/footer/FinalSection').then((m) => ({ default: m.FinalSection }))
+);
 
 function pickHeroParams(sp: Record<string, string | string[] | undefined>) {
   const out: { kw?: string | string[]; agid?: string | string[] } = {};
@@ -111,6 +114,9 @@ async function HomePageContent({
       </DeferredMount>
       <DeferredMount minHeight="min(80vh, 700px)">
         <FAQSection />
+      </DeferredMount>
+      <DeferredMount minHeight="min(120vh, 1100px)">
+        <FinalSection />
       </DeferredMount>
     </main>
   );

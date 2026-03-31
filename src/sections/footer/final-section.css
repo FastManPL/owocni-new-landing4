@@ -1,0 +1,48 @@
+/* IDENTYCZNA KOPIA z P2A — zero modyfikacji */
+/* Usunięte: html{}, body{}, .preview-spacer (harness-only), DEV overlay CSS */
+
+/* SECTION CSS — sticky reveal pattern */
+/* Sekcje powyżej muszą mieć tło + z-index:1 żeby naturalnie zakrywały tę sekcję */
+#final-section {
+  position: relative;
+  z-index: 0;
+  margin-top: -100vh;
+  background: #f7f6f4;
+}
+#final-section *, #final-section *::before, #final-section *::after { margin:0; padding:0; box-sizing:border-box; }
+
+/* Sticky viewport — przykleja się do ekranu gdy sekcja jest w viewport */
+/* Zero JS, zero clip-path, zero visibility management */
+#final-sticky {
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  pointer-events: none;
+}
+
+/* Canvas — absolute wewnątrz sticky wrappera, wymiary = sticky wrapper = 100vh */
+#final-section #final-scene {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+/* Canvas skalowany CSS do 100% — GPU zawsze liczy max 2340px */
+#final-section #final-scene canvas {
+  display: block;
+  width: 100% !important;
+  height: 100% !important;
+}
+#final-section #final-scene canvas { display:block; touch-action:pan-y; width:100%; height:100%; }
+
+/* FormCard — desktop: centrum; mobile: bottom sheet + translateY z JS (odsłona napisów, potem .final-scroll-extender) */
+#final-section #final-formCard {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  width: calc(100% - 40px); max-width:500px; height:640px; border-radius:24px;
+  background:#ffffff; box-shadow:0 20px 60px rgba(0,0,0,0.12);
+  z-index:500;
+  /* pointer-events zarządzane przez JS — mobile:auto, desktop:none */
+}
