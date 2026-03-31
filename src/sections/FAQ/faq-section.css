@@ -337,8 +337,13 @@
 }
 
 /* ====== LAYOUT ====== */
+/* Nad #final-section (z-index:0) — pełne tło canvasu, żeby stopka WebGL nie przeświecała przy scrollu */
 #faq-section {
-  background: #f7f6f4; padding: clamp(40px, 8vw, 100px) 0;
+  position: relative;
+  z-index: 1;
+  isolation: isolate;
+  background: #f7f6f4;
+  padding: clamp(40px, 8vw, 100px) 0;
   font-family: 'Lexend', sans-serif; color: #111;
   display: flex; flex-direction: column; align-items: center;
 }

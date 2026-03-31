@@ -135,9 +135,22 @@ function updateMobileFormScroll(){
   var cw2=w||window.innerWidth, vh=window.innerHeight;
   if(cw2>=1200) return;
   gsap.killTweensOf(cardEl);
+  var sec=container.getBoundingClientRect();
+  if(sec.bottom<=0 || sec.top>=vh){
+    cardEl.style.transform='translateY(640px)';
+    cardEl.style.pointerEvents='none';
+    _cardMaxUp=0;
+    return;
+  }
   var er=extScrollEl.getBoundingClientRect();
   var t=0;
-  if(er.top<vh){
+  var eh=Math.max(er.height,1);
+  if(er.bottom<=0 || er.top>=vh){
+    t=0;
+  } else if(er.top<0){
+    /* Extender wychodzi w górę — bez tego enter rośnie i t clampuje do 1 → karta „pływa” przy scrollu w górę */
+    t=Math.max(0,Math.min(1,er.bottom/eh));
+  } else if(er.top<vh){
     var enter=vh-er.top;
     var delayRatio=0.84;
     if(enter>=vh*delayRatio){
