@@ -508,7 +508,17 @@ export function WynikiSection() {
     setPopupOpen(true);
     setWistiaActivated(true);
   };
-  cbRef.current.onPopupClose = () => setPopupOpen(false);
+  cbRef.current.onPopupClose = () => {
+    setPopupOpen(false);
+    const host = rootRef.current?.querySelector('wistia-player') as
+      | (HTMLElement & { pause?: () => Promise<unknown> | void })
+      | null;
+    if (host && typeof host.pause === 'function') {
+      try {
+        void host.pause();
+      } catch {}
+    }
+  };
 
   useEffect(() => {
     if (!wistiaActivated || !popupOpen) return;
@@ -553,7 +563,11 @@ export function WynikiSection() {
   }, { scope: rootRef });
 
   return (
-    <section id="wyniki-section" ref={rootRef}>
+    <section
+      id="wyniki-section"
+      ref={rootRef}
+      className={popupOpen ? 'is-popup-open' : undefined}
+    >
       <div className="wyniki-card">
         <div className="wyniki-content">
           <div className="wyniki-left">
@@ -661,7 +675,7 @@ export function WynikiSection() {
           <div className="wp-close">✕</div>
           <div className="wp-panel">
             <div className="wp-video-wrap">
-              {wistiaActivated ? (
+              {wistiaActivated && popupOpen ? (
                 <>
                   <Script src="https://fast.wistia.com/player.js" strategy="afterInteractive" />
                   <Script

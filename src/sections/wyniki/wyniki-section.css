@@ -275,7 +275,12 @@
 
       width: var(--wyniki-width);
       max-width: 100%;
+      margin-inline: auto;
       isolation: isolate;
+    }
+    #wyniki-section.is-popup-open {
+      position: relative;
+      z-index: 2147483640;
     }
 
     /* ─── KARTA (zewnętrzny biały kontener z ramką) ─────────────────────── */
@@ -680,6 +685,7 @@
       /* Edge-to-edge: karta od krawędzi do krawędzi ekranu */
       #wyniki-section {
         width: 100%;
+        margin-inline: 0;
       }
 
       /* Ramka mobile: 6% karty = 6vw → 24-28px przy 430px — zgodnie z konsultantami */
