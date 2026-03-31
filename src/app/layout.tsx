@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Lexend, Fraunces } from 'next/font/google';
+import { Lexend, Fraunces, Poppins } from 'next/font/google';
 
 // === CSS IMPORT ORDER (Konstytucja C7) ===
 // 1. Vendor CSS first
@@ -30,6 +30,16 @@ const fraunces = Fraunces({
   preload: false,
 });
 
+/** Formularz cennika (@owocni/cennik-form) — preload: false, sekcja pod foldem. */
+const owocniForm = Poppins({
+  subsets: ['latin', 'latin-ext'],
+  display: 'swap',
+  variable: '--font-owocni-form',
+  weight: ['400', '500', '600', '700'],
+  adjustFontFallback: true,
+  preload: false,
+});
+
 // === METADATA ===
 export const metadata: Metadata = {
   title: {
@@ -57,7 +67,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pl" className={`${lexend.variable} ${fraunces.variable}`}>
+    <html lang="pl" className={`${lexend.variable} ${fraunces.variable} ${owocniForm.variable}`}>
       <head>
         {/* 
           === G7: dns-prefetch dla sGTM ===

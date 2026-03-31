@@ -7,7 +7,9 @@ import gsap from 'gsap';
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { scrollRuntime } from '@/lib/scrollRuntime';
+import { FinalFormCard } from './FinalFormCard';
 import './final-section.css';
+
 
 // ⚠️ GSAP-SSR-01: ZAKAZ gsap.registerPlugin() na module top-level.
 // Sekcja nie używa żadnych pluginów GSAP — brak potrzeby registerPlugin.
@@ -1178,7 +1180,10 @@ export function FinalEngine() {
     <section id="final-section" ref={rootRef}>
       <div id="final-sticky">
         <div id="final-scene"></div>
-        <div id="final-formCard"></div>
+        <div id="final-formCard">
+          <FinalFormCard />
+        </div>
+
       </div>
       <div
         className="final-scroll-extender"

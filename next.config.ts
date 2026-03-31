@@ -11,6 +11,8 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
 
+  transpilePackages: ['@owocni/cennik-form'],
+
   /** Tree-shaking / deduplikacja importów z „barrel-heavy” paczek (Konstytucja H8). */
   experimental: {
     optimizePackageImports: ['gsap'],

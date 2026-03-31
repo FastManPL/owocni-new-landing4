@@ -2,6 +2,9 @@
   "name": "lp-project",
   "version": "0.1.0",
   "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
   "engines": {
     "node": "20.x"
   },
@@ -17,6 +20,7 @@
     "analyze": "cross-env ANALYZE=true next build"
   },
   "dependencies": {
+    "@owocni/cennik-form": "workspace:*",
     "@gsap/react": "2.1.1",
     "gsap": "3.12.7",
     "imagesloaded": "^5.0.0",
