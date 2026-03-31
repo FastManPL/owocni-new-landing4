@@ -36,13 +36,13 @@
   height: 100%;
   pointer-events: none;
 }
-/* Canvas skalowany CSS do 100% — GPU zawsze liczy max 2340px */
+/* Canvas skalowany CSS do 100% — GPU zawsze liczy max 2340px; touch-action z poprzedniego bloku #final-scene canvas */
 #final-section #final-scene canvas {
   display: block;
+  touch-action: pan-y;
   width: 100% !important;
   height: 100% !important;
 }
-#final-section #final-scene canvas { display:block; touch-action:pan-y; width:100%; height:100%; }
 
 /* Karta: pointer-events:auto — #final-sticky ma none; inaczej formularz nie dostaje kliknięć */
 #final-section #final-formCard {

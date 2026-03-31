@@ -112,7 +112,7 @@ var state=CLK.CLOCK, activeTL=null, nextCall=null;
 var _digits=[0,0,0,0,0,0], _date=new Date();
 
 // ── INTERACTION ───────────────────────────────────────────────────────────────
-var isPageVisible=true, rawMouse={x:0,y:0}, hasPointerInput=false; // O6: phantom cursor guard
+var isPageVisible=true, rawMouse={x:0,y:0};
 var mouse={x:0,y:0}, smooth={x:0,y:0}, mUV_x=0, mUV_y=0;
 var _m2cResult={x:0,y:0};
 var clockResponsiveOffsetX=0, clockResponsiveOffsetY=0;
@@ -740,12 +740,13 @@ function _setupCardBottomSheet(){
     _expanded ? _collapse() : _expand();
   }
 
-  cardEl.addEventListener('touchstart', _onTouchStart, {passive:true});
-  cardEl.addEventListener('touchend',   _onTouchEnd,   {passive:true});
+  var _touchOpts = { passive: true };
+  cardEl.addEventListener('touchstart', _onTouchStart, _touchOpts);
+  cardEl.addEventListener('touchend',   _onTouchEnd,   _touchOpts);
   cardEl.addEventListener('click',      _onClick);
   cleanups.push(function(){
-    cardEl.removeEventListener('touchstart', _onTouchStart);
-    cardEl.removeEventListener('touchend',   _onTouchEnd);
+    cardEl.removeEventListener('touchstart', _onTouchStart, _touchOpts);
+    cardEl.removeEventListener('touchend',   _onTouchEnd,   _touchOpts);
     cardEl.removeEventListener('click',      _onClick);
   });
 }
@@ -963,7 +964,7 @@ document.addEventListener('visibilitychange',_onVisChange);
 cleanups.push(function(){ document.removeEventListener('visibilitychange',_onVisChange); });
 
 // ── POINTERMOVE (HF — za IO gatingiem) ───────────────────────────────────────
-var _onPointerMove=function(e){ rawMouse.x=e.clientX; rawMouse.y=e.clientY; hasPointerInput=true; };
+var _onPointerMove=function(e){ rawMouse.x=e.clientX; rawMouse.y=e.clientY; };
 // INP-02: dodawany/usuwany przez pause/resume, nie w init()
 hfListeners.push({target:window,event:'pointermove',fn:_onPointerMove,options:{passive:true}});
 
