@@ -1,0 +1,1571 @@
+<!DOCTYPE html>
+<!-- wyniki.stack.html — INTEGRATION HARNESS -->
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>wyniki — STACK HARNESS</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.7/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.7/ScrollTrigger.min.js"></script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital@1&family=Lexend:wght@100..900&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Lexend', sans-serif; }
+
+    .fake-above {
+      height: 80vh;
+      background: repeating-linear-gradient(45deg, #1a1a2e, #1a1a2e 10px, #16213e 10px, #16213e 20px);
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-family: sans-serif; font-size: 1.5rem;
+    }
+    .fake-pinned { height: 200vh; background: #0f3460; }
+    .fake-pinned-content {
+      position: sticky; top: 0; height: 100vh;
+      display: flex; align-items: center; justify-content: center;
+      color: #e94560; font-family: sans-serif; font-size: 2rem;
+    }
+    .fake-accordion { background: #1a1a2e; padding: 2rem; }
+    .fake-accordion-content {
+      overflow: hidden; height: 100px; transition: height 0.4s ease;
+      background: #16213e; color: #fff; font-family: sans-serif; padding: 1rem;
+    }
+    .fake-accordion-content.expanded { height: 400px; }
+    .dev-controls {
+      position: fixed; top: 1rem; right: 1rem; z-index: 9999;
+      display: flex; flex-direction: column; gap: 0.5rem;
+    }
+    .dev-controls button {
+      padding: 0.5rem 1rem; background: #e94560; color: #fff;
+      border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem;
+    }
+
+    /* ═══ KOMPLETNY CSS SEKCJI (linie 57-851 z reference.html) ═══ */
+    #wyniki-section .mockup-zoom-wrapper {
+      position: absolute;
+      top: 0; right: 0; bottom: 0; left: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1;
+      pointer-events: none;
+    }
+    #wyniki-section .mockup-zoom-layer {
+      /*
+       * Trzyma proporcje OBRAZU (2176:1792 = 1.214:1), NIE panelu.
+       * Na mobile panel = ~1.7:1 (widescreen) → obraz overflow top/bottom,
+       * identycznie jak object-fit:cover na prawdziwym <img>.
+       * Flex wrapper centruje go pionowo — overflow równomierny góra/dół.
+       */
+      position: relative;
+      width: 100%;
+      flex-shrink: 0;
+      padding-top: 82.35%;          /* 1792÷2176 — fallback Safari <15 */
+      aspect-ratio: 2176 / 1792;
+      margin-top: var(--img-y, 0%);          /* desktop: 0% (3440×1279) */
+      transform-origin: 50% 30%;
+      /* will-change: USUNIĘTE — GSAP zarządza dynamicznie (WE-3) */
+    }
+    @supports (aspect-ratio: 1 / 1) {
+      #wyniki-section .mockup-zoom-layer { padding-top: 0; }
+    }
+
+    /* ─── TLO (tło za monitorem, parallax) ───────────────────────────── */
+    #wyniki-section .mockup-tlo {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      width: 100%;
+      height: 130%;
+      object-fit: cover;
+      object-position: center top;
+      display: block;
+      z-index: 1;
+      /* will-change: USUNIĘTE — GSAP zarządza dynamicznie (WE-3) */
+    }
+
+    /* ─── MONITOR (obraz monitora, na wierzchu TLO) ─────────────────── */
+    #wyniki-section .mockup-frame {
+      position: absolute;
+      top: 0; right: 0; bottom: 0; left: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+      z-index: 2;                 /* nad TLO — widoczny */
+    }
+
+    /* Video — nad TLO, pozycjonowane nad ekranem */
+    #wyniki-section .mockup-video {
+      position: absolute;
+      left: 17.647%;
+      top: var(--vid-y, 19.9%);
+      width: 64.706%;
+      height: 47.935%;
+      object-fit: cover;
+      z-index: 3;
+      border: none;
+      display: block;
+    }
+
+    /* Czarna warstwa — 2.5% większa niż video (pokrywa krawędzie) */
+    #wyniki-section .mockup-video-overlay {
+      position: absolute;
+      left: 16.838%;
+      top: calc(var(--vid-y, 19.9%) - 0.6%);
+      width: 66.324%;
+      height: 49.133%;
+      background: #000;
+      opacity: 0.7;
+      z-index: 4;
+      pointer-events: none;
+      /* transition: USUNIĘTE — walczyło z scroll-driven JS updates (K2) */
+    }
+    @media (hover: hover) and (pointer: fine) {
+      #wyniki-section .wyniki-right:hover .mockup-video-overlay {
+        opacity: 0 !important;
+        transition: opacity 0.35s ease; /* transition TYLKO na hover, TYLKO desktop */
+      }
+    }
+
+
+    /* ─── PLAY BUTTON (prawy dolny róg prawego panelu) ──────────────────── */
+    #wyniki-section .wyniki-play-btn {
+      position: absolute;
+      bottom: 6%;
+      right: 6%;
+      width: 11%;
+      height: auto;
+      aspect-ratio: 1;
+      z-index: 15;
+      pointer-events: none;
+      opacity: 0;
+      transform: translateX(-15px);
+      transition: transform 0.6s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.5s ease;
+    }
+    #wyniki-section .wyniki-play-btn.is-visible {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    #wyniki-section .wyniki-play-btn svg {
+      width: 100% !important;
+      height: 100% !important;
+    }
+
+    /* Prawy panel klikalny */
+    #wyniki-section .wyniki-right { cursor: pointer; }
+
+    /* ─── VIDEO POPUP ───────────────────────────────────────────────────── */
+    #wyniki-section #wyniki-video-popup {
+      position: fixed;
+      top: 0; right: 0; bottom: 0; left: 0;
+      z-index: 100000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(0,0,0,0);
+      visibility: hidden;
+      pointer-events: none;
+      transition: background 0.4s ease, visibility 0.4s ease;
+    }
+    #wyniki-section #wyniki-video-popup.is-open {
+      visibility: visible;
+      pointer-events: auto;
+      background: rgba(0,0,0,0.85);
+    }
+    /* Wrapper — kontekst pozycjonowania dla close + panel */
+    #wyniki-section .wp-wrapper {
+      position: relative;
+      width: min(96vw, 1150px);
+      transform: translateY(40px) scale(0.96);
+      opacity: 0;
+      transition: transform 0.45s cubic-bezier(0.32, 0.72, 0, 1), opacity 0.35s ease;
+    }
+    #wyniki-section #wyniki-video-popup.is-open .wp-wrapper {
+      transform: translateY(0) scale(1);
+      opacity: 1;
+    }
+    #wyniki-section .wp-panel {
+      position: relative;
+      width: 100%;
+      max-height: 90vh;
+      max-height: 90svh;
+      background: #f2ece7;         /* jasne tło — video-wrap ma own #000 */
+      border-radius: 1.2rem;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 20px 80px rgba(0,0,0,0.6);
+    }
+    /* Close — NAD panelem, czarny z żółtym X */
+    #wyniki-section .wp-close {
+      position: absolute;
+      bottom: calc(100% + 12px);
+      right: 0;
+      width: 44px; height: 44px;
+      background: #1a1816;
+      border: 1px solid rgba(255,198,0,0.25);
+      border-radius: 50%;
+      cursor: pointer;
+      color: #ffc600;
+      font-size: 20px; font-weight: 700;
+      line-height: 44px; text-align: center;
+      z-index: 5;
+      transition: transform 0.2s, border-color 0.2s;
+    }
+    #wyniki-section .wp-close:hover {
+      transform: scale(1.1);
+      border-color: rgba(255,198,0,0.6);
+    }
+    #wyniki-section .wp-video-wrap {
+      position: relative;
+      width: 100%;
+      padding-top: 56.25%;
+      aspect-ratio: 16 / 9;
+      background: #000;
+      flex-shrink: 0;
+    }
+    @supports (aspect-ratio: 16 / 9) {
+      #wyniki-section .wp-video-wrap { padding-top: 0; }
+    }
+    #wyniki-section .wp-video-wrap video {
+      width: 100%; height: 100%;
+      object-fit: contain;
+      display: block;
+    }
+    @supports not (aspect-ratio: 16 / 9) {
+      #wyniki-section .wp-video-wrap video { position: absolute; top: 0; left: 0; }
+    }
+    #wyniki-section .wp-content {
+      padding: clamp(1.2rem, 3.5vw, 2.2rem) clamp(1.5rem, 4vw, 2.5rem);
+      display: flex; flex-direction: column;
+      overflow-y: auto;
+      background: #f2ece7;
+    }
+    #wyniki-section .wp-content > * + * { margin-top: 1.2rem; }
+    #wyniki-section .wp-tag {
+      display: inline-flex; align-items: center;
+      font: 600 11px/1 'Lexend', sans-serif;
+      letter-spacing: 0.08em; text-transform: uppercase;
+      color: rgba(80,60,40,0.5);
+    }
+    #wyniki-section .wp-tag::before {
+      content: ''; width: 6px; height: 6px;
+      border-radius: 50%; background: #c53c0a;
+      margin-right: 6px;
+    }
+    #wyniki-section .wp-title {
+      font: 300 clamp(1.1rem, 2.5vw, 1.5rem)/1.3 'Lexend', sans-serif;
+      color: #1a1816; margin: 0;   /* ciemny tekst */
+    }
+    #wyniki-section .wp-title b { font-weight: 600; color: #0a0a0a; }
+    #wyniki-section .wp-close-text {
+      display: inline-flex; align-items: center; justify-content: center;
+      padding: 1rem 2rem; border-radius: 999px;
+      background: transparent;
+      border: 1px solid rgba(26,24,22,0.2);  /* ciemna ramka na jasnym */
+      color: rgba(26,24,22,0.5);
+      font: 400 clamp(0.95rem, 1.8vw, 1.15rem)/1 'Lexend', sans-serif;
+      cursor: pointer; transition: border-color 0.2s, color 0.2s;
+    }
+    #wyniki-section .wp-close-text:hover {
+      border-color: rgba(26,24,22,0.4);
+      color: rgba(26,24,22,0.8);
+    }
+    #wyniki-section .wp-buttons {
+      display: flex; justify-content: space-between;
+      align-items: center; gap: 2.5rem; flex-wrap: wrap;
+    }
+    @media (max-width: 600px) {
+      #wyniki-section .wp-wrapper { width: 94vw; }
+      #wyniki-section .wp-panel { max-height: 92vh; border-radius: 1rem; }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════
+       CSS SEKCJI — każdy selektor ma prefix #wyniki-section
+       @keyframes mają prefix wyniki-
+    ══════════════════════════════════════════════════════════════════════ */
+
+    /* ─── ROOT ───────────────────────────────────────────────────────────── */
+    #wyniki-section {
+      --wyniki-width:  clamp(62.5rem, 88vw, 110rem);
+      --wyniki-radius: 1.5rem;
+      --wyniki-pad:    clamp(1.5rem, calc(3.6vw - 0.5rem), 3.85rem);
+      --wyniki-gap:    clamp(0rem, 0vw, 0rem);
+
+      /* ─── CTA zmienne (przeniesione z gwarancja-section) ──────────── */
+      --intro-dur:    0.55s;
+      --loop-dur:     3.5s;
+      --loop-delay:   2.05s;
+      --depth-intro:  0.16em;   /* było 4px — em skaluje proporcjonalnie z CTA font-size */
+      --depth-tap1:   0.18em;   /* było 4.5px */
+      --depth-tap2:   0.16em;   /* było 4px */
+      --depth-bounce: 0.02em;   /* było 0.5px */
+      --ease-silk:    cubic-bezier(0.25, 0.46, 0.45, 0.94);
+      --ease-press:   cubic-bezier(0.32, 0, 0.67, 0);
+      --ease-release: cubic-bezier(0.33, 1, 0.68, 1);
+
+      width: var(--wyniki-width);
+      max-width: 100%;
+      /* isolation: isolate — WSTRZYMANE do weryfikacji z właścicielem
+         contain: layout style — SKIP: position:fixed popup wewnątrz sekcji */
+    }
+
+    /* ─── KARTA (zewnętrzny biały kontener z ramką) ─────────────────────── */
+    /*
+     * Biała ramka = padding na karcie.
+     * Brak box-shadow — celowa decyzja projektowa.
+     * Inner radius = outer radius – padding (żeby narożniki się zgadzały).
+     */
+    #wyniki-section .wyniki-card {
+      /*
+       * CONCENTRIC CURVES — jedyna poprawna matematyka dla zagnieżdżonych zaokrągleń:
+       *   inner = outer − frame
+       * Krzywe biegną równolegle → wizualnie spójne, ale nie identyczne.
+       * Warunek: outer > frame zawsze → inner > 0 zawsze.
+       * Warunek: inner < frame → narożnik nie "wychodzi" poza panel.
+       *
+       * outer ≈ 5vw skaluje się razem z frame (3.2vw), zachowując stały zapas.
+       * Wynik desktop (~1400px): outer≈70px, frame≈45px, inner≈25px ✓
+       * Wynik min-clamp:         outer=52px,  frame=28px,  inner=24px ✓
+       * Wynik max-clamp:         outer=80px,  frame=52px,  inner=28px ✓
+       */
+      --wyniki-frame:         clamp(28px, 3.2vw, 52px);
+      --wyniki-inner-radius:  calc(var(--wyniki-frame) * 0.6); /* zawsze 37.5% outer */
+      --wyniki-outer-radius:  calc(var(--wyniki-frame) + var(--wyniki-inner-radius));
+
+      width: 100%;
+      border-radius: var(--wyniki-outer-radius);
+      background: #ffffff;
+      padding: var(--wyniki-frame);
+      /* box-shadow: BRAK — celowe */
+    }
+
+    #wyniki-section .wyniki-content {
+      display: flex;
+      align-items: stretch;
+      aspect-ratio: 1600 / 720;
+      border-radius: var(--wyniki-inner-radius);
+      overflow: hidden;
+      background: #f7f6f4; /* kolor pod zaokrągleniami .wyniki-right */
+    }
+    /* Fallback proporcji karty na Safari <15, tylko desktop */
+    @supports not (aspect-ratio: 1 / 1) {
+      @media (min-width: 601px) {
+        #wyniki-section .wyniki-content { min-height: 36vw; }
+      }
+    }
+
+    /* ─── LEWY PANEL — tekst ─────────────────────────────────────────────── */
+    #wyniki-section .wyniki-left {
+      flex: 0 0 44.5%;
+      background: #f7f6f4;
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-start;
+      align-items: center;
+      padding: 4.1vw 2.7vw 4.1vw; /* boki zmniejszone z 4.1vw → 2.7vw dla +10% heading */
+      gap: 0; /* odstępy kontrolowane indywidualnie */
+    }
+
+    /* ─── PRAWY PANEL — media ────────────────────────────────────────────── */
+    #wyniki-section .wyniki-right {
+      flex: 1;
+      position: relative;
+      overflow: hidden;
+      background: #0d0d1c;
+      /*
+       * Zaokrąglenia lewej strony (widoczne wewnątrz białej ramki):
+       * top-left:    2× --wyniki-outer-radius (duże, efektowne)
+       * bottom-left: --wyniki-inner-radius    (spójne z wewnętrznym narożnikiem ramki)
+       * prawa strona: 0 (karta tnie overflow:hidden)
+       */
+      border-radius: clamp(100px, 17vw, 300px) 0 0 var(--wyniki-inner-radius);
+    }
+
+    /* ─── GRADIENT PLACEHOLDER ───────────────────────────────────────────── */
+    #wyniki-section .wyniki-placeholder {
+      position: absolute;
+      top: 0; right: 0; bottom: 0; left: 0;
+      /* gradient: USUNIĘTY — niewidoczny pod realnymi mediami, zbędny koszt compositor (2D) */
+    }
+
+    /* Etykieta dewelopera — widoczna tylko, gdy brak realnego obrazu */
+    #wyniki-section .wyniki-placeholder-label {
+      position: absolute;
+      top: 0; right: 0; bottom: 0; left: 0;
+      z-index: 2;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: rgba(255,255,255,0.20);
+      font-size: clamp(0.6rem, 1vw, 0.78rem);
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      pointer-events: none;
+      user-select: none;
+    }
+
+    /* ─── TYPOGRAFIA — HEADING ───────────────────────────────────────────── */
+    #wyniki-section .wyniki-heading {
+      font-family: 'Lexend', var(--font-sans);
+      /*
+       * Panel = 39.2vw. Padding 2.7vw × 2 = 5.4vw. Dostępne = 33.8vw.
+       * "W zasięgu ręki masz" ≈ 10.4 char-units → font = 33.8/10.4 = 3.25vw
+       * (+10% vs oryginalne 2.95vw)
+       */
+      font-size: 3.25vw;
+      font-weight: 300;
+      line-height: 1.2;
+      letter-spacing: -0.025em;
+      text-align: center;
+      width: 100%;
+      margin-bottom: 2vw;
+      /* ─── TEXT GRADIENT (fiolet → bordowy → ceglasty) ──────────── */
+      background-image: linear-gradient(135deg, #252030 2%, #2a2130 44%, #382630 56.7%, #512b2b 67.5%, #7d3527 80.2%, #7d3527 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    #wyniki-section .wyniki-heading strong {
+      font-weight: 700;
+      /* gradient dziedziczony z parenta — strong nie potrzebuje color */
+    }
+
+    /* ─── TYPOGRAFIA — SUBHEADING ────────────────────────────────────────── */
+    #wyniki-section .wyniki-sub {
+
+      font-size: 1.84vw; /* 62.5% heading (2.95vw) — było 1.475vw (+25%) */
+      font-weight: 500;  /* było 600 (-100) */
+      color: #000000;
+      letter-spacing: 0.005em;
+      text-align: center;
+      margin-bottom: 0; /* gap kontrolowany przez spacer--mid (flex:1) */
+    }
+
+    /* ─── SPACER — bazowy ──────────────────────────────────────────────── */
+    #wyniki-section .wyniki-spacer {
+      flex: 1;
+      min-height: 1.5vw;
+    }
+
+    /* Sub blisko heading: spacer--top nie rośnie, stały mały gap */
+    #wyniki-section .wyniki-spacer--top {
+      flex: 0 0 auto !important;
+      min-height: clamp(8px, 1.2vw, 20px);
+    }
+
+    /* CTA na środku między sub a footnote:
+       spacer--mid = flex:1 (bazowy) = spacer pod CTA (flex:1)
+       → równy podział przestrzeni → CTA wycentrowany */
+
+    /* ─── CTA BUTTON — transplant 1:1 z gwarancja-section ──────────────── */
+    #wyniki-section .wyniki-btn-wrapper-wave {
+      position: relative;
+      display: inline-flex;
+      justify-content: center;
+      align-items: center;
+      transform-style: preserve-3d;
+    }
+    #wyniki-section .wyniki-btn-static-floor {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      border-radius: 999px;
+      z-index: 1;
+      pointer-events: none;
+      box-shadow:
+        0 10px 0 0 #ffffff,
+        0 12px 8px 0 rgba(255,255,255,0.8),
+        0 18px 20px rgba(0,0,0,0.15);
+    }
+    #wyniki-section .wyniki-cta {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      height: 2.23em; /* było 57px — teraz em: skaluje się razem z font-size */
+      padding: 0 1.25em;
+      border: 0.12em solid #262626;         /* było 3px — em skaluje z font-size */
+      border-radius: 999px;
+      font-family: 'Lexend', sans-serif;
+      font-size: clamp(1rem, 1.7vw, 1.6rem); /* skaluje z vw jak heading (2.95vw) — nigdy nie przerośnie heading */
+      font-weight: 800;
+      text-decoration: none;
+      cursor: pointer;
+      z-index: 10;
+      white-space: nowrap;
+      background-color: #ffc600;
+      box-shadow: 0 0.27em 0 0 #262626, 0 0.31em 0 0 #ffffff; /* było 7px/8px */
+      position: relative;
+      transform: translateY(0) translateZ(0);
+      will-change: transform, box-shadow;
+      touch-action: manipulation;
+      -webkit-tap-highlight-color: transparent;
+      outline: none;
+      -webkit-font-smoothing: antialiased;
+      backface-visibility: hidden;
+    }
+    #wyniki-section .wyniki-cta:focus-visible {
+      outline: 3px solid rgba(38,38,38,0.35);
+      outline-offset: 6px;
+    }
+    @media (hover: hover) and (pointer: fine) {
+      #wyniki-section .wyniki-cta:hover {
+        animation:
+          wyniki-silk-intro var(--intro-dur) var(--ease-silk) forwards,
+          wyniki-silk-pulse var(--loop-dur) var(--ease-silk) var(--loop-delay) infinite;
+      }
+      #wyniki-section .wyniki-cta:hover + .wyniki-btn-static-floor {
+        animation:
+          wyniki-floor-intro var(--intro-dur) var(--ease-silk) forwards,
+          wyniki-floor-pulse var(--loop-dur) var(--ease-silk) var(--loop-delay) infinite;
+      }
+      #wyniki-section .wyniki-cta:hover .wyniki-btn-cap {
+        animation:
+          wyniki-cap-intro var(--intro-dur) var(--ease-silk) forwards,
+          wyniki-cap-pulse var(--loop-dur) var(--ease-silk) var(--loop-delay) infinite;
+      }
+      #wyniki-section .wyniki-cta:hover .wyniki-btn-text::after {
+        background-position: -50% 0;
+        transition: background-position 0.9s var(--ease-release);
+      }
+    }
+    #wyniki-section .wyniki-cta:active {
+      transform: translateY(0.27em) !important;       /* było 7px */
+      box-shadow: 0 0 0 0 #262626, 0 0.04em 0 0 #ffffff !important; /* było 1px */
+      transition: all 0.04s ease-out !important;
+      animation: none !important;
+    }
+    #wyniki-section .wyniki-cta:active + .wyniki-btn-static-floor {
+      transform: scale(0.965) !important;
+      box-shadow: 0 10px 0 0 #ffffff, 0 5px 4px -1px rgba(255,255,255,0.75), 0 5px 8px rgba(0,0,0,0.1) !important;
+      transition: all 0.04s ease-out !important;
+      animation: none !important;
+    }
+    #wyniki-section .wyniki-cta:active .wyniki-btn-cap {
+      opacity: 0 !important;
+      animation: none !important;
+    }
+    #wyniki-section .wyniki-btn-hole {
+      position: absolute;
+      top: 0.08em; left: 0.08em; right: 0.08em; bottom: 0.08em; /* było 2px */
+      border-radius: 990px;
+      background: #ffc600;
+      overflow: hidden;
+      pointer-events: none;
+      box-shadow:
+        inset 0 6px 12px rgba(160,60,0,0.25),
+        inset 0 -3px 6px rgba(255,255,255,0.8),
+        0 0 0 1px rgba(255,255,255,0.4);
+    }
+    #wyniki-section .wyniki-btn-cap {
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      border-radius: 999px;
+      opacity: 1;
+      background:
+        radial-gradient(120% 120% at 0% 0%, rgba(255,255,255,0.7) 0%, transparent 60%),
+        radial-gradient(120% 120% at 100% 100%, rgba(160,60,0,0.25) 0%, transparent 60%),
+        #ffc600;
+      box-shadow:
+        inset 0 8px 5px -4px rgba(255,255,255,0.7),
+        inset 2px 2px 5px rgba(160,60,0,0.05),
+        inset -2px -2px 5px rgba(255,255,255,0.4);
+    }
+    #wyniki-section .wyniki-btn-text {
+      position: relative;
+      z-index: 20;
+      color: #262626;
+      text-shadow: 0 1px 0 rgba(255,255,255,0.4);
+      pointer-events: none;
+      transform: translateY(-0.08em);
+    }
+    #wyniki-section .wyniki-btn-text::after {
+      content: attr(data-text);
+      position: absolute;
+      left: 0; top: 0;
+      width: 100%; height: 100%;
+      background: linear-gradient(110deg, transparent 30%, rgba(254,215,79,0.5) 45%, rgba(254,215,79,1.0) 50%, rgba(254,215,79,0.5) 55%, transparent 70%);
+      background-size: 200% 100%;
+      background-position: 150% 0;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      text-shadow: none;
+      transition: background-position 1.2s cubic-bezier(0.19,1,0.22,1);
+    }
+    #wyniki-section .wyniki-wave-effect {
+      position: absolute;
+      width: 120%; height: 160%;
+      top: 58%; left: 50%;
+      transform: translate(-50%,-50%);
+      border-radius: 999px;
+      background: linear-gradient(to bottom right, #d1d1d1 0%, #ffffff 100%);
+      box-shadow: 4px 4px 8px #c8c8c8, -4px -4px 8px #ffffff;
+      opacity: 0;
+      z-index: 0;
+      pointer-events: none;
+      filter: blur(1px);
+    }
+    #wyniki-section .wyniki-wave-effect.animating {
+      animation: wyniki-wave-expand 2.34s cubic-bezier(0.1,0.45,0.4,1) forwards;
+    }
+
+    @keyframes wyniki-silk-intro {
+      0%   { transform: translateY(0);                  box-shadow: 0 0.27em 0 0 #262626, 0 0.31em 0 0 #ffffff; }
+      45%  { transform: translateY(var(--depth-intro));  box-shadow: 0 0.12em 0 0 #262626, 0 0.16em 0 0 #ffffff; }
+      100% { transform: translateY(0);                  box-shadow: 0 0.27em 0 0 #262626, 0 0.31em 0 0 #ffffff; }
+    }
+    @keyframes wyniki-floor-intro {
+      0%   { transform: scale(1);     opacity: 1;   box-shadow: 0 10px 0 0 #ffffff, 0 12px 8px 0 rgba(255,255,255,0.8), 0 18px 20px rgba(0,0,0,0.15); }
+      45%  { transform: scale(0.965); opacity: 0.8; box-shadow: 0 10px 0 0 #ffffff, 0 5px 4px -1px rgba(255,255,255,0.75), 0 5px 8px rgba(0,0,0,0.1); }
+      100% { transform: scale(1);     opacity: 1;   box-shadow: 0 10px 0 0 #ffffff, 0 12px 8px 0 rgba(255,255,255,0.8), 0 18px 20px rgba(0,0,0,0.15); }
+    }
+    @keyframes wyniki-cap-intro {
+      0% { opacity: 1; } 45% { opacity: 0.08; } 100% { opacity: 1; }
+    }
+    @keyframes wyniki-cap-pulse {
+      0%, 56% { opacity: 1; } 62% { opacity: 0.08; } 67% { opacity: 0.08; } 73% { opacity: 0.08; } 85%, 100% { opacity: 1; }
+    }
+    @keyframes wyniki-silk-pulse {
+      0%, 56%  { transform: translateY(0);                   box-shadow: 0 0.27em 0 0 #262626, 0 0.31em 0 0 #ffffff; }
+      62%      { transform: translateY(var(--depth-tap1));   box-shadow: 0 0.10em 0 0 #262626, 0 0.14em 0 0 #ffffff; }
+      67%      { transform: translateY(var(--depth-bounce)); box-shadow: 0 0.25em 0 0 #262626, 0 0.29em 0 0 #ffffff; }
+      73%      { transform: translateY(var(--depth-tap2));   box-shadow: 0 0.12em 0 0 #262626, 0 0.16em 0 0 #ffffff; }
+      85%, 100%{ transform: translateY(0);                   box-shadow: 0 0.27em 0 0 #262626, 0 0.31em 0 0 #ffffff; }
+    }
+    @keyframes wyniki-floor-pulse {
+      0%, 56%  { transform: scale(1);     box-shadow: 0 10px 0 0 #ffffff, 0 12px 8px 0 rgba(255,255,255,0.8), 0 18px 20px rgba(0,0,0,0.15); }
+      62%      { transform: scale(0.975); box-shadow: 0 10px 0 0 #ffffff, 0 7px 5px 0 rgba(255,255,255,0.85), 0 9px 12px rgba(0,0,0,0.12); }
+      67%      { transform: scale(0.995); }
+      73%      { transform: scale(0.978); box-shadow: 0 10px 0 0 #ffffff, 0 7px 5px 0 rgba(255,255,255,0.85), 0 9px 12px rgba(0,0,0,0.12); }
+      85%, 100%{ transform: scale(1);     box-shadow: 0 10px 0 0 #ffffff, 0 12px 8px 0 rgba(255,255,255,0.8), 0 18px 20px rgba(0,0,0,0.15); }
+    }
+    @keyframes wyniki-wave-expand {
+      0%   { transform: translate(-50%,-50%) scale(0.9); opacity: 0.4; }
+      100% { transform: translate(-50%,-50%) scale(1.3); opacity: 0; }
+    }
+
+    /* ─── FOOTNOTE ───────────────────────────────────────────────────────── */
+    #wyniki-section .wyniki-footnote {
+      font-size: clamp(0.62rem, 0.8vw, 0.78rem);
+      font-weight: 300;
+      color: #777777;
+      line-height: 1.55;
+      text-align: center;
+      max-width: 80%;
+      margin-top: clamp(6px, 1vw, 12px); /* odsunięcie od CTA */
+    }
+
+    #wyniki-section .wyniki-footnote strong {
+      font-weight: 600;
+      color: #505050;
+    }
+
+
+    /* ═══════════════════════════════════════════════════════════════════════
+       TABLET: 601px – 720px
+    ══════════════════════════════════════════════════════════════════════ */
+    @media (min-width: 601px) and (max-width: 720px) {
+      #wyniki-section .wyniki-content {
+        aspect-ratio: auto;
+        min-height: 260px;
+      }
+
+      #wyniki-section .wyniki-left {
+        padding: clamp(1.5rem, 5vw, 2.5rem);
+      }
+    }
+
+    /* ═══════════════════════════════════════════════════════════════════════
+       WIDESCREEN: min-width 125rem (2000px)
+       Powyżej tego progu banner = zablokowany na 110rem (1760px).
+       vw rośnie dalej → padding i font-size przerastają panel.
+       Fix: stałe wartości rem kalibrowane do max-panelu.
+         Panel-max = 44.5% × 1760px = 783px
+         Padding   = 15% × 783px = 117.5px = 7.34rem
+         Font-size = 70% × 783px / 10.4 chars = 52.7px = 3.3rem
+    ══════════════════════════════════════════════════════════════════════ */
+    @media (min-width: 125rem) {
+      #wyniki-section .wyniki-left {
+        padding: 5.1rem 3.4rem 5.1rem; /* boki zmniejszone z 5.1rem dla +10% heading */
+      }
+      #wyniki-section .wyniki-heading {
+        font-size: 4.07rem; /* +10% vs 3.7rem */
+        margin-bottom: 2.55rem; /* połowa top-padding */
+      }
+      #wyniki-section .wyniki-sub {
+
+        font-size: 2.31rem; /* 62.5% headingu — było 1.85rem (+25%) */
+      }
+      #wyniki-section .wyniki-btn-wrapper-wave {
+        margin-bottom: 1.4rem;
+      }
+    }
+
+
+    /* ═══════════════════════════════════════════════════════════════════════
+       MOBILE: max-width 600px
+    ══════════════════════════════════════════════════════════════════════ */
+    @media (max-width: 600px) {
+
+      /* Edge-to-edge: karta od krawędzi do krawędzi ekranu */
+      #wyniki-section {
+        width: 100%;
+      }
+
+      /* Ramka mobile: 6% karty = 6vw → 24-28px przy 430px — zgodnie z konsultantami */
+      #wyniki-section .wyniki-card {
+        --wyniki-frame: clamp(20px, 6vw, 28px);
+        /* border-radius dziedziczony z --wyniki-outer-radius — zaokrąglenia zewnętrzne zachowane */
+      }
+
+      /* Wewnętrzne panele zachowują swój inner-radius */
+      #wyniki-section .wyniki-content {
+        border-radius: var(--wyniki-inner-radius);
+      }
+
+      /* Kolumnowy układ: obraz na górze, tekst na dole */
+      #wyniki-section .wyniki-content {
+        flex-direction: column;
+        aspect-ratio: auto;
+      }
+
+      /* Prawy panel (OBRAZ) idzie na górę — brak zaokrągleń na mobile */
+      #wyniki-section .wyniki-right {
+        order: -1;
+        min-height: 60vw;  /* było 52vw — +15% */
+        flex: 0 0 auto;
+        border-radius: 0;
+      }
+
+      /* Zoom wrapper: na mobile obraz przyklejony do góry panelu (flex-start),
+         NIE centrowany. Dzięki temu ekran monitora (12.3% od góry obrazu)
+         siedzi ~35px poniżej krawędzi panelu = nigdy nie dotyka białej ramki.
+         Overflow idzie na dół (kanapa/stolik — zbędne wizualnie). */
+      #wyniki-section .mockup-zoom-wrapper {
+        align-items: flex-start;
+        padding-top: 3.2vw;      /* ~15px przy 467px */
+      }
+
+      /* Skalibrowane wartości mobile (430×932) */
+      #wyniki-section .mockup-zoom-layer {
+        --img-y: -10.1%;
+      }
+      #wyniki-section .mockup-video {
+        --vid-y: 20.4%;
+        top: 20.4%;
+      }
+      #wyniki-section .mockup-video-overlay {
+        top: calc(20.4% - 0.6%);
+      }
+
+      /* Lewy panel: padding symetryczny - bottom = top = 8vw
+         min-height: 25% więcej niż minimalna wysokość treści → elementy nie nachodzą */
+      #wyniki-section .wyniki-left {
+        flex: 1;
+        min-height: 88vw;
+        padding: 8vw 7vw 8vw; /* było 10.5vw — zmniejszone, żeby heading trzymał 3 rzędy */
+        gap: 0;
+      }
+
+      #wyniki-section .wyniki-heading {
+        font-size: 7vw;
+        letter-spacing: -0.02em;
+        margin-bottom: 4vw; /* połowa top-padding (8vw) */
+      }
+
+      #wyniki-section .wyniki-sub {
+
+        font-size: 4.4vw; /* 62.5% headingu (7vw) — było 3.5vw (+25%) */
+      }
+
+      #wyniki-section .wyniki-spacer {
+        min-height: 3vw;
+      }
+
+      /* font-size skaluje cały button: height, padding, border, shadow — wszystko em */
+      #wyniki-section .wyniki-cta {
+        font-size: clamp(1rem, 4.5vw, 1.6rem);
+      }
+
+      #wyniki-section .wyniki-footnote {
+        font-size: clamp(0.62rem, 2.8vw, 0.78rem);
+        max-width: 100%;
+      }
+    }
+
+
+    /* ─── GRACEFUL DEGRADATION (wolne 3G — media nie dotarły) ──────────── */
+    #wyniki-section .mockup-tlo.load-failed,
+    #wyniki-section .mockup-frame.load-failed { opacity: 0; }
+    #wyniki-section .wyniki-placeholder { background: #1a1816; }
+    #wyniki-section .wyniki-right { background: #0d0d1c; }
+
+    /* ═══════════════════════════════════════════════════════════════════════
+       DEBUG PANEL (aktywowany przez ?debug=1 lub localStorage.debug=1)
+    ══════════════════════════════════════════════════════════════════════ */
+    #wyniki-section .wyniki-debug {
+      display: none;
+      position: fixed;
+      bottom: 1rem;
+      right: 1rem;
+      background: rgba(10,10,10,0.88);
+      color: #4afa82;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      line-height: 1.7;
+      padding: 10px 14px;
+      border-radius: 8px;
+      z-index: 9999;
+      min-width: 220px;
+      -webkit-backdrop-filter: blur(4px);
+      backdrop-filter: blur(4px);
+    }
+
+    #wyniki-section .wyniki-debug.wyniki-debug--visible {
+      display: block;
+    }
+
+    #wyniki-section .wyniki-debug-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    #wyniki-section .wyniki-debug-key { color: rgba(255,255,255,0.45); }
+    /* ═══ KONIEC CSS SEKCJI ═══ */
+  </style>
+</head>
+<body>
+  <div class="dev-controls">
+    <button onclick="toggleAccordion()">Accordion: expand/collapse</button>
+    <button onclick="changeFakeAboveHeight()">FakeAbove: zmień wysokość</button>
+  </div>
+
+  <div style="height:150vh; background:#0a0a0c; display:flex; align-items:center; justify-content:center; color:#333; font-family:monospace; font-size:14px;">
+    ↑ 150vh spacer
+  </div>
+  <div class="fake-above" id="fake-above" style="height:80vh">FAKE ABOVE</div>
+  <div class="fake-pinned" id="fake-pinned">
+    <div class="fake-pinned-content">FAKE PINNED ABOVE</div>
+  </div>
+
+  <section id="wyniki-section">
+
+    <div class="wyniki-card">
+      <div class="wyniki-content">
+
+        <!-- LEWY PANEL: Tekst -->
+        <div class="wyniki-left">
+          <h2 class="wyniki-heading" id="wyniki-heading">
+            W zasięgu ręki masz<br>
+            już <strong>34–45% więcej</strong><br>
+            przychodów
+          </h2>
+
+          <!-- Spacer górny: 2/3 dystansu heading→CTA -->
+          <div class="wyniki-spacer wyniki-spacer--top" aria-hidden="true"></div>
+
+          <p class="wyniki-sub" id="wyniki-sub">
+            Czas je odzyskać
+          </p>
+
+          <!-- Spacer środkowy: 1/3 dystansu heading→CTA (top=flex:2, mid=flex:1 → 2:1) -->
+          <div class="wyniki-spacer wyniki-spacer--mid" aria-hidden="true"></div>
+
+          <div class="wyniki-btn-wrapper-wave">
+            <a href="#" class="wyniki-cta" id="wyniki-cta">
+              <span class="wyniki-btn-hole"></span>
+              <span class="wyniki-btn-cap"></span>
+              <span class="wyniki-btn-text" data-text="Zobacz demo">Zobacz demo</span>
+            </a>
+            <div class="wyniki-btn-static-floor"></div>
+          </div>
+
+          <!-- Spacer dolny: popycha footnote od CTA ku dołowi -->
+          <div class="wyniki-spacer" aria-hidden="true"></div>
+
+          <p class="wyniki-footnote" id="wyniki-footnote">
+            <strong>Źródło danych:</strong> Testy reklamowe klientów za 2025r. Łączny budżet <strong>3,5 mln&nbsp;zł</strong>.
+          </p>
+        </div>
+
+        <!-- PRAWY PANEL: Placeholder → podmienić na laptop mockup -->
+        <div class="wyniki-right" id="wyniki-media">
+          <div class="wyniki-placeholder" id="wyniki-placeholder">
+            <!-- ═══ ZOOM LAYER — TLO(1) → Monitor(2) → Video(3) → Overlay(4) ═══ -->
+            <!--
+              Format negotiation: w produkcji next/image (G10).
+              Standalone test: proste <img> — pliki obok HTML.
+            -->
+            <div class="mockup-zoom-wrapper">
+              <div class="mockup-zoom-layer" id="wyniki-zoom-layer">
+                <!-- z:1 — TLO (parallax) -->
+                <img class="mockup-tlo" id="wyniki-tlo"
+                     src="TLO-Monitor.jpg"
+                     alt="Tło za monitorem"
+                     loading="eager" decoding="async"
+                     onerror="this.classList.add('load-failed')"
+                     draggable="false">
+                <!-- z:2 — Monitor (LCP) -->
+                <img class="mockup-frame"
+                     src="Monitor1.png"
+                     alt="Monitor"
+                     loading="eager" decoding="async" fetchpriority="high"
+                     onerror="this.classList.add('load-failed')"
+                     draggable="false">
+                <!-- z:3 — Video (nad monitorem, na ekranie) -->
+                <video class="mockup-video"
+                       src="Video.mp4"
+                       preload="auto"
+                       autoplay loop muted playsinline
+                       disablepictureinpicture></video>
+                <!-- z:4 — Ciemna warstwa (opacity 0.7→0.1→0) -->
+                <div class="mockup-video-overlay" id="wyniki-video-overlay"></div>
+              </div>
+            </div>
+          </div>
+          <div class="wyniki-placeholder-label" style="display:none">
+            ← Laptop mockup · placeholder →
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- DEBUG PANEL (niewidoczny w produkcji) -->
+    <div class="wyniki-debug" id="wyniki-debug">
+      <div style="color:#fff;font-weight:600;margin-bottom:4px">wyniki-section</div>
+      <div class="wyniki-debug-row">
+        <span class="wyniki-debug-key">scroll</span>
+        <span id="wyniki-debug-scroll">—</span>
+      </div>
+      <div class="wyniki-debug-row">
+        <span class="wyniki-debug-key">viewport</span>
+        <span id="wyniki-debug-vp">—</span>
+      </div>
+      <div class="wyniki-debug-row">
+        <span class="wyniki-debug-key">bp</span>
+        <span id="wyniki-debug-bp">—</span>
+      </div>
+      <div class="wyniki-debug-row">
+        <span class="wyniki-debug-key">st</span>
+        <span id="wyniki-debug-st">idle</span>
+      </div>
+    </div>
+
+    <!-- ═══ VIDEO POPUP ═══ -->
+    <div id="wyniki-video-popup">
+      <div class="wp-wrapper">
+        <div class="wp-close">✕</div>
+        <div class="wp-panel">
+          <div class="wp-video-wrap">
+            <video controls playsinline preload="none"></video>
+          </div>
+          <div class="wp-content">
+            <span class="wp-tag">Zobacz jak to działa</span>
+            <h3 class="wp-title"><b>Otrzymaj 3 propozycje cenowe</b> na projekt dla swojej firmy.</h3>
+            <div class="wp-buttons">
+              <!-- CTA 1:1 jak "Zobacz demo" -->
+              <div class="wyniki-btn-wrapper-wave">
+                <a href="#kontakt" class="wyniki-cta" id="wyniki-popup-cta">
+                  <span class="wyniki-btn-hole"></span>
+                  <span class="wyniki-btn-cap"></span>
+                  <span class="wyniki-btn-text" data-text="Otrzymaj wycenę teraz →">Otrzymaj wycenę teraz →</span>
+                </a>
+                <div class="wyniki-btn-static-floor"></div>
+              </div>
+              <button class="wp-close-text" type="button">Zamknij wideo</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </section>
+
+
+  <div class="fake-accordion">
+    <div style="color:#fff;font-family:sans-serif;padding-bottom:1rem;cursor:pointer" onclick="toggleAccordion()">Accordion</div>
+    <div class="fake-accordion-content" id="fake-accordion-content">Treść akordeonu</div>
+  </div>
+  <div style="height:100vh; background:#0d0d0d; display:flex; align-items:center; justify-content:center; color:#333; font-family:monospace;">↓ below</div>
+
+  <script>
+    var refreshQueued = false;
+    function scheduleRefresh() {
+      if (refreshQueued) return;
+      refreshQueued = true;
+      setTimeout(function() { ScrollTrigger.refresh(true); refreshQueued = false; }, 150);
+    }
+    var scrollRuntime = {
+      getScroll:      function() { return window.lenis?.scroll ?? window.scrollY; },
+      getRawScroll:   function() { return window.lenis?.actualScroll ?? window.scrollY; },
+      requestRefresh: function(reason) { scheduleRefresh(); }
+    };
+    gsap.registerPlugin(ScrollTrigger);
+    ScrollTrigger.config({ ignoreMobileResize: true });
+    var _debugParam = new URLSearchParams(location.search).get('debug');
+    var DEBUG_MODE = _debugParam === '1' || _debugParam === 'true' || localStorage.debug === '1';
+    if (DEBUG_MODE) ScrollTrigger.defaults({ markers: true });
+
+    function init(container) {
+      /* FIX: null container guard — SPA / async mount safety */
+      if (!container) return { pause: function(){}, resume: function(){}, kill: function(){} };
+
+      const DEBUG_MODE =
+        new URLSearchParams(window.location.search).has('debug') ||
+        localStorage.getItem('debug') === '1';
+
+      const $   = (sel) => container.querySelector(sel);
+      const $$  = (sel) => [...container.querySelectorAll(sel)];
+      const $id = (id)  => container.querySelector('#' + id);
+      const getScroll = () =>
+        window.__scroll?.getScroll?.() ??
+        window.lenis?.scroll ??
+        window.scrollY;
+
+      const cleanups = [];
+      const timerIds = [];
+      const observers = [];
+
+      /* ─── DEBUG ───────────────────────────────────────────────────────── */
+      const elDebug   = $id('wyniki-debug');
+      const elDbScroll = $id('wyniki-debug-scroll');
+      const elDbVp    = $id('wyniki-debug-vp');
+      const elDbBp    = $id('wyniki-debug-bp');
+
+      if (DEBUG_MODE && elDebug) {
+        elDebug.classList.add('wyniki-debug--visible');
+
+        const onScroll = () => {
+          if (elDbScroll) elDbScroll.textContent = Math.round(getScroll()) + 'px';
+        };
+        const onResize = () => {
+          const w = window.innerWidth;
+          if (elDbVp) elDbVp.textContent = w + '×' + window.innerHeight;
+          if (elDbBp) elDbBp.textContent =
+            w <= 600 ? 'mobile' : w <= 720 ? 'tablet' : w >= 2000 ? 'widescreen' : 'desktop';
+        };
+        window.addEventListener('scroll', onScroll, { passive: true });
+        window.addEventListener('resize', onResize, { passive: true });
+        onScroll(); onResize();
+        cleanups.push(() => {
+          window.removeEventListener('scroll', onScroll);
+          window.removeEventListener('resize', onResize);
+        });
+      }
+
+      /* ─── CTA — WAVE + AUREOLA + CURSOR PARTICLES ────────────────────── */
+      const pauseHooks = [], resumeHooks = [];
+      let bindAureola = () => {}, unbindAureola = () => {};
+
+      const onVisChange = () => {
+        if (document.hidden) pauseHooks.forEach(h => h());
+        else resumeHooks.forEach(h => h());
+      };
+      document.addEventListener('visibilitychange', onVisChange);
+      cleanups.push(() => document.removeEventListener('visibilitychange', onVisChange));
+
+      // Wave click
+      $$('.wyniki-btn-wrapper-wave').forEach((wrapper) => {
+        const _touchActivate = () => {};
+        wrapper.addEventListener('touchstart', _touchActivate, {passive:true});
+        const handler = () => {
+          const wave = document.createElement('span');
+          wave.classList.add('wyniki-wave-effect', 'animating');
+          wrapper.insertBefore(wave, wrapper.firstChild);
+          wave.addEventListener('animationend', () => wave.remove());
+        };
+        wrapper.addEventListener('click', handler);
+        cleanups.push(() => {
+          wrapper.removeEventListener('touchstart', _touchActivate);
+          wrapper.removeEventListener('click', handler);
+        });
+      });
+
+      // Cursor particles — sprites + system TYLKO na desktop (2C)
+      {
+        const canDoHover = window.matchMedia('(hover: hover) and (pointer: fine)').matches && window.innerWidth > 600;
+        if (canDoHover) {
+          // Shared star sprites (przeniesione z globalnego scope)
+          const STAR_PTS = 8;
+          const starCos = new Float32Array(STAR_PTS), starSin = new Float32Array(STAR_PTS);
+          for (let i = 0; i < STAR_PTS; i++) { const a = (i * Math.PI) / 4; starCos[i] = Math.cos(a); starSin[i] = Math.sin(a); }
+          const STAR_SPR_SZ = 128, STAR_SPR_HALF = STAR_SPR_SZ / 2;
+          const sharedStarPhases = [0, 0.5, 1.0].map(tw => {
+            const c = document.createElement('canvas'); c.width = STAR_SPR_SZ; c.height = STAR_SPR_SZ;
+            const ctx = c.getContext('2d'); if (!ctx) return c;
+            ctx.translate(STAR_SPR_HALF, STAR_SPR_HALF);
+            const gr = ctx.createRadialGradient(0,0,0, 0,0, STAR_SPR_HALF);
+            gr.addColorStop(0,'#ffffff'); gr.addColorStop(0.3,'#fffde8');
+            gr.addColorStop(0.6,'#ffeaa0'); gr.addColorStop(1,'rgba(255,234,160,0)');
+            ctx.fillStyle = gr;
+            const refSize = STAR_SPR_HALF / 2, oR = refSize * (1.4 + tw * 0.5), iR = refSize * 0.35;
+            ctx.beginPath();
+            for (let i=0;i<STAR_PTS;i++){const r=(i&1)===0?oR:iR;if(i===0)ctx.moveTo(starCos[i]*r,starSin[i]*r);else ctx.lineTo(starCos[i]*r,starSin[i]*r);}
+            ctx.closePath(); ctx.fill(); return c;
+          });
+          const sharedDotSprite = document.createElement('canvas'); sharedDotSprite.width = 64; sharedDotSprite.height = 64;
+          { const ctx = sharedDotSprite.getContext('2d'); if (ctx) { ctx.translate(32,32); ctx.fillStyle='#ffffff'; ctx.beginPath(); ctx.arc(0,0,32*0.15,0,Math.PI*2); ctx.fill(); } }
+
+          const cWrapper = $('.wyniki-btn-wrapper-wave'), cButton = $('.wyniki-cta');
+          if (cWrapper && cButton) {
+            const cCanvas = document.createElement('canvas'), cCtx = cCanvas.getContext('2d');
+            if (!cCtx) return;  /* FIX: graceful degradation if context unavailable */
+            cCanvas.style.cssText = 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:100;width:500px;height:300px;';
+            const cDpr=window.devicePixelRatio||1; cCanvas.width=Math.round(500*cDpr); cCanvas.height=Math.round(300*cDpr);
+            cWrapper.appendChild(cCanvas);
+            const glowSprite=document.createElement('canvas'); glowSprite.width=128; glowSprite.height=128;
+            const glowCtx=glowSprite.getContext('2d');
+            if (!glowCtx) { if (cCanvas.parentNode) cCanvas.parentNode.removeChild(cCanvas); return; }
+            const gg=glowCtx.createRadialGradient(64,64,0,64,64,64);
+            gg.addColorStop(0,'rgba(255,255,255,1)'); gg.addColorStop(0.2,'rgba(255,253,232,0.71)');
+            gg.addColorStop(0.5,'rgba(255,234,160,0.29)'); gg.addColorStop(1,'rgba(255,234,160,0)');
+            glowCtx.fillStyle=gg; glowCtx.fillRect(0,0,128,128);
+            let cIsHovering=false,cLastSpawn=0; const cSpawnRate=31;
+            let cMouseX=250,cMouseY=150,cTargetMouseX=250,cTargetMouseY=150,cLastMouseX2=250,cLastMouseY2=150;
+            let cMouseSpeed=0,cMouseAngle=0,cSmoothedSpeed=0,cIdleTime=0,cLastTimestamp=0;
+            let cAnimationId=null,cIsAnimating=false;
+            const C_MAX_PARTICLES=150,C_FRICTION=0.970225;
+            const cParticles=new Array(C_MAX_PARTICLES); let cActiveCount=0;
+            for(let i=0;i<C_MAX_PARTICLES;i++)cParticles[i]=null;
+            let cCachedRect=null,cCachedScaleX=1,cCachedScaleY=1;
+            function cUpdateCachedRect(){cCachedRect=cCanvas.getBoundingClientRect();cCachedScaleX=500/cCachedRect.width;cCachedScaleY=300/cCachedRect.height;}
+            requestAnimationFrame(cUpdateCachedRect);
+            let cResizeScheduled=false;
+            const cOnResize=()=>{if(!cResizeScheduled){cResizeScheduled=true;requestAnimationFrame(()=>{cUpdateCachedRect();cResizeScheduled=false;});}};
+            window.addEventListener('resize',cOnResize);
+            const cRand=(min,max)=>Math.random()*(max-min)+min;
+            const cParticlePool=[];
+            class CursorParticle{constructor(){this.x=0;this.y=0;this.size=0;this.hasGlow=false;this.speedX=0;this.speedY=0;this.life=0;this.maxLife=1;this.fadeInSpeed=0.07;this.isFadingIn=true;this.decay=0;this.gravity=-0.002;this.rotation=0;this.rotationSpeed=0;this.twinkle=0;this.twinkleSpeed=0;this.reset(0,0,0,0);}
+              reset(x,y,cs,ca){this.x=x;this.y=y;this.size=Math.random()<0.25?cRand(5.625,8.625):cRand(2.25,4.375);this.hasGlow=Math.random()<0.25;const isMoving=cs>0.5;if(isMoving){const opp=ca+Math.PI,spread=(Math.random()-0.5)*Math.PI*0.6,a=opp+spread,s=cRand(0.3,0.9)+cs*0.1;this.speedX=Math.cos(a)*s;this.speedY=Math.sin(a)*s;}else{const a=cRand(0,Math.PI*2),s=cRand(0.15,0.45);this.speedX=Math.cos(a)*s;this.speedY=Math.sin(a)*s;}this.life=0;this.maxLife=1;this.fadeInSpeed=0.07;this.isFadingIn=true;this.decay=cRand(0.006,0.018);this.gravity=-0.002;this.rotation=cRand(0,Math.PI*2);this.rotationSpeed=(Math.random()-0.5)*0.15;this.twinkle=cRand(0,Math.PI*2);this.twinkleSpeed=cRand(0.1,0.32);return this;}
+              update(){if(this.isFadingIn){this.life+=this.fadeInSpeed*2;if(this.life>=this.maxLife){this.life=this.maxLife;this.isFadingIn=false;}}else{this.life-=this.decay*2;}this.x+=this.speedX*2;this.y+=this.speedY*2;this.speedY+=this.gravity*2;this.speedX*=C_FRICTION;this.speedY*=C_FRICTION;this.rotation+=this.rotationSpeed*2;this.twinkle+=this.twinkleSpeed*2;return this.life>0;}
+              draw(){if(this.life<=0)return;const tw=(Math.sin(this.twinkle)+1)*0.5,al=this.life*(0.5+tw*0.5);const co=Math.cos(this.rotation),si=Math.sin(this.rotation);cCtx.setTransform(co*cDpr,si*cDpr,-si*cDpr,co*cDpr,this.x*cDpr,this.y*cDpr);if(this.hasGlow){const gd=(this.size*4+10+tw*8)*0.75*2,go=-gd/2;cCtx.globalAlpha=al*0.35;cCtx.drawImage(glowSprite,go,go,gd,gd);}cCtx.globalAlpha=al;const phase=tw<0.25?0:tw<0.75?1:2;const drawR=this.size*2;cCtx.drawImage(sharedStarPhases[phase],-drawR,-drawR,drawR*2,drawR*2);cCtx.globalAlpha=this.life;cCtx.drawImage(sharedDotSprite,-drawR,-drawR,drawR*2,drawR*2);}}
+            function cGetParticle(x,y,s,a){let p=cParticlePool.pop();if(!p)p=new CursorParticle();return p.reset(x,y,s,a);}
+            function cReleaseParticle(p){if(cParticlePool.length<C_MAX_PARTICLES)cParticlePool.push(p);}
+            function cCreateParticle(){if(cActiveCount>=C_MAX_PARTICLES)return;const minR=10,maxR=30,offY=Math.random()<0.9?28:0;let sR,sA;if(cSmoothedSpeed>0.5){const oa=cMouseAngle+Math.PI;sA=oa+(Math.random()-0.5)*Math.PI*0.8;sR=minR+Math.random()*(maxR-minR)+cSmoothedSpeed*3;}else{sA=cRand(0,Math.PI*2);sR=minR+Math.random()*(maxR-minR);}const px=cMouseX+Math.cos(sA)*sR,py=cMouseY+Math.sin(sA)*sR+offY;const p=cGetParticle(px,py,cSmoothedSpeed,cMouseAngle);for(let i=0;i<C_MAX_PARTICLES;i++){if(cParticles[i]===null){cParticles[i]=p;cActiveCount++;return;}}}
+            function cStartAnimation(){if(!cIsAnimating){cIsAnimating=true;cLastTimestamp=performance.now();cAnimationId=requestAnimationFrame(cAnimate);}}
+            const C_FRAME_MS=1000/30; let cLastPaint=0;
+            function cAnimate(ts){if(ts-cLastPaint<C_FRAME_MS){cAnimationId=requestAnimationFrame(cAnimate);return;}cLastPaint=ts;const dt=cLastTimestamp?(ts-cLastTimestamp)/1000:0;cLastTimestamp=ts;cMouseX+=(cTargetMouseX-cMouseX)*0.18;cMouseY+=(cTargetMouseY-cMouseY)*0.18;const dx=cMouseX-cLastMouseX2,dy=cMouseY-cLastMouseY2;cMouseSpeed=Math.sqrt(dx*dx+dy*dy);if(cMouseSpeed>0.1)cMouseAngle=Math.atan2(dy,dx);cSmoothedSpeed+=(cMouseSpeed-cSmoothedSpeed)*0.15;if(cSmoothedSpeed<0.5)cIdleTime+=dt;else cIdleTime=0;cLastMouseX2=cMouseX;cLastMouseY2=cMouseY;cCtx.setTransform(cDpr,0,0,cDpr,0,0);cCtx.clearRect(0,0,500,300);if(cIsHovering){let rate=cSpawnRate;if(cIdleTime>0)rate=cSpawnRate*(1+1.5*Math.min(cIdleTime/3,1));if(ts-cLastSpawn>rate){cCreateParticle();cLastSpawn=ts;}}for(let i=0;i<C_MAX_PARTICLES;i++){const p=cParticles[i];if(p===null)continue;if(p.update())p.draw();else{cReleaseParticle(p);cParticles[i]=null;cActiveCount--;}}if(!cIsHovering&&cActiveCount===0){cIsAnimating=false;cAnimationId=null;return;}cAnimationId=requestAnimationFrame(cAnimate);}
+            const cOnMove=(e)=>{if(!cCachedRect)return;cTargetMouseX=(e.clientX-cCachedRect.left)*cCachedScaleX;cTargetMouseY=(e.clientY-cCachedRect.top)*cCachedScaleY;};
+            const cOnEnter=()=>{cIsHovering=true;cUpdateCachedRect();cStartAnimation();};
+            const cOnLeave=()=>{cIsHovering=false;};
+            cWrapper.addEventListener('mousemove',cOnMove);
+            cButton.addEventListener('mouseenter',cOnEnter);
+            cButton.addEventListener('mouseleave',cOnLeave);
+            let _wasCAnimating=false;
+            pauseHooks.push(()=>{_wasCAnimating=cIsAnimating;if(cAnimationId){cancelAnimationFrame(cAnimationId);cAnimationId=null;}cIsAnimating=false;});
+            resumeHooks.push(()=>{if(_wasCAnimating&&cActiveCount>0)cStartAnimation();});
+            cleanups.push(()=>{if(cAnimationId)cancelAnimationFrame(cAnimationId);window.removeEventListener('resize',cOnResize);cWrapper.removeEventListener('mousemove',cOnMove);cButton.removeEventListener('mouseenter',cOnEnter);cButton.removeEventListener('mouseleave',cOnLeave);if(cCanvas.parentNode)cCanvas.parentNode.removeChild(cCanvas);});
+          }
+        }
+      }
+
+
+      /* ═══ ZOOM SCROLL ANIMATION (merged into init — N2) ═══════════════ */
+      const gsapInstances = [];   /* N3: tracking GSAP for kill() */
+
+      const layer   = $id('wyniki-zoom-layer');
+      const tlo     = $id('wyniki-tlo');
+      const overlay = $id('wyniki-video-overlay');
+      const bgVideo = $('.mockup-video');
+
+      if (layer) {
+        var tl = gsap.timeline({
+          scrollTrigger: {
+            trigger: '#wyniki-section',
+            start: '60% bottom',
+            end:   'center 30%',
+            scrub: 0.6,
+          }
+        });
+        gsapInstances.push(tl);
+
+        tl.fromTo(layer,
+          { scale: 1.0 },
+          { scale: 1.2, ease: 'power2.inOut', duration: 1 },
+          0
+        );
+
+        if (tlo) {
+          tl.fromTo(tlo,
+            { yPercent: 0 },
+            { yPercent: -43.5, ease: 'none', duration: 1 },
+            0
+          );
+        }
+
+        if (overlay) {
+          tl.fromTo(overlay,
+            { opacity: 0.7 },
+            { opacity: 0.1, ease: 'none', duration: 1 },
+            0
+          );
+        }
+      }
+
+      /* Video visibility gating (3B) */
+      if (bgVideo && 'IntersectionObserver' in window) {
+        var videoIO = new IntersectionObserver(function(entries) {
+          entries.forEach(function(e) {
+            if (e.isIntersecting) bgVideo.play().catch(function() {});
+            else bgVideo.pause();
+          });
+        }, { rootMargin: '200px' });
+        videoIO.observe(bgVideo);
+        observers.push(videoIO);   /* N4: tracked for kill() */
+
+        /* Video pause/resume hooks — koordynacja z Factory IO gating */
+        pauseHooks.push(function() { bgVideo.pause(); });
+        resumeHooks.push(function() { bgVideo.play().catch(function() {}); });
+        /* Explicit kill cleanup — pause only (src jest w statycznym HTML) */
+        cleanups.push(function() { bgVideo.pause(); });
+      }
+
+      /* ═══ PLAY BUTTON + VIDEO POPUP (merged into init — N2) ════════ */
+      var rightPanel = $('.wyniki-right');
+      var ctaBtn     = $('.wyniki-cta');
+      var popup      = $id('wyniki-video-popup');
+      var bodyOverflowLocked = false;   /* N5: guard */
+
+      if (rightPanel && popup) {
+        /* ─── CREATE PLAY BUTTON SVG ─────────────────────────────── */
+        var YELLOW = '#ffc600', ns = 'http://www.w3.org/2000/svg';
+        var pbSize = 64;
+        var SW = Math.max(2, pbSize * 0.035), CX = pbSize / 2, CY = pbSize / 2;
+        var R = CX - SW * 2 - 2, CIRC = 2 * Math.PI * R;
+        var DOT_R = SW * 1.05, DOT_COUNT = Math.round(CIRC / (DOT_R * 5.5));
+        var kfId = 'wyniki-pb-spin';
+
+        var kfStyle = document.createElement('style');
+        kfStyle.textContent = '@keyframes ' + kfId + '{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}';
+        document.head.appendChild(kfStyle);
+        cleanups.push(function() { if (kfStyle.parentNode) kfStyle.parentNode.removeChild(kfStyle); });
+
+        var wrap = document.createElement('div');
+        wrap.className = 'wyniki-play-btn';
+        rightPanel.appendChild(wrap);
+        cleanups.push(function() { if (wrap.parentNode) wrap.parentNode.removeChild(wrap); });
+
+        var svg = document.createElementNS(ns, 'svg');
+        svg.setAttribute('width', pbSize);
+        svg.setAttribute('height', pbSize);
+        svg.setAttribute('viewBox', '0 0 ' + pbSize + ' ' + pbSize);
+        svg.style.cssText = 'display:block;overflow:visible;filter:drop-shadow(0 2px 8px rgba(0,0,0,0.35));';
+        wrap.appendChild(svg);
+
+        /* Dots ring */
+        var dotsG = document.createElementNS(ns, 'g');
+        dotsG.style.cssText = 'transform-origin:' + CX + 'px ' + CY + 'px;animation:' + kfId + ' 8s linear infinite;animation-play-state:paused;';
+        svg.appendChild(dotsG);
+        var dotEls = [];
+        for (var di = 0; di < DOT_COUNT; di++) {
+          var da = (di / DOT_COUNT) * Math.PI * 2 - Math.PI / 2;
+          var dot = document.createElementNS(ns, 'circle');
+          dot.setAttribute('cx', CX + Math.cos(da) * R);
+          dot.setAttribute('cy', CY + Math.sin(da) * R);
+          dot.setAttribute('r', DOT_R);
+          dot.setAttribute('fill', YELLOW);
+          dot.setAttribute('opacity', '0.22');
+          dot.style.transition = 'opacity 0.35s ease';
+          dotsG.appendChild(dot);
+          dotEls.push(dot);
+        }
+
+        /* Progress arc */
+        var arc = document.createElementNS(ns, 'circle');
+        arc.setAttribute('cx', CX);
+        arc.setAttribute('cy', CY);
+        arc.setAttribute('r', R);
+        arc.setAttribute('fill', 'none');
+        arc.setAttribute('stroke', '#ffffff');
+        arc.setAttribute('stroke-width', SW * 1.6);
+        arc.setAttribute('stroke-linecap', 'round');
+        arc.setAttribute('stroke-dasharray', CIRC.toFixed(1));
+        arc.setAttribute('stroke-dashoffset', CIRC.toFixed(1));
+        arc.setAttribute('transform', 'rotate(-90 ' + CX + ' ' + CY + ')');
+        arc.style.cssText = 'transition:opacity 0.4s ease;';
+        svg.appendChild(arc);
+
+        /* Triangle */
+        var h = pbSize * 0.32, w = h * 0.866, ox = h * 0.1;
+        var triPts = (CX - w/2 + ox) + ',' + (CY - h/2) + ' ' + (CX + w/2 + ox) + ',' + CY + ' ' + (CX - w/2 + ox) + ',' + (CY + h/2);
+        var triG = document.createElementNS(ns, 'g');
+        triG.style.cssText = 'transform-origin:' + CX + 'px ' + CY + 'px;transition:transform 0.35s cubic-bezier(0.34,1.56,0.64,1);';
+        svg.appendChild(triG);
+        var tri = document.createElementNS(ns, 'polygon');
+        tri.setAttribute('points', triPts);
+        tri.setAttribute('fill', YELLOW);
+        tri.style.transition = 'fill 0.3s ease';
+        triG.appendChild(tri);
+
+        /* Show play button */
+        var showPbTimer = setTimeout(function() { wrap.classList.add('is-visible'); }, 800);
+        timerIds.push(showPbTimer);
+
+        /* Hover effects — right panel */
+        var bounceT = null;
+        var onPanelEnter = function() {
+          dotsG.style.animationPlayState = 'running';
+          dotEls.forEach(function(d) { d.setAttribute('opacity', '0.5'); });
+          arc.style.opacity = '0';
+          tri.setAttribute('fill', '#ffffff');
+          triG.style.transform = 'scale(0.7)';
+          clearTimeout(bounceT);
+          bounceT = setTimeout(function() { triG.style.transform = 'scale(1.35)'; }, 150);
+        };
+        var onPanelLeave = function() {
+          dotsG.style.animationPlayState = 'paused';
+          dotEls.forEach(function(d) { d.setAttribute('opacity', '0.22'); });
+          arc.style.opacity = '1';
+          tri.setAttribute('fill', YELLOW);
+          triG.style.transform = 'scale(0.75)';
+          clearTimeout(bounceT);
+          bounceT = setTimeout(function() { triG.style.transform = 'scale(1)'; }, 150);
+        };
+        rightPanel.addEventListener('mouseenter', onPanelEnter);
+        rightPanel.addEventListener('mouseleave', onPanelLeave);
+        cleanups.push(function() {
+          rightPanel.removeEventListener('mouseenter', onPanelEnter);
+          rightPanel.removeEventListener('mouseleave', onPanelLeave);
+          clearTimeout(bounceT);
+        });
+
+        /* Video progress → arc (throttled 500ms) */
+        if (bgVideo) {
+          var arcLastUpdate = 0;
+          var onTimeUpdate = function() {
+            var now = performance.now();
+            if (now - arcLastUpdate < 500) return;
+            arcLastUpdate = now;
+            if (bgVideo.duration > 0) {
+              arc.setAttribute('stroke-dashoffset', (CIRC * (1 - bgVideo.currentTime / bgVideo.duration)).toFixed(1));
+            }
+          };
+          bgVideo.addEventListener('timeupdate', onTimeUpdate);
+          cleanups.push(function() { bgVideo.removeEventListener('timeupdate', onTimeUpdate); });
+        }
+
+        /* ─── POPUP LOGIC ────────────────────────────────────────── */
+        var popupVid = popup.querySelector('video');
+        var savedScrollY = 0;
+
+        function openPopup() {
+          if (popup.classList.contains('is-open')) return;
+          if (popupVid) {
+            popupVid.src = 'Video.mp4';
+            popupVid.load();           /* FIX: wymuszenie bufora dla iOS Safari */
+            popupVid.currentTime = 0;
+          }
+          popup.classList.add('is-open');
+          /* iOS scroll lock (position:fixed pattern — WebKit bug #153852) */
+          savedScrollY = window.scrollY;
+          document.body.style.position = 'fixed';
+          document.body.style.top = '-' + savedScrollY + 'px';
+          document.body.style.left = '0';
+          document.body.style.right = '0';
+          document.body.style.overflow = 'hidden';
+          /* Lenis stop NIEPOTRZEBNE — position:fixed blokuje scroll
+             na wszystkich warstwach, Lenis nie ma czego scrollować.
+             ENT-SCROLL-API-01: window.lenis wyłącznie w getScroll(). */
+          bodyOverflowLocked = true;
+          if (popupVid) {
+            var pp = popupVid.play();
+            if (pp !== undefined) pp.catch(function() {});
+          }
+        }
+
+        function closePopup() {
+          popup.classList.remove('is-open');
+          /* iOS scroll unlock */
+          document.body.style.position = '';
+          document.body.style.top = '';
+          document.body.style.left = '';
+          document.body.style.right = '';
+          document.body.style.overflow = '';
+          window.scrollTo(0, savedScrollY);
+          bodyOverflowLocked = false;
+          if (popupVid) {
+            popupVid.pause();
+            popupVid.removeAttribute('src');
+            popupVid.load();
+          }
+        }
+
+        var onRightPanelClick = function(e) { e.preventDefault(); openPopup(); };
+        rightPanel.addEventListener('click', onRightPanelClick);
+        cleanups.push(function() { rightPanel.removeEventListener('click', onRightPanelClick); });
+
+        if (ctaBtn) {
+          var onCtaClick = function(e) { e.preventDefault(); openPopup(); };
+          ctaBtn.addEventListener('click', onCtaClick);
+          cleanups.push(function() { ctaBtn.removeEventListener('click', onCtaClick); });
+        }
+
+        /* Popup CTA "Otrzymaj wycenę" — zamyka modal, zachowuje hash nav */
+        var popupCta = $id('wyniki-popup-cta');
+        if (popupCta) {
+          var onPopupCtaClick = function() { closePopup(); };
+          popupCta.addEventListener('click', onPopupCtaClick);
+          cleanups.push(function() { popupCta.removeEventListener('click', onPopupCtaClick); });
+        }
+
+        var onPopupBackdropClick = function(e) { if (e.target === popup) closePopup(); };
+        popup.addEventListener('click', onPopupBackdropClick);
+        cleanups.push(function() { popup.removeEventListener('click', onPopupBackdropClick); });
+
+        var closeX = popup.querySelector('.wp-close');
+        var closeTextBtn = popup.querySelector('.wp-close-text');
+        if (closeX) {
+          closeX.addEventListener('click', closePopup);
+          cleanups.push(function() { closeX.removeEventListener('click', closePopup); });
+        }
+        if (closeTextBtn) {
+          closeTextBtn.addEventListener('click', closePopup);
+          cleanups.push(function() { closeTextBtn.removeEventListener('click', closePopup); });
+        }
+
+        var onEscKey = function(e) {
+          if (e.key === 'Escape' && popup.classList.contains('is-open')) closePopup();
+        };
+        document.addEventListener('keydown', onEscKey);
+        cleanups.push(function() { document.removeEventListener('keydown', onEscKey); });
+      }
+
+      /* ═══ FACTORY IO GATING — Ścieżka 1 (Typ B → pause/resume) ════ */
+      var _factoryIo = null;
+      var _factoryIoDebounce = null;
+
+      function _getGatingMargin() {
+        var vh = (window.visualViewport ? window.visualViewport.height : window.innerHeight) || 800;
+        return Math.min(1200, Math.max(200, Math.round(vh * 0.5))) + 'px';
+      }
+
+      function _ioCallback(entries) {
+        if (!entries[0]) return;
+        if (entries[0].isIntersecting) { resume(); }
+        else { pause(); }
+      }
+
+      function _recreateFactoryIo() {
+        clearTimeout(_factoryIoDebounce);
+        _factoryIoDebounce = setTimeout(function() {
+          if (_killed) return;
+          if (_factoryIo) _factoryIo.disconnect();
+          _factoryIo = new IntersectionObserver(_ioCallback, {
+            rootMargin: _getGatingMargin()
+          });
+          _factoryIo.observe(container);
+          observers.push(_factoryIo);
+        }, 50);
+      }
+
+      _recreateFactoryIo();
+
+      var _onVVResize = function() { _recreateFactoryIo(); };
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', _onVVResize, { passive: true });
+        cleanups.push(function() {
+          clearTimeout(_factoryIoDebounce);
+          window.visualViewport.removeEventListener('resize', _onVVResize);
+        });
+      }
+
+      /* ═══ ST-REFRESH-01 — section-in-view + layout-settle ══════════ */
+      var _stIo = new IntersectionObserver(function(entries) {
+        if (!entries[0]?.isIntersecting) return;
+        scrollRuntime.requestRefresh('section-in-view');
+        _stIo.disconnect();
+      }, { threshold: 0, rootMargin: '0px' });
+      _stIo.observe(container);
+      observers.push(_stIo);
+      cleanups.push(function() { _stIo.disconnect(); });
+
+      var _settleTimer = setTimeout(function() {
+        scrollRuntime.requestRefresh('layout-settle');
+      }, 1000);
+      timerIds.push(_settleTimer);
+
+      /* ═══ LIFECYCLE (N3 + N5 + N6 + B-CPU-03) ════════════════════════ */
+      var _paused = false;
+      var _killed = false;
+      function pause() {
+        if (_paused) return;  /* B-CPU-03: idempotent */
+        _paused = true;
+        pauseHooks.forEach(function(h) { h(); });
+      }
+      function resume() {
+        if (!_paused) return; /* B-CPU-03: idempotent */
+        _paused = false;
+        resumeHooks.forEach(function(h) { h(); });
+      }
+
+      function kill() {
+        if (_killed) return;
+        _killed = true;
+        pause(); /* ensure paused before teardown */
+        /* Background video: tylko pause — src jest w statycznym HTML, nie usuwaj */
+        if (bgVideo) { bgVideo.pause(); }
+        /* Domknij popup jeśli otwarty */
+        if (popup && popup.classList.contains('is-open')) {
+          popup.classList.remove('is-open');
+          var v = popup.querySelector('video');
+          if (v) { v.pause(); v.removeAttribute('src'); v.load(); }
+        }
+        /* B-CPU-05: tickery/RAF → listeners → observers → timelines → ST */
+        cleanups.forEach(function(fn) { try { fn(); } catch(e) {} });
+        timerIds.forEach(function(id) { try { clearTimeout(id); } catch(e) {} });
+        observers.forEach(function(o) { try { o.disconnect?.(); } catch(e) {} });
+        gsapInstances.forEach(function(x) { try { x.revert(); x.kill(); } catch(e) {} });
+        if (bodyOverflowLocked) {
+          document.body.style.position = '';
+          document.body.style.top = '';
+          document.body.style.left = '';
+          document.body.style.right = '';
+          document.body.style.overflow = '';
+        }
+        gsapInstances.length = 0;
+        cleanups.length = 0;
+        timerIds.length = 0;
+        observers.length = 0;
+      }
+
+      return { pause, resume, kill };
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+      ScrollTrigger.create({
+        trigger: '#fake-pinned', start: 'top top', end: '+=100%',
+        pin: true, scrub: 1, markers: !!DEBUG_MODE,
+      });
+      var el = document.getElementById('wyniki-section');
+      window.wynikiHarnessInst = init(el);
+    });
+
+    var accordionExpanded = false;
+    function toggleAccordion() {
+      accordionExpanded = !accordionExpanded;
+      var el = document.getElementById('fake-accordion-content');
+      if (el) el.classList.toggle('expanded', accordionExpanded);
+    }
+    var accEl = document.getElementById('fake-accordion-content');
+    if (accEl) accEl.addEventListener('transitionend', function(e) {
+      if (e.propertyName !== 'height') return;
+      setTimeout(function() { scrollRuntime.requestRefresh('accordion-settle'); }, 100);
+    });
+    var fakeAboveHeights = ['80vh', '120vh', '40vh'];
+    var fakeAboveIdx = 0;
+    function changeFakeAboveHeight() {
+      fakeAboveIdx = (fakeAboveIdx + 1) % fakeAboveHeights.length;
+      var el = document.getElementById('fake-above');
+      if (el) el.style.height = fakeAboveHeights[fakeAboveIdx];
+      scheduleRefresh();
+    }
+  </script>
+</body>
+</html>

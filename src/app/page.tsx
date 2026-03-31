@@ -4,13 +4,8 @@ import { Suspense } from 'react';
 import { DeferredMount } from '@/components/DeferredMount';
 import { resolveHeroVariant } from '@/config/heroVariants.generated';
 import { HeroSection } from '@/sections/hero/HeroSection';
+import { WynikiSection } from '@/sections/wyniki/WynikiSection';
 import { SectionsClient } from './SectionsClient';
-
-const WzrostPrzychodowSection = dynamic(() =>
-  import('@/sections/wzrost-przychodow/WzrostPrzychodowSection').then((m) => ({
-    default: m.WzrostPrzychodowSection,
-  }))
-);
 const BookStatsSection = dynamic(() =>
   import('@/sections/books/BookStatsSection').then((m) => ({ default: m.BookStatsSection }))
 );
@@ -82,7 +77,7 @@ async function HomePageContent({
   return (
     <main>
       <HeroSection variant={variant} />
-      <WzrostPrzychodowSection />
+      <WynikiSection />
       <BookStatsSection />
       {/* Od Fakty w dół: montaż dopiero blisko viewportu — mniejszy początkowy koszt JS (TBT). BookStats zostaje od razu (LCP / obraz). */}
       <DeferredMount minHeight="min(120vh, 1100px)">

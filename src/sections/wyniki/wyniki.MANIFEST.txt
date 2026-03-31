@@ -1,0 +1,71 @@
+SECTION_MANIFEST:
+
+  slug:     'wyniki'
+  type:     'B'
+  requires: ['scrollRuntime', 'gsap', 'ScrollTrigger']
+
+  webgl:    null
+
+  assets:
+    - kind: 'img', src: 'TLO-Monitor.jpg', priority: 'HOT', critical: true, lcp: false
+    - kind: 'img', src: 'Monitor1.png', priority: 'HOT', critical: true, lcp: true
+    - kind: 'video', src: 'Video.mp4', priority: 'HOT', critical: true, lcp: false
+
+  warmup: []
+  scrollTriggersCount: 1
+
+  geometryMutable:           false
+  geometryRefresh:           'none'
+  geometryContract:          'normal'
+  syntheticContextAllowed:   true
+  entryExitInvariant:        false
+  preserveExistingGuards:    true
+
+  refreshSignals: ['section-in-view', 'layout-settle']
+
+  export:
+    mode: 'named'
+    name: 'WynikiSection'
+
+  slots: []
+  dciProps: []
+  timelineContract: undefined
+
+  specialNotes:
+    breakpoints:        ['600px']
+    platformGuards:     ['hover:hover', 'pointer:fine']
+    cpuGatingMechanism: 'IO-pause/resume'
+    cpuGatingPath:      1
+    containApplied:     false
+    containReason:      'position:fixed popup inside section — contain:layout creates new containing block for fixed descendants'
+
+  integrationNotes:
+    hasPin:                false
+    hasSnap:               false
+    affectsGeometryBelow:  false
+    sensitiveTo:           []
+    testWith:              []
+
+  deliveryRisk: null
+
+  perf:
+    dynamicImport:       false
+    isHero:              true
+    gracefulDegradation: true
+    preloadCandidates:   ['TLO-Monitor.jpg', 'Monitor1.png']
+    prefetchCandidates:  []
+    coldCandidates:      []
+    preconnectDomains:   []
+    containApplied:      false
+    warnings:            ['PERF-W3']
+
+  scrollRuntimeRecommendations: []
+
+  runtimeChecks:
+    CLN-01: 'PASS'
+    SM-01:  'PASS'
+    SM-02:  'PASS'
+    INT-01: 'PASS'
+    INT-02: 'PASS'
+    INT-03: 'PASS'
+    INT-04: 'PASS'
