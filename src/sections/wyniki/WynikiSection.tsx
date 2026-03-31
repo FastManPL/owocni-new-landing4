@@ -187,7 +187,7 @@ function init(
       if (layer) {
         var tl = gsap.timeline({
           scrollTrigger: {
-            trigger: '#wyniki-section',
+            trigger: container,
             start: '60% bottom',
             end:   'center 30%',
             scrub: 0.6,
@@ -220,7 +220,6 @@ function init(
 
       /* ═══ PLAY BUTTON + VIDEO POPUP (merged into init — N2) ════════ */
       var popupIsOpen = false;
-      var savedScrollY = 0;
       var openPopup = function () {};
       var closePopup = function () {};
       var rightPanel = $('.wyniki-right');
@@ -337,11 +336,7 @@ function init(
           if (popupIsOpen) return;
           popupIsOpen = true;
           callbacks?.onPopupOpen?.();
-          savedScrollY = window.scrollY;
-          document.body.style.position = 'fixed';
-          document.body.style.top = '-' + savedScrollY + 'px';
-          document.body.style.left = '0';
-          document.body.style.right = '0';
+          document.documentElement.style.overflow = 'hidden';
           document.body.style.overflow = 'hidden';
           bodyOverflowLocked = true;
         };
@@ -350,12 +345,8 @@ function init(
           if (!popupIsOpen) return;
           popupIsOpen = false;
           callbacks?.onPopupClose?.();
-          document.body.style.position = '';
-          document.body.style.top = '';
-          document.body.style.left = '';
-          document.body.style.right = '';
+          document.documentElement.style.overflow = '';
           document.body.style.overflow = '';
-          window.scrollTo(0, savedScrollY);
           bodyOverflowLocked = false;
         };
 
@@ -481,10 +472,7 @@ function init(
         observers.forEach(function(o) { try { o.disconnect?.(); } catch(e) {} });
         gsapInstances.forEach(function(x) { try { x.revert(); x.kill(); } catch(e) {} });
         if (bodyOverflowLocked) {
-          document.body.style.position = '';
-          document.body.style.top = '';
-          document.body.style.left = '';
-          document.body.style.right = '';
+          document.documentElement.style.overflow = '';
           document.body.style.overflow = '';
         }
         gsapInstances.length = 0;
@@ -687,6 +675,7 @@ export function WynikiSection() {
                     'media-id': WISTIA_MEDIA_ID,
                     seo: 'false',
                     aspect: '1.7777777777777777',
+                    autoplay: 'true',
                   })}
                 </>
               ) : null}
