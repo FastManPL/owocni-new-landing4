@@ -36,7 +36,7 @@
 }
 #final-section #final-scene canvas { display:block; touch-action:pan-y; width:100%; height:100%; }
 
-/* FormCard — desktop: centrum; mobile: bottom sheet + translateY z JS (odsłona napisów, potem .final-scroll-extender) */
+/* FormCard — zawsze w #final-sticky (absolute); desktop: pozycja z JS; mobile: bottom + translateY z JS — bez fixed przy karcie */
 #final-section #final-formCard {
   position: absolute;
   top: 50%; left: 50%;

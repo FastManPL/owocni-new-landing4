@@ -769,10 +769,12 @@ function positionCard(){
     if(_hMob) _hMob.style.display='none';
     updateMobileFormScroll();
   } else if(cw2>=1200){
-    cardEl.style.position='fixed'; cardEl.style.height='640px'; cardEl.style.width='';
+    /* absolute w #final-sticky — NIE fixed: fixed po resize z mobile sprawia, że karta jedzie po całym viewport nad innymi sekcjami */
+    cardEl.style.position='absolute'; cardEl.style.height='640px'; cardEl.style.width='';
     var bl=getBannerLayout(cw2), textLeftPx=bl.textLeft;
     var cardLeft=cw2-textLeftPx-500; cardLeft=Math.max(textLeftPx,cardLeft);
     cardEl.style.left=cardLeft+'px'; cardEl.style.top='50%';
+    cardEl.style.right='auto';
     cardEl.style.transform='translateY(-50%)'; cardEl.style.bottom='auto';
     cardEl.style.borderRadius='24px';
     _cardMaxUp=0;
@@ -781,6 +783,15 @@ function positionCard(){
     if(_handle) _handle.style.display='none';
     container.style.minHeight='100vh';
     _lastMinH='100vh';
+  } else {
+    /* <1200 ale brak layoutu mobilnego (np. tuż po resize) — nie zostawiaj poprzedniego trybu */
+    cardEl.style.position='absolute';
+    cardEl.style.top='50%'; cardEl.style.left='50%'; cardEl.style.right='auto';
+    cardEl.style.bottom='auto'; cardEl.style.transform='translate(-50%,-50%)';
+    cardEl.style.width='calc(100% - 40px)'; cardEl.style.maxWidth='500px'; cardEl.style.height='640px';
+    cardEl.style.borderRadius='24px'; cardEl.style.pointerEvents='auto';
+    _cardMaxUp=0;
+    if(_lastMinH!==''){ container.style.minHeight=''; _lastMinH=''; }
   }
 }
 
