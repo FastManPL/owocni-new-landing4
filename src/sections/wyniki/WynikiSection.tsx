@@ -472,6 +472,7 @@ export function WynikiSection() {
   const rootRef = useRef<HTMLElement | null>(null);
   const [popupOpen, setPopupOpen] = useState(false);
   const [wistiaActivated, setWistiaActivated] = useState(false);
+  const [allowInlineAutoplay, setAllowInlineAutoplay] = useState(true);
   const cbRef = useRef({
     onPopupOpen: () => {},
     onPopupClose: () => {},
@@ -491,6 +492,26 @@ export function WynikiSection() {
       } catch {}
     }
   };
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
+    const mqMobile = window.matchMedia('(max-width: 720px)');
+    const mqReduced = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    const apply = () => {
+      // Mobile i reduced-motion: mniej pracy CPU/GPU w sekcji hero-adjacent.
+      setAllowInlineAutoplay(!(mqMobile.matches || mqReduced.matches));
+    };
+    apply();
+
+    const onChange = () => apply();
+    mqMobile.addEventListener?.('change', onChange);
+    mqReduced.addEventListener?.('change', onChange);
+    return () => {
+      mqMobile.removeEventListener?.('change', onChange);
+      mqReduced.removeEventListener?.('change', onChange);
+    };
+  }, []);
 
   useEffect(() => {
     if (!wistiaActivated || !popupOpen) return;
@@ -603,7 +624,7 @@ export function WynikiSection() {
                     className="mockup-video"
                     src="/wyniki/Video.mp4"
                     preload="metadata"
-                    autoPlay
+                    autoPlay={allowInlineAutoplay}
                     loop
                     muted
                     playsInline
