@@ -428,21 +428,6 @@ function init(
         });
       }
 
-      /* ═══ ST-REFRESH-01 — section-in-view + layout-settle ══════════ */
-      var _stIo = new IntersectionObserver(function(entries) {
-        if (!entries[0]?.isIntersecting) return;
-        scrollRuntime.requestRefresh('section-in-view');
-        _stIo.disconnect();
-      }, { threshold: 0, rootMargin: '0px' });
-      _stIo.observe(container);
-      observers.push(_stIo);
-      cleanups.push(function() { _stIo.disconnect(); });
-
-      var _settleTimer = setTimeout(function() {
-        scrollRuntime.requestRefresh('layout-settle');
-      }, 1000);
-      timerIds.push(_settleTimer);
-
       /* ═══ LIFECYCLE (N3 + N5 + N6 + B-CPU-03) ════════════════════════ */
       var _paused = false;
       var _killed = false;
@@ -604,7 +589,6 @@ export function WynikiSection() {
                     fill
                     className="mockup-tlo"
                     sizes="(max-width: 720px) 100vw, min(88vw, 110rem)"
-                    priority
                     onError={(e) => e.currentTarget.classList.add('load-failed')}
                   />
                   <Image
@@ -613,14 +597,12 @@ export function WynikiSection() {
                     fill
                     className="mockup-frame"
                     sizes="(max-width: 720px) 100vw, min(88vw, 110rem)"
-                    priority
-                    fetchPriority="high"
                     onError={(e) => e.currentTarget.classList.add('load-failed')}
                   />
                   <video
                     className="mockup-video"
                     src="/wyniki/Video.mp4"
-                    preload="auto"
+                    preload="metadata"
                     autoPlay
                     loop
                     muted
