@@ -10,6 +10,7 @@ html {
 @layer base {
   html {
     scrollbar-gutter: stable;
+    overflow-x: clip;
   }
 
   /* 
@@ -28,7 +29,12 @@ html {
 
   body {
     background-color: #f7f6f4;
-    overflow-x: hidden; /* brak poziomego paska przewijania */
+    overflow-x: clip; /* clip + html: mniej poziomego „rubber” na mobile niż hidden-only na body */
+  }
+
+  main {
+    max-width: 100%;
+    overflow-x: clip;
   }
 
   /* Zaznaczenie tekstu — branding Owocni */

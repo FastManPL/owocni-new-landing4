@@ -750,6 +750,18 @@
         @media (min-width: 1201px) {
             #hero-section .br-desktop { display: block; }
         }
+
+        /* Mobile/tablet: br-desktop ukryty — brak odstępu między liniami H1; desktop bez ::before */
+        @media (max-width: 1200px) {
+            #hero-section .hero-title .br-desktop + strong::before {
+                content: ' ';
+            }
+        }
+        @media (min-width: 1201px) {
+            #hero-section .hero-title .br-desktop + strong::before {
+                content: none;
+            }
+        }
         
         /* ═══════════════════════════════════════════════════════════════
            PILL BADGE — "3500+ zadowolonych klientów"
@@ -1077,12 +1089,14 @@
                 text-align: center;
                 position: relative;
                 z-index: 6;
+                overflow-x: clip; /* full-bleed .brands-section (100vw) — brak poziomego scrolla strony */
             }
             #hero-section .hero-brands-text {
                 text-align: center;
                 margin-bottom: -2px;
             }
-            #hero-section .hero-title-wrapper { order: 1; margin-top: clamp(0.8rem, 3vw, 1.5rem); }
+            /* Większy odstęp pod badge Google (absolute) — unikaj nachodzenia na H1 */
+            #hero-section .hero-title-wrapper { order: 1; margin-top: clamp(2.35rem, 8.5vw, 3.1rem); }
             #hero-section .pill-wrap { order: 2; margin: 0.8rem 0 0.4rem 0; }
             #hero-section .hero-description { order: 3; margin-top: 0.5rem; }
             
@@ -2493,7 +2507,7 @@
                 align-items: center;
                 gap: 0.8rem;
                 margin-top: 3rem;
-                /* Pełna szerokość — wyłamujemy się z max-width */
+                /* Pełna szerokość — wyłamujemy się z max-width; poziomy overflow obcina .hero-brands-marquee */
                 max-width: none;
                 width: 100vw;
                 margin-left: calc(-50vw + 50%);
