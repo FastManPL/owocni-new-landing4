@@ -625,7 +625,7 @@ export function WynikiSection() {
                     src="/wyniki/Video.mp4"
                     preload="metadata"
                     autoPlay={allowInlineAutoplay}
-                    loop
+                    loop={allowInlineAutoplay}
                     muted
                     playsInline
                     disablePictureInPicture
