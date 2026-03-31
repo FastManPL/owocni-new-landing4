@@ -780,7 +780,7 @@ function positionCard(){
     cardEl.style.transform='translateY(-50%)'; cardEl.style.bottom='auto';
     cardEl.style.borderRadius='24px';
     _cardMaxUp=0;
-    cardEl.style.pointerEvents='none'; // desktop: karta non-interactive (jak było)
+    cardEl.style.pointerEvents='auto';
     var _handle=document.getElementById('final-card-handle');
     if(_handle) _handle.style.display='none';
     container.style.minHeight='100vh';
