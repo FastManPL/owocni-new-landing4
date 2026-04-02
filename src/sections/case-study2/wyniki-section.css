@@ -214,20 +214,8 @@
       object-fit: contain;
       display: block;
     }
-    #wyniki-section .wp-video-wrap wistia-player {
-      display: block;
-      width: 100%;
-      height: 100%;
-    }
-    #wyniki-section .wp-video-wrap wistia-player[media-id='7agfboivfi']:not(:defined) {
-      background: center / contain no-repeat
-        url('https://fast.wistia.com/embed/medias/7agfboivfi/swatch');
-      filter: blur(5px);
-      padding-top: 56.25%;
-    }
     @supports not (aspect-ratio: 16 / 9) {
       #wyniki-section .wp-video-wrap video { position: absolute; top: 0; left: 0; }
-      #wyniki-section .wp-video-wrap wistia-player { position: absolute; top: 0; left: 0; }
     }
     #wyniki-section .wp-content {
       padding: clamp(1.2rem, 3.5vw, 2.2rem) clamp(1.5rem, 4vw, 2.5rem);

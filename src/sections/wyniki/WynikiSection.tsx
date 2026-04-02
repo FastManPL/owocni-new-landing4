@@ -2,18 +2,15 @@
 'use client';
 
 import { createElement, useEffect, useRef, useState } from 'react';
-import Image from 'next/image';
 import Script from 'next/script';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { scrollRuntime } from '@/lib/scrollRuntime';
-import imgTlo from './TLO-Monitor.jpg';
-import imgMonitor from './Monitor1.webp';
 import './wyniki-section.css';
 
-/** Ten sam media-id co sekcja „wzrost przychodów” (hero2) — demo w Wistii zamiast MP4 w popupie. */
-const WISTIA_MEDIA_ID = 'kmqidz4bso';
+/** Wistia — wideo w popupie ładowane dopiero po `onPopupOpen` (skrypty w JSX). */
+const WISTIA_MEDIA_ID = '7agfboivfi';
 
 // ⚠️ GSAP-SSR-01: registerPlugin() WYŁĄCZNIE wewnątrz useGSAP.
 
@@ -26,6 +23,9 @@ function init(
   container: HTMLElement,
   callbacks?: WynikiInitCallbacks,
 ): { kill: () => void; pause: () => void; resume: () => void } {
+      if (!container) {
+        return { pause: function () {}, resume: function () {}, kill: function () {} };
+      }
 
       const DEBUG_MODE =
         new URLSearchParams(window.location.search).has('debug') ||
@@ -181,7 +181,9 @@ function init(
 
       const layer   = $id('wyniki-zoom-layer');
       const tlo     = $id('wyniki-tlo');
-      const overlay = $id('wyniki-video-overlay');
+      const deviceWrapper = $id('wyniki-device-wrapper');
+      const bgVideo = $('.mockup-video');
+      const laptopFrame = $id('wyniki-laptop-frame');
 
       if (layer) {
         var tl = gsap.timeline({
@@ -194,12 +196,7 @@ function init(
         });
         gsapInstances.push(tl);
 
-        tl.fromTo(layer,
-          { scale: 1.0 },
-          { scale: 1.2, ease: 'power2.inOut', duration: 1 },
-          0
-        );
-
+        /* TLO parallax: góra→dół */
         if (tlo) {
           tl.fromTo(tlo,
             { yPercent: 0 },
@@ -208,13 +205,74 @@ function init(
           );
         }
 
-        if (overlay) {
-          tl.fromTo(overlay,
-            { opacity: 0.7 },
-            { opacity: 0.1, ease: 'none', duration: 1 },
+        /* Laptop Frame: proxy → CSS vars (transform-origin: bottom) */
+        if (laptopFrame) {
+          var frameP = { x: 0, y: -0.5, s: 1.07 };
+          tl.to(frameP, {
+            x: 2, y: 8, s: 1.35,
+            ease: 'power2.inOut', duration: 1,
+            onUpdate: function() {
+              laptopFrame.style.setProperty('--frame-x', frameP.x.toFixed(2) + '%');
+              laptopFrame.style.setProperty('--frame-y', frameP.y.toFixed(2) + '%');
+              laptopFrame.style.setProperty('--frame-scale', frameP.s.toFixed(4));
+            }
+          }, 0);
+        }
+
+        /* Screen Video: proxy → CSS vars (breakpoint-aware) */
+        if (bgVideo) {
+          var isMobile = window.innerWidth <= 600;
+          var vidMin = isMobile
+            ? { x: 49,   y: 55,  s: 0.68 }
+            : { x: 49.5, y: 55,  s: 1.02 };
+          var vidMax = isMobile
+            ? { x: 51,   y: 52.5, s: 0.83 }
+            : { x: 50.5, y: 52,   s: 1.27 };
+
+          var vidP = { x: vidMin.x, y: vidMin.y, s: vidMin.s };
+          tl.to(vidP, {
+            x: vidMax.x, y: vidMax.y, s: vidMax.s,
+            ease: 'power2.inOut', duration: 1,
+            onUpdate: function() {
+              bgVideo.style.setProperty('--scrvid-x', vidP.x.toFixed(2) + '%');
+              bgVideo.style.setProperty('--scrvid-y', vidP.y.toFixed(2) + '%');
+              bgVideo.style.setProperty('--scrvid-scale', vidP.s.toFixed(4));
+            }
+          }, 0);
+        }
+
+        /* Device wrapper: brightness — wyjeżdża z cienia */
+        if (deviceWrapper) {
+          tl.fromTo(deviceWrapper,
+            { filter: 'brightness(0.15)' },
+            { filter: 'brightness(1)', ease: 'power2.inOut', duration: 1 },
             0
           );
         }
+      }
+
+      /* Video visibility gating (3B) */
+      if (bgVideo && 'IntersectionObserver' in window) {
+        var videoIO = new IntersectionObserver(function(entries) {
+          entries.forEach(function(e) {
+            if (e.isIntersecting) bgVideo.play().catch(function() {});
+            else bgVideo.pause();
+          });
+        }, { rootMargin: '200px' });
+        videoIO.observe(bgVideo);
+        observers.push(videoIO);
+
+        pauseHooks.push(function() { bgVideo.pause(); });
+        resumeHooks.push(function() { bgVideo.play().catch(function() {}); });
+        cleanups.push(function() { bgVideo.pause(); });
+      }
+
+      /* ─── THUMB VIDEO (PLAY-NEW.mp4, lewy panel) — pause/resume/kill ─── */
+      var thumbVideo = $('.wyniki-vthumb-face video');
+      if (thumbVideo) {
+        pauseHooks.push(function() { thumbVideo.pause(); });
+        resumeHooks.push(function() { thumbVideo.play().catch(function() {}); });
+        cleanups.push(function() { thumbVideo.pause(); });
       }
 
       /* ═══ PLAY BUTTON + VIDEO POPUP (merged into init — N2) ════════ */
@@ -280,8 +338,7 @@ function init(
         arc.setAttribute('stroke-width', SW * 1.6);
         arc.setAttribute('stroke-linecap', 'round');
         arc.setAttribute('stroke-dasharray', CIRC.toFixed(1));
-        /* Bez tła wideo: pełny łuk zamiast progresu z timeupdate */
-        arc.setAttribute('stroke-dashoffset', '0');
+        arc.setAttribute('stroke-dashoffset', CIRC.toFixed(1));
         arc.setAttribute('transform', 'rotate(-90 ' + CX + ' ' + CY + ')');
         arc.style.cssText = 'transition:opacity 0.4s ease;';
         svg.appendChild(arc);
@@ -330,6 +387,21 @@ function init(
           clearTimeout(bounceT);
         });
 
+        /* Video progress → arc (throttled 500ms) */
+        if (bgVideo) {
+          var arcLastUpdate = 0;
+          var onTimeUpdate = function() {
+            var now = performance.now();
+            if (now - arcLastUpdate < 500) return;
+            arcLastUpdate = now;
+            if (bgVideo.duration > 0) {
+              arc.setAttribute('stroke-dashoffset', (CIRC * (1 - bgVideo.currentTime / bgVideo.duration)).toFixed(1));
+            }
+          };
+          bgVideo.addEventListener('timeupdate', onTimeUpdate);
+          cleanups.push(function() { bgVideo.removeEventListener('timeupdate', onTimeUpdate); });
+        }
+
         /* ─── POPUP LOGIC (Wistia ładuje React — dopiero po onPopupOpen) ─── */
         openPopup = function () {
           if (popupIsOpen) return;
@@ -352,6 +424,13 @@ function init(
         var onRightPanelClick = function(e) { e.preventDefault(); openPopup(); };
         rightPanel.addEventListener('click', onRightPanelClick);
         cleanups.push(function() { rightPanel.removeEventListener('click', onRightPanelClick); });
+
+        var vThumb = container.querySelector('.wyniki-video-thumb');
+        if (vThumb) {
+          var onVThumbClick = function(e) { e.preventDefault(); openPopup(); };
+          vThumb.addEventListener('click', onVThumbClick);
+          cleanups.push(function() { vThumb.removeEventListener('click', onVThumbClick); });
+        }
 
         if (ctaBtn) {
           var onCtaClick = function(e) { e.preventDefault(); openPopup(); };
@@ -564,78 +643,103 @@ export function WynikiSection() {
       <div className="wyniki-card">
         <div className="wyniki-content">
           <div className="wyniki-left">
-            <h2 className="wyniki-heading" id="wyniki-heading">
-              W zasięgu ręki masz
-              <br />
-              już <strong>34–45% więcej</strong>
-              <br />
-              przychodów
+            <h2 className="wyniki-heading wyniki-heading--casestudy" id="wyniki-heading">
+              CASE STUDY
             </h2>
 
             <div className="wyniki-spacer wyniki-spacer--top" aria-hidden="true" />
 
-            <p className="wyniki-sub" id="wyniki-sub">
-              Czas je odzyskać
+            <p className="wyniki-sub wyniki-sub--casestudy" id="wyniki-sub">
+              <strong>
+                Zobacz przebieg realizacji
+                <br />
+                strony ParkAPP.pl od kuchni.
+              </strong>
+              <br />
+              <span className="wyniki-sub-light" style={{ fontStyle: 'normal' }}>
+                (1 min) – Słowami właściciela
+              </span>
             </p>
 
-            <div className="wyniki-spacer wyniki-spacer--mid" aria-hidden="true" />
+            <div className="wyniki-video-thumb" id="wyniki-video-thumb">
+              <div className="wyniki-vthumb-face">
+                <video
+                  src="/wyniki/PLAY-NEW.mp4"
+                  poster="/wyniki/TLO-Portfolio.webp"
+                  autoPlay={allowInlineAutoplay}
+                  loop={allowInlineAutoplay}
+                  muted
+                  playsInline
+                  preload="auto"
+                />
+              </div>
+            </div>
+
+            <div className="wyniki-spacer" aria-hidden="true" style={{ flex: 1 }} />
 
             <div className="wyniki-btn-wrapper-wave">
               <a href="#" className="wyniki-cta" id="wyniki-cta">
                 <span className="wyniki-btn-hole" />
                 <span className="wyniki-btn-cap" />
-                <span className="wyniki-btn-text" data-text="Zobacz demo">
-                  Zobacz demo
+                <span className="wyniki-btn-text" data-text="Zobacz realizację">
+                  Zobacz realizację
                 </span>
               </a>
               <div className="wyniki-btn-static-floor" />
             </div>
 
-            <div className="wyniki-spacer" aria-hidden="true" />
-
-            <p className="wyniki-footnote" id="wyniki-footnote">
-              <strong>Źródło danych:</strong> Testy reklamowe klientów za 2025r. Łączny budżet{' '}
-              <strong>3,5 mln&nbsp;zł</strong>.
-            </p>
+            <div className="wyniki-spacer" aria-hidden="true" style={{ flex: '0 0 auto', minHeight: 0 }} />
           </div>
 
           <div className="wyniki-right" id="wyniki-media">
             <div className="wyniki-placeholder" id="wyniki-placeholder">
               <div className="mockup-zoom-wrapper">
                 <div className="mockup-zoom-layer" id="wyniki-zoom-layer">
-                  <Image
-                    id="wyniki-tlo"
-                    src={imgTlo}
-                    alt=""
-                    fill
-                    className="mockup-tlo"
-                    sizes="(max-width: 720px) 100vw, min(88vw, 110rem)"
-                    onError={(e) => e.currentTarget.classList.add('load-failed')}
-                  />
-                  <Image
-                    src={imgMonitor}
-                    alt=""
-                    fill
-                    className="mockup-frame"
-                    sizes="(max-width: 720px) 100vw, min(88vw, 110rem)"
-                    onError={(e) => e.currentTarget.classList.add('load-failed')}
-                  />
-                  <video
-                    className="mockup-video"
-                    src="/wyniki/Video.mp4"
-                    preload="metadata"
-                    autoPlay={allowInlineAutoplay}
-                    loop={allowInlineAutoplay}
-                    muted
-                    playsInline
-                    disablePictureInPicture
-                  />
-                  <div className="mockup-video-overlay" id="wyniki-video-overlay" />
+                  <picture>
+                    <source srcSet="/wyniki/TLO-Portfolio.avif" type="image/avif" />
+                    <source srcSet="/wyniki/TLO-Portfolio.webp" type="image/webp" />
+                    <img
+                      className="mockup-tlo"
+                      id="wyniki-tlo"
+                      src="/wyniki/TLO-Portfolio.webp"
+                      alt="Tło portfolio"
+                      loading="eager"
+                      decoding="async"
+                      fetchPriority="high"
+                      draggable={false}
+                      onError={(e) => e.currentTarget.classList.add('load-failed')}
+                    />
+                  </picture>
+                  <div className="mockup-device-wrapper" id="wyniki-device-wrapper">
+                    <video
+                      className="mockup-video"
+                      id="wyniki-screen-video"
+                      src="/wyniki/Parkapp.mp4"
+                      poster="/wyniki/TLO-Portfolio.webp"
+                      preload="auto"
+                      autoPlay={allowInlineAutoplay}
+                      loop={allowInlineAutoplay}
+                      muted
+                      playsInline
+                      disablePictureInPicture
+                    />
+                    <picture>
+                      <source srcSet="/wyniki/Laptop.avif" type="image/avif" />
+                      <source srcSet="/wyniki/Laptop.webp" type="image/webp" />
+                      <img
+                        className="mockup-frame"
+                        id="wyniki-laptop-frame"
+                        src="/wyniki/Laptop.webp"
+                        alt="Laptop"
+                        loading="eager"
+                        decoding="async"
+                        draggable={false}
+                        onError={(e) => e.currentTarget.classList.add('load-failed')}
+                      />
+                    </picture>
+                  </div>
                 </div>
               </div>
-            </div>
-            <div className="wyniki-placeholder-label" style={{ display: 'none' }}>
-              ← Laptop mockup · placeholder →
             </div>
           </div>
         </div>

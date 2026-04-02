@@ -77,7 +77,6 @@ async function HomePageContent({
   return (
     <main>
       <HeroSection variant={variant} />
-      <WynikiSection />
       <BookStatsSection />
       {/* Od Fakty w dół: montaż dopiero blisko viewportu — mniejszy początkowy koszt JS (TBT). BookStats zostaje od razu (LCP / obraz). */}
       <DeferredMount minHeight="min(120vh, 1100px)">
@@ -97,6 +96,9 @@ async function HomePageContent({
       </DeferredMount>
       <DeferredMount minHeight="min(100vh, 900px)">
         <LoveWallSection />
+      </DeferredMount>
+      <DeferredMount minHeight="min(100vh, 900px)">
+        <WynikiSection />
       </DeferredMount>
       <DeferredMount minHeight="min(90vh, 800px)">
         <CaseStudiesSection />
