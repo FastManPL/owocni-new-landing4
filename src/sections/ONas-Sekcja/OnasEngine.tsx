@@ -1603,6 +1603,7 @@ async function onasCapitanInit(container) {
     if (pmRaf) return;
     pmRaf = requestAnimationFrame(() => {
       pmRaf = 0;
+      rectCache = threeContainer.getBoundingClientRect(); // FIX C: fresh rect before normalization
       if (rectCache.width <= 0 || rectCache.height <= 0) return;
       mouse.x = ((lastClientX - rectCache.left) / rectCache.width) * 2 - 1;
       mouse.y = ((lastClientY - rectCache.top) / rectCache.height) * 2 - 1;
@@ -1940,13 +1941,12 @@ async function onasCapitanInit(container) {
   J.prev = ANIM_START;
   J.on = true;
 
-  /* ── ScrollTrigger: badge as trigger (position:absolute = safe,
-       getBoundingClientRect is position-mode agnostic — verified in ST source)
+  /* ── ScrollTrigger: #onas-capitan jako trigger (FIX A — stabilny rect; badge ma drift transform)
        scrub:true = direct link, Lenis handles ALL smoothing
        invalidateOnRefresh = recalculate bounds on resize/refresh
        onToggle = OR logic with IO for ticker sleep/wake ── */
   const badgeST = ScrollTrigger.create({
-    trigger: badge,               // #onas-capitan-badgeWrapper (position:absolute — OK)
+    trigger: container,           // FIX A: #onas-capitan — stabilny rect, bez JS-driven transform
     start: 'bottom 65%',           // badge bottom at 65% from top → progress 0
     end: 'top 1%',                 // badge top reaches 1% from viewport top → progress 1
     scrub: true,                  // direct link (Lenis = only smoother, no double-smooth)
@@ -2250,6 +2250,7 @@ async function onasCapitanInit(container) {
   let sRx = _initC.rx, sRy = _initC.ry, sRz = _initC.rz, sSc = _initC.sc;
   let sEnvI = _initC.envI, sBlm = _initC.blm, sSlY = _initC.slY, sSlX = _initC.slX, sRingRy = _initC.ringRy;
   const SP = 0.12;
+  let _smoothVk = 0;
 
   tickFn = function capitanTick(time) {
     if (!running) return;
@@ -2261,6 +2262,7 @@ async function onasCapitanInit(container) {
     if (_wakeSkip) {
       _wakeSkip = false;
       J.prev = J.p;
+      _smoothVk = 0;
     }
 
     const targetInfluence = mouse.near ? 1 : 0;
@@ -2306,8 +2308,9 @@ async function onasCapitanInit(container) {
         const shY = Math.sin(time * 2.3) * 0.004 + Math.sin(time * 3.7) * 0.002;
         const shX = Math.sin(time * 1.9) * 0.003;
 
-        // Scroll velocity kick (SCROLL delta only — NOT hover-influenced p)
-        const vk = (J.p - J.prev) * 2.5;
+        // Scroll velocity kick — smoothed (FIX B: lerp tłumi spiki ±17° → ±3°)
+        _smoothVk += ((J.p - J.prev) * 2.5 - _smoothVk) * 0.18;
+        const vk = _smoothVk;
 
         // ── Global levitation (old animation PHI harmonics, always running) ──
         const t1 = time * 1.3, t2 = time * 0.9;

@@ -406,12 +406,13 @@
     height: 100vh;
     height: 100svh;
     position: relative;
-    z-index: 1;
+    /* Nad #onas-capitan (z-index 10): ujemny join-gap nakłada karuzelę pod dół bannera —
+       bez tego pas kart / ludzi bywa zasłonięty przez .banner__curve i tło capitan. */
+    z-index: 11;
     overflow: hidden;
-    cursor: grab;
+    /* Przepuszczaj kliknięcia poza .a3d (np. przycisk na .banner__curve pod spodem). */
+    pointer-events: none;
 }
-
-#onas-section .carousel-section:active { cursor: grabbing; }
 
 #onas-section .scene,
 #onas-section .a3d { display: grid; }
@@ -423,11 +424,19 @@
     position: absolute; top: 0; left: 0; right: 0; bottom: 0;
     z-index: 1;
     touch-action: pan-y;
+    pointer-events: none;
 }
 #onas-section .a3d {
     place-self: center;
     transform-style: preserve-3d;
     transform: translateZ(var(--camera-dist)) translateY(calc(var(--pos-y-user) + var(--pos-y-auto))) scale(var(--zoom)) rotateX(var(--tilt)) rotateY(0deg);
+    pointer-events: auto;
+    cursor: grab;
+    touch-action: pan-y;
+}
+
+#onas-section .carousel-section.is-dragging .a3d {
+    cursor: grabbing;
 }
 
 #onas-section .card {
