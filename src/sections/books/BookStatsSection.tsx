@@ -293,6 +293,17 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
         const eps = 1;
         const prevP = prevBookSTProgress;
 
+        /*
+         * Po zejściu za `end` (scroll w dół): pin-spacer/RO wywołuje setupCanvasDPR często *zanim*
+         * zdążą polecieć onLeave / onUpdate(progress≥0.95) — wtedy bookScrubPastEnd jest jeszcze false,
+         * gałęzie poniżej nie ładują, a playhead bywa już 0 → jednorazowy „skok” na klatkę 0 po twardym refreshu.
+         * Jeśli faktycznie rysowaliśmy już ostatnią klatkę (peak), trzymaj finał.
+         */
+        if (y >= st.end - eps && st.direction !== -1 && peakBookFrameIndex >= lastIdx) {
+          prevBookSTProgress = currentP;
+          return allLoaded ? lastIdx : findNearestLoaded(lastIdx);
+        }
+
         if (y < st.start - eps) {
           /* Realny powrót nad sekcję w górę: direction -1 — zamknięta książka.
              Glitch przy pierwszym zejściu w dół: y chwilowo < start; prevP/bookScrubPastEnd bywa jeszcze niezsynchronizowane,
