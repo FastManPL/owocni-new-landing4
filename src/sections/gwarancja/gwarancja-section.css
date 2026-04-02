@@ -285,16 +285,21 @@
   display: none;
   align-items: center;
   justify-content: center;
-  flex-wrap: wrap;
-  gap: 15px;
+  flex-wrap: nowrap;
+  gap: clamp(16px, 4vw, 40px);
   width: 100%;
   margin-top: 76px;
-  opacity: 0.45;
 }
-#gwarancja-section .cta-logos-below svg {
-  height: 52px;
+#gwarancja-section .cta-logos-below--partner {
+  opacity: 0.5;
+}
+#gwarancja-section .cta-logos-below--partner img {
+  height: clamp(40px, calc(12px + 9vw), 96px);
   width: auto;
-  max-width: 100%;
+  flex: 1 1 0;
+  min-width: 0;
+  max-width: calc(50% - clamp(8px, 2vw, 20px));
+  object-fit: contain;
 }
 @media (max-width: 1200px) {
   #gwarancja-section .cta-logos-below { display: flex; }
