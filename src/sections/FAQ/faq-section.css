@@ -310,7 +310,8 @@
   text-align: center;
 }
 #faq-section .faq-section-lead__title {
-  font-size: clamp(2.4rem, 6vw, 6.9rem);
+  /* ~−30% względem skali hero-h1 (2.4 / 6 / 6.9) */
+  font-size: clamp(1.68rem, 4.2vw, 4.83rem);
   line-height: 1.05;
   letter-spacing: -0.02em;
   margin: 0;

@@ -3,6 +3,8 @@
   position: relative;
   background: #f7f6f4;
   padding-top: 0;
+  /* Zbicie nadmiaru pustki nad blokiem „4 etapy / WZROSTU” (ok. −25vh) */
+  margin-top: -25vh;
   isolation: isolate;           /* FACTORY:AUTO-FIX B-ISO-01 */
   contain: layout style;        /* FACTORY:ADDED — geometryMutable:false, no pin, no bleed */
   /* PROD: brak fixed, brak overflow:hidden, brak touch-action:none
