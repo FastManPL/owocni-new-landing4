@@ -748,17 +748,19 @@ export function BookStatsSection() {
         {/* PIĘTRO 1: OBRAZY */}
         <div className="cs-floor cs-floor--images">
           <div className="cs-floor__left">
-            <video
-              className="cs-img--stats cs-video"
-              src="/books/Kalendarz_1-mute-video.mp4"
-              poster="/books/Statystyki-stron.png"
-              playsInline
-              muted
-              loop
-              autoPlay
-              preload="metadata"
-              aria-hidden
-            />
+            <div className="cs-video-clip">
+              <video
+                className="cs-img--stats cs-video"
+                src="/books/Kalendarz_1-mute-video.mp4"
+                poster="/books/Statystyki-stron.png"
+                playsInline
+                muted
+                loop
+                autoPlay
+                preload="metadata"
+                aria-hidden
+              />
+            </div>
           </div>
           <div className="cs-floor__right">
             <div className="cs-img-placeholder cs-img--book">
@@ -767,8 +769,6 @@ export function BookStatsSection() {
             </div>
           </div>
         </div>
-
-        <div className="cs-divider" />
 
         {/* PIĘTRO 2: TEKSTY */}
         <div className="cs-floor cs-floor--texts">

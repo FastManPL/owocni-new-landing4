@@ -119,12 +119,29 @@
   aspect-ratio: 606 / 456;
   background: linear-gradient(135deg, #e8e4e0 0%, #ddd8d2 60%, #d5cfc8 100%);
 }
+/* Wrapper: obcina 1px od dołu (czarna linia z dekodowania wideo obok książki) */
+#book-stats-section .cs-video-clip {
+  width: 100%;
+  overflow: hidden;
+  line-height: 0;
+  aspect-ratio: 606 / 456;
+}
+
 /* Video w lewej kolumnie — te same wymiary i flow co .cs-img-placeholder (jak w PREVIEW) */
 #book-stats-section .cs-floor--images .cs-floor__left .cs-img--stats.cs-video {
   width: 100%;
   display: block;
   object-fit: cover;
   overflow: hidden;
+}
+
+#book-stats-section .cs-video-clip .cs-img--stats.cs-video {
+  height: 100%;
+  aspect-ratio: unset;
+  min-height: 0;
+  /* Obcięcie 1px od dołu (artefakt czarnej krawędzi) */
+  clip-path: inset(0 0 1px 0);
+  -webkit-clip-path: inset(0 0 1px 0);
 }
 
 #book-stats-section .cs-img--book {

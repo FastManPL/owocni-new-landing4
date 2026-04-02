@@ -285,7 +285,7 @@ function playEntrySequence() {
     trackedTimeout(() => {
         // [A10] Gradient OKLCH — Faza 2: delay 2000ms (minimalizacja peak)
         // Badge'e + Laurel startują w 0.3s (CSS variables)
-        // Gradient + Logo Lottie startują w 2s
+        // Gradient startuje w 2s; logo Lottie osobno ~6s (po szczycie animacji gradientu)
         trackedTimeout(() => {
             startGradient();
             scheduleGradientAutoFade();
@@ -3815,7 +3815,7 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
         }
 
         // Init lottie-web
-        // [A10] autoplay: false — Logo startuje w Fazie 2 (2s) razem z Gradient OKLCH
+        // [A10] autoplay: false — Logo startuje po szczycie gradientu (~6s od load), nie z pierwszym błyskiem
         // [PERF] Canvas renderer: init 1.07s vs SVG 14.6s (−93%), 1 DOM element vs 1909
 
         anim = lottie.loadAnimation({
@@ -3831,12 +3831,12 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
             }
         });
 
-        // [A10] Delayed start — Faza 2 choreografii (2000ms)
+        // Po szczycie gradientu: Faza 2 (2s) + --anim-duration (4s w hero-section.css) ≈ start znikania
         let logoStartTimer = trackedTimeout(() => {
             if (!destroyed && anim) {
                 anim.play();
             }
-        }, 2000);
+        }, 6000);
 
         anim.addEventListener('complete', onComplete);
 

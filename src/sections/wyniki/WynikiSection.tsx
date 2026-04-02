@@ -203,7 +203,7 @@ function init(
         if (tlo) {
           tl.fromTo(tlo,
             { yPercent: 0 },
-            { yPercent: -43.5, ease: 'none', duration: 1 },
+            { yPercent: -28, ease: 'none', duration: 1 },
             0
           );
         }
@@ -594,8 +594,11 @@ export function WynikiSection() {
             <div className="wyniki-spacer" aria-hidden="true" />
 
             <p className="wyniki-footnote" id="wyniki-footnote">
-              <strong>Źródło danych:</strong> Testy reklamowe klientów za 2025r. Łączny budżet{' '}
-              <strong>3,5 mln&nbsp;zł</strong>.
+              Źródło danych:
+              <br />
+              Testy reklamowe klientów za 2025r.
+              <br />
+              Łączny budżet <strong>3,5 mln&nbsp;zł</strong>.
             </p>
           </div>
 
