@@ -413,9 +413,9 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
             onFrameLoaded(loadedIdx);
 
             if (!_scrollEnabled && loadedCount >= _PRIORITY_COUNT) {
-              if (canvas) canvas.classList.add('is-ready');
               createScrollAnimation();
               setupResizeObserver();
+              if (canvas) canvas.classList.add('is-ready');
             }
 
             loadNext();
@@ -472,7 +472,6 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
         onFrameLoaded(idx);
         setupCanvasDPR();
         drawFrame(0);
-        if (canvas) canvas.classList.add('is-ready');
 
         loadQueue.shift();
         loadNext();
