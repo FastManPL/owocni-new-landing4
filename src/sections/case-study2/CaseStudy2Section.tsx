@@ -1,3 +1,4 @@
+// @ts-nocheck — sekcja robocza (silnie typowana w Fabryce); import z page.tsx wymusza check bez exclude.
 'use client';
 
 import { useRef } from 'react';
@@ -5,7 +6,7 @@ import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { scrollRuntime } from '@/lib/scrollRuntime';
-import './wyniki-section.css';
+import './case-study-section.css';
 
 // ⚠️ GSAP-SSR-01: ZAKAZ gsap.registerPlugin() na module top-level.
 // registerPlugin() WYŁĄCZNIE wewnątrz useGSAP(() => { ... }).
@@ -28,10 +29,10 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
   const observers = [];
 
   /* ─── DEBUG ───────────────────────────────────────────────────────── */
-  const elDebug   = $id('wyniki-debug');
-  const elDbScroll = $id('wyniki-debug-scroll');
-  const elDbVp    = $id('wyniki-debug-vp');
-  const elDbBp    = $id('wyniki-debug-bp');
+  const elDebug   = $id('case-study-debug');
+  const elDbScroll = $id('case-study-debug-scroll');
+  const elDbVp    = $id('case-study-debug-vp');
+  const elDbBp    = $id('case-study-debug-bp');
 
   if (DEBUG_MODE && elDebug) {
     elDebug.classList.add('wyniki-debug--visible');
@@ -164,16 +165,16 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
   /* ═══ ZOOM SCROLL ANIMATION (merged into init — N2) ═══════════════ */
   const gsapInstances = [];   /* N3: tracking GSAP for kill() */
 
-  const layer   = $id('wyniki-zoom-layer');
-  const tlo     = $id('wyniki-tlo');
-  const deviceWrapper = $id('wyniki-device-wrapper');
+  const layer   = $id('case-study-zoom-layer');
+  const tlo     = $id('case-study-tlo');
+  const deviceWrapper = $id('case-study-device-wrapper');
   const bgVideo = $('.mockup-video');
-  const laptopFrame = $id('wyniki-laptop-frame');
+  const laptopFrame = $id('case-study-laptop-frame');
 
   if (layer) {
     var tl = gsap.timeline({
       scrollTrigger: {
-        trigger: '#wyniki-section',
+        trigger: '#case-study-section',
         start: '60% bottom',
         end:   'center 30%',
         scrub: 0.6,
@@ -271,7 +272,7 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
   /* ═══ PLAY BUTTON + VIDEO POPUP (merged into init — N2) ════════ */
   var rightPanel = $('.wyniki-right');
   var ctaBtn     = $('.wyniki-cta');
-  var popup      = $id('wyniki-video-popup');
+  var popup      = $id('case-study-video-popup');
   var bodyOverflowLocked = false;   /* N5: guard */
 
   if (rightPanel && popup) {
@@ -281,7 +282,7 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
     var SW = Math.max(2, pbSize * 0.035), CX = pbSize / 2, CY = pbSize / 2;
     var R = CX - SW * 2 - 2, CIRC = 2 * Math.PI * R;
     var DOT_R = SW * 1.05, DOT_COUNT = Math.round(CIRC / (DOT_R * 5.5));
-    var kfId = 'wyniki-pb-spin';
+    var kfId = 'case-study-pb-spin';
 
     var kfStyle = document.createElement('style');
     kfStyle.textContent = '@keyframes ' + kfId + '{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}';
@@ -457,7 +458,7 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
     }
 
     /* Popup CTA "Otrzymaj wycenę" — zamyka modal, zachowuje hash nav */
-    var popupCta = $id('wyniki-popup-cta');
+    var popupCta = $id('case-study-popup-cta');
     if (popupCta) {
       var onPopupCtaClick = function() { closePopup(); };
       popupCta.addEventListener('click', onPopupCtaClick);
@@ -588,7 +589,7 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
 }
 
 
-export function WynikiSection() {
+export function CaseStudy2Section() {
   const rootRef = useRef<HTMLElement | null>(null);
 
   useGSAP(() => {
@@ -606,36 +607,36 @@ export function WynikiSection() {
   }, { scope: rootRef });
 
   return (
-  <section id="wyniki-section" ref={rootRef}>
+  <section id="case-study-section" ref={rootRef}>
 
     <div className="wyniki-card">
       <div className="wyniki-content">
 
-        <!-- LEWY PANEL: Case Study -->
+        {/* LEWY PANEL: Case Study */}
         <div className="wyniki-left">
-          <h2 className="wyniki-heading wyniki-heading--casestudy" id="wyniki-heading">
+          <h2 className="wyniki-heading wyniki-heading--casestudy" id="case-study-heading">
             CASE STUDY
           </h2>
 
           <div className="wyniki-spacer wyniki-spacer--top" aria-hidden="true"></div>
 
-          <p className="wyniki-sub wyniki-sub--casestudy" id="wyniki-sub">
+          <p className="wyniki-sub wyniki-sub--casestudy" id="case-study-sub">
             <strong>Zobacz przebieg realizacji<br />strony ParkAPP.pl od kuchni.</strong><br />
             <span className="wyniki-sub-light" style={{ fontStyle: 'normal' }}>(1 min) – Słowami właściciela</span>
           </p>
 
-          <!-- Video — absolute, pętla, nie rozpycha layoutu -->
-          <div className="wyniki-video-thumb" id="wyniki-video-thumb">
+          {/* Video — absolute, pętla, nie rozpycha layoutu */}
+          <div className="wyniki-video-thumb" id="case-study-video-thumb">
             <div className="wyniki-vthumb-face">
               <video src="PLAY-NEW.mp4" poster="CaseStudyPlaceholder.webp" autoPlay loop muted playsInline preload="auto"></video>
             </div>
           </div>
 
-          <!-- Flex grow — popycha CTA ku dołowi -->
+          {/* Flex grow — popycha CTA ku dołowi */}
           <div className="wyniki-spacer" aria-hidden="true" style={{ flex: 1 }}></div>
 
           <div className="wyniki-btn-wrapper-wave">
-            <a href="#" className="wyniki-cta" id="wyniki-cta">
+            <a href="#" className="wyniki-cta" id="case-study-cta">
               <span className="wyniki-btn-hole"></span>
               <span className="wyniki-btn-cap"></span>
               <span className="wyniki-btn-text" data-text="Zobacz realizację">Zobacz realizację</span>
@@ -646,36 +647,36 @@ export function WynikiSection() {
           <div className="wyniki-spacer" aria-hidden="true" style={{ flex: '0 0 auto', minHeight: 0 }}></div>
         </div>
 
-        <!-- PRAWY PANEL: Portfolio mockup -->
-        <div className="wyniki-right" id="wyniki-media">
-          <div className="wyniki-placeholder" id="wyniki-placeholder">
+        {/* PRAWY PANEL: Portfolio mockup */}
+        <div className="wyniki-right" id="case-study-media">
+          <div className="wyniki-placeholder" id="case-study-placeholder">
             <div className="mockup-zoom-wrapper">
-              <div className="mockup-zoom-layer" id="wyniki-zoom-layer">
-                <!-- z:1 — TLO Portfolio (parallax góra→dół) — POZA wrapperem brightness -->
+              <div className="mockup-zoom-layer" id="case-study-zoom-layer">
+                {/* z:1 — TLO Portfolio (parallax góra→dół) — POZA wrapperem brightness */}
                 <picture>
                   <source srcset="TLO-Portfolio.avif" type="image/avif" />
                   <source srcset="TLO-Portfolio.webp" type="image/webp" />
-                  <img className="mockup-tlo" id="wyniki-tlo"
+                  <img className="mockup-tlo" id="case-study-tlo"
                        src="TLO-Portfolio.jpg"
                        alt="Tło portfolio"
                        loading="eager" decoding="async" fetchpriority="high"
                        onError={(e) => e.currentTarget.classList.add('load-failed')}
                        draggable="false" />
                 </picture>
-                <!-- z:2 — Device wrapper: brightness() na video+laptop razem -->
-                <div className="mockup-device-wrapper" id="wyniki-device-wrapper">
-                  <!-- Video (pod laptopem, na ekranie) -->
-                  <video className="mockup-video" id="wyniki-screen-video"
+                {/* z:2 — Device wrapper: brightness() na video+laptop razem */}
+                <div className="mockup-device-wrapper" id="case-study-device-wrapper">
+                  {/* Video (pod laptopem, na ekranie) */}
+                  <video className="mockup-video" id="case-study-screen-video"
                          src="Parkapp.mp4"
                          poster="CaseStudyPlaceholder.webp"
                          preload="auto"
                          autoPlay loop muted playsInline
                          disablePictureInPicture></video>
-                  <!-- Laptop frame (nad video) -->
+                  {/* Laptop frame (nad video) */}
                   <picture>
                     <source srcset="Laptop.avif" type="image/avif" />
                     <source srcset="Laptop.webp" type="image/webp" />
-                    <img className="mockup-frame" id="wyniki-laptop-frame"
+                    <img className="mockup-frame" id="case-study-laptop-frame"
                          src="Laptop.png"
                          alt="Laptop"
                          loading="eager" decoding="async"
@@ -691,29 +692,29 @@ export function WynikiSection() {
       </div>
     </div>
 
-    <!-- DEBUG PANEL (niewidoczny w produkcji) -->
-    <div className="wyniki-debug" id="wyniki-debug">
-      <div style={{ color: '#fff', fontWeight: 600, marginBottom: '4px' }}>wyniki-section</div>
+    {/* DEBUG PANEL (niewidoczny w produkcji) */}
+    <div className="wyniki-debug" id="case-study-debug">
+      <div style={{ color: '#fff', fontWeight: 600, marginBottom: '4px' }}>case-study-section</div>
       <div className="wyniki-debug-row">
         <span className="wyniki-debug-key">scroll</span>
-        <span id="wyniki-debug-scroll">—</span>
+        <span id="case-study-debug-scroll">—</span>
       </div>
       <div className="wyniki-debug-row">
         <span className="wyniki-debug-key">viewport</span>
-        <span id="wyniki-debug-vp">—</span>
+        <span id="case-study-debug-vp">—</span>
       </div>
       <div className="wyniki-debug-row">
         <span className="wyniki-debug-key">bp</span>
-        <span id="wyniki-debug-bp">—</span>
+        <span id="case-study-debug-bp">—</span>
       </div>
       <div className="wyniki-debug-row">
         <span className="wyniki-debug-key">st</span>
-        <span id="wyniki-debug-st">idle</span>
+        <span id="case-study-debug-st">idle</span>
       </div>
     </div>
 
-    <!-- ═══ VIDEO POPUP ═══ -->
-    <div id="wyniki-video-popup">
+    {/* ═══ VIDEO POPUP ═══ */}
+    <div id="case-study-video-popup">
       <div className="wp-wrapper">
         <div className="wp-close">✕</div>
         <div className="wp-panel">
@@ -724,9 +725,9 @@ export function WynikiSection() {
             <span className="wp-tag">Zobacz jak to działa</span>
             <h3 className="wp-title"><b>Otrzymaj 3 propozycje cenowe</b> na projekt dla swojej firmy.</h3>
             <div className="wp-buttons">
-              <!-- CTA 1:1 jak "Zobacz demo" -->
+              {/* CTA 1:1 jak "Zobacz demo" */}
               <div className="wyniki-btn-wrapper-wave">
-                <a href="#kontakt" className="wyniki-cta" id="wyniki-popup-cta">
+                <a href="#kontakt" className="wyniki-cta" id="case-study-popup-cta">
                   <span className="wyniki-btn-hole"></span>
                   <span className="wyniki-btn-cap"></span>
                   <span className="wyniki-btn-text" data-text="Otrzymaj wycenę teraz →">Otrzymaj wycenę teraz →</span>

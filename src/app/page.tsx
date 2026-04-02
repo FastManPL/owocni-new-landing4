@@ -25,6 +25,9 @@ const GwarancjaSectionWrapper = dynamic(() =>
 const LoveWallSection = dynamic(() =>
   import('@/sections/Opinie/LoveWallSection').then((m) => ({ default: m.LoveWallSection }))
 );
+const CaseStudy2Section = dynamic(() =>
+  import('@/sections/case-study2/CaseStudy2Section').then((m) => ({ default: m.CaseStudy2Section }))
+);
 const CaseStudiesSection = dynamic(() =>
   import('@/sections/case-studies/CaseStudiesSection').then((m) => ({ default: m.CaseStudiesSection }))
 );
@@ -77,6 +80,7 @@ async function HomePageContent({
   return (
     <main>
       <HeroSection variant={variant} />
+      <WynikiSection />
       <BookStatsSection />
       {/* Od Fakty w dół: montaż dopiero blisko viewportu — mniejszy początkowy koszt JS (TBT). BookStats zostaje od razu (LCP / obraz). */}
       <DeferredMount minHeight="min(120vh, 1100px)">
@@ -98,7 +102,7 @@ async function HomePageContent({
         <LoveWallSection />
       </DeferredMount>
       <DeferredMount minHeight="min(100vh, 900px)">
-        <WynikiSection />
+        <CaseStudy2Section />
       </DeferredMount>
       <DeferredMount minHeight="min(90vh, 800px)">
         <CaseStudiesSection />
