@@ -1,7 +1,8 @@
 // @ts-nocheck — sekcja robocza (silnie typowana w Fabryce); import z page.tsx wymusza check bez exclude.
 'use client';
 
-import { useRef } from 'react';
+import { useLayoutEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -35,7 +36,7 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
   const elDbBp    = $id('case-study-debug-bp');
 
   if (DEBUG_MODE && elDebug) {
-    elDebug.classList.add('wyniki-debug--visible');
+    elDebug.classList.add('case-study-debug--visible');
 
     const onScroll = () => {
       if (elDbScroll) elDbScroll.textContent = Math.round(getScroll()) + 'px';
@@ -67,12 +68,12 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
   cleanups.push(() => document.removeEventListener('visibilitychange', onVisChange));
 
   // Wave click
-  $$('.wyniki-btn-wrapper-wave').forEach((wrapper) => {
+  $$('.case-study-btn-wrapper-wave').forEach((wrapper) => {
     const _touchActivate = () => {};
     wrapper.addEventListener('touchstart', _touchActivate, {passive:true});
     const handler = () => {
       const wave = document.createElement('span');
-      wave.classList.add('wyniki-wave-effect', 'animating');
+      wave.classList.add('case-study-wave-effect', 'animating');
       wrapper.insertBefore(wave, wrapper.firstChild);
       wave.addEventListener('animationend', () => wave.remove());
     };
@@ -108,7 +109,7 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
       const sharedDotSprite = document.createElement('canvas'); sharedDotSprite.width = 64; sharedDotSprite.height = 64;
       { const ctx = sharedDotSprite.getContext('2d'); if (ctx) { ctx.translate(32,32); ctx.fillStyle='#ffffff'; ctx.beginPath(); ctx.arc(0,0,32*0.15,0,Math.PI*2); ctx.fill(); } }
 
-      const cWrapper = $('.wyniki-btn-wrapper-wave'), cButton = $('.wyniki-cta');
+      const cWrapper = $('.case-study-btn-wrapper-wave'), cButton = $('.case-study-cta');
       if (cWrapper && cButton) {
         const cCanvas = document.createElement('canvas'), cCtx = cCanvas.getContext('2d');
         if (!cCtx) return;  /* FIX: graceful degradation if context unavailable */
@@ -262,7 +263,7 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
   }
 
   /* ─── THUMB VIDEO (PLAY-NEW.mp4, lewy panel) — pause/resume/kill ─── */
-  var thumbVideo = $('.wyniki-vthumb-face video');
+  var thumbVideo = $('.case-study-vthumb-face video');
   if (thumbVideo) {
     pauseHooks.push(function() { thumbVideo.pause(); });
     resumeHooks.push(function() { thumbVideo.play().catch(function() {}); });
@@ -270,9 +271,10 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
   }
 
   /* ═══ PLAY BUTTON + VIDEO POPUP (merged into init — N2) ════════ */
-  var rightPanel = $('.wyniki-right');
-  var ctaBtn     = $('.wyniki-cta');
-  var popup      = $id('case-study-video-popup');
+  var rightPanel = $('.case-study-right');
+  var ctaBtn     = $('.case-study-cta');
+  /* Popup renderowany przez portal na document.body — poza #case-study-section */
+  var popup      = document.getElementById('case-study-video-popup');
   var bodyOverflowLocked = false;   /* N5: guard */
 
   if (rightPanel && popup) {
@@ -290,7 +292,7 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
     cleanups.push(function() { if (kfStyle.parentNode) kfStyle.parentNode.removeChild(kfStyle); });
 
     var wrap = document.createElement('div');
-    wrap.className = 'wyniki-play-btn';
+    wrap.className = 'case-study-play-btn';
     rightPanel.appendChild(wrap);
     cleanups.push(function() { if (wrap.parentNode) wrap.parentNode.removeChild(wrap); });
 
@@ -406,7 +408,8 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
       }
       popup.classList.add('is-open');
       /* iOS scroll lock (position:fixed pattern — WebKit bug #153852) */
-      savedScrollY = window.scrollY;
+      /* Lenis: window.scrollY jest 0 — źródłem prawdy jest scrollRuntime.getScroll() */
+      savedScrollY = scrollRuntime.getScroll();
       document.body.style.position = 'fixed';
       document.body.style.top = '-' + savedScrollY + 'px';
       document.body.style.left = '0';
@@ -430,7 +433,7 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
       document.body.style.left = '';
       document.body.style.right = '';
       document.body.style.overflow = '';
-      window.scrollTo(0, savedScrollY);
+      scrollRuntime.scrollTo(savedScrollY, { immediate: true });
       bodyOverflowLocked = false;
       if (popupVid) {
         popupVid.pause();
@@ -444,7 +447,7 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
     cleanups.push(function() { rightPanel.removeEventListener('click', onRightPanelClick); });
 
     /* Video thumbnail (lewy panel) — też otwiera popup */
-    var vThumb = container.querySelector('.wyniki-video-thumb');
+    var vThumb = container.querySelector('.case-study-video-thumb');
     if (vThumb) {
       var onVThumbClick = function(e) { e.preventDefault(); openPopup(); };
       vThumb.addEventListener('click', onVThumbClick);
@@ -457,10 +460,14 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
       cleanups.push(function() { ctaBtn.removeEventListener('click', onCtaClick); });
     }
 
-    /* Popup CTA "Otrzymaj wycenę" — zamyka modal, zachowuje hash nav */
-    var popupCta = $id('case-study-popup-cta');
+    /* Popup CTA "Otrzymaj wycenę" — zamyka modal; bez tego #kontakt + Lenis skacze na górę */
+    var popupCta = popup.querySelector('#case-study-popup-cta');
     if (popupCta) {
-      var onPopupCtaClick = function() { closePopup(); };
+      var onPopupCtaClick = function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        closePopup();
+      };
       popupCta.addEventListener('click', onPopupCtaClick);
       cleanups.push(function() { popupCta.removeEventListener('click', onPopupCtaClick); });
     }
@@ -591,6 +598,11 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
 
 export function CaseStudy2Section() {
   const rootRef = useRef<HTMLElement | null>(null);
+  const [portalReady, setPortalReady] = useState(false);
+
+  useLayoutEffect(() => {
+    setPortalReady(true);
+  }, []);
 
   useGSAP(() => {
     gsap.registerPlugin(ScrollTrigger);
@@ -604,52 +616,81 @@ export function CaseStudy2Section() {
     }
     const inst = init(el);
     return () => inst?.kill?.();
-  }, { scope: rootRef });
+  }, { scope: rootRef, dependencies: [portalReady], revertOnUpdate: true });
+
+  const popupMarkup = (
+    <div id="case-study-video-popup">
+      <div className="wp-wrapper">
+        <div className="wp-close">✕</div>
+        <div className="wp-panel">
+          <div className="wp-video-wrap">
+            <video controls playsInline preload="none"></video>
+          </div>
+          <div className="wp-content">
+            <span className="wp-tag">Zobacz jak to działa</span>
+            <h3 className="wp-title"><b>Otrzymaj 3 propozycje cenowe</b> na projekt dla swojej firmy.</h3>
+            <div className="wp-buttons">
+              <div className="case-study-btn-wrapper-wave">
+                <a href="#kontakt" className="case-study-cta" id="case-study-popup-cta">
+                  <span className="case-study-btn-hole"></span>
+                  <span className="case-study-btn-cap"></span>
+                  <span className="case-study-btn-text" data-text="Otrzymaj wycenę teraz →">Otrzymaj wycenę teraz →</span>
+                </a>
+                <div className="case-study-btn-static-floor"></div>
+              </div>
+              <button className="wp-close-text" type="button">Zamknij wideo</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 
   return (
+  <>
   <section id="case-study-section" ref={rootRef}>
 
-    <div className="wyniki-card">
-      <div className="wyniki-content">
+    <div className="case-study-card">
+      <div className="case-study-content">
 
         {/* LEWY PANEL: Case Study */}
-        <div className="wyniki-left">
-          <h2 className="wyniki-heading wyniki-heading--casestudy" id="case-study-heading">
+        <div className="case-study-left">
+          <h2 className="case-study-heading case-study-heading--casestudy" id="case-study-heading">
             CASE STUDY
           </h2>
 
-          <div className="wyniki-spacer wyniki-spacer--top" aria-hidden="true"></div>
+          <div className="case-study-spacer case-study-spacer--top" aria-hidden="true"></div>
 
-          <p className="wyniki-sub wyniki-sub--casestudy" id="case-study-sub">
+          <p className="case-study-sub case-study-sub--casestudy" id="case-study-sub">
             <strong>Zobacz przebieg realizacji<br />strony ParkAPP.pl od kuchni.</strong><br />
-            <span className="wyniki-sub-light" style={{ fontStyle: 'normal' }}>(1 min) – Słowami właściciela</span>
+            <span className="case-study-sub-light" style={{ fontStyle: 'normal' }}>(1 min) – Słowami właściciela</span>
           </p>
 
           {/* Video — absolute, pętla, nie rozpycha layoutu */}
-          <div className="wyniki-video-thumb" id="case-study-video-thumb">
-            <div className="wyniki-vthumb-face">
+          <div className="case-study-video-thumb" id="case-study-video-thumb">
+            <div className="case-study-vthumb-face">
               <video src="/wyniki/PLAY-NEW.mp4" poster="/wyniki/TLO-Portfolio.webp" autoPlay loop muted playsInline preload="auto"></video>
             </div>
           </div>
 
           {/* Flex grow — popycha CTA ku dołowi */}
-          <div className="wyniki-spacer" aria-hidden="true" style={{ flex: 1 }}></div>
+          <div className="case-study-spacer" aria-hidden="true" style={{ flex: 1 }}></div>
 
-          <div className="wyniki-btn-wrapper-wave">
-            <a href="#" className="wyniki-cta" id="case-study-cta">
-              <span className="wyniki-btn-hole"></span>
-              <span className="wyniki-btn-cap"></span>
-              <span className="wyniki-btn-text" data-text="Zobacz realizację">Zobacz realizację</span>
+          <div className="case-study-btn-wrapper-wave">
+            <a href="#" className="case-study-cta" id="case-study-cta">
+              <span className="case-study-btn-hole"></span>
+              <span className="case-study-btn-cap"></span>
+              <span className="case-study-btn-text" data-text="Zobacz realizację">Zobacz realizację</span>
             </a>
-            <div className="wyniki-btn-static-floor"></div>
+            <div className="case-study-btn-static-floor"></div>
           </div>
 
-          <div className="wyniki-spacer" aria-hidden="true" style={{ flex: '0 0 auto', minHeight: 0 }}></div>
+          <div className="case-study-spacer" aria-hidden="true" style={{ flex: '0 0 auto', minHeight: 0 }}></div>
         </div>
 
         {/* PRAWY PANEL: Portfolio mockup */}
-        <div className="wyniki-right" id="case-study-media">
-          <div className="wyniki-placeholder" id="case-study-placeholder">
+        <div className="case-study-right" id="case-study-media">
+          <div className="case-study-placeholder" id="case-study-placeholder">
             <div className="mockup-zoom-wrapper">
               <div className="mockup-zoom-layer" id="case-study-zoom-layer">
                 {/* z:1 — TLO Portfolio (parallax góra→dół) — POZA wrapperem brightness */}
@@ -693,54 +734,28 @@ export function CaseStudy2Section() {
     </div>
 
     {/* DEBUG PANEL (niewidoczny w produkcji) */}
-    <div className="wyniki-debug" id="case-study-debug">
+    <div className="case-study-debug" id="case-study-debug">
       <div style={{ color: '#fff', fontWeight: 600, marginBottom: '4px' }}>case-study-section</div>
-      <div className="wyniki-debug-row">
-        <span className="wyniki-debug-key">scroll</span>
+      <div className="case-study-debug-row">
+        <span className="case-study-debug-key">scroll</span>
         <span id="case-study-debug-scroll">—</span>
       </div>
-      <div className="wyniki-debug-row">
-        <span className="wyniki-debug-key">viewport</span>
+      <div className="case-study-debug-row">
+        <span className="case-study-debug-key">viewport</span>
         <span id="case-study-debug-vp">—</span>
       </div>
-      <div className="wyniki-debug-row">
-        <span className="wyniki-debug-key">bp</span>
+      <div className="case-study-debug-row">
+        <span className="case-study-debug-key">bp</span>
         <span id="case-study-debug-bp">—</span>
       </div>
-      <div className="wyniki-debug-row">
-        <span className="wyniki-debug-key">st</span>
+      <div className="case-study-debug-row">
+        <span className="case-study-debug-key">st</span>
         <span id="case-study-debug-st">idle</span>
       </div>
     </div>
 
-    {/* ═══ VIDEO POPUP ═══ */}
-    <div id="case-study-video-popup">
-      <div className="wp-wrapper">
-        <div className="wp-close">✕</div>
-        <div className="wp-panel">
-          <div className="wp-video-wrap">
-            <video controls playsInline preload="none"></video>
-          </div>
-          <div className="wp-content">
-            <span className="wp-tag">Zobacz jak to działa</span>
-            <h3 className="wp-title"><b>Otrzymaj 3 propozycje cenowe</b> na projekt dla swojej firmy.</h3>
-            <div className="wp-buttons">
-              {/* CTA 1:1 jak "Zobacz demo" */}
-              <div className="wyniki-btn-wrapper-wave">
-                <a href="#kontakt" className="wyniki-cta" id="case-study-popup-cta">
-                  <span className="wyniki-btn-hole"></span>
-                  <span className="wyniki-btn-cap"></span>
-                  <span className="wyniki-btn-text" data-text="Otrzymaj wycenę teraz →">Otrzymaj wycenę teraz →</span>
-                </a>
-                <div className="wyniki-btn-static-floor"></div>
-              </div>
-              <button className="wp-close-text" type="button">Zamknij wideo</button>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
   </section>
+  {portalReady ? createPortal(popupMarkup, document.body) : null}
+  </>
   );
 }
