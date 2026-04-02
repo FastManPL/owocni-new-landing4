@@ -1,10 +1,15 @@
 "use client";
 
-import { useRef } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import "./gwarancja-section.css";
+
+/** ≤600px: tylko szkło — plik mechanizmu nie jest ładowany (brak src na video). */
+const GWARANCJA_MOBILE_MAX_W = 600;
+const GWARANCJA_MECHANISM_VIDEO_SRC =
+  "/videos/gwarancja/Strony-Gwarancja-MECHANIZM-MINIFILE.mp4";
 
 // ⚠️ GSAP-SSR-01: ZAKAZ gsap.registerPlugin() na module top-level.
 // Next.js pre-renderuje Client Components na serwerze — window/document nie istnieją.
@@ -30,7 +35,12 @@ function init(container: HTMLElement): {
   const videoTop = $id("gwarancja-layer-top");
   const isVideo = (el: Element | null) => el && el.tagName === "VIDEO";
   if (isVideo(videoTop)) {
-    (videoTop as HTMLVideoElement).setAttribute("fetchpriority", "high");
+    if (
+      typeof window !== "undefined" &&
+      window.innerWidth > GWARANCJA_MOBILE_MAX_W
+    ) {
+      (videoTop as HTMLVideoElement).setAttribute("fetchpriority", "high");
+    }
   }
   const cursorStage = $id("gwarancja-cursor-stage");
   const cursorPivot = $id("gwarancja-cursor-pivot");
@@ -69,15 +79,7 @@ function init(container: HTMLElement): {
   const BASE_RADIUS = 140;
   const BASE_FEATHER = 80;
   const BASE_PAD = 180;
-  const MOBILE_BREAKPOINT = 600;
-  /** Mobile: warstwa mechanizmu tylko przy urządzeniach dotykowych (coarse). Inaczej samo szkło. */
-  function prefersCoarsePointer() {
-    try {
-      return window.matchMedia("(pointer: coarse)").matches;
-    } catch {
-      return false;
-    }
-  }
+  const MOBILE_BREAKPOINT = GWARANCJA_MOBILE_MAX_W;
   const SCALE_REF = 1400;
   const SCALE_MIN = 0.45;
   let lensScale = 1;
@@ -85,6 +87,8 @@ function init(container: HTMLElement): {
   let scaledPad = BASE_PAD;
   let scaledFeather = BASE_FEATHER;
   let isMobileDisabled = false;
+  let bottomVideoLoaded = false;
+  let mechanismVideoPrimed = false;
 
   function computeScale() {
     const w = window.innerWidth;
@@ -98,6 +102,7 @@ function init(container: HTMLElement): {
     }
     const wasMobile = isMobileDisabled;
     isMobileDisabled = false;
+    if (wasMobile) mechanismVideoPrimed = false;
     lensScale = Math.max(SCALE_MIN, Math.min(1, w / SCALE_REF));
     scaledRadius = BASE_RADIUS * lensScale;
     scaledPad = BASE_PAD * lensScale;
@@ -1163,12 +1168,9 @@ function init(container: HTMLElement): {
   }
 
   // === VIDEO LAZY LOAD ===
-  let bottomVideoLoaded = false;
   /** Jednorazowe .load() na wideo mechanizmu — bez tego pierwszy play() często czeka na sieć/dekodowanie (duże opóźnienie przy hover). */
-  let mechanismVideoPrimed = false;
   function primeMechanismVideoOnce() {
-    if (mechanismVideoPrimed || !isVideo(videoTop)) return;
-    if (isMobileDisabled && !prefersCoarsePointer()) return;
+    if (mechanismVideoPrimed || !isVideo(videoTop) || isMobileDisabled) return;
     mechanismVideoPrimed = true;
     try {
       (videoTop as HTMLVideoElement).load();
@@ -1205,14 +1207,10 @@ function init(container: HTMLElement): {
         }
         loadBottomVideo();
         primeMechanismVideoOnce();
-        const playMechanism =
-          !isMobileDisabled || prefersCoarsePointer();
-        if (isVideo(videoTop)) {
-          if (playMechanism) {
-            (videoTop as HTMLVideoElement).play().catch(() => {});
-          } else {
-            (videoTop as HTMLVideoElement).pause();
-          }
+        if (isVideo(videoTop) && !isMobileDisabled) {
+          (videoTop as HTMLVideoElement).play().catch(() => {});
+        } else if (isVideo(videoTop)) {
+          (videoTop as HTMLVideoElement).pause();
         }
         if (isVideo(videoBottom)) {
           (videoBottom as HTMLVideoElement).play().catch(() => {});
@@ -1235,7 +1233,7 @@ function init(container: HTMLElement): {
 
   // Pierwszy callback IO bywa 1 klatkę później — jeśli kontener już blisko viewport, od razu rozpocznij pobieranie mechanizmu.
   const _mechanismPrimeRaf = requestAnimationFrame(() => {
-    if (paused || (isMobileDisabled && !prefersCoarsePointer())) return;
+    if (paused || isMobileDisabled) return;
     const r = (containerEl as HTMLElement).getBoundingClientRect();
     const vh = window.visualViewport?.height ?? window.innerHeight;
     const m = 200;
@@ -1309,13 +1307,10 @@ function init(container: HTMLElement): {
     }
     loadBottomVideo();
     primeMechanismVideoOnce();
-    const playMechanism = !isMobileDisabled || prefersCoarsePointer();
-    if (isVideo(videoTop)) {
-      if (playMechanism) {
-        (videoTop as HTMLVideoElement).play().catch(() => {});
-      } else {
-        (videoTop as HTMLVideoElement).pause();
-      }
+    if (isVideo(videoTop) && !isMobileDisabled) {
+      (videoTop as HTMLVideoElement).play().catch(() => {});
+    } else if (isVideo(videoTop)) {
+      (videoTop as HTMLVideoElement).pause();
     }
     if (isVideo(videoBottom)) {
       (videoBottom as HTMLVideoElement).play().catch(() => {});
@@ -2243,6 +2238,32 @@ function init(container: HTMLElement): {
 /* eslint-disable @next/next/no-img-element */
 export function GwarancjaSection() {
   const rootRef = useRef<HTMLElement | null>(null);
+  const [mechanismVideoSrc, setMechanismVideoSrc] = useState<string | null>(
+    null,
+  );
+
+  useLayoutEffect(() => {
+    function syncMechanismSrc() {
+      setMechanismVideoSrc(
+        window.innerWidth > GWARANCJA_MOBILE_MAX_W
+          ? GWARANCJA_MECHANISM_VIDEO_SRC
+          : null,
+      );
+    }
+    syncMechanismSrc();
+    window.addEventListener("resize", syncMechanismSrc, { passive: true });
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", syncMechanismSrc, {
+        passive: true,
+      });
+    }
+    return () => {
+      window.removeEventListener("resize", syncMechanismSrc);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener("resize", syncMechanismSrc);
+      }
+    };
+  }, []);
 
   useGSAP(
     () => {
@@ -2266,7 +2287,7 @@ export function GwarancjaSection() {
       // 1. cleanups.length=0 guard w kill() — idempotencja gwarantowana
       // 2. useGSAP scope — context revert czyszczony przez React
     },
-    { scope: rootRef },
+    { scope: rootRef, dependencies: [mechanismVideoSrc] },
   );
 
   return (
@@ -2286,11 +2307,13 @@ export function GwarancjaSection() {
           <div id="gwarancja-layer-top-wrap">
             <video
               id="gwarancja-layer-top"
-              src="/videos/gwarancja/Strony-Gwarancja-MECHANIZM-MINIFILE.mp4"
+              {...(mechanismVideoSrc
+                ? { src: mechanismVideoSrc }
+                : {})}
               muted
               playsInline
               loop
-              preload="auto"
+              preload="none"
               aria-hidden
             />
           </div>

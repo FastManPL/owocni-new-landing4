@@ -497,7 +497,7 @@
 
 @media (max-width: 600px) {
   #gwarancja-section #gwarancja-container { aspect-ratio: 16/9; }
-  /* Domyślnie mobile: pełne szkło (bottom). Warstwa mechanizmu ukryta — włączana tylko przy (pointer: coarse). */
+  /* Mobile: tylko szkło (bottom). Warstwa mechanizmu ukryta; src video jest usuwany w JS — brak pobrania pliku. */
   #gwarancja-section #gwarancja-layer-bottom { display: block; }
   #gwarancja-section #gwarancja-layer-top-wrap {
     position: relative;
@@ -510,13 +510,6 @@
   }
   #gwarancja-section #gwarancja-layer-top-wrap video { display: block; }
   #gwarancja-section #gwarancja-cursor-stage { display: none; }
-}
-@media (max-width: 600px) and (pointer: coarse) {
-  #gwarancja-section #gwarancja-layer-top-wrap {
-    display: block;
-    position: absolute;
-    inset: 0;
-  }
 }
 
 #gwarancja-section #gwarancja-cursor-stage { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 50; opacity: 0; }
