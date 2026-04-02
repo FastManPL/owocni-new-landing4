@@ -2146,8 +2146,8 @@ export default function ConversionCalculator() {
   const isMicroMobile = screenSize.w > 0 && screenSize.w < 315;
   const scaleFactor = screenSize.w < 290 ? 290 / 800 : isSmallMobile ? Math.max(0.65, screenSize.w / 800) : 1;
   
-  const slider1Default = isLargeScreen ? 35 : 1;
-  const slider2Default = isLargeScreen ? 490 : 10;
+  const slider1Default = 110;
+  const slider2Default = 930;
   
   const [slider1Value, setSlider1Value] = useState(slider1Default);
   const [slider2Value, setSlider2Value] = useState(slider2Default);
@@ -2223,7 +2223,7 @@ export default function ConversionCalculator() {
   `, [centerX, centerY, rangeX, rangeY]);
 
   return (
-    <div id="kalkulator-section" ref={rootRef} className={`min-h-screen w-full flex items-center justify-center p-4${!sectionInView ? ' kalkulator-section--offscreen' : ''}`} style={{ backgroundColor: '#f7f6f4', outline: dbg(D.screen), position: 'relative', isolation: 'isolate' }}>
+    <div ref={rootRef} className={`w-full flex items-center justify-center p-4${!sectionInView ? ' kalkulator-section--offscreen' : ''}`} style={{ backgroundColor: '#f7f6f4', outline: dbg(D.screen), position: 'relative', isolation: 'isolate' }}>
       <DebugLabel show={showDebug} name="SCREEN" color={D.screen} />
       
       {/* PERSPECTIVE WRAPPER */}
