@@ -397,7 +397,6 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
 
     /* ─── POPUP LOGIC ────────────────────────────────────────── */
     var popupVid = popup.querySelector('video');
-    var savedScrollY = 0;
 
     function openPopup() {
       if (popup.classList.contains('is-open')) return;
@@ -407,17 +406,12 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
         popupVid.currentTime = 0;
       }
       popup.classList.add('is-open');
-      /* iOS scroll lock (position:fixed pattern — WebKit bug #153852) */
-      /* Lenis: window.scrollY jest 0 — źródłem prawdy jest scrollRuntime.getScroll() */
-      savedScrollY = scrollRuntime.getScroll();
-      document.body.style.position = 'fixed';
-      document.body.style.top = '-' + savedScrollY + 'px';
-      document.body.style.left = '0';
-      document.body.style.right = '0';
+      /*
+       * Blokada tła jak w WynikiSection (overflow) — BEZ position:fixed + top.
+       * Wzorzec iOS (fixed body + scrollTo przy close) psuje Lenis: po unlock skok na górę.
+       */
+      document.documentElement.style.overflow = 'hidden';
       document.body.style.overflow = 'hidden';
-      /* Lenis stop NIEPOTRZEBNE — position:fixed blokuje scroll
-         na wszystkich warstwach, Lenis nie ma czego scrollować.
-         ENT-SCROLL-API-01: window.lenis wyłącznie w getScroll(). */
       bodyOverflowLocked = true;
       if (popupVid) {
         var pp = popupVid.play();
@@ -427,13 +421,8 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
 
     function closePopup() {
       popup.classList.remove('is-open');
-      /* iOS scroll unlock */
-      document.body.style.position = '';
-      document.body.style.top = '';
-      document.body.style.left = '';
-      document.body.style.right = '';
+      document.documentElement.style.overflow = '';
       document.body.style.overflow = '';
-      scrollRuntime.scrollTo(savedScrollY, { immediate: true });
       bodyOverflowLocked = false;
       if (popupVid) {
         popupVid.pause();
@@ -580,10 +569,7 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
     observers.forEach(function(o) { try { o.disconnect?.(); } catch(e) {} });
     gsapInstances.forEach(function(x) { try { x.revert(); x.kill(); } catch(e) {} });
     if (bodyOverflowLocked) {
-      document.body.style.position = '';
-      document.body.style.top = '';
-      document.body.style.left = '';
-      document.body.style.right = '';
+      document.documentElement.style.overflow = '';
       document.body.style.overflow = '';
     }
     gsapInstances.length = 0;
