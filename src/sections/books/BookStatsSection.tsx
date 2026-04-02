@@ -312,6 +312,12 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
           prevBookSTProgress = currentP;
           return allLoaded ? lastIdx : findNearestLoaded(lastIdx);
         }
+
+        /* Pierwsze zejście pinu: refresh często daje !isActive przy y jeszcze między start/end i p<0.95 — inaczej pada playhead 0. */
+        if (bookScrubPastEnd) {
+          prevBookSTProgress = currentP;
+          return allLoaded ? lastIdx : findNearestLoaded(lastIdx);
+        }
       }
 
       let t = Math.round(playhead.frame);
