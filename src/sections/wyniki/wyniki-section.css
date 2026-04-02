@@ -301,6 +301,7 @@
 
       width: var(--wyniki-width);
       max-width: 100%;
+      margin: 0 auto 5rem auto;
       /* isolation: isolate — WSTRZYMANE do weryfikacji z właścicielem
          contain: layout style — SKIP: position:fixed popup wewnątrz sekcji */
     }
