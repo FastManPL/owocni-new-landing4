@@ -278,13 +278,22 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
       return 0;
     }
 
-    /** Mapowanie klatki: glitch playhead + po pinie ST zgłasza progress 0 przy opuszczeniu sekcji w dół. */
+    /** Mapowanie klatki: po pinie !isActive jest zarówno nad start (scroll < start), jak i za end — rozdzielamy po scroll(). */
     function effectiveFrameForDraw(): number {
       const lastIdx = FRAME_COUNT - 1;
       const st = bookST;
 
-      if (bookScrubPastEnd && st && !st.isActive) {
-        return allLoaded ? lastIdx : findNearestLoaded(lastIdx);
+      if (st && !st.isActive) {
+        const y = st.scroll();
+        const eps = 1;
+        /* Nad triggerem (hero itd.): zawsze zamknięta książka — inaczej playhead zostaje na 22. */
+        if (y < st.start - eps) {
+          return allLoaded ? 0 : findNearestLoaded(0);
+        }
+        /* Pod sekcją po przejechaniu scrubem w dół: trzymaj ostatnią klatkę mimo progress=0. */
+        if (bookScrubPastEnd && y >= st.end - eps) {
+          return allLoaded ? lastIdx : findNearestLoaded(lastIdx);
+        }
       }
 
       let t = Math.round(playhead.frame);
