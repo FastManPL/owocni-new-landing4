@@ -301,6 +301,62 @@
   #faq-section .faq-glow { display: none; }
 }
 
+/* ====== LEAD (skala jak „Możemy to zmienić” / .hero-h1 w blok-4-5) ====== */
+#faq-section .faq-section-lead {
+  width: calc(100% - 2rem);
+  max-width: clamp(62.5rem, 88vw, 110rem);
+  margin: 0 auto clamp(28px, 4.5vw, 52px);
+  padding: 0 1rem;
+  text-align: center;
+}
+#faq-section .faq-section-lead__title {
+  font-size: clamp(2.4rem, 6vw, 6.9rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.15em;
+  font-family: 'Lexend', sans-serif;
+}
+#faq-section .faq-section-lead__strong {
+  display: block;
+  font-weight: 700;
+  font-variation-settings: 'wght' 700;
+  background-image: linear-gradient(
+    135deg,
+    #252030 2%,
+    #2a2130 44%,
+    #382630 56.7%,
+    #512b2b 67.5%,
+    #7d3527 80.2%,
+    #7d3527 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+#faq-section .faq-section-lead__light {
+  display: block;
+  font-weight: 200;
+  font-variation-settings: 'wght' 200;
+  background-image: linear-gradient(
+    135deg,
+    #252030 2%,
+    #2a2130 44%,
+    #382630 56.7%,
+    #512b2b 67.5%,
+    #7d3527 80.2%,
+    #7d3527 100%
+  );
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  color: transparent;
+}
+
 /* ====== HEADER COLUMNS ====== */
 #faq-section .faq-header {
   width: calc(100% - 2rem); max-width: clamp(62.5rem, 88vw, 110rem);

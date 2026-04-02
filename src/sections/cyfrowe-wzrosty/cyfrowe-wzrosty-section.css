@@ -2,6 +2,7 @@
 #cyfrowe-wzrosty-section {
   position: relative;
   background: #f7f6f4;
+  padding-top: 0;
   isolation: isolate;           /* FACTORY:AUTO-FIX B-ISO-01 */
   contain: layout style;        /* FACTORY:ADDED — geometryMutable:false, no pin, no bleed */
   /* PROD: brak fixed, brak overflow:hidden, brak touch-action:none
@@ -21,7 +22,10 @@
   display: flex;
   align-items: flex-end;
   justify-content: center;
+  padding-top: 0;
   padding-bottom: 0;
+  /* Kompensacja „pustki” od translateY(50%) na #cyfrowe-wzrosty-word-container */
+  margin-top: -clamp(2rem, 7vw, 6rem);
   perspective: 1500px;
   box-sizing: border-box;
 }
@@ -36,7 +40,7 @@
   text-align: center;
   line-height: 1.05;
   transform: translateY(50%);
-  margin-top: -clamp(1rem, 3vw, 2.5rem);
+  margin-top: -clamp(2.25rem, 7.5vw, 6rem);
 }
 
 #cyfrowe-wzrosty-section #cyfrowe-wzrosty-cyfrowe-label {

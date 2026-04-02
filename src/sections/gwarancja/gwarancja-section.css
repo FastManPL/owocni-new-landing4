@@ -256,14 +256,14 @@
   gap: 0;
   justify-content: center;
 }
-/* Loga przy krawędziach kolumn — więcej „powietrza” wokół środkowego CTA */
+/* Loga bliżej CTA niż przy pełnej szerokości kolumny, z widocznym marginesem od boku */
 #gwarancja-section .cta-group > .cta-logos--partner-side:first-of-type {
-  justify-content: flex-start;
-  padding-right: 0;
+  justify-content: flex-end;
+  padding-right: clamp(20px, 4vw, 64px);
 }
 #gwarancja-section .cta-group > .cta-logos--partner-side:last-of-type {
-  justify-content: flex-end;
-  padding-left: 0;
+  justify-content: flex-start;
+  padding-left: clamp(20px, 4vw, 64px);
 }
 #gwarancja-section .cta-logos svg,
 #gwarancja-section .cta-logos img {

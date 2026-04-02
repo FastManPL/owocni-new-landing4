@@ -707,6 +707,12 @@ export default function FAQSection() {
     // WARN-02: FontLinks usunięty — fonty przez next/font/google w layout.tsx
     // WARN-03: Styles usunięty — CSS w ./faq-section.css
     <section id="faq-section">
+      <div className="faq-section-lead">
+        <h2 className="faq-section-lead__title">
+          <span className="faq-section-lead__strong">Budżety, z którymi pracujemy.</span>
+          <span className="faq-section-lead__light">Dwa zespoły. Jeden standard.</span>
+        </h2>
+      </div>
       <canvas id="faq-burstCanvas" ref={burstCanvasRef} />
       <div className="faq-header">
         <div className="faq-header-col">
