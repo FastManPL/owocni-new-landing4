@@ -232,6 +232,8 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
     let _scrollEnabled = false; /* używane w PRODUCTION PATTERN (obecnie zakomentowany) */
     let allLoaded = false;
     let roRafId = 0;
+    /** Po dojściu scrubem do końca: poza strefą ST progress=0 — bez latch znów rysuje się klatka 0. */
+    let bookScrubPastEnd = false;
 
     const cached = { cw: 0, ch: 0, sx: 0, sy: 0, sw: 0, sh: 0 };
 
@@ -276,11 +278,18 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
       return 0;
     }
 
-    /** Gdy ST.progress≈1 a playhead.frame chwilowo ~0 (invalidate/refresh), mapuj na ostatnią klatkę. */
+    /** Mapowanie klatki: glitch playhead + po pinie ST zgłasza progress 0 przy opuszczeniu sekcji w dół. */
     function effectiveFrameForDraw(): number {
+      const lastIdx = FRAME_COUNT - 1;
+      const st = bookST;
+
+      if (bookScrubPastEnd && st && !st.isActive) {
+        return allLoaded ? lastIdx : findNearestLoaded(lastIdx);
+      }
+
       let t = Math.round(playhead.frame);
-      if (bookST && bookST.progress > 0.95 && t < FRAME_COUNT - 3) {
-        t = FRAME_COUNT - 1;
+      if (st && st.progress > 0.95 && t < FRAME_COUNT - 3) {
+        t = lastIdx;
       }
       return allLoaded ? t : findNearestLoaded(t);
     }
@@ -370,6 +379,15 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
           pin: true,
           anticipatePin: 1,
           invalidateOnRefresh: true,
+          onUpdate(self) {
+            if (self.progress >= 0.95) bookScrubPastEnd = true;
+          },
+          onEnterBack() {
+            bookScrubPastEnd = false;
+          },
+          onLeaveBack() {
+            bookScrubPastEnd = false;
+          },
         }
       });
 
@@ -546,6 +564,7 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
       _scrollEnabled = false;
       void _scrollEnabled; /* read so TS does not flag unused (used in PRODUCTION PATTERN when uncommented) */
       preloadStarted = false;
+      bookScrubPastEnd = false;
       playhead.frame = 0;
       displayIndex = -1;
       ctx = null;
