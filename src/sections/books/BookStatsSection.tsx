@@ -276,6 +276,15 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
       return 0;
     }
 
+    /** Gdy ST.progress≈1 a playhead.frame chwilowo ~0 (invalidate/refresh), mapuj na ostatnią klatkę. */
+    function effectiveFrameForDraw(): number {
+      let t = Math.round(playhead.frame);
+      if (bookST && bookST.progress > 0.95 && t < FRAME_COUNT - 3) {
+        t = FRAME_COUNT - 1;
+      }
+      return allLoaded ? t : findNearestLoaded(t);
+    }
+
     /* ── DPR-aware canvas setup ── */
     function setupCanvasDPR() {
       if (!canvas || !ctx) return;
@@ -306,7 +315,7 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
 
       if (loadedCount > 0) {
         displayIndex = -1;
-        drawFrame(findNearestLoaded(Math.round(playhead.frame)));
+        drawFrame(effectiveFrameForDraw());
       }
     }
 
@@ -329,10 +338,10 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
       loadedCount++;
       if (loadedCount === FRAME_COUNT) allLoaded = true;
 
-      const target = Math.round(playhead.frame);
-      const bestNow = allLoaded ? target : findNearestLoaded(target);
+      const raw = Math.round(playhead.frame);
+      const bestNow = effectiveFrameForDraw();
 
-      if (Math.abs(bestNow - target) < Math.abs(displayIndex - target) || bestNow === target) {
+      if (Math.abs(bestNow - raw) < Math.abs(displayIndex - raw) || bestNow === raw) {
         drawFrame(bestNow);
       }
     }
@@ -369,8 +378,7 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
         snap: 'frame',
         ease: 'none',
         onUpdate: function() {
-          const target = Math.round(playhead.frame);
-          drawFrame(allLoaded ? target : findNearestLoaded(target));
+          drawFrame(effectiveFrameForDraw());
         }
       });
 
