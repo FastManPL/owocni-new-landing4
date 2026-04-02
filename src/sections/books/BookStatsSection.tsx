@@ -324,6 +324,20 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
       if (st && st.progress > 0.95 && t < FRAME_COUNT - 3) {
         t = lastIdx;
       }
+      /*
+       * Pierwsze zejście z pinu: ResizeObserver → setupCanvasDPR często przy isActive===true.
+       * Wtedy nie wchodzimy w gałąź !isActive, a GSAP chwilowo ma playhead≈0 + progress≈0 — bez tego rysuje się klatka 0.
+       * direction === -1: użytkownik cofa w górę w strefie scrub — nie blokuj.
+       */
+      if (
+        bookScrubPastEnd &&
+        st &&
+        t < FRAME_COUNT - 3 &&
+        st.progress < 0.25 &&
+        st.direction !== -1
+      ) {
+        t = lastIdx;
+      }
       const out = allLoaded ? t : findNearestLoaded(t);
       if (st) prevBookSTProgress = st.progress;
       return out;
