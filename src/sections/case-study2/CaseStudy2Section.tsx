@@ -400,7 +400,7 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
     function openPopup() {
       if (popup.classList.contains('is-open')) return;
       if (popupVid) {
-        popupVid.src = 'Parkapp.mp4';
+        popupVid.src = '/wyniki/Parkapp.mp4';
         popupVid.load();           /* FIX: wymuszenie bufora dla iOS Safari */
         popupVid.currentTime = 0;
       }
@@ -628,7 +628,7 @@ export function CaseStudy2Section() {
           {/* Video — absolute, pętla, nie rozpycha layoutu */}
           <div className="wyniki-video-thumb" id="case-study-video-thumb">
             <div className="wyniki-vthumb-face">
-              <video src="PLAY-NEW.mp4" poster="CaseStudyPlaceholder.webp" autoPlay loop muted playsInline preload="auto"></video>
+              <video src="/wyniki/PLAY-NEW.mp4" poster="/wyniki/TLO-Portfolio.webp" autoPlay loop muted playsInline preload="auto"></video>
             </div>
           </div>
 
@@ -654,12 +654,12 @@ export function CaseStudy2Section() {
               <div className="mockup-zoom-layer" id="case-study-zoom-layer">
                 {/* z:1 — TLO Portfolio (parallax góra→dół) — POZA wrapperem brightness */}
                 <picture>
-                  <source srcset="TLO-Portfolio.avif" type="image/avif" />
-                  <source srcset="TLO-Portfolio.webp" type="image/webp" />
+                  <source srcSet="/wyniki/TLO-Portfolio.avif" type="image/avif" />
+                  <source srcSet="/wyniki/TLO-Portfolio.webp" type="image/webp" />
                   <img className="mockup-tlo" id="case-study-tlo"
-                       src="TLO-Portfolio.jpg"
+                       src="/wyniki/TLO-Portfolio.webp"
                        alt="Tło portfolio"
-                       loading="eager" decoding="async" fetchpriority="high"
+                       loading="eager" decoding="async" fetchPriority="high"
                        onError={(e) => e.currentTarget.classList.add('load-failed')}
                        draggable="false" />
                 </picture>
@@ -667,17 +667,17 @@ export function CaseStudy2Section() {
                 <div className="mockup-device-wrapper" id="case-study-device-wrapper">
                   {/* Video (pod laptopem, na ekranie) */}
                   <video className="mockup-video" id="case-study-screen-video"
-                         src="Parkapp.mp4"
-                         poster="CaseStudyPlaceholder.webp"
+                         src="/wyniki/Parkapp.mp4"
+                         poster="/wyniki/TLO-Portfolio.webp"
                          preload="auto"
                          autoPlay loop muted playsInline
                          disablePictureInPicture></video>
                   {/* Laptop frame (nad video) */}
                   <picture>
-                    <source srcset="Laptop.avif" type="image/avif" />
-                    <source srcset="Laptop.webp" type="image/webp" />
+                    <source srcSet="/wyniki/Laptop.avif" type="image/avif" />
+                    <source srcSet="/wyniki/Laptop.webp" type="image/webp" />
                     <img className="mockup-frame" id="case-study-laptop-frame"
-                         src="Laptop.png"
+                         src="/wyniki/Laptop.webp"
                          alt="Laptop"
                          loading="eager" decoding="async"
                          onError={(e) => e.currentTarget.classList.add('load-failed')}
