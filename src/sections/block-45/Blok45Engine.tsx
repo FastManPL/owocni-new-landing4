@@ -7,6 +7,10 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { scrollRuntime } from '@/lib/scrollRuntime';
 import './blok-4-5-section.css';
+import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
+import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
+import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 
 // ⚠️ GSAP-SSR-01: ZAKAZ gsap.registerPlugin() na module top-level.
 // registerPlugin() WYŁĄCZNIE wewnątrz useGSAP(() => { ... }) jak poniżej.
@@ -359,8 +363,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
         pmremGenerator.dispose(); _envMapReady = true;
       }
-      if (typeof window.requestIdleCallback === 'function') { _envMapIdleId = window.requestIdleCallback(_generateEnvMap); }
-      else { setTimeout(_generateEnvMap, 500); }
+      _envMapIdleId = window.setTimeout(_generateEnvMap, 0);
       scene.add(new THREE.AmbientLight(0xffffff, 1.0));
       var dirLight = new THREE.DirectionalLight(0xfff5e6, 1.5);
       dirLight.position.set(5, 10, 7); scene.add(dirLight);
@@ -592,7 +595,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       }, 100);
       function dispose() {
         if (_disposed) return; _disposed = true;
-        if (_envMapIdleId && typeof window.cancelIdleCallback === 'function') window.cancelIdleCallback(_envMapIdleId);
+        if (_envMapIdleId) { clearTimeout(_envMapIdleId); _envMapIdleId = 0; }
         window.removeEventListener('resize', _scheduleThreeResize); window.removeEventListener('scroll', _onThreeScroll);
         if (threeResizeRaf !== null) { cancelAnimationFrame(threeResizeRaf); threeResizeRaf = null; }
         if (threeScrollRaf !== null) { cancelAnimationFrame(threeScrollRaf); threeScrollRaf = null; }
@@ -608,32 +611,18 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     }
 
     // =========================================================
-    // THREE.JS LAZY LOADING
+    // THREE.JS STARS (statyczny import — EnvMap w sync z bundlerem)
     // =========================================================
     var _webglSupported = (function() { try { var c = document.createElement('canvas'); return !!(c.getContext('webgl') || c.getContext('experimental-webgl')); } catch(e) { return false; } })();
-    var _threeDepsPromise: Promise<any[]> | null = null;
     var _starsEngine: { wake: () => void; sleep: () => void; dispose: () => void } | null = null;
     var _starsEnginePromise: Promise<any> | null = null;
-
-    function loadThreeDeps() {
-      if (!_threeDepsPromise) {
-        _threeDepsPromise = Promise.all([
-          import('three'),
-          import('three/examples/jsm/geometries/RoundedBoxGeometry.js'),
-          import('three/examples/jsm/environments/RoomEnvironment.js'),
-          import('three/examples/jsm/utils/BufferGeometryUtils.js')
-        ]);
-      }
-      return _threeDepsPromise;
-    }
 
     function ensureStarsEngine() {
       if (!_webglSupported) return Promise.resolve(null);
       if (_starsEngine) return Promise.resolve(_starsEngine);
       if (_starsEnginePromise) return _starsEnginePromise;
-      _starsEnginePromise = loadThreeDeps().then(function(deps) {
+      _starsEnginePromise = Promise.resolve().then(function() {
         if (isDead) return null;
-        var THREE = deps[0], RoundedBoxGeometry = deps[1].RoundedBoxGeometry, RoomEnvironment = deps[2].RoomEnvironment, BufferGeometryUtils = deps[3];
         var starsContainer = $id('blok-4-5-stars-canvas') as HTMLElement | null;
         if (!starsContainer) return null;
         _starsEngine = createStarsEngine(THREE, RoundedBoxGeometry, RoomEnvironment, BufferGeometryUtils, starsContainer, starsState);
@@ -642,16 +631,6 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         return _starsEngine;
       }).catch(function(err: any) { console.warn('[blok-4-5] Stars engine init failed:', err); return null; }).finally(function() { _starsEnginePromise = null; });
       return _starsEnginePromise;
-    }
-
-    if (_webglSupported) {
-      if (typeof window.requestIdleCallback === 'function') {
-        var _warmupId = window.requestIdleCallback(function() { loadThreeDeps(); });
-        timerIds.push({ type: 'idle', id: _warmupId });
-      } else {
-        var _warmupTid = setTimeout(function() { loadThreeDeps(); }, 500);
-        timerIds.push({ type: 'timeout', id: _warmupTid });
-      }
     }
 
     var lastTouchTime = 0;
