@@ -236,6 +236,8 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
     let bookScrubPastEnd = false;
     /** Poprzedni progress ST — rozróżnia glitch pinu (spadek 0.99→0 przy scroll w dół) od realnego y<start przy scroll w górę. */
     let prevBookSTProgress = -1;
+    /** Najwyższa klatka faktycznie narysowana — niezależna od progress/prev; pierwsze zejście potrafi nie zdążyć zaktualizować prev przy glitchu y<start. */
+    let peakBookFrameIndex = -1;
 
     const cached = { cw: 0, ch: 0, sx: 0, sy: 0, sw: 0, sh: 0 };
 
@@ -293,11 +295,12 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
 
         if (y < st.start - eps) {
           /* Realny powrót nad sekcję w górę: direction -1 — zamknięta książka.
-             Glitch przy pierwszym zejściu w dół: y chwilowo < start przy direction ≥0 i już byliśmy przy końcu scrubu.
-             Pierwsza wersja wymagała currentP < 0.1 — przy pierwszym przejściu GSAP często zostawia wysoki progress
-             mimo błędnego y, wtedy padało na klatkę 0; drugie przejście miało inny układ zdarzeń. */
+             Glitch przy pierwszym zejściu w dół: y chwilowo < start; prevP/bookScrubPastEnd bywa jeszcze niezsynchronizowane,
+             ale jeśli ostatnia klatka była już narysowana (peak), trzymamy finał zamiast 0. */
           const forwardGlitch =
-            bookScrubPastEnd && prevP >= 0.9 && st.direction !== -1;
+            st.direction !== -1 &&
+            (peakBookFrameIndex >= lastIdx ||
+              (bookScrubPastEnd && prevP >= 0.9));
 
           if (forwardGlitch) {
             prevBookSTProgress = currentP;
@@ -385,6 +388,7 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
       if (!img) return;
 
       displayIndex = index;
+      if (index > peakBookFrameIndex) peakBookFrameIndex = index;
       ctx.clearRect(0, 0, cached.cw, cached.ch);
       ctx.drawImage(img as CanvasImageSource, cached.sx, cached.sy, cached.sw, cached.sh);
     }
@@ -430,13 +434,18 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
           onUpdate(self) {
             if (self.progress >= 0.95) bookScrubPastEnd = true;
           },
+          onLeave() {
+            bookScrubPastEnd = true;
+          },
           onEnterBack() {
             bookScrubPastEnd = false;
             prevBookSTProgress = -1;
+            peakBookFrameIndex = -1;
           },
           onLeaveBack() {
             bookScrubPastEnd = false;
             prevBookSTProgress = -1;
+            peakBookFrameIndex = -1;
           },
         }
       });
@@ -446,6 +455,7 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
         snap: 'frame',
         ease: 'none',
         onUpdate: function() {
+          if (Math.round(playhead.frame) >= FRAME_COUNT - 1) bookScrubPastEnd = true;
           drawFrame(effectiveFrameForDraw());
         }
       });
@@ -616,6 +626,7 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
       preloadStarted = false;
       bookScrubPastEnd = false;
       prevBookSTProgress = -1;
+      peakBookFrameIndex = -1;
       playhead.frame = 0;
       displayIndex = -1;
       ctx = null;
