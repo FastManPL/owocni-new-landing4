@@ -1192,6 +1192,11 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       var span=document.createElement('span');span.className='walking-char';span.textContent=ch;span.style.transformOrigin=i>=5?'50% 100%':'0% 100%';walkContainer!.appendChild(span);chars.push(span);
       charStates.push({pullRot:0,pullSkew:0,pullRotY:0,pullSqueeze:0,pullX:0,elasticY:0,mass:MASS_TABLE[i]+(i>=2&&i<5?Math.random()*0.3:0),finalX:0,finalY:0,baseOffsetLeft:0,prevVaporX:undefined,pqx:-9999,pqy:-9999,pqrz:-9999,pqry:-9999,pqsk:-9999});
     });
+    // Warstwa dymu między literami (2D) — jak w blok-4-5.stack.html; bez tego initCanvases() nie znajdzie #blok-4-5-particleCanvas
+    var particleEl = document.createElement('canvas');
+    particleEl.id = 'blok-4-5-particleCanvas';
+    particleEl.setAttribute('aria-hidden', 'true');
+    walkContainer.insertBefore(particleEl, walkContainer.firstChild);
     lastScrollY=scrollRuntime.getRawScroll();anchorScrollY=lastScrollY;
     _containerEl=$id('blok-4-5-walkingContainer') as HTMLElement|null;_anchorCharEl=$id('blok-4-5-anchorChar');
     initCanvases();initBubbles();initMana();initStarCanvas();initPopup();
