@@ -2369,14 +2369,9 @@ export function GwarancjaSection() {
             statystycznej.
           </p>
           <div className="cta-group">
-            <div className="cta-logos">
+            <div className="cta-logos cta-logos--partner-side">
               <img
                 src="/assets/Partner-Logo-left.svg"
-                alt=""
-                decoding="async"
-              />
-              <img
-                src="/assets/Partner-Logo-right.svg"
                 alt=""
                 decoding="async"
               />
@@ -2460,12 +2455,7 @@ export function GwarancjaSection() {
                 </svg>
               </div>
             </div>
-            <div className="cta-logos">
-              <img
-                src="/assets/Partner-Logo-left.svg"
-                alt=""
-                decoding="async"
-              />
+            <div className="cta-logos cta-logos--partner-side">
               <img
                 src="/assets/Partner-Logo-right.svg"
                 alt=""

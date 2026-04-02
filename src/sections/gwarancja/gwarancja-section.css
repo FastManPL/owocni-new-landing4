@@ -51,7 +51,7 @@
   flex-direction: column;
   align-items: center;
   pointer-events: auto;
-  padding: 0 1rem;
+  padding: 0 1rem clamp(2.5rem, 7vw, 5rem);
   width: 100%;
 }
 #gwarancja-section .lens-pill-wrapper {
@@ -250,6 +250,19 @@
   gap: clamp(32px, calc(-21.33px + 4.444vw), 64px);
   opacity: 0.5;
   min-height: 100%;
+}
+/* Lewa / prawa kolumna siatki: jeden asset, wypchnięty w stronę środka (przy przycisku). */
+#gwarancja-section .cta-logos--partner-side {
+  gap: 0;
+  justify-content: center;
+}
+#gwarancja-section .cta-group > .cta-logos--partner-side:first-of-type {
+  justify-content: flex-end;
+  padding-right: clamp(8px, 1.5vw, 20px);
+}
+#gwarancja-section .cta-group > .cta-logos--partner-side:last-of-type {
+  justify-content: flex-start;
+  padding-left: clamp(8px, 1.5vw, 20px);
 }
 #gwarancja-section .cta-logos svg,
 #gwarancja-section .cta-logos img {
