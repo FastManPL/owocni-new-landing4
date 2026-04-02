@@ -912,16 +912,30 @@ function init(container) {
     engine._activeGlow = 'gold-ring'; engine._glowDirty = true;
     engine.config.frontEasing = 'pulse'; engine._bindEasing('pulse');
 
-    /* ── CASCADE REVEAL: IntersectionObserver trigger ── */
-    if(window.IntersectionObserver){
+    /* ── CASCADE REVEAL: IntersectionObserver + fallbacks
+       Previously rootMargin included -10% bottom, shrinking the IO root — isIntersecting
+       could stay false while #onas-carousel was visibly on screen → cards stuck at opacity 0.
+       Fallback: browsers without IO; delayed bbox check if IO never fires. */
+    var revealTarget=$id('onas-scene');
+    if(window.IntersectionObserver&&revealTarget){
         var revealIO=new IntersectionObserver(function(entries){
             if(entries[0]?.isIntersecting&&!engine._revealTriggered){
                 engine.startCascadeReveal();
             }
-        },{root:null,rootMargin:'200px 0px -10% 0px',threshold:0.01});
-        var revealTarget=$id('onas-scene');
-        if(revealTarget) revealIO.observe(revealTarget);
+        },{root:null,rootMargin:'200px 0px 0px 0px',threshold:0});
+        revealIO.observe(revealTarget);
         observers.push(revealIO);
+    } else if(revealTarget){
+        engine.startCascadeReveal();
+    }
+    if(revealTarget){
+        var revealFallbackTid=setTimeout(function(){
+            if(engine._revealTriggered||!revealTarget)return;
+            var r=revealTarget.getBoundingClientRect();
+            var vh=window.innerHeight||document.documentElement.clientHeight||800;
+            if(r.bottom>0&&r.top<vh) engine.startCascadeReveal();
+        },200);
+        timerIds.push(revealFallbackTid);
     }
 
     /* ── VIDEO POPUP: close logic ── */
