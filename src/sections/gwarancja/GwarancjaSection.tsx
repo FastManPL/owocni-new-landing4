@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useRef, useState } from "react";
+import { useLayoutEffect, useRef } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
@@ -2238,18 +2238,34 @@ function init(container: HTMLElement): {
 /* eslint-disable @next/next/no-img-element */
 export function GwarancjaSection() {
   const rootRef = useRef<HTMLElement | null>(null);
-  const [mechanismVideoSrc, setMechanismVideoSrc] = useState<string | null>(
-    null,
-  );
 
+  /**
+   * Src warstwy mechanizmu tylko przez DOM (nie przez state + useGSAP deps).
+   * Gdy `mechanismVideoSrc` było w dependencies useGSAP, @gsap/react przy zmianie
+   * deps robił revert → kill() → removeAttribute("src") PO commicie React z nowym src,
+   * więc na desktopie wideo zostawało bez źródła.
+   */
   useLayoutEffect(() => {
     function syncMechanismSrc() {
-      setMechanismVideoSrc(
-        window.innerWidth > GWARANCJA_MOBILE_MAX_W
-          ? GWARANCJA_MECHANISM_VIDEO_SRC
-          : null,
-      );
+      const c = rootRef.current;
+      if (!c) return;
+      const videoTop = c.querySelector(
+        "#gwarancja-layer-top",
+      ) as HTMLVideoElement | null;
+      if (!videoTop) return;
+      const desktop = window.innerWidth > GWARANCJA_MOBILE_MAX_W;
+      if (desktop) {
+        if (videoTop.getAttribute("src") !== GWARANCJA_MECHANISM_VIDEO_SRC) {
+          videoTop.src = GWARANCJA_MECHANISM_VIDEO_SRC;
+          videoTop.load();
+        }
+      } else {
+        videoTop.pause();
+        videoTop.removeAttribute("src");
+        videoTop.load();
+      }
     }
+
     syncMechanismSrc();
     window.addEventListener("resize", syncMechanismSrc, { passive: true });
     if (window.visualViewport) {
@@ -2287,7 +2303,7 @@ export function GwarancjaSection() {
       // 1. cleanups.length=0 guard w kill() — idempotencja gwarantowana
       // 2. useGSAP scope — context revert czyszczony przez React
     },
-    { scope: rootRef, dependencies: [mechanismVideoSrc] },
+    { scope: rootRef },
   );
 
   return (
@@ -2307,9 +2323,6 @@ export function GwarancjaSection() {
           <div id="gwarancja-layer-top-wrap">
             <video
               id="gwarancja-layer-top"
-              {...(mechanismVideoSrc
-                ? { src: mechanismVideoSrc }
-                : {})}
               muted
               playsInline
               loop
