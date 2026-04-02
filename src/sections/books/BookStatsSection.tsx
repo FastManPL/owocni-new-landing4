@@ -6,6 +6,11 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import './book-stats-section.css';
 
+/** GSAP ustawia podczas globalnego refresh(); wtedy pin mierzy timeline przez animation.render(0) — onUpdate scrub dałby klatkę 0. */
+function scrollTriggerIsRefreshing(): boolean {
+  return !!(ScrollTrigger as unknown as { isRefreshing?: boolean }).isRefreshing;
+}
+
 // Poster wideo: public/books/Statystyki-stron.png → /books/Statystyki-stron.png
 
 // ⚠️ GSAP-SSR-01: ZAKAZ gsap.registerPlugin() na module top-level.
@@ -386,7 +391,17 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
 
       if (loadedCount > 0) {
         displayIndex = -1;
-        drawFrame(effectiveFrameForDraw());
+        if (scrollTriggerIsRefreshing()) {
+          requestAnimationFrame(function() {
+            requestAnimationFrame(function() {
+              if (!ctx) return;
+              displayIndex = -1;
+              drawFrame(effectiveFrameForDraw());
+            });
+          });
+        } else {
+          drawFrame(effectiveFrameForDraw());
+        }
       }
     }
 
@@ -410,11 +425,20 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
       loadedCount++;
       if (loadedCount === FRAME_COUNT) allLoaded = true;
 
-      const raw = Math.round(playhead.frame);
-      const bestNow = effectiveFrameForDraw();
+      function flushLoadedDraw() {
+        const raw = Math.round(playhead.frame);
+        const bestNow = effectiveFrameForDraw();
+        if (Math.abs(bestNow - raw) < Math.abs(displayIndex - raw) || bestNow === raw) {
+          drawFrame(bestNow);
+        }
+      }
 
-      if (Math.abs(bestNow - raw) < Math.abs(displayIndex - raw) || bestNow === raw) {
-        drawFrame(bestNow);
+      if (scrollTriggerIsRefreshing()) {
+        requestAnimationFrame(function() {
+          requestAnimationFrame(flushLoadedDraw);
+        });
+      } else {
+        flushLoadedDraw();
       }
     }
     void onFrameLoaded; /* referencja żeby TS nie zgłaszał unused */
@@ -458,6 +482,13 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
             prevBookSTProgress = -1;
             peakBookFrameIndex = -1;
           },
+          onRefresh() {
+            requestAnimationFrame(function() {
+              requestAnimationFrame(function() {
+                drawFrame(effectiveFrameForDraw());
+              });
+            });
+          },
         }
       });
 
@@ -466,6 +497,7 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
         snap: 'frame',
         ease: 'none',
         onUpdate: function() {
+          if (scrollTriggerIsRefreshing()) return;
           if (Math.round(playhead.frame) >= FRAME_COUNT - 1) bookScrubPastEnd = true;
           drawFrame(effectiveFrameForDraw());
         }
