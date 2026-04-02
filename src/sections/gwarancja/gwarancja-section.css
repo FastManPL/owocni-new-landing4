@@ -256,13 +256,14 @@
   gap: 0;
   justify-content: center;
 }
+/* Loga przy krawędziach kolumn — więcej „powietrza” wokół środkowego CTA */
 #gwarancja-section .cta-group > .cta-logos--partner-side:first-of-type {
-  justify-content: flex-end;
-  padding-right: clamp(8px, 1.5vw, 20px);
+  justify-content: flex-start;
+  padding-right: 0;
 }
 #gwarancja-section .cta-group > .cta-logos--partner-side:last-of-type {
-  justify-content: flex-start;
-  padding-left: clamp(8px, 1.5vw, 20px);
+  justify-content: flex-end;
+  padding-left: 0;
 }
 #gwarancja-section .cta-logos svg,
 #gwarancja-section .cta-logos img {

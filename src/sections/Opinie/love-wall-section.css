@@ -2,7 +2,7 @@
    SECTION CSS: love-wall — velocity cards (RENAMED + NAMESPACED)
    ============================================================ */
 #love-wall-section{--card-width:498px;--card-height:280px;--card-gap:32px;--card-padding:36px 45px 22px 45px;--card-radius:1.25rem;--card-bg:#f7f6f4;--section-bg:#f7f6f4;--star-gold:#f5c518;--text-primary:#222;--text-gray:#434343;--border-dark:#D0CEC8;--row-padding-block:60px;--row-padding-left:16px}
-#love-wall-section{position:relative;padding:80px 0;border-top:1px solid #d1d5db;overflow:visible;margin-bottom:128px;background-color:var(--section-bg);isolation:isolate;contain:style}
+#love-wall-section{position:relative;padding:80px 0;overflow:visible;margin-bottom:128px;background-color:var(--section-bg);isolation:isolate;contain:style}
 #love-wall-section .rows-wrapper{display:flex;flex-direction:column;overflow:visible;position:relative}
 @media(min-width:1700px){#love-wall-section .rows-wrapper{max-width:2500px;margin-left:auto;margin-right:auto}}
 /* Edge fade: overlay divs instead of mask-image.

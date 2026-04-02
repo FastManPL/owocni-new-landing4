@@ -274,64 +274,6 @@ function init(container: HTMLElement): {
     navigator.userAgent,
   );
 
-  // === CLOCK TICK AUDIO (desktop only) ===
-  // Ścieżka: public/Zegar.mp3 — jeśli plik brak, audio jest wyłączane po błędzie ładowania
-  let clockAudio: HTMLAudioElement | null = window.matchMedia("(pointer:fine)")
-    .matches
-    ? new Audio("/Zegar.mp3")
-    : null;
-  if (clockAudio) {
-    clockAudio.loop = true;
-    clockAudio.volume = 0;
-    clockAudio.preload = "auto";
-    clockAudio.addEventListener(
-      "error",
-      () => {
-        clockAudio = null;
-      },
-      { once: true },
-    );
-  }
-  let clockFadeTw: gsap.core.Tween | null = null;
-  function clockPlay() {
-    if (!clockAudio || isMobileDisabled) return;
-    if (clockFadeTw) clockFadeTw.kill();
-    clockAudio
-      .play()
-      .then(() => {
-        clockFadeTw = gsap.to(clockAudio, {
-          volume: 0.5,
-          duration: 0.4,
-          ease: "power2.out",
-        });
-      })
-      .catch(() => {}); // silent fail — user activation not yet granted
-  }
-  function clockPause() {
-    if (!clockAudio || clockAudio.paused) return;
-    if (clockFadeTw) clockFadeTw.kill();
-    clockFadeTw = gsap.to(clockAudio, {
-      volume: 0,
-      duration: 0.3,
-      ease: "power2.in",
-      onComplete() {
-        clockAudio!.pause();
-        clockAudio!.currentTime = 0;
-      },
-    });
-  }
-  const clockVisHandler = () => {
-    if (document.hidden && clockAudio && !clockAudio.paused) clockPause();
-  };
-  document.addEventListener("visibilitychange", clockVisHandler);
-  cleanups.push(() => {
-    document.removeEventListener("visibilitychange", clockVisHandler);
-    if (clockAudio) {
-      if (clockFadeTw) clockFadeTw.kill();
-      clockAudio.pause();
-      clockAudio.src = "";
-    }
-  });
   let tLastMove = 0,
     txtIdleTw: gsap.core.Tween | null = null;
   let txtState = { scale: 1.1, opacity: 1.0, fontSize: 16 },
@@ -1290,7 +1232,6 @@ function init(container: HTMLElement): {
     unbindDoc();
     unbindRectListeners();
     unbindAureola();
-    clockPause();
     if (isVideo(videoTop)) (videoTop as HTMLVideoElement).pause();
     if (isVideo(videoBottom)) (videoBottom as HTMLVideoElement).pause();
   });
@@ -1362,7 +1303,6 @@ function init(container: HTMLElement): {
     targetAlpha = 0.5;
     gsap.set(cursorStage, { scale: 1, opacity: 1 });
     tarczaIntro(rx, ry);
-    clockPlay();
   }
 
   function handleMouseLeave() {
@@ -1382,7 +1322,6 @@ function init(container: HTMLElement): {
     if (idleTimerRef && idleTimerRef.kill) idleTimerRef.kill();
     idleTimerRef = null;
     tarczaOutro();
-    clockPause();
   }
 
   // === LIFECYCLE ===

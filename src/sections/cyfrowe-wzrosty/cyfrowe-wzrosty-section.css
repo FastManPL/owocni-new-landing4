@@ -36,6 +36,7 @@
   text-align: center;
   line-height: 1.05;
   transform: translateY(50%);
+  margin-top: -clamp(1rem, 3vw, 2.5rem);
 }
 
 #cyfrowe-wzrosty-section #cyfrowe-wzrosty-cyfrowe-label {
