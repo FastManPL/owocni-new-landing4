@@ -70,6 +70,14 @@ function init(container: HTMLElement): {
   const BASE_FEATHER = 80;
   const BASE_PAD = 180;
   const MOBILE_BREAKPOINT = 600;
+  /** Mobile: warstwa mechanizmu tylko przy urządzeniach dotykowych (coarse). Inaczej samo szkło. */
+  function prefersCoarsePointer() {
+    try {
+      return window.matchMedia("(pointer: coarse)").matches;
+    } catch {
+      return false;
+    }
+  }
   const SCALE_REF = 1400;
   const SCALE_MIN = 0.45;
   let lensScale = 1;
@@ -1159,7 +1167,8 @@ function init(container: HTMLElement): {
   /** Jednorazowe .load() na wideo mechanizmu — bez tego pierwszy play() często czeka na sieć/dekodowanie (duże opóźnienie przy hover). */
   let mechanismVideoPrimed = false;
   function primeMechanismVideoOnce() {
-    if (mechanismVideoPrimed || !isVideo(videoTop) || isMobileDisabled) return;
+    if (mechanismVideoPrimed || !isVideo(videoTop)) return;
+    if (isMobileDisabled && !prefersCoarsePointer()) return;
     mechanismVideoPrimed = true;
     try {
       (videoTop as HTMLVideoElement).load();
@@ -1168,7 +1177,7 @@ function init(container: HTMLElement): {
     }
   }
   function loadBottomVideo() {
-    if (bottomVideoLoaded || !isVideo(videoBottom) || isMobileDisabled) return;
+    if (bottomVideoLoaded || !isVideo(videoBottom)) return;
     (videoBottom as HTMLVideoElement).load();
     (videoBottom as HTMLVideoElement).play().catch(() => {});
     bottomVideoLoaded = true;
@@ -1182,18 +1191,32 @@ function init(container: HTMLElement): {
     (e) => {
       isContainerVisible = e[0]?.isIntersecting ?? false;
       if (paused) return; // state tracked above, but no bind/unbind while paused
-      if (isContainerVisible && !isMobileDisabled) {
-        updateCachedRect();
-        computeScale();
-        bindDoc();
-        bindRectListeners();
-        bindAureola();
+      if (isContainerVisible) {
+        if (!isMobileDisabled) {
+          updateCachedRect();
+          computeScale();
+          bindDoc();
+          bindRectListeners();
+          bindAureola();
+        } else {
+          unbindDoc();
+          unbindRectListeners();
+          unbindAureola();
+        }
         loadBottomVideo();
         primeMechanismVideoOnce();
-        if (isVideo(videoTop))
-          (videoTop as HTMLVideoElement).play().catch(() => {});
-        if (isVideo(videoBottom) && bottomVideoLoaded)
+        const playMechanism =
+          !isMobileDisabled || prefersCoarsePointer();
+        if (isVideo(videoTop)) {
+          if (playMechanism) {
+            (videoTop as HTMLVideoElement).play().catch(() => {});
+          } else {
+            (videoTop as HTMLVideoElement).pause();
+          }
+        }
+        if (isVideo(videoBottom)) {
           (videoBottom as HTMLVideoElement).play().catch(() => {});
+        }
         container.classList.remove("lens-oop");
       } else {
         unbindDoc();
@@ -1212,7 +1235,7 @@ function init(container: HTMLElement): {
 
   // Pierwszy callback IO bywa 1 klatkę później — jeśli kontener już blisko viewport, od razu rozpocznij pobieranie mechanizmu.
   const _mechanismPrimeRaf = requestAnimationFrame(() => {
-    if (paused || isMobileDisabled) return;
+    if (paused || (isMobileDisabled && !prefersCoarsePointer())) return;
     const r = (containerEl as HTMLElement).getBoundingClientRect();
     const vh = window.visualViewport?.height ?? window.innerHeight;
     const m = 200;
@@ -1274,15 +1297,28 @@ function init(container: HTMLElement): {
     if (isVideo(videoBottom)) (videoBottom as HTMLVideoElement).pause();
   });
   resumeHooks.push(() => {
-    if (_wasContainerVisible && !isMobileDisabled) {
+    if (!_wasContainerVisible) return;
+    if (!isMobileDisabled) {
       if (_wasDocBound) bindDoc();
       if (_wasRectBound) bindRectListeners();
       bindAureola();
-      primeMechanismVideoOnce();
-      if (isVideo(videoTop))
+    } else {
+      unbindDoc();
+      unbindRectListeners();
+      unbindAureola();
+    }
+    loadBottomVideo();
+    primeMechanismVideoOnce();
+    const playMechanism = !isMobileDisabled || prefersCoarsePointer();
+    if (isVideo(videoTop)) {
+      if (playMechanism) {
         (videoTop as HTMLVideoElement).play().catch(() => {});
-      if (isVideo(videoBottom) && bottomVideoLoaded)
-        (videoBottom as HTMLVideoElement).play().catch(() => {});
+      } else {
+        (videoTop as HTMLVideoElement).pause();
+      }
+    }
+    if (isVideo(videoBottom)) {
+      (videoBottom as HTMLVideoElement).play().catch(() => {});
     }
   });
 
@@ -2334,50 +2370,16 @@ export function GwarancjaSection() {
           </p>
           <div className="cta-group">
             <div className="cta-logos">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                xmlSpace="preserve"
-                viewBox="0 0 226 168"
-              >
-                <path
-                  fill="#5B5B5B"
-                  d="M118 137c5 0 11-2 14 3 4 7-4 12-11 10v9h-3v-22m4 3v7c11 2 11-9 0-7m43 3v-4h3c0 3 0 5 4 4v3h-4c1 4-2 12 4 11v3c-9 2-7-8-7-14h-3v-3h3m-29 3c2-5 10-5 12 0 2 4 1 9 1 13-1 0-3 1-3-1-14 8-16-13 0-9 0-4-6-4-8-1l-2-2m2 9c1 4 8 2 8-2-2-2-8-2-8 2m40-11c12-7 11 8 11 15h-4c0-4 3-15-5-13-4 3-2 9-2 13h-3v-16h2l1 1m16 0c6-4 14 1 12 8h-12c0 3 3 5 6 5 2 0 3-4 6-2-7 13-22-2-12-11m0 5h9c0-5-8-4-9 0m21-6h3l1 3c-9-2-7 8-7 13h-3v-16l3 1 3-1m-60 2 6-2v3c-8-1-6 9-6 14h-3v-16c1 0 3-1 3 1M70 18c20-21 57-22 77-2l-16 17c-17-17-46-7-53 14L59 33c3-6 7-11 11-15"
-                />
-                <path
-                  fill="#5B5B5B"
-                  d="m59 33 19 14c-7 28 12 15-19 36-8-15-8-35 0-50m51 15h53c3 18-1 40-16 53l-18-14c5-4 9-10 10-17h-29V48"
-                />
-                <path
-                  fill="#5B5B5B"
-                  d="m63 81 15-12c7 21 33 30 51 18l18 14c-26 25-73 15-88-18l4-2m-51 58c4-4 12-4 16 1l-2 2c-6-6-17 0-15 8 1 9 16 9 16 0h-8v-3h11c1 25-36 8-18-8m76-2h3v22h-3v-22m-43 7c-8-6-18 7-10 14 9 8 20-7 10-14zm0 9c-2 7-11 4-10-2 1-9 13-5 10 2z"
-                />
-                <path
-                  fill="#5B5B5B"
-                  d="M63 144c-8-5-16 6-11 13 8 11 23-7 11-13zm-1 12c-7 5-12-8-5-10 6-2 10 6 5 10z"
-                />
-                <path
-                  fill="#5B5B5B"
-                  d="M85 143h-3v1c-5-3-11-1-13 5-2 7 6 15 13 9 0 4-3 7-7 5-2-1-3-3-5-1 1 5 8 6 12 3 6-5 2-15 3-22zm-6 13c-6 4-10-7-4-10 6-2 9 8 4 10zm30-4c2-12-16-12-15 0-1 8 12 12 15 3l-3-1c-2 5-9 3-9-2h12zm-9-6c2-1 5 0 6 3h-9l3-3z"
-                />
-              </svg>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                xmlSpace="preserve"
-                viewBox="0 0 314 168"
-              >
-                <path
-                  fill="#5B5B5B"
-                  d="M121 27h11l19 34 20-34h11v56h-10V40l-16 30h-9l-17-30v43h-9zm109 36c3-22-27-32-38-12-7 14 2 34 19 33 9 0 24-4 13-12-7 8-24 6-25-6h31v-3zm-31-4c1-14 22-15 22 0h-22zm42-10h-8v-8h8V29h9v12h13v8h-13c1 9-5 33 13 27 0 7 0 8-8 8-18 2-13-24-14-35zm59-8v6c-11-15-35-3-33 15-2 18 22 31 33 16v5h9V42h-9zm0 28c-5 13-26 8-24-7-1-14 19-20 24-6v13zM17 65c7 35 33-29 44-35 29-25 56 51 21 55V75c16-4 4-42-10-42-15 2-24 35-33 43C27 94 6 83 8 64l9 1z"
-                />
-                <path
-                  fill="#5B5B5B"
-                  d="M15 37C48-3 63 67 82 75c6 0 7-5 7-11h9c1 16-14 28-27 16-9-9-19-32-28-40-4-7-15-8-19 1-1 1-9-4-9-4z"
-                />
-                <path
-                  fill="#5B5B5B"
-                  d="M33 35c-13 2-19 25-14 37l-8 6c-9-18 1-52 23-53l-1 10zm7 83c8-3 22 5 10 11 2 1 5 3 5 7 1 7-9 7-15 7v-25zm3 10c11 2 11-10 0-8v8zm0 12c12 3 12-11 0-9v9zm32-2v4c-4 1-3 1-3-2-12 10-14-6-12-15h3c0 3-3 15 4 15s4-11 4-15h3l1 13zm4 1c2 2 8 2 8-1s-9-4-8-8c-1-6 13-8 10-2-2-1-7-2-7 1 1 4 9 4 8 9 2 5-13 8-11 1zm19-19c0 2-4 2-4 0 0-3 4-3 4 0zm-4 23v-18h3v18h-3zm9-13v-5c3 0 3 0 3 3 11-11 13 5 12 15h-3c-1-4 2-16-4-16-7 0-4 11-5 15h-3v-12zm22 4c0 7 7 7 11 6 2 3-2 3-5 3-12 1-12-19-1-19 7 1 8 6 7 10h-12zm10-2c0-7-10-7-10 0h10zm6 7c2 2 8 2 8-1s-9-4-8-8c-2-6 12-8 10-2-2-1-7-2-7 1 0 4 9 4 8 9 2 5-14 8-11 1zm15 0c1 2 8 2 7-1 0-3-9-4-8-8-1-6 13-8 10-2-1-1-7-2-7 1 1 4 10 4 9 9 1 5-14 8-11 1zm23-21c16-6 21 17 3 15v9h-4l1-24zm3 12c11 3 11-13 0-10v10zm27 8 1 5c-3-1-3 0-4-3-10 10-17-11 0-9 1-4-5-6-8-3-3-6 13-4 11 4v6zm-3-4c-5-2-11 5-4 7 4 0 5-4 4-7zm9-4v-5c3 0 2 1 2 3 2-3 8-6 7 0-8-2-6 10-6 15h-3v-13zm16-9v4h5v2h-5c1 3-2 16 5 13 0 2 0 3-3 3-7 0-4-11-5-16h-2v-2h2c0-3 0-4 3-4zm9 9-1-5c4 0 3 0 4 3 11-11 13 5 12 15h-4c0-4 3-16-4-16s-3 11-4 15h-3v-12zm22 4c0 7 7 7 11 6 1 3-2 3-6 3-11 1-11-19 0-19 6 1 8 6 7 10h-12zm9-2c1-7-9-7-9 0h9zm7-2v-5c4 0 3 1 3 3 1-3 7-6 6 0-8-2-5 10-6 15h-3v-13z"
-                />
-              </svg>
+              <img
+                src="/assets/Partner-Logo-left.svg"
+                alt=""
+                decoding="async"
+              />
+              <img
+                src="/assets/Partner-Logo-right.svg"
+                alt=""
+                decoding="async"
+              />
             </div>
             <div className="cta-center">
               <div className="btn-wrapper-wave">
@@ -2459,26 +2461,16 @@ export function GwarancjaSection() {
               </div>
             </div>
             <div className="cta-logos">
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                xmlSpace="preserve"
-                viewBox="0 0 235 168"
-              >
-                <path
-                  fill="#5B5B5B"
-                  d="M145 38c-4-27-34-27-55-25v67c31 4 61-4 55-42zm-13 18c-3 15-18 14-31 14V23c23-4 39 11 31 33zm32 24h-12V13c4 0 15-2 16 1 6 20 22 38 10 58l-14-36v44zm17 0 24-64c1-6 9-3 13-4l-25 67c-2 3-8 1-12 1zm-28 75 22-60c2-9 7-8 15-8l-25 67c-2 3-8 0-12 1zm63 0c-14 1-13-1-17-13-5-5-15-1-22-2 3-13 6-11 17-11-6-13-8-21 0-34l22 60zm4-131v56h-11c-3-20 3-38 11-56z"
-                />
-              </svg>
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                xmlSpace="preserve"
-                viewBox="0 0 264 168"
-              >
-                <path
-                  fill="#5B5B5B"
-                  d="M157 145c-10-2-2 6-2 11-12-14-21 1-33-11-6-3-14 11-18 4-4-15-12 1-16-6-3-6-5-9-11-11-3-4-8-1-12-4 1-3 1-8-3-6-4 3-11-7-11 1 0 6-5 2-6-1-10-10-7-11-23-15-6-3 6-12 0-16-4-2-3-6-4-9-4-6 0-17-6-23-6-4 5-3 1-21 0-14 26-5 34-17 46-19 16 0 41 6 3 5 8 0 12-2 23 9 58-13 58 20 7 9 4-10 3-13 1-6-6-7-9-10-3-5-7 0-10 0l-18 1c-9 1-21-7-28-2-3 0-12 1-13-2 7 1 2-7-2-9-11-6-24 3-36 5-6 12-36 6-38 17 5 14-3 18-1 29 7 4 4 13 6 19 3 4 1 11 6 14-2 13-7 16 10 20 11 3 4 5 11 9 4 2 5 9 11 8 4 0 5-6 10-3-1 6 5 8 6 3 2 2 2 5 5 4 11 0 12 21 23 14 7-6 4 12 17 6 16-11 9 5 28 0 8-5 18 14 22 1 0-4-5-7-4-11z"
-                />
-              </svg>
+              <img
+                src="/assets/Partner-Logo-left.svg"
+                alt=""
+                decoding="async"
+              />
+              <img
+                src="/assets/Partner-Logo-right.svg"
+                alt=""
+                decoding="async"
+              />
             </div>
           </div>
         </div>
