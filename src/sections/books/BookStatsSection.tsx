@@ -293,12 +293,11 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
 
         if (y < st.start - eps) {
           /* Realny powrót nad sekcję w górę: direction -1 — zamknięta książka.
-             Glitch przy pierwszym zejściu w dół: y chwilowo < start, direction 1, był wysoki progress. */
+             Glitch przy pierwszym zejściu w dół: y chwilowo < start przy direction ≥0 i już byliśmy przy końcu scrubu.
+             Pierwsza wersja wymagała currentP < 0.1 — przy pierwszym przejściu GSAP często zostawia wysoki progress
+             mimo błędnego y, wtedy padało na klatkę 0; drugie przejście miało inny układ zdarzeń. */
           const forwardGlitch =
-            bookScrubPastEnd &&
-            prevP >= 0.9 &&
-            currentP < 0.1 &&
-            st.direction !== -1;
+            bookScrubPastEnd && prevP >= 0.9 && st.direction !== -1;
 
           if (forwardGlitch) {
             prevBookSTProgress = currentP;
