@@ -234,6 +234,8 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
     let roRafId = 0;
     /** Po dojściu scrubem do końca: poza strefą ST progress=0 — bez latch znów rysuje się klatka 0. */
     let bookScrubPastEnd = false;
+    /** Poprzedni progress ST — rozróżnia glitch pinu (spadek 0.99→0 przy scroll w dół) od realnego y<start przy scroll w górę. */
+    let prevBookSTProgress = -1;
 
     const cached = { cw: 0, ch: 0, sx: 0, sy: 0, sw: 0, sh: 0 };
 
@@ -278,20 +280,36 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
       return 0;
     }
 
-    /** Mapowanie klatki: po pinie !isActive jest zarówno nad start (scroll < start), jak i za end — rozdzielamy po scroll(). */
+    /** Nad start vs za end vs glitch pinu (y<start przy direction=1 + spadek progress). */
     function effectiveFrameForDraw(): number {
       const lastIdx = FRAME_COUNT - 1;
       const st = bookST;
+      const currentP = st ? st.progress : 0;
 
       if (st && !st.isActive) {
         const y = st.scroll();
         const eps = 1;
-        /* Nad triggerem (hero itd.): zawsze zamknięta książka — inaczej playhead zostaje na 22. */
+        const prevP = prevBookSTProgress;
+
         if (y < st.start - eps) {
+          /* Realny powrót nad sekcję w górę: direction -1 — zamknięta książka.
+             Glitch przy pierwszym zejściu w dół: y chwilowo < start, direction 1, był wysoki progress. */
+          const forwardGlitch =
+            bookScrubPastEnd &&
+            prevP >= 0.9 &&
+            currentP < 0.1 &&
+            st.direction !== -1;
+
+          if (forwardGlitch) {
+            prevBookSTProgress = currentP;
+            return allLoaded ? lastIdx : findNearestLoaded(lastIdx);
+          }
+          prevBookSTProgress = currentP;
           return allLoaded ? 0 : findNearestLoaded(0);
         }
-        /* Pod sekcją po przejechaniu scrubem w dół: trzymaj ostatnią klatkę mimo progress=0. */
-        if (bookScrubPastEnd && y >= st.end - eps) {
+
+        if (bookScrubPastEnd && (y >= st.end - eps || currentP >= 0.95)) {
+          prevBookSTProgress = currentP;
           return allLoaded ? lastIdx : findNearestLoaded(lastIdx);
         }
       }
@@ -300,7 +318,9 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
       if (st && st.progress > 0.95 && t < FRAME_COUNT - 3) {
         t = lastIdx;
       }
-      return allLoaded ? t : findNearestLoaded(t);
+      const out = allLoaded ? t : findNearestLoaded(t);
+      if (st) prevBookSTProgress = st.progress;
+      return out;
     }
 
     /* ── DPR-aware canvas setup ── */
@@ -393,9 +413,11 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
           },
           onEnterBack() {
             bookScrubPastEnd = false;
+            prevBookSTProgress = -1;
           },
           onLeaveBack() {
             bookScrubPastEnd = false;
+            prevBookSTProgress = -1;
           },
         }
       });
@@ -574,6 +596,7 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
       void _scrollEnabled; /* read so TS does not flag unused (used in PRODUCTION PATTERN when uncommented) */
       preloadStarted = false;
       bookScrubPastEnd = false;
+      prevBookSTProgress = -1;
       playhead.frame = 0;
       displayIndex = -1;
       ctx = null;
