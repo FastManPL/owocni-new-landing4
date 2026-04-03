@@ -394,48 +394,46 @@
 }
 
 /* ====== LAYOUT ====== */
-/* Nad #final-section (z-index:0) — pełne tło canvasu, żeby stopka WebGL nie przeświecała przy scrollu */
-@keyframes faq-footer-shadow-fade {
-  from { opacity: 1; }
-  to { opacity: 0; }
-}
-
+/* Nad #final-section (z-index:0). Tło tylko w ::before — ostatnie 2rem sekcji zostaje przezroczyste, żeby gradient ::after
+   schodził do prawdziwej przezroczystości i widać było #final-section (margin-top:-100vh), a nie „kolor” tła FAQ. */
 #faq-section {
   position: relative;
   z-index: 1;
   isolation: isolate;
-  background: #f7f6f4;
+  background: transparent;
   padding: clamp(40px, 8vw, 100px) 0;
   font-family: 'Lexend', sans-serif; color: #111;
   display: flex; flex-direction: column; align-items: center;
 }
 
-/* Cień u dolnej krawędzi FAQ (jak final.stack.html .fake-pinned-content::after) — „odkrywa” #final-section przy scrollu */
+#faq-section::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 0;
+  bottom: 2rem;
+  background: #f7f6f4;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Cień tylko w pasie 2rem nad dolną krawędzią — gradient do transparent (warstwa pod spodem = final, nie kolor FAQ). */
 #faq-section::after {
   content: '';
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
-  height: 20vh;
+  height: 2rem;
   pointer-events: none;
   z-index: 0;
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.045) 0%, transparent 100%);
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 0%, transparent 100%);
 }
 
 #faq-section > *:not(.faq-overlay) {
   position: relative;
   z-index: 1;
-}
-
-@supports (animation-timeline: view()) {
-  @media (prefers-reduced-motion: no-preference) {
-    #faq-section::after {
-      animation: faq-footer-shadow-fade linear both;
-      animation-timeline: view(block);
-      animation-range: entry 50% cover 35%;
-    }
-  }
 }
 #faq-section .faq-grid {
   width: calc(100% - 2rem); max-width: clamp(62.5rem, 88vw, 110rem);
