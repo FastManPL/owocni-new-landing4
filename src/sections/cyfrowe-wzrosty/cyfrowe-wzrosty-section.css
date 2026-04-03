@@ -122,6 +122,9 @@
   --tile-radius: 1rem;
   --tile-padding: 1.5rem;
   --content-height: 11rem;
+  /* Zanik głównego wideo u dołu (jak ::before kafelka) */
+  --tile-main-video-fade-color: #ffffff;
+  --tile-main-video-fade-height: 15px;
 }
 
 @media (max-width: 400px) {
@@ -505,6 +508,23 @@
   mask-position: center bottom;
 }
 
+/* Cieniowanie u dołu głównego wideo — gradient do przezroczystości (~15px) */
+#cyfrowe-wzrosty-section .tile-media--masked-stack .tile-media-main::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--tile-main-video-fade-height);
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(
+    to top,
+    var(--tile-main-video-fade-color) 0%,
+    rgba(255, 255, 255, 0) 100%
+  );
+}
+
 #cyfrowe-wzrosty-section .tile-media-secondary {
   position: absolute;
   z-index: 0;
@@ -581,6 +601,22 @@
   width: 100%;
   height: auto;
   display: block;
+}
+
+#cyfrowe-wzrosty-section .tile-media-float--etap03::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--tile-main-video-fade-height);
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(
+    to top,
+    var(--tile-main-video-fade-color) 0%,
+    rgba(255, 255, 255, 0) 100%
+  );
 }
 
 /* NAVIGATION ROW */

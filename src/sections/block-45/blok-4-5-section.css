@@ -650,7 +650,7 @@
 #blok-4-5-section #blok-4-5-anchorChar.mana-active { background: linear-gradient(180deg, #252030 0%, #2a2130 40%, #512b2b 70%, #7d3527 100%); -webkit-background-clip: text; background-clip: text; }
 #blok-4-5-section #blok-4-5-iHeatWrapper { position: fixed; pointer-events: none; z-index: 150; overflow: visible; }
 #blok-4-5-section #blok-4-5-iHeatCanvas { position: absolute; top: 0; left: 0; pointer-events: none; }
-#blok-4-5-section .walking-text-container { display: inline-flex; font-family: 'Lexend', sans-serif; font-weight: 700; font-size: 1em; line-height: 1; white-space: pre; margin-left: 0.25em; overflow: visible; perspective: 300px; perspective-origin: 50% 50%; position: relative; }
+#blok-4-5-section .walking-text-container { display: inline-flex; font-family: 'Lexend', sans-serif; font-weight: 700; font-size: 1em; line-height: 1; white-space: pre; margin-left: 0.25em; overflow: visible; perspective: 300px; perspective-origin: 50% 50%; position: relative; will-change: transform; }
 #blok-4-5-section .walking-char { display: inline-block; transform-origin: 50% 100%; position: relative; backface-visibility: hidden; }
 #blok-4-5-section #blok-4-5-particleCanvas { position: absolute; top: -50px; left: -100px; pointer-events: none; z-index: 1; }
 #blok-4-5-section #blok-4-5-sparksCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }

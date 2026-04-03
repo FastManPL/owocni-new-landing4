@@ -757,6 +757,8 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     var smokeCanvas: HTMLCanvasElement | null, smokeCtx: CanvasRenderingContext2D | null;
     var sparksCanvas: HTMLCanvasElement | null, sparksCtx: CanvasRenderingContext2D | null;
     var iStarCanvas: HTMLCanvasElement | null, iStarCtx: CanvasRenderingContext2D | null, iStarWrapper: HTMLElement | null;
+    var STAR_CANVAS_SIZE = 800;
+    var iHeatAnimating = false;
     var manaContainer: HTMLElement | null, manaBar: HTMLElement | null;
     var _containerEl: HTMLElement | null = null, _anchorCharEl: Element | null = null;
 
@@ -845,8 +847,78 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       });
     }
 
-    function initStarCanvas() { iStarWrapper = $id('blok-4-5-iHeatWrapper') as HTMLElement|null; iStarCanvas = $id('blok-4-5-iHeatCanvas') as HTMLCanvasElement|null; if (iStarCanvas) iStarCtx = iStarCanvas.getContext('2d'); }
-    function spawnStars() { if (!_starsEngine && _webglSupported) ensureStarsEngine(); starsState.triggerManual += 3; if (starsState.wake) starsState.wake(); }
+    function updateIHeatCanvasPosition() {
+      var anchor = $id('blok-4-5-anchorChar') as HTMLElement | null;
+      if (!anchor || !iStarWrapper || !iStarCanvas) return;
+      var rect = anchor.getBoundingClientRect();
+      var cx = rect.left + rect.width / 2, cy = rect.top + rect.height * 0.25;
+      iStarWrapper.style.width = iStarWrapper.style.height = STAR_CANVAS_SIZE + 'px';
+      iStarWrapper.style.left = cx - STAR_CANVAS_SIZE / 2 + 'px';
+      iStarWrapper.style.top = cy - STAR_CANVAS_SIZE / 2 + 'px';
+      if (iStarCanvas.width !== STAR_CANVAS_SIZE) {
+        iStarCanvas.width = iStarCanvas.height = STAR_CANVAS_SIZE;
+      }
+    }
+    function initStarCanvas() {
+      iStarWrapper = $id('blok-4-5-iHeatWrapper') as HTMLElement | null;
+      iStarCanvas = $id('blok-4-5-iHeatCanvas') as HTMLCanvasElement | null;
+      if (iStarCanvas && iStarWrapper) {
+        iStarCtx = iStarCanvas.getContext('2d');
+        updateIHeatCanvasPosition();
+      }
+      function onResizeStar() { updateIHeatCanvasPosition(); }
+      window.addEventListener('resize', onResizeStar, { passive: true });
+      cleanups.push(function() { window.removeEventListener('resize', onResizeStar); });
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', onResizeStar, { passive: true });
+        cleanups.push(function() { window.visualViewport!.removeEventListener('resize', onResizeStar); });
+      }
+    }
+    /** Iskierki na kropce „i” przy przejściu na „zostają!” — jak blok-4-5.stack.html (osobno od WebGL przy Konwersja). */
+    function spawnIHeatBurst() {
+      updateIHeatCanvasPosition();
+      var cx = STAR_CANVAS_SIZE / 2;
+      function burst(n: number) {
+        for (var i = 0; i < n; i++) {
+          var angle = Math.random() * Math.PI * 2;
+          var r = Math.sqrt(Math.random()) * 15;
+          spawnParticle(4, cx + Math.cos(angle) * r, cx + Math.sin(angle) * r, {});
+        }
+        if (!iHeatAnimating) { iHeatAnimating = true; requestAnimationFrame(animateIHeatStars); }
+      }
+      var tid1 = window.setTimeout(function() { burst(25); }, 150);
+      var tid2 = window.setTimeout(function() { burst(8); }, 350);
+      timerIds.push({ type: 'timeout', id: tid1 }); timerIds.push({ type: 'timeout', id: tid2 });
+    }
+    function animateIHeatStars() {
+      if (!iStarCtx) { iHeatAnimating = false; return; }
+      var hasStars = false;
+      iStarCtx.clearRect(0, 0, STAR_CANVAS_SIZE, STAR_CANVAS_SIZE);
+      var starNow = Date.now();
+      for (var i = poolActive - 1; i >= 0; i--) {
+        var p = POOL[i];
+        if (p.type !== 4) continue;
+        hasStars = true;
+        p.vy += p.gravity; p.x += p.vx; p.y += p.vy;
+        p.rotation += p.rSpeed; p.life -= p.decay;
+        if (p.life <= 0) {
+          poolActive--;
+          var tmp = POOL[i]; POOL[i] = POOL[poolActive]; POOL[poolActive] = tmp;
+          continue;
+        }
+        var twinkle = 0.8 + Math.sin(starNow * 0.02 + p.rotation) * 0.2;
+        iStarCtx.save();
+        iStarCtx.translate(p.x, p.y);
+        iStarCtx.rotate(p.rotation);
+        iStarCtx.globalAlpha = p.life * twinkle;
+        var scale = p.size / 16;
+        iStarCtx.scale(scale, scale);
+        iStarCtx.drawImage(SPRITES.star!, -16, -16);
+        iStarCtx.restore();
+      }
+      if (hasStars) requestAnimationFrame(animateIHeatStars);
+      else iHeatAnimating = false;
+    }
     function initCanvases() {
       smokeCanvas = $id('blok-4-5-particleCanvas') as HTMLCanvasElement|null; if (smokeCanvas) smokeCtx = smokeCanvas.getContext('2d');
       sparksCanvas = $id('blok-4-5-sparksCanvas') as HTMLCanvasElement|null; if (sparksCanvas) sparksCtx = sparksCanvas.getContext('2d');
@@ -857,6 +929,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       updateCachedFontSize(); cacheBaseMetrics();
       Object.values(bubbles).forEach(function(b){return b&&b.classList.remove('visible');});
       (['b1','b2','b3'] as const).forEach(function(k){activeTargets[k]=null;}); activeBubbleCount=0;
+      updateIHeatCanvasPosition();
     }
 
     // =========================================================
