@@ -465,14 +465,18 @@
 }
 
 /* —— Tile multimedia (z benefits-carousel landing2) —— */
+/* Secondary zawsze pod mainem; overflow obcina powiększone wideo (scale) i odstaje max ~2rem przez margin maina. */
 #cyfrowe-wzrosty-section .tile-media--masked-stack {
-  overflow: visible;
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: 0.75rem 0.75rem 0 0;
 }
 
 #cyfrowe-wzrosty-section .tile-media--masked-stack .tile-media-main {
   position: relative;
   z-index: 1;
   width: 100%;
+  /* Odsunięcie w dół względem dolnej krawędzi slotu; boki/góra powiększenia obcina overflow:hidden na .tile-media--masked-stack */
   margin-bottom: -2rem;
   display: flex;
   align-items: flex-end;
@@ -498,7 +502,7 @@
 
 #cyfrowe-wzrosty-section .tile-media-secondary {
   position: absolute;
-  z-index: 2;
+  z-index: 0;
   border-radius: 0.5rem;
   overflow: hidden;
   pointer-events: none;
@@ -538,10 +542,14 @@
 
 /* Etap 03: wideo nad mockupem iPhone */
 #cyfrowe-wzrosty-section .tile-media--iphone {
-  overflow: visible;
+  overflow: hidden;
+  isolation: isolate;
+  border-radius: 0.75rem 0.75rem 0 0;
 }
 
 #cyfrowe-wzrosty-section .tile-media--iphone .tile-media-bg {
+  position: relative;
+  z-index: 0;
   width: 100%;
 }
 
@@ -558,7 +566,7 @@
   position: absolute;
   left: clamp(0.75rem, 12vw, 3.5rem);
   bottom: 0;
-  z-index: 3;
+  z-index: 1;
   width: min(17rem, 58%);
   border-radius: 0.5rem;
   overflow: hidden;
