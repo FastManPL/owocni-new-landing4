@@ -464,6 +464,113 @@
   letter-spacing: 0.1em;
 }
 
+/* —— Tile multimedia (z benefits-carousel landing2) —— */
+#cyfrowe-wzrosty-section .tile-media--masked-stack {
+  overflow: visible;
+}
+
+#cyfrowe-wzrosty-section .tile-media--masked-stack .tile-media-main {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  margin-bottom: -2rem;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  transform: scale(1.6);
+  transform-origin: bottom center;
+}
+
+#cyfrowe-wzrosty-section .tile-media--masked-stack .tile-media-main video {
+  width: 100%;
+  height: auto;
+  display: block;
+  vertical-align: bottom;
+  -webkit-mask-size: contain;
+  mask-size: contain;
+  -webkit-mask-repeat: no-repeat;
+  mask-repeat: no-repeat;
+  -webkit-mask-position: center bottom;
+  mask-position: center bottom;
+}
+
+#cyfrowe-wzrosty-section .tile-media-secondary {
+  position: absolute;
+  z-index: 2;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+#cyfrowe-wzrosty-section .tile-media-secondary video {
+  width: 100%;
+  height: auto;
+  display: block;
+  vertical-align: bottom;
+}
+
+/* Pozycje jak w karuzeli (kafelki źródłowe) */
+#cyfrowe-wzrosty-section .tile-media-secondary--etap01 {
+  left: 0;
+  bottom: 11rem;
+  width: min(20rem, 92%);
+}
+
+#cyfrowe-wzrosty-section .tile-media-secondary--etap02 {
+  left: -0.5rem;
+  bottom: 8.5rem;
+  width: min(15rem, 78%);
+}
+
+#cyfrowe-wzrosty-section .tile-media-secondary--etap04 {
+  left: 0;
+  bottom: 14rem;
+  width: min(25rem, 100%);
+}
+
+@media (max-width: 400px) {
+  #cyfrowe-wzrosty-section .tile-media-secondary--etap01 { bottom: 9rem; width: min(17rem, 94%); }
+  #cyfrowe-wzrosty-section .tile-media-secondary--etap02 { left: 0; bottom: 7rem; width: min(12rem, 82%); }
+  #cyfrowe-wzrosty-section .tile-media-secondary--etap04 { bottom: 11rem; }
+}
+
+/* Etap 03: wideo nad mockupem iPhone */
+#cyfrowe-wzrosty-section .tile-media--iphone {
+  overflow: visible;
+}
+
+#cyfrowe-wzrosty-section .tile-media--iphone .tile-media-bg {
+  width: 100%;
+}
+
+#cyfrowe-wzrosty-section .tile-media--iphone .tile-media-bg img {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+  object-position: bottom center;
+  border-radius: 0.75rem 0.75rem 0 0;
+}
+
+#cyfrowe-wzrosty-section .tile-media-float--etap03 {
+  position: absolute;
+  left: clamp(0.75rem, 12vw, 3.5rem);
+  bottom: 0;
+  z-index: 3;
+  width: min(17rem, 58%);
+  border-radius: 0.5rem;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+#cyfrowe-wzrosty-section .tile-media-float--etap03 video {
+  width: 100%;
+  height: auto;
+  display: block;
+}
+
 /* NAVIGATION ROW */
 #cyfrowe-wzrosty-section .navigation-row {
   display: flex;

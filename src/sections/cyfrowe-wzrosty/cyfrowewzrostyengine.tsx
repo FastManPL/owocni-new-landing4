@@ -7,6 +7,9 @@ import { ScrollToPlugin } from 'gsap/ScrollToPlugin';
 import { scrollRuntime } from '@/lib/scrollRuntime';
 import './cyfrowe-wzrosty-section.css';
 
+/** Assety z karuzeli benefits (landing2) — mapowanie wg briefu klienta. */
+const CW_TILE_ASSETS = '/assets/cyfrowe-wzrosty-tiles';
+
 // ⚠️ GSAP-SSR-01: ZAKAZ gsap.registerPlugin() na module top-level.
 // registerPlugin() WYŁĄCZNIE wewnątrz useGSAP(() => { ... }) jak poniżej.
 
@@ -1104,8 +1107,31 @@ export default function CyfroweWzrostyEngine() {
                 <h3 className="tile-heading"><strong>Klikalny prototyp strony</strong> gotowy w 15 dni roboczych.</h3>
                 <p className="tile-body">Akceptujesz układ UX i komplet treści przed etapem designu. <strong>= zero niespodzianek.</strong></p>
               </div>
-              <div className="tile-media">
-                <div className="tile-media-placeholder">Multimedia 1</div>
+              <div className="tile-media tile-media--masked-stack" aria-hidden="true">
+                <div className="tile-media-secondary tile-media-secondary--etap01">
+                  <video
+                    src={`${CW_TILE_ASSETS}/konwersja-strony2.mp4`}
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    preload="metadata"
+                  />
+                </div>
+                <div className="tile-media-main">
+                  <video
+                    src={`${CW_TILE_ASSETS}/Copywriting.mp4`}
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    preload="metadata"
+                    style={{
+                      WebkitMaskImage: `url(${CW_TILE_ASSETS}/maska_carreySV.svg)`,
+                      maskImage: `url(${CW_TILE_ASSETS}/maska_carreySV.svg)`,
+                    }}
+                  />
+                </div>
               </div>
             </article>
 
@@ -1121,8 +1147,31 @@ export default function CyfroweWzrostyEngine() {
                 <h3 className="tile-heading"><strong>Bezkonkurencyjny design.</strong><br />— Przed upływem 21 dni.</h3>
                 <p className="tile-body"><strong>Profesjonalizm Twojej firmy widoczny od pierwszego spojrzenia.</strong> — Będziesz z tego dumny na każdym spotkaniu.</p>
               </div>
-              <div className="tile-media">
-                <div className="tile-media-placeholder">Multimedia 2</div>
+              <div className="tile-media tile-media--masked-stack" aria-hidden="true">
+                <div className="tile-media-secondary tile-media-secondary--etap02">
+                  <video
+                    src={`${CW_TILE_ASSETS}/nr1-strony2.mp4`}
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    preload="metadata"
+                  />
+                </div>
+                <div className="tile-media-main">
+                  <video
+                    src={`${CW_TILE_ASSETS}/LogoIdentyfikacja.mp4`}
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    preload="metadata"
+                    style={{
+                      WebkitMaskImage: `url(${CW_TILE_ASSETS}/maska_dicaprioSV.svg)`,
+                      maskImage: `url(${CW_TILE_ASSETS}/maska_dicaprioSV.svg)`,
+                    }}
+                  />
+                </div>
               </div>
             </article>
 
@@ -1138,8 +1187,20 @@ export default function CyfroweWzrostyEngine() {
                 <h3 className="tile-heading"><strong>Wsparcie przy starcie</strong><br />— Konsultacje i szkolenia.</h3>
                 <p className="tile-body"><strong>Uruchamiamy, monitorujemy, reagujemy.</strong> Upewniamy się, że w pełni wykorzystujesz możliwości nowej strony.</p>
               </div>
-              <div className="tile-media">
-                <div className="tile-media-placeholder">Multimedia 3</div>
+              <div className="tile-media tile-media--iphone" aria-hidden="true">
+                <div className="tile-media-float tile-media-float--etap03">
+                  <video
+                    src={`${CW_TILE_ASSETS}/optymalne-strony3.mp4`}
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    preload="metadata"
+                  />
+                </div>
+                <div className="tile-media-bg">
+                  <img src={`${CW_TILE_ASSETS}/iphone.jpg`} alt="" decoding="async" />
+                </div>
               </div>
             </article>
 
@@ -1155,8 +1216,31 @@ export default function CyfroweWzrostyEngine() {
                 <h3 className="tile-heading"><strong>Stała opieka</strong><br />— W opcjach nawet 24/7.</h3>
                 <p className="tile-body"><strong>Pełna dostępność zespołu i szybkie zmiany, gdy ich potrzebujesz.</strong> W opcjach 24/7 dla tych, którzy nie mogą sobie pozwolić na przestój.</p>
               </div>
-              <div className="tile-media">
-                <div className="tile-media-placeholder">Multimedia 4</div>
+              <div className="tile-media tile-media--masked-stack" aria-hidden="true">
+                <div className="tile-media-secondary tile-media-secondary--etap04">
+                  <video
+                    src={`${CW_TILE_ASSETS}/klient-strony2.mp4`}
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    preload="metadata"
+                  />
+                </div>
+                <div className="tile-media-main">
+                  <video
+                    src={`${CW_TILE_ASSETS}/Konwersja.mp4`}
+                    autoPlay
+                    muted
+                    loop
+                    playsInline
+                    preload="metadata"
+                    style={{
+                      WebkitMaskImage: `url(${CW_TILE_ASSETS}/maska_ziomkiSV.svg)`,
+                      maskImage: `url(${CW_TILE_ASSETS}/maska_ziomkiSV.svg)`,
+                    }}
+                  />
+                </div>
               </div>
             </article>
 

@@ -11,8 +11,20 @@ export const SECTION_MANIFEST = {
   // Nota: ScrollTrigger NIE jest required przez sekcję (0 ST instances).
   // scrollRuntime importuje ScrollTrigger globalnie — sekcja nie tworzy własnych ST.
 
-  assets: [],
-  // 0 mediów. Tile placeholders to div.tile-media-placeholder (CSS gradient, nie asset).
+  assets: [
+    '/assets/cyfrowe-wzrosty-tiles/Copywriting.mp4',
+    '/assets/cyfrowe-wzrosty-tiles/maska_carreySV.svg',
+    '/assets/cyfrowe-wzrosty-tiles/konwersja-strony2.mp4',
+    '/assets/cyfrowe-wzrosty-tiles/LogoIdentyfikacja.mp4',
+    '/assets/cyfrowe-wzrosty-tiles/maska_dicaprioSV.svg',
+    '/assets/cyfrowe-wzrosty-tiles/nr1-strony2.mp4',
+    '/assets/cyfrowe-wzrosty-tiles/optymalne-strony3.mp4',
+    '/assets/cyfrowe-wzrosty-tiles/iphone.jpg',
+    '/assets/cyfrowe-wzrosty-tiles/Konwersja.mp4',
+    '/assets/cyfrowe-wzrosty-tiles/maska_ziomkiSV.svg',
+    '/assets/cyfrowe-wzrosty-tiles/klient-strony2.mp4',
+  ],
+  // Wideo + maski SVG + jpg z karuzeli benefits (landing2), katalog public/assets/cyfrowe-wzrosty-tiles/.
 
   warmup: [],
   // Typ B: ticker startuje natychmiast w resume(). Brak async warm-up.
@@ -85,11 +97,20 @@ export const SECTION_MANIFEST = {
 
     isHero: false,
     gracefulDegradation: false,
-    // 0 mediów → degradation nieaplikowalne.
+    // Wideo dekoracyjne w kafelkach; brak osobnej ścieżki bez wideo.
 
     preloadCandidates: [],
     prefetchCandidates: [],
-    coldCandidates: [],
+    coldCandidates: [
+      '/assets/cyfrowe-wzrosty-tiles/Copywriting.mp4',
+      '/assets/cyfrowe-wzrosty-tiles/konwersja-strony2.mp4',
+      '/assets/cyfrowe-wzrosty-tiles/LogoIdentyfikacja.mp4',
+      '/assets/cyfrowe-wzrosty-tiles/nr1-strony2.mp4',
+      '/assets/cyfrowe-wzrosty-tiles/optymalne-strony3.mp4',
+      '/assets/cyfrowe-wzrosty-tiles/iphone.jpg',
+      '/assets/cyfrowe-wzrosty-tiles/Konwersja.mp4',
+      '/assets/cyfrowe-wzrosty-tiles/klient-strony2.mp4',
+    ],
     preconnectDomains: [],
 
     containApplied: true,
