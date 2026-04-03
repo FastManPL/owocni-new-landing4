@@ -2266,6 +2266,17 @@ async function onasCapitanInit(container) {
   const SP = 0.12;
   let _smoothVk = 0;
 
+  /* Ticker off-screen: ring/small1 keep Three.js defaults (ringRy=0, small1 identity) until first
+     capitanTick — visible as ~180° snap on inner ring + wrong pose for center strokes. One-time sync. */
+  (function syncCapitanMeshesToCurrentScroll() {
+    const c0 = sceneRing(J.p);
+    if (ringPivot) ringPivot.rotation.y = c0.ringRy;
+    if (EL.small1) {
+      const sp0 = J.on ? Math.max(0, Math.min(1, (J.p - ANIM_START) / ANIM_RANGE)) : 0;
+      animateSmall1(Math.round(sp0 * 1000));
+    }
+  })();
+
   tickFn = function capitanTick(time) {
     if (!running) return;
 
