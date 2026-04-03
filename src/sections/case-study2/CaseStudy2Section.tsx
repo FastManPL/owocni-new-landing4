@@ -175,7 +175,7 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
   if (layer) {
     var tl = gsap.timeline({
       scrollTrigger: {
-        trigger: '#case-study-section',
+        trigger: container,
         start: '60% bottom',
         end:   'center 30%',
         scrub: 0.6,
