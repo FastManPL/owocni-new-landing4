@@ -1634,17 +1634,10 @@ async function onasCapitanInit(container) {
     });
   }
 
-  threeContainer.addEventListener('pointerenter', onPointerEnter, { passive: true });
-  threeContainer.addEventListener('pointerleave', onPointerLeave, { passive: true });
-  cleanups.push(() => {
-    threeContainer.removeEventListener('pointerenter', onPointerEnter, { passive: true });
-    threeContainer.removeEventListener('pointerleave', onPointerLeave, { passive: true });
-  });
-
   const hfListeners = [
     { target: threeContainer, event: 'pointermove', fn: onPointerMove, options: { passive: true } }
   ];
-  hfListeners.forEach(l => l.target.addEventListener(l.event, l.fn, l.options));
+  /* pointerenter / leave / move — attached only after badgeInteractReady (see attachBadgePointerListeners) */
 
   let lastResizedSize = SIZE;
   const threeRo = new ResizeObserver(() => {
@@ -1727,6 +1720,7 @@ async function onasCapitanInit(container) {
   let inertiaRaf = 0;
   /** Until reveal + drift settle: only scroll drives 3D (ignore cursor / hover-attract). */
   let badgeInteractReady = false;
+  let badgePointerAttached = false;
 
   function updateBadgeDrift() {
     if (mq.matches) {
@@ -1826,6 +1820,7 @@ async function onasCapitanInit(container) {
                   Math.abs(driftInertia) < 0.6;
                 if (settled || settleFrames > 120) {
                   badgeInteractReady = true;
+                  attachBadgePointerListeners();
                   return;
                 }
                 requestAnimationFrame(waitDriftSettle);
@@ -1861,6 +1856,7 @@ async function onasCapitanInit(container) {
               badge.style.maskImage = 'none';
               badge.style.animation = 'none';
               badgeInteractReady = true;
+              attachBadgePointerListeners();
             }, { once: true });
           } else {
             /* No @property (Safari < 16.4): skip broken mask, fade+scale only */
@@ -1871,7 +1867,10 @@ async function onasCapitanInit(container) {
             gsap.to(badge, {
               opacity: 1, scale: 1, duration: 1.0,
               ease: 'power3.out',
-              onComplete: function() { badgeInteractReady = true; }
+              onComplete: function() {
+                badgeInteractReady = true;
+                attachBadgePointerListeners();
+              }
             });
           }
         }
@@ -1885,8 +1884,40 @@ async function onasCapitanInit(container) {
   /* If IO/reveal never completes (edge layout), do not block pointer forever */
   const badgeInteractFailsafeId = window.setTimeout(() => {
     badgeInteractReady = true;
+    attachBadgePointerListeners();
   }, 12000);
   cleanups.push(() => clearTimeout(badgeInteractFailsafeId));
+
+  function attachBadgePointerListeners() {
+    if (badgePointerAttached || !badgeInteractReady) return;
+    badgePointerAttached = true;
+    hoverAttract = 0;
+    mouse.x = 0;
+    mouse.y = 0;
+    mouse.near = false;
+    mouse.influence = 0;
+    rectCache = threeContainer.getBoundingClientRect();
+    threeContainer.addEventListener('pointerenter', onPointerEnter, { passive: true });
+    threeContainer.addEventListener('pointerleave', onPointerLeave, { passive: true });
+    hfListeners.forEach(l => l.target.addEventListener(l.event, l.fn, l.options));
+  }
+
+  function detachBadgePointerListeners() {
+    if (!badgePointerAttached) return;
+    badgePointerAttached = false;
+    threeContainer.removeEventListener('pointerenter', onPointerEnter, { passive: true });
+    threeContainer.removeEventListener('pointerleave', onPointerLeave, { passive: true });
+    hfListeners.forEach(l => l.target.removeEventListener(l.event, l.fn, l.options));
+    if (pmRaf) {
+      cancelAnimationFrame(pmRaf);
+      pmRaf = 0;
+    }
+    mouse.x = 0;
+    mouse.y = 0;
+    mouse.near = false;
+  }
+
+  cleanups.push(() => detachBadgePointerListeners());
 
   /* ── syncRunning: OR logic — IO visible OR ScrollTrigger active → ticker runs ── */
   function syncRunning() {
@@ -1895,9 +1926,11 @@ async function onasCapitanInit(container) {
     running = shouldRun;
     if (running) {
       _wakeSkip = true; // wake from sleep → skip first-frame velocity spike
-      if (!ticking) { ticking = true; gsap.ticker.add(tickFn); hfListeners.forEach(l => l.target.addEventListener(l.event, l.fn, l.options)); }
+      if (!ticking) { ticking = true; gsap.ticker.add(tickFn); }
+      if (badgeInteractReady) attachBadgePointerListeners();
     } else {
-      if (ticking) { ticking = false; gsap.ticker.remove(tickFn); hfListeners.forEach(l => l.target.removeEventListener(l.event, l.fn, l.options)); }
+      if (ticking) { ticking = false; gsap.ticker.remove(tickFn); }
+      detachBadgePointerListeners();
     }
   }
 
@@ -2454,14 +2487,14 @@ async function onasCapitanInit(container) {
     if (pmRaf) { cancelAnimationFrame(pmRaf); pmRaf = 0; }
     if (posRaf) { cancelAnimationFrame(posRaf); posRaf = 0; }
     inertiaRunning = false;
-    hfListeners.forEach(l => l.target.removeEventListener(l.event, l.fn, l.options));
+    detachBadgePointerListeners();
   }
 
   function resume() {
     if (ticking) return; if (!running) return;
     _wakeSkip = true; // manual resume = wake → skip velocity spike
     ticking = true; gsap.ticker.add(tickFn);
-    hfListeners.forEach(l => l.target.addEventListener(l.event, l.fn, l.options));
+    if (badgeInteractReady) attachBadgePointerListeners();
   }
 
   function kill() {
