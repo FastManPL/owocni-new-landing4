@@ -1610,7 +1610,17 @@ async function onasCapitanInit(container) {
   let pmRaf = 0;
 
   function onPointerEnter() { mouse.near = true; rectCache = threeContainer.getBoundingClientRect(); }
-  function onPointerLeave() { mouse.near = false; }
+  function onPointerLeave() {
+    mouse.near = false;
+    /* Stale normalized coords (e.g. last move on right edge of badge) kept mRy≠0 while influence
+       decayed slowly → medal looked “flipped” vs cursor far right on screen. Clear on exit. */
+    mouse.x = 0;
+    mouse.y = 0;
+    if (pmRaf) {
+      cancelAnimationFrame(pmRaf);
+      pmRaf = 0;
+    }
+  }
   function onPointerMove(e) {
     lastClientX = e.clientX; lastClientY = e.clientY;
     if (!mouse.near) mouse.near = true;
