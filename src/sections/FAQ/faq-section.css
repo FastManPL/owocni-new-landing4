@@ -395,6 +395,11 @@
 
 /* ====== LAYOUT ====== */
 /* Nad #final-section (z-index:0) — pełne tło canvasu, żeby stopka WebGL nie przeświecała przy scrollu */
+@keyframes faq-footer-shadow-fade {
+  from { opacity: 1; }
+  to { opacity: 0; }
+}
+
 #faq-section {
   position: relative;
   z-index: 1;
@@ -403,6 +408,34 @@
   padding: clamp(40px, 8vw, 100px) 0;
   font-family: 'Lexend', sans-serif; color: #111;
   display: flex; flex-direction: column; align-items: center;
+}
+
+/* Cień u dolnej krawędzi FAQ (jak final.stack.html .fake-pinned-content::after) — „odkrywa” #final-section przy scrollu */
+#faq-section::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: min(18vh, 140px);
+  pointer-events: none;
+  z-index: 0;
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.14) 0%, transparent 100%);
+}
+
+#faq-section > *:not(.faq-overlay) {
+  position: relative;
+  z-index: 1;
+}
+
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    #faq-section::after {
+      animation: faq-footer-shadow-fade linear both;
+      animation-timeline: view(block);
+      animation-range: entry 55% cover 40%;
+    }
+  }
 }
 #faq-section .faq-grid {
   width: calc(100% - 2rem); max-width: clamp(62.5rem, 88vw, 110rem);

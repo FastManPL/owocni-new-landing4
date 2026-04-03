@@ -14,7 +14,7 @@ type DeferredMountProps = {
   rootMargin?: string;
 };
 
-/** Szybkie przewinięcie może „pominąć” jedną klatkę IntersectionObserver — margines + scroll. */
+/** Szybki skok scrolla: IO nie zdąży zgłosić przecięcia; slot może być już nad viewportem — wtedy też montujemy (isSlotScrolledPast). */
 const NEAR_VIEWPORT_PX = 1200;
 const LENIS_BIND_MAX_FRAMES = 180;
 
@@ -63,14 +63,22 @@ export function DeferredMount({
       return r.top < vh + NEAR_VIEWPORT_PX && r.bottom > -NEAR_VIEWPORT_PX;
     };
 
+    /** Skok scrolla (np. pasek): slot mija viewport bez „przecięcia” IO — montujemy, żeby treść była w DOM przy powrocie w górę. */
+    const isSlotScrolledPast = () => {
+      const r = el.getBoundingClientRect();
+      return r.height > 0 && r.bottom < 0;
+    };
+
+    const shouldActivate = () => isNearViewport() || isSlotScrolledPast();
+
     const onScroll = () => {
-      if (!activated && isNearViewport()) activate();
+      if (!activated && shouldActivate()) activate();
     };
 
     const rect = el.getBoundingClientRect();
     const vh = window.innerHeight;
     const preloadPx = 480;
-    if (rect.top < vh + preloadPx) {
+    if (rect.top < vh + preloadPx || isSlotScrolledPast()) {
       activate();
       return;
     }
@@ -106,7 +114,7 @@ export function DeferredMount({
     io.observe(el);
 
     requestAnimationFrame(() => {
-      if (!activated && isNearViewport()) activate();
+      if (!activated && shouldActivate()) activate();
     });
 
     return () => {
