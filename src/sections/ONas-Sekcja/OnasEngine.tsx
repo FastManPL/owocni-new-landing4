@@ -1725,6 +1725,8 @@ async function onasCapitanInit(container) {
   let smoothProgress = 0; /* lerped progress — trails real scroll */
   let smoothRaf = 0;
   let inertiaRaf = 0;
+  /** Until reveal + drift settle: only scroll drives 3D (ignore cursor / hover-attract). */
+  let badgeInteractReady = false;
 
   function updateBadgeDrift() {
     if (mq.matches) {
@@ -1813,6 +1815,22 @@ async function onasCapitanInit(container) {
               badge.style.setProperty('--onas-badge-reveal', '72%');
               badge.style.webkitMaskImage = 'none';
               badge.style.maskImage = 'none';
+              /* After GSAP, wait until drift lerp + scroll inertia settle — then allow pointer. */
+              let settleFrames = 0;
+              function waitDriftSettle() {
+                settleFrames++;
+                const target = calcDriftProgress();
+                const settled =
+                  Math.abs(target - smoothProgress) < 0.005 &&
+                  !inertiaRunning &&
+                  Math.abs(driftInertia) < 0.6;
+                if (settled || settleFrames > 120) {
+                  badgeInteractReady = true;
+                  return;
+                }
+                requestAnimationFrame(waitDriftSettle);
+              }
+              requestAnimationFrame(waitDriftSettle);
             }
           });
           revealBadgeTl.to(badge, {
@@ -1842,6 +1860,7 @@ async function onasCapitanInit(container) {
               badge.style.webkitMaskImage = 'none';
               badge.style.maskImage = 'none';
               badge.style.animation = 'none';
+              badgeInteractReady = true;
             }, { once: true });
           } else {
             /* No @property (Safari < 16.4): skip broken mask, fade+scale only */
@@ -1851,7 +1870,8 @@ async function onasCapitanInit(container) {
             badge.style.transform = 'translate(-50%, -50%) rotate(0deg) scale(0.7)';
             gsap.to(badge, {
               opacity: 1, scale: 1, duration: 1.0,
-              ease: 'power3.out'
+              ease: 'power3.out',
+              onComplete: function() { badgeInteractReady = true; }
             });
           }
         }
@@ -1861,6 +1881,12 @@ async function onasCapitanInit(container) {
   );
   badgeRevealIO.observe(container);
   observers.push(badgeRevealIO);
+
+  /* If IO/reveal never completes (edge layout), do not block pointer forever */
+  const badgeInteractFailsafeId = window.setTimeout(() => {
+    badgeInteractReady = true;
+  }, 12000);
+  cleanups.push(() => clearTimeout(badgeInteractFailsafeId));
 
   /* ── syncRunning: OR logic — IO visible OR ScrollTrigger active → ticker runs ── */
   function syncRunning() {
@@ -2300,11 +2326,12 @@ async function onasCapitanInit(container) {
       _smoothVk = 0;
     }
 
-    const targetInfluence = mouse.near ? 1 : 0;
+    const scrollOnlyBadge = !badgeInteractReady;
+    const targetInfluence = scrollOnlyBadge ? 0 : (mouse.near ? 1 : 0);
     mouse.influence += (targetInfluence - mouse.influence) * 0.04;
 
-    /* ── Hover attract: mouse near → animation glides to 100% ── */
-    const hoverTarget = mouse.near ? 1 : 0;
+    /* ── Hover attract: mouse near → animation glides to 100% (disabled until badgeInteractReady) ── */
+    const hoverTarget = scrollOnlyBadge ? 0 : (mouse.near ? 1 : 0);
     hoverAttract += (hoverTarget - hoverAttract) * 0.025; // slow, smooth glide
     if (Math.abs(hoverAttract) < 0.001) hoverAttract = 0;
 
@@ -2313,13 +2340,15 @@ async function onasCapitanInit(container) {
       ? Math.max(0, Math.min(1, (J.p - ANIM_START) / ANIM_RANGE))
       : 0;
     // Effective progress: blend scroll → 100% based on hover attract
-    const effProgress = scrollProgress + (1 - scrollProgress) * hoverAttract;
+    const effProgress = scrollOnlyBadge
+      ? scrollProgress
+      : scrollProgress + (1 - scrollProgress) * hoverAttract;
     const effP = ANIM_START + effProgress * ANIM_RANGE;
     const effFrame = Math.round(effProgress * 1000);
     _effectiveFrame = effFrame; // expose for applyIdleLevitation
 
     if (logoGroup) {
-      const p = hoverAttract > 0.01 ? effP : J.p;
+      const p = (scrollOnlyBadge || hoverAttract <= 0.01) ? J.p : effP;
       const active = (J.on && p > 0.003 && p < 0.997) || hoverAttract > 0.01;
 
       /* ── Idle levitation: ALWAYS runs (topO, POLAND wave, innerRing drift) ── */
@@ -2356,7 +2385,7 @@ async function onasCapitanInit(container) {
         // Mouse deltas (old animation mouse response)
         const mRx = mouse.y * 0.08;
         const mRy = mouse.x * 0.25;
-        const inf = mouse.influence;
+        const inf = scrollOnlyBadge ? 0 : mouse.influence;
 
         // Organic layer: (RX_CENTER + levitation) ↔ (RX_CENTER + mouse)
         // Exactly like old animation: both branches include RX_CENTER
