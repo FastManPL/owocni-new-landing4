@@ -9,5 +9,6 @@ const OwocniForm = dynamic(
 
 /** Zawartość #final-formCard — osobny chunk, bez SSR (formularz + CSS). */
 export function FinalFormCard() {
-  return <OwocniForm embed />;
+  /* LP stron www: od razu ścieżka „Strona internetowa” (initialProduct → krok produktowy). */
+  return <OwocniForm embed initialProduct="strony" />;
 }

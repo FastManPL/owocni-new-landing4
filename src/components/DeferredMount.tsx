@@ -17,6 +17,8 @@ type DeferredMountProps = {
 /** Szybki skok scrolla: IO nie zdąży zgłosić przecięcia; slot może być już nad viewportem — wtedy też montujemy (isSlotScrolledPast). */
 const NEAR_VIEWPORT_PX = 1200;
 const LENIS_BIND_MAX_FRAMES = 180;
+const ACTIVATE_POLL_MS = 120;
+const ACTIVATE_POLL_MAX_TICKS = 70;
 
 /**
  * Montuje dzieci dopiero gdy slot jest blisko viewportu (IntersectionObserver)
@@ -39,11 +41,20 @@ export function DeferredMount({
     let io: IntersectionObserver | null = null;
     let rafId = 0;
     let srFrames = 0;
+    let pollTicks = 0;
+    let pollId: ReturnType<typeof setInterval> | null = null;
     const scrollCleanups: (() => void)[] = [];
 
     const teardownScroll = () => {
       while (scrollCleanups.length) {
         scrollCleanups.pop()?.();
+      }
+    };
+
+    const stopPoll = () => {
+      if (pollId != null) {
+        clearInterval(pollId);
+        pollId = null;
       }
     };
 
@@ -54,6 +65,7 @@ export function DeferredMount({
       io?.disconnect();
       io = null;
       teardownScroll();
+      stopPoll();
       cancelAnimationFrame(rafId);
     };
 
@@ -113,12 +125,30 @@ export function DeferredMount({
     );
     io.observe(el);
 
-    requestAnimationFrame(() => {
+    const tickActivate = () => {
       if (!activated && shouldActivate()) activate();
+    };
+
+    requestAnimationFrame(() => {
+      tickActivate();
+      requestAnimationFrame(tickActivate);
     });
+
+    /* Lenis często nie odpala window.scroll; skok paska — jedna klatka IO może pominąć zakres. */
+    pollId = setInterval(() => {
+      pollTicks++;
+      tickActivate();
+      if (activated || pollTicks >= ACTIVATE_POLL_MAX_TICKS) stopPoll();
+    }, ACTIVATE_POLL_MS);
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('scrollend', tickActivate, { passive: true });
+      scrollCleanups.push(() => window.removeEventListener('scrollend', tickActivate));
+    }
 
     return () => {
       cancelAnimationFrame(rafId);
+      stopPoll();
       io?.disconnect();
       teardownScroll();
     };
