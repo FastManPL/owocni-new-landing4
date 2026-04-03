@@ -465,19 +465,24 @@
 }
 
 /* —— Tile multimedia (z benefits-carousel landing2) —— */
-/* Secondary zawsze pod mainem; overflow obcina powiększone wideo (scale) i odstaje max ~2rem przez margin maina. */
+/* Secondary pod mainem. 2rem „na zewnątrz”: szerszy/niższy wrapper niż kolumna treści — obcinanie na obwodzie tego rozszerzenia, nie przez margin wewnątrz maina. */
 #cyfrowe-wzrosty-section .tile-media--masked-stack {
   overflow: hidden;
   isolation: isolate;
   border-radius: 0.75rem 0.75rem 0 0;
+  width: calc(100% + 4rem);
+  max-width: none;
+  margin-left: -2rem;
+  margin-right: -2rem;
+  margin-bottom: -2rem;
+  align-self: stretch;
+  box-sizing: border-box;
 }
 
 #cyfrowe-wzrosty-section .tile-media--masked-stack .tile-media-main {
   position: relative;
   z-index: 1;
   width: 100%;
-  /* Odsunięcie w dół względem dolnej krawędzi slotu; boki/góra powiększenia obcina overflow:hidden na .tile-media--masked-stack */
-  margin-bottom: -2rem;
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -545,6 +550,13 @@
   overflow: hidden;
   isolation: isolate;
   border-radius: 0.75rem 0.75rem 0 0;
+  width: calc(100% + 4rem);
+  max-width: none;
+  margin-left: -2rem;
+  margin-right: -2rem;
+  margin-bottom: -2rem;
+  align-self: stretch;
+  box-sizing: border-box;
 }
 
 #cyfrowe-wzrosty-section .tile-media--iphone .tile-media-bg {
