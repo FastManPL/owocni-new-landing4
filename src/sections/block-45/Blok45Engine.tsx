@@ -355,6 +355,9 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       renderer.setPixelRatio(1);
       renderer.setClearColor(0x000000, 0);
       renderer.setScissorTest(false);
+      if (typeof (renderer as any).transmissionResolutionScale === 'number') {
+        (renderer as any).transmissionResolutionScale = 0.5;
+      }
       starsContainer.appendChild(renderer.domElement);
       var _envMapReady = false, _envMapIdleId = 0;
       function _generateEnvMap() {
@@ -422,7 +425,11 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
           LUT_tyPx[i] = tyPx; LUT_rP[i] = rP; LUT_op[i] = op; LUT_sc[i] = sc;
         }
       })();
-      var _baseMaterialAuto = new THREE.MeshStandardMaterial({ color: CLEAR_COLOR, transparent: true, opacity: 0.45, roughness: 0.05, metalness: 0.1, envMapIntensity: 1.5, side: THREE.DoubleSide, emissive: '#000000', emissiveIntensity: 0 });
+      var _baseMaterialAuto = new THREE.MeshPhysicalMaterial({
+        color: CLEAR_COLOR, transparent: true, opacity: 0.88, roughness: 0.06, metalness: 0.02,
+        transmission: 0.78, thickness: 0.55, ior: 1.47, envMapIntensity: 1.35, side: THREE.DoubleSide,
+        emissive: '#000000', emissiveIntensity: 0, clearcoat: 0.42, clearcoatRoughness: 0.12
+      });
       var _baseMaterialManualBlack = new THREE.MeshStandardMaterial({ color: '#000000', transparent: true, opacity: 1, roughness: 0.3, metalness: 0.1, envMapIntensity: 1.0, side: THREE.DoubleSide, emissive: '#000000', emissiveIntensity: 0.4 });
       var _baseMaterialManualRed = new THREE.MeshStandardMaterial({ color: '#e24132', transparent: true, opacity: 1, roughness: 0.3, metalness: 0.1, envMapIntensity: 1.0, side: THREE.DoubleSide, emissive: '#e24132', emissiveIntensity: 0.4 });
 
@@ -446,8 +453,14 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
           if (isManual) { isRed = this.random() < 0.15; color = isRed ? '#e24132' : '#000000'; emissiveColor = color; emissiveIntensity = 0.4; opacity = 1; roughness = 0.3; envIntensity = 1.0; }
           else { color = CLEAR_COLOR; emissiveColor = '#000000'; emissiveIntensity = 0; opacity = 0.45; roughness = 0.05; envIntensity = 1.5; }
           this.baseOpacity = opacity;
-          if (this.material) { this.material.color.set(color); this.material.emissive.set(emissiveColor); this.material.emissiveIntensity = emissiveIntensity; this.material.opacity = opacity; this.material.roughness = roughness; this.material.envMapIntensity = envIntensity; }
-          else { var base = isManual ? (isRed ? _baseMaterialManualRed : _baseMaterialManualBlack) : _baseMaterialAuto; this.material = base.clone(); }
+          if (this.material) {
+            this.material.color.set(color); this.material.emissive.set(emissiveColor); this.material.emissiveIntensity = emissiveIntensity;
+            this.material.opacity = opacity; this.material.roughness = roughness; this.material.envMapIntensity = envIntensity;
+            if (!isManual && (this.material as THREE.MeshPhysicalMaterial).isMeshPhysicalMaterial) {
+              var phy = this.material as THREE.MeshPhysicalMaterial;
+              phy.transmission = 0.78; phy.thickness = 0.55; phy.ior = 1.47; phy.clearcoat = 0.42; phy.clearcoatRoughness = 0.12;
+            }
+          } else { var base = isManual ? (isRed ? _baseMaterialManualRed : _baseMaterialManualBlack) : _baseMaterialAuto; this.material = base.clone(); }
           var scale = state.pixelToUnit || 0.01, sizeRand = this.random(), sizePx: number;
           if (sizeRand < 0.4) sizePx = 20 + this.random() * 9;
           else if (sizeRand < 0.8) sizePx = 28 + this.random() * 10;
@@ -622,7 +635,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       if (_starsEngine) return Promise.resolve(_starsEngine);
       if (_starsEnginePromise) return _starsEnginePromise;
       _starsEnginePromise = Promise.resolve().then(function() {
-        if (isDead) return null;
+        // isDead dotyczy tylko animacji „wychodzą” — nie blokuj WebGL przy Konwersja (inaczej po flow + popup plusiki już nigdy się nie ładują).
         var starsContainer = $id('blok-4-5-stars-canvas') as HTMLElement | null;
         if (!starsContainer) return null;
         _starsEngine = createStarsEngine(THREE, RoundedBoxGeometry, RoomEnvironment, BufferGeometryUtils, starsContainer, starsState);
@@ -958,11 +971,13 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
 
     function processParticles() {
       if (!frameCache.valid) return;
-      var isActiveScrollUp = scrollUpVelocity < -2;
+      // Lenis daje mniejsze kroki niż natywny scroll — -2 było zbyt ostre; iskry przy „wychodzą” prawie nie wychodziły.
+      var isActiveScrollUp = scrollUpVelocity < -0.85;
       if (!(frameCount & 1)) {
         if (isActiveScrollUp && hasStarted && !isDead && chars.length > 0) {
           var mass = charStates[0]?.mass||1.0;
-          if (Math.random() < pullStrength*3.5*mass*1.15 && frameCache.valid) {
+          var sparkChance = Math.max(pullStrength, 0.12) * 3.5 * mass * 1.15;
+          if (Math.random() < sparkChance && frameCache.valid) {
             var type=Math.random()<0.15?1:2;
             if(type===1||Math.random()<0.575){spawnParticle(type,frameCache.firstLeft,frameCache.anchorBottom+frameCache.cachedFloorOffset,{});}
           }
@@ -1237,6 +1252,10 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         if(popupTransitionEndHandler){overlay.removeEventListener('transitionend',popupTransitionEndHandler);popupTransitionEndHandler=null;}
         popupTransitionEndHandler=function(){if(!overlay!.classList.contains('visible')){overlay!.style.display='none';container.classList.remove('popup-overlay-active');}if(popupTransitionEndHandler){overlay!.removeEventListener('transitionend',popupTransitionEndHandler);popupTransitionEndHandler=null;}};
         overlay.addEventListener('transitionend',popupTransitionEndHandler);
+        // Po popupie pętla Three.js mogła się wyłączyć (brak żywych cząstek) + ewentualny sleep z pause — wznów plusiki od razu.
+        starsState.triggerAuto++;
+        if (starsState.wake) starsState.wake(); else void ensureStarsEngine();
+        if (tickIOVisible && !document.hidden) startGlowTick();
       }
     }
 

@@ -653,7 +653,8 @@
 #blok-4-5-section .walking-text-container { display: inline-flex; font-family: 'Lexend', sans-serif; font-weight: 700; font-size: 1em; line-height: 1; white-space: pre; margin-left: 0.25em; overflow: visible; perspective: 300px; perspective-origin: 50% 50%; position: relative; will-change: transform; }
 #blok-4-5-section .walking-char { display: inline-block; transform-origin: 50% 100%; position: relative; backface-visibility: hidden; }
 #blok-4-5-section #blok-4-5-particleCanvas { position: absolute; top: -50px; left: -100px; pointer-events: none; z-index: 1; }
-#blok-4-5-section #blok-4-5-sparksCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 10; }
+/* Nad warstwą tekstu na ilustracji (25), pod dymkami many (100) — iskry 2D przy „wychodzą” muszą być widoczne */
+#blok-4-5-section #blok-4-5-sparksCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 40; }
 #blok-4-5-section #blok-4-5-bubble-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; }
 #blok-4-5-section .mana-container { position: fixed; top: 60vh; left: 50%; transform: translateX(-50%); width: 30vw; min-width: 200px; display: flex; justify-content: center; pointer-events: none; opacity: 0; transition: opacity 1s ease; z-index: 100; }
 #blok-4-5-section .mana-container.visible.in-viewport { opacity: 1; transition: opacity 0.3s ease; }
