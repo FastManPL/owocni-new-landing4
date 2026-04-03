@@ -781,7 +781,8 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       frameCache.containerTransformX = wordOffsetX * visualBlend;
       if (_anchorCharEl) { var ar = _anchorCharEl.getBoundingClientRect(); frameCache.anchorBottom = ar.bottom; }
       if (chars[0]) {
-        var fLeft = frameCache.containerLeft + frameCache.containerTransformX + charStates[0].baseOffsetLeft + charStates[0].finalX;
+        // cr.left już zawiera translateX kontenera — nie dodawaj containerTransformX (było podwójne; psuło iskierki/ogień vs preview).
+        var fLeft = frameCache.containerLeft + charStates[0].baseOffsetLeft + charStates[0].finalX;
         var fTop = frameCache.containerTop + frameCache.charOffsetTop + charStates[0].finalY;
         var fBottom = fTop + frameCache.charOffsetHeight;
         frameCache.firstLeft = fLeft; frameCache.firstBottom = fBottom; frameCache.firstRight = fLeft + (frameCache.charOffsetWidths[0] || 0); frameCache.gritFloorY = fBottom;
@@ -982,7 +983,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     // TRANSFORM TO "ZOSTAJĄ!"
     // =========================================================
     function transformToZostaja() {
-      spawnStars();
+      spawnIHeatBurst();
       var newText='zostają!',targetChars=newText.split('');
       var walkContainer=$id('blok-4-5-walkingContainer') as HTMLElement|null;if(!walkContainer)return;
       var containerRect=walkContainer.getBoundingClientRect();
@@ -1214,7 +1215,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     if(window.visualViewport){window.visualViewport.addEventListener('resize',onResizeMain,{passive:true});cleanups.push(function(){window.visualViewport!.removeEventListener('resize',onResizeMain);if(resizeMainRaf!==null){cancelAnimationFrame(resizeMainRaf);resizeMainRaf=null;}});}
     window.addEventListener('scroll',handleScrollWalking,{passive:true});cleanups.push(function(){window.removeEventListener('scroll',handleScrollWalking);});
 
-    var stWalking=ScrollTrigger.create({trigger:'#blok-4-5-voidSection',start:"top 50%",once:true,onEnter:function(){hasStarted=true;anchorScrollY=lastScrollY;if((window as any)._blok45Debug)(window as any)._blok45Debug.walkingStarted=true;}});
+    var stWalking=ScrollTrigger.create({trigger:'#blok-4-5-voidSection',start:'top 25%',once:true,onEnter:function(){hasStarted=true;anchorScrollY=lastScrollY;if((window as any)._blok45Debug)(window as any)._blok45Debug.walkingStarted=true;}});
     gsapInstances.push(stWalking);
     gsap.ticker.add(mainLoop);
     var ticking=true,sectionInView=true;

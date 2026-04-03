@@ -258,6 +258,13 @@
   z-index: 1;
 }
 
+/* Kafelki z wideo: treść może „wystawać” max ~2rem poza prostokąt kafelka (jak przy scale 1.6); dalej obcina clip-path. */
+#cyfrowe-wzrosty-section .tile:has(.tile-media--masked-stack),
+#cyfrowe-wzrosty-section .tile:has(.tile-media--iphone) {
+  -webkit-clip-path: inset(-2rem round var(--tile-radius));
+  clip-path: inset(-2rem round var(--tile-radius));
+}
+
 /* STAGE LABEL */
 #cyfrowe-wzrosty-section .stage-label {
   position: absolute;
@@ -465,24 +472,17 @@
 }
 
 /* —— Tile multimedia (z benefits-carousel landing2) —— */
-/* Secondary pod mainem. 2rem „na zewnątrz”: szerszy/niższy wrapper niż kolumna treści — obcinanie na obwodzie tego rozszerzenia, nie przez margin wewnątrz maina. */
+/* Secondary pod mainem. overflow: visible — obcinanie tylko na kafelku (clip-path inset -2rem). */
 #cyfrowe-wzrosty-section .tile-media--masked-stack {
-  overflow: hidden;
+  overflow: visible;
   isolation: isolate;
-  border-radius: 0.75rem 0.75rem 0 0;
-  width: calc(100% + 4rem);
-  max-width: none;
-  margin-left: -2rem;
-  margin-right: -2rem;
-  margin-bottom: -2rem;
-  align-self: stretch;
-  box-sizing: border-box;
 }
 
 #cyfrowe-wzrosty-section .tile-media--masked-stack .tile-media-main {
   position: relative;
   z-index: 1;
   width: 100%;
+  margin-bottom: -2rem;
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -547,16 +547,8 @@
 
 /* Etap 03: wideo nad mockupem iPhone */
 #cyfrowe-wzrosty-section .tile-media--iphone {
-  overflow: hidden;
+  overflow: visible;
   isolation: isolate;
-  border-radius: 0.75rem 0.75rem 0 0;
-  width: calc(100% + 4rem);
-  max-width: none;
-  margin-left: -2rem;
-  margin-right: -2rem;
-  margin-bottom: -2rem;
-  align-self: stretch;
-  box-sizing: border-box;
 }
 
 #cyfrowe-wzrosty-section .tile-media--iphone .tile-media-bg {
