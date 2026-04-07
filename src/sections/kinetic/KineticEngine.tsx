@@ -2380,7 +2380,8 @@ import './kinetic-section.css';
             // ============================================
             // SNAP GATE: bridge = 1:1 scrub, kinetic = directional
             // ============================================
-            const OVERSHOOT_U = (_s._overshootOverride !== undefined) ? _s._overshootOverride : 1.5;
+            // Po SNAP3 (Gemius / koniec narracji): dodatkowy dystans scrolla zanim pin puści — UX / dwell
+            const OVERSHOOT_U = (_s._overshootOverride !== undefined) ? _s._overshootOverride : 2.5;
             const pxPerU = SCROLL_KINETIC / KINETIC_U; // 153.3
             const SCROLL_OVERSHOOT = OVERSHOOT_U * pxPerU;
             
