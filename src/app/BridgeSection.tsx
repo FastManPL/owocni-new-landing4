@@ -38,18 +38,26 @@ export function BridgeSection() {
           ref={wrapperRef}
           style={{
             position: 'relative',
-            overflow: 'hidden',
-            height: '100vh',
+            /*
+              Kinetic + ScrollTrigger pin: GSAP dokłada wysoki .pin-spacer wokół #kinetic-section.
+              Gdy #kinetic-layer był position:absolute (poza flow) i wrapper miał sztywne height:100vh
+              + overflow:hidden, dokument NIE dostawał pełnej długości pinu — #blok-4-5-section
+              (z ujemnym margin-top) wchodził wizualnie „nad” Kinetic. minHeight + warstwa w flow
+              pozwala pin-spacerowi rozpychać stronę; Blok45 zostaje pod rzeczywistą osią scrolla Kinetic.
+            */
+            overflow: 'visible',
+            minHeight: '100vh',
             isolation: 'isolate',
-            /* Nad #blok-4-5-section (z-index 11 w CSS sekcji), żeby Kinetic był widoczny przed Blok45 mimo ujemnego margin-top Blok45. Wave nadal wygrywa: .wave-reveal-active → z-index 20. */
+            /* Nad #blok-4-5-section (z-index 11). Wave: .wave-reveal-active → z-index 20. */
             zIndex: 15,
           }}
         >
           <div
             id="kinetic-layer"
             style={{
-              position: 'absolute',
-              inset: 0,
+              position: 'relative',
+              width: '100%',
+              minHeight: '100vh',
               zIndex: 1,
             }}
           >
