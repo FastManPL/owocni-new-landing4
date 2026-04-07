@@ -58,7 +58,7 @@ function init(container: HTMLElement): { kill: () => void } {
   let charOffsets: { el: HTMLElement; x: number; y: number }[] = [];
   let currentFrame = -1;
   const playhead = { frame: 0 };
-  /** Jak tunnel: scrub może wywołać onUpdate >1× / frame — jedna aktualizacja CSS na klatkę. */
+  /** Scrub może wywołać onUpdate >1× / frame — jedna aktualizacja CSS na klatkę. */
   let frameScrollRafId: number | null = null;
   let frameScrollPendingIndex: number | null = null;
   let isKilled = false;
@@ -1127,152 +1127,6 @@ function init(container: HTMLElement): { kill: () => void } {
     disableOrganic();
   });
 
-  // ══════════════════════════════════════════════════════════
-  // TUNNEL ENGINE
-  // ══════════════════════════════════════════════════════════
-  const tunnelCanvas =
-    container.querySelector<HTMLCanvasElement>("#fakty-tunnel");
-  // VIS-PATCH-01: alpha: true — tunel musi być przezroczysty (tło sekcji widoczne przez cyfry)
-  const tunnelCtx = tunnelCanvas
-    ? tunnelCanvas.getContext("2d", { alpha: true })
-    : null;
-  const TW = 256,
-    TH = 144,
-    T_STEPS = 90,
-    T_COLS = 10,
-    T_SPEED = 1.0;
-  const T_SNAP = ["10%", "20%", "30%", "40%"];
-  let tunnelAtlasSource: HTMLCanvasElement | ImageBitmap | null = null,
-    tunnelLastStep = -1;
-  let tunnelST: ScrollTrigger | null = null;
-  /** Coaleskuje wiele ticków scrub w jednej klatce do jednego blitu (ST może wywołać onUpdate >1× / frame). */
-  let tunnelScrollRafId: number | null = null;
-  let tunnelScrollPendingStep: number | null = null;
-  function scheduleTunnelScrollDraw(step: number) {
-    tunnelScrollPendingStep = step;
-    if (tunnelScrollRafId !== null) return;
-    tunnelScrollRafId = requestAnimationFrame(() => {
-      tunnelScrollRafId = null;
-      const s = tunnelScrollPendingStep;
-      tunnelScrollPendingStep = null;
-      if (s !== null) tunnelDraw(s);
-    });
-  }
-
-  function tunnelSnapText(raw: number) {
-    if (raw <= 14) return T_SNAP[0];
-    if (raw <= 24) return T_SNAP[1];
-    if (raw <= 34) return T_SNAP[2];
-    return T_SNAP[3];
-  }
-  function tunnelDraw(step: number) {
-    if (step === tunnelLastStep || !tunnelCtx || !tunnelAtlasSource) return;
-    tunnelLastStep = step;
-    const col = step % T_COLS,
-      row = (step / T_COLS) | 0;
-    // VIS-PATCH-01: 'copy' blituje kadr z atlasu i jednocześnie czyści poprzedni
-    // (zastępuje clearRect + drawImage — czystsze dla alpha:true canvas)
-    tunnelCtx.globalCompositeOperation = "copy";
-    tunnelCtx.drawImage(
-      tunnelAtlasSource,
-      col * TW,
-      row * TH,
-      TW,
-      TH,
-      0,
-      0,
-      TW,
-      TH,
-    );
-    tunnelCtx.globalCompositeOperation = "source-over";
-  }
-  function preRenderTunnelAtlas() {
-    const atlas = document.createElement("canvas");
-    atlas.width = T_COLS * TW;
-    atlas.height = Math.ceil(T_STEPS / T_COLS) * TH;
-    // VIS-PATCH-01: alpha: true — cyfry na przezroczystym tle
-    const ac = atlas.getContext("2d", { alpha: true });
-    if (!ac) return atlas;
-    ac.textAlign = "center";
-    ac.textBaseline = "middle";
-    for (let step = 0; step < T_STEPS; step++) {
-      const col = step % T_COLS,
-        row = (step / T_COLS) | 0;
-      const ox = col * TW,
-        oy = row * TH;
-      // VIS-PATCH-01: brak fill tła — cyfry renderowane na przezroczystości
-      ac.fillStyle = "#ffffff";
-      const progress = step / (T_STEPS - 1),
-        rp = 1 - progress;
-      for (let l = 0; l < 12; l++) {
-        const lp = (l / 12 + rp) % 1,
-          lp2 = lp * lp,
-          scale = lp2 * lp2 * 25;
-        if (scale < 0.01) continue;
-        const fontSize = 7 * scale,
-          alpha = Math.sin(lp * Math.PI);
-        if (alpha < 0.15 || fontSize < 1.5 || (fontSize > 75 && alpha < 0.3))
-          continue;
-        ac.globalAlpha = alpha;
-        ac.font = "600 " + fontSize + "px Lexend";
-        const raw = 10 + Math.floor(progress * 30 + lp * 5);
-        ac.fillText(tunnelSnapText(raw) ?? "", ox + TW / 2, oy + TH / 2);
-      }
-      ac.globalAlpha = 1;
-    }
-    return atlas;
-  }
-  function buildTunnel() {
-    if (!tunnelCanvas) return;
-    tunnelCanvas.width = TW;
-    tunnelCanvas.height = TH;
-    const atlas = preRenderTunnelAtlas();
-    if (typeof window.createImageBitmap === "function") {
-      createImageBitmap(atlas)
-        .then((bmp) => {
-          tunnelAtlasSource = bmp;
-          tunnelDraw(0);
-        })
-        .catch(() => {
-          tunnelAtlasSource = atlas;
-          tunnelDraw(0);
-        });
-    } else {
-      tunnelAtlasSource = atlas;
-      tunnelDraw(0);
-    }
-    tunnelST = ScrollTrigger.create({
-      trigger: faktyBlock,
-      start: "top bottom",
-      end: "bottom top",
-      scrub: true,
-      onUpdate: function (self) {
-        scheduleTunnelScrollDraw(
-          Math.floor(self.progress * T_SPEED * (T_STEPS - 1)),
-        );
-      },
-    });
-    gsapInstances.push(tunnelST);
-  }
-  cleanups.push(() => {
-    if (tunnelScrollRafId !== null) {
-      cancelAnimationFrame(tunnelScrollRafId);
-      tunnelScrollRafId = null;
-    }
-    tunnelScrollPendingStep = null;
-    if (
-      tunnelAtlasSource &&
-      "close" in tunnelAtlasSource &&
-      typeof tunnelAtlasSource.close === "function"
-    )
-      tunnelAtlasSource.close();
-    tunnelAtlasSource = null;
-    if (tunnelCanvas) {
-      tunnelCanvas.width = 0;
-      tunnelCanvas.height = 0;
-    }
-  });
-
   // ── frameST ────────────────────────────────────────────────
   let frameST: ScrollTrigger | null = null;
   function buildFrameScroll() {
@@ -1486,13 +1340,11 @@ function init(container: HTMLElement): { kill: () => void } {
     lazyStObserver = null;
     buildPhase1();
     buildFrameScroll();
-    buildTunnel();
   }
 
   // ── fonts → build (bez ST; ST w maybeCreateScrollTriggers) ───
   Promise.all([
     document.fonts.load("900 16px Lexend"),
-    document.fonts.load("600 16px Lexend"),
     document.fonts.load("139 16px Lexend"),
   ])
     .then(() => document.fonts.ready)
@@ -1577,7 +1429,6 @@ export default function FaktyEngine() {
   return (
     <section id="fakty-section" ref={rootRef}>
       <div className="title-block" id="fakty-block">
-        <canvas id="fakty-tunnel"></canvas>
         <div className="title-dom" id="fakty-dom"></div>
         <canvas id="organic-overlay"></canvas>
       </div>

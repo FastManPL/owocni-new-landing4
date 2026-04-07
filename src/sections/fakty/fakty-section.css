@@ -7,9 +7,7 @@
          nie z body background. Owner decision wymagana przed P2B.
          isolation_override: TAK → odkomentuj isolation: isolate poniżej
          isolation_override: NIE → zostaw zakomentowane
-     [2] contain: layout style — NIE dodano
-         #fakty-tunnel: left: -25%; width: 150% — wychodzi poza bounds roota
-         contain: layout przyciąłby overflow → wizualny błąd
+     [2] contain: layout style — NIE dodano (historycznie: warstwa tunelu usunięta z produkcji)
    HTML-FONTSIZE-01: PASS — html/root font-size NIE jest w SECTION_CSS
    ════════════════════════════════════════════════════════════ */
 
@@ -89,16 +87,6 @@
   background-color: #0a0a0c;
   background-repeat: no-repeat;
   background-image: var(--current-frame-url);
-}
-
-#fakty-section #fakty-tunnel {
-  position: absolute;
-  top: 25%; left: -25%;
-  width: 150%;
-  height: 152%;
-  pointer-events: none;
-  object-fit: cover;
-  z-index: 0;
 }
 
 #fakty-section #fakty-dom {
