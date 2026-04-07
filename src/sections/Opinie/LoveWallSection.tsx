@@ -72,6 +72,14 @@ function loveWallLogoInit(container: HTMLElement): { pause: () => void; resume: 
     initPool: function(wordEl: Element) {
       if (this.pools.has(wordEl)) return;
 
+      const rainbowColors = [
+        'hsl(320,100%,50%)', // pink
+        'hsl(280,100%,50%)', // purple
+        'hsl(220,100%,60%)', // blue
+        'hsl(160,100%,50%)', // green
+        'hsl(40,100%,50%)', // orange
+      ];
+
       const poolEl = document.createElement('div');
       poolEl.className = 'debris-pool';
       wordEl.appendChild(poolEl);
@@ -89,6 +97,7 @@ function loveWallLogoInit(container: HTMLElement): { pause: () => void; resume: 
         const isCircle = i % 2 === 0;
         const doesStrobe = isCircle && (i % 4 === 0);
         if (isCircle) el.style.borderRadius = '50%';
+        el.style.background = rainbowColors[i % rainbowColors.length];
 
         let startX: number;
         if (i <= 2) startX = 20 + Math.random() * 15;
@@ -116,6 +125,12 @@ function loveWallLogoInit(container: HTMLElement): { pause: () => void; resume: 
       for (let i = 0; i < 8; i++) {
         const el = document.createElement('div');
         el.className = i % 2 === 0 ? 'spark plus' : 'spark';
+        const sparkColor = rainbowColors[(i + 2) % rainbowColors.length];
+        if (i % 2 === 0) {
+          el.style.setProperty('--spark-color', sparkColor);
+        } else {
+          el.style.background = sparkColor;
+        }
         el.style.left = (20 + Math.random() * 52) + '%';
         el.style.top = '50%';
         poolEl.appendChild(el);
@@ -1713,7 +1728,7 @@ export function LoveWallSection() {
                 <div className="word" data-effect="anchor" data-time-scale="0.55" data-trigger-point="0.675" style={{ fontFamily: "'Lexend', sans-serif", fontWeight: 900, fontSize: 'calc(12.15 * var(--vw-cap))', color: '#000' }}>WZÓR</div>
                 <div className="word" data-effect="optical-bloom" data-trigger-point="0.625" data-time-scale="0.6" style={{ fontFamily: "'Fraunces', serif", fontStyle: 'italic', fontSize: 'calc(14 * var(--vw-cap))', color: '#000' }}>10na10</div>
                 <div className="word" data-effect="velocity-skew" data-trigger-point="0.70" style={{ fontFamily: "'Lexend', sans-serif", fontWeight: 900, fontSize: 'calc(8 * var(--vw-cap))', color: '#333', textTransform: 'uppercase' }}>Ekspres</div>
-                <div className="word" data-effect="rotate-3d-scale" data-needs-3d="true" style={{ fontFamily: "'Lexend', sans-serif", fontWeight: 900, color: '#1a1a1a', fontSize: 'calc(16.5 * var(--vw-cap))' }}>WOW</div>
+                <div className="word" data-effect="rotate-3d-scale" data-needs-3d="true" style={{ fontFamily: "'Lexend', sans-serif", fontWeight: 900, fontSize: 'calc(16.5 * var(--vw-cap))' }}>WOW</div>
                 <div className="word" data-effect="prism-cut" data-time-scale="0.75" style={{ fontFamily: "'Lexend', sans-serif", fontWeight: 400, fontSize: 'calc(6.6 * var(--vw-cap))', letterSpacing: '-0.05em', color: '#1a1a1a' }}>Niezawodni</div>
                 <div className="word" data-effect="zipper" data-min-duration="2" data-trigger-point="0.625" data-time-scale="0.448" style={{ fontFamily: "'Fraunces', serif", fontSize: 'calc(12 * var(--vw-cap))', color: '#1a1a1a' }}>Elegancja</div>
                 <div className="word" data-effect="growth" data-trigger-point="0.70" data-time-scale="0.49" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontStyle: 'italic', fontSize: 'calc(12 * var(--vw-cap))', color: '#555', marginTop: 'calc(-2.4 * var(--vw-cap))' }}>Wrócę!</div>
@@ -1727,7 +1742,7 @@ export function LoveWallSection() {
                 <div className="word" data-effect="anchor" data-time-scale="0.55" data-trigger-point="0.675" style={{ fontFamily: "'Lexend', sans-serif", fontWeight: 900, fontSize: 'calc(12.15 * var(--vw-cap))', color: '#000' }}>WZÓR</div>
                 <div className="word" data-effect="optical-bloom" data-trigger-point="0.625" data-time-scale="0.6" style={{ fontFamily: "'Fraunces', serif", fontStyle: 'italic', fontSize: 'calc(14 * var(--vw-cap))', color: '#000' }}>10na10</div>
                 <div className="word" data-effect="velocity-skew" data-trigger-point="0.70" style={{ fontFamily: "'Lexend', sans-serif", fontWeight: 900, fontSize: 'calc(8 * var(--vw-cap))', color: '#333', textTransform: 'uppercase' }}>Ekspres</div>
-                <div className="word" data-effect="rotate-3d-scale" data-needs-3d="true" style={{ fontFamily: "'Lexend', sans-serif", fontWeight: 900, color: '#1a1a1a', fontSize: 'calc(16.5 * var(--vw-cap))' }}>WOW</div>
+                <div className="word" data-effect="rotate-3d-scale" data-needs-3d="true" style={{ fontFamily: "'Lexend', sans-serif", fontWeight: 900, fontSize: 'calc(16.5 * var(--vw-cap))' }}>WOW</div>
                 <div className="word" data-effect="prism-cut" data-time-scale="0.75" style={{ fontFamily: "'Lexend', sans-serif", fontWeight: 400, fontSize: 'calc(6.6 * var(--vw-cap))', letterSpacing: '-0.05em', color: '#1a1a1a' }}>Niezawodni</div>
                 <div className="word" data-effect="zipper" data-min-duration="2" data-trigger-point="0.625" data-time-scale="0.448" style={{ fontFamily: "'Fraunces', serif", fontSize: 'calc(12 * var(--vw-cap))', color: '#1a1a1a' }}>Elegancja</div>
                 <div className="word" data-effect="growth" data-trigger-point="0.70" data-time-scale="0.49" style={{ fontFamily: "'Fraunces', serif", fontWeight: 700, fontStyle: 'italic', fontSize: 'calc(12 * var(--vw-cap))', color: '#555', marginTop: 'calc(-2.4 * var(--vw-cap))' }}>Wrócę!</div>

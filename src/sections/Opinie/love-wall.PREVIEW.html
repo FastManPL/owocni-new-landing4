@@ -183,14 +183,56 @@ body.debug-mode #love-wall-section .debug-panel{display:block}
 #love-wall-section #love-wall-logo-section .char { display: inline-block; white-space: pre; backface-visibility: hidden; transform: translateZ(0); opacity: 0; }
 #love-wall-section #love-wall-logo-section .char-wrapper { display: inline-block; overflow: hidden; vertical-align: bottom; padding-top: 0.15em; margin-top: -0.15em; }
 #love-wall-section #love-wall-logo-section .word[data-effect="rotate-3d-scale"] { overflow: visible !important; }
+
+/* ═══ RAINBOW WOW — keyframe + styl na .char ═══ */
+@keyframes love-wall-rainbow {
+  0%   { background-position: 0% 50%; }
+  100% { background-position: 200% 50%; }
+}
+
+#love-wall-section #love-wall-logo-section .word[data-effect="rotate-3d-scale"] .char {
+  --color-1: 320 100% 50%;
+  --color-2: 280 100% 50%;
+  --color-3: 220 100% 60%;
+  --color-4: 160 100% 50%;
+  --color-5:  40 100% 50%;
+
+  color: transparent !important;
+
+  background-image: linear-gradient(
+    90deg,
+    hsl(var(--color-1)),
+    hsl(var(--color-5)),
+    hsl(var(--color-3)),
+    hsl(var(--color-4)),
+    hsl(var(--color-2))
+  );
+  background-size: 200% 100%;
+
+  -webkit-background-clip: text;
+  background-clip: text;
+
+  animation: love-wall-rainbow 4s linear infinite;
+
+  text-shadow:
+    0 0 1px rgba(255, 255, 255, 0.6),
+    0 0 2px rgba(255, 255, 255, 0.4),
+    1px 1px 1px hsl(var(--color-1)),
+   -1px -1px 1px hsl(var(--color-5));
+
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
 #love-wall-section #love-wall-logo-section .debris-pool { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
 #love-wall-section #love-wall-logo-section .debris { position: absolute; width: clamp(3px, calc(0.714 * var(--vw-cap)), 10px); height: clamp(3px, calc(0.714 * var(--vw-cap)), 10px); background: #1a1a1a; border-radius: 2px; opacity: 0; pointer-events: none; z-index: 10; }
 #love-wall-section #love-wall-logo-section .spark { position: absolute; width: 3px; height: clamp(3px, calc(1.43 * var(--vw-cap)), 20px); background: #1a1a1a; border-radius: 1px; opacity: 0; pointer-events: none; z-index: -1; }
 #love-wall-section #love-wall-logo-section .spark.plus { width: clamp(3px, calc(1.43 * var(--vw-cap)), 20px); height: clamp(3px, calc(1.43 * var(--vw-cap)), 20px); background: transparent; }
-#love-wall-section #love-wall-logo-section .spark.plus::before, #love-wall-section #love-wall-logo-section .spark.plus::after { content: ''; position: absolute; background: #1a1a1a; border-radius: 1px; }
+#love-wall-section #love-wall-logo-section .spark.plus::before, #love-wall-section #love-wall-logo-section .spark.plus::after { content: ''; position: absolute; background: var(--spark-color, #1a1a1a); border-radius: 1px; }
 #love-wall-section #love-wall-logo-section .spark.plus::before { width: 3px; height: 100%; left: 50%; transform: translateX(-50%); }
 #love-wall-section #love-wall-logo-section .spark.plus::after { width: 100%; height: 3px; top: 50%; transform: translateY(-50%); }
 @media (prefers-reduced-motion: reduce) {
+  #love-wall-section #love-wall-logo-section .word[data-effect="rotate-3d-scale"] .char { animation: none !important; }
   #love-wall-section #love-wall-logo-section .char { opacity: 1 !important; transform: none !important; filter: none !important; text-shadow: none !important; }
   #love-wall-section #love-wall-logo-section .char-wrapper { overflow: visible !important; }
   #love-wall-section #love-wall-logo-section .track { transition: transform 0.3s linear; }
@@ -269,7 +311,7 @@ body.debug-mode #love-wall-section .debug-panel{display:block}
               <div class="word" data-effect="anchor" data-time-scale="0.55" data-trigger-point="0.675" style="font-family:'Lexend',sans-serif;font-weight:900;font-size:calc(12.15 * var(--vw-cap));color:#000">WZÓR</div>
               <div class="word" data-effect="optical-bloom" data-trigger-point="0.625" data-time-scale="0.6" style="font-family:'Fraunces',serif;font-style:italic;font-size:calc(14 * var(--vw-cap));color:#000">10na10</div>
               <div class="word" data-effect="velocity-skew" data-trigger-point="0.70" style="font-family:'Lexend',sans-serif;font-weight:900;font-size:calc(8 * var(--vw-cap));color:#333;text-transform:uppercase">Ekspres</div>
-              <div class="word" data-effect="rotate-3d-scale" data-needs-3d="true" style="font-family:'Lexend',sans-serif;font-weight:900;color:#1a1a1a;font-size:calc(16.5 * var(--vw-cap))">WOW</div>
+              <div class="word" data-effect="rotate-3d-scale" data-needs-3d="true" style="font-family:'Lexend',sans-serif;font-weight:900;font-size:calc(16.5 * var(--vw-cap))">WOW</div>
               <div class="word" data-effect="prism-cut" data-time-scale="0.75" style="font-family:'Lexend',sans-serif;font-weight:400;font-size:calc(6.6 * var(--vw-cap));letter-spacing:-0.05em;color:#1a1a1a">Niezawodni</div>
               <div class="word" data-effect="zipper" data-min-duration="2" data-trigger-point="0.625" data-time-scale="0.448" style="font-family:'Fraunces',serif;font-size:calc(12 * var(--vw-cap));color:#1a1a1a">Elegancja</div>
               <div class="word" data-effect="growth" data-trigger-point="0.70" data-time-scale="0.49" style="font-family:'Fraunces',serif;font-weight:700;font-style:italic;font-size:calc(12 * var(--vw-cap));color:#555;margin-top:calc(-2.4 * var(--vw-cap))">Wrócę!</div>
@@ -283,7 +325,7 @@ body.debug-mode #love-wall-section .debug-panel{display:block}
               <div class="word" data-effect="anchor" data-time-scale="0.55" data-trigger-point="0.675" style="font-family:'Lexend',sans-serif;font-weight:900;font-size:calc(12.15 * var(--vw-cap));color:#000">WZÓR</div>
               <div class="word" data-effect="optical-bloom" data-trigger-point="0.625" data-time-scale="0.6" style="font-family:'Fraunces',serif;font-style:italic;font-size:calc(14 * var(--vw-cap));color:#000">10na10</div>
               <div class="word" data-effect="velocity-skew" data-trigger-point="0.70" style="font-family:'Lexend',sans-serif;font-weight:900;font-size:calc(8 * var(--vw-cap));color:#333;text-transform:uppercase">Ekspres</div>
-              <div class="word" data-effect="rotate-3d-scale" data-needs-3d="true" style="font-family:'Lexend',sans-serif;font-weight:900;color:#1a1a1a;font-size:calc(16.5 * var(--vw-cap))">WOW</div>
+              <div class="word" data-effect="rotate-3d-scale" data-needs-3d="true" style="font-family:'Lexend',sans-serif;font-weight:900;font-size:calc(16.5 * var(--vw-cap))">WOW</div>
               <div class="word" data-effect="prism-cut" data-time-scale="0.75" style="font-family:'Lexend',sans-serif;font-weight:400;font-size:calc(6.6 * var(--vw-cap));letter-spacing:-0.05em;color:#1a1a1a">Niezawodni</div>
               <div class="word" data-effect="zipper" data-min-duration="2" data-trigger-point="0.625" data-time-scale="0.448" style="font-family:'Fraunces',serif;font-size:calc(12 * var(--vw-cap));color:#1a1a1a">Elegancja</div>
               <div class="word" data-effect="growth" data-trigger-point="0.70" data-time-scale="0.49" style="font-family:'Fraunces',serif;font-weight:700;font-style:italic;font-size:calc(12 * var(--vw-cap));color:#555;margin-top:calc(-2.4 * var(--vw-cap))">Wrócę!</div>
@@ -336,6 +378,7 @@ body.debug-mode #love-wall-section .debug-panel{display:block}
         pools: new WeakMap(),
         initPool: function(wordEl) {
           if(this.pools.has(wordEl))return;
+          var rainbowColors=['hsl(320,100%,50%)','hsl(280,100%,50%)','hsl(220,100%,60%)','hsl(160,100%,50%)','hsl(40,100%,50%)'];
           var poolEl=document.createElement('div'); poolEl.className='debris-pool'; wordEl.appendChild(poolEl);
           var h=wordEl.offsetHeight||100;
           var pool={particles:[],sparks:[],triggered:false,masterTween:null,poolEl:poolEl,allItems:null,totalDuration:0};
@@ -343,6 +386,7 @@ body.debug-mode #love-wall-section .debug-panel{display:block}
             var el=document.createElement('div'); el.className='debris';
             var isCircle=i%2===0, doesStrobe=isCircle&&(i%4===0);
             if(isCircle)el.style.borderRadius='50%';
+            el.style.background=rainbowColors[i%rainbowColors.length];
             var sx; if(i<=2)sx=20+Math.random()*15; else if(i>=21)sx=35+Math.random()*30; else if(i>=18&&i<=20)sx=55+Math.random()*17; else if(i>=15&&i<=17)sx=22+Math.random()*16; else{var mid=i-3;sx=28+(mid/11)*44+(Math.random()-0.5)*12;}
             el.style.left=sx+'%'; el.style.top='50%'; poolEl.appendChild(el);
             var pm=(i>=6&&i<=11)?1.6+Math.random()*0.5:1.2+Math.random()*0.6;
@@ -351,6 +395,8 @@ body.debug-mode #love-wall-section .debug-panel{display:block}
           }
           for(var i=0;i<8;i++){
             var el=document.createElement('div'); el.className=i%2===0?'spark plus':'spark';
+            var sparkColor=rainbowColors[(i+2)%rainbowColors.length];
+            if(i%2===0){el.style.setProperty('--spark-color',sparkColor);}else{el.style.background=sparkColor;}
             el.style.left=(20+Math.random()*52)+'%'; el.style.top='50%'; poolEl.appendChild(el);
             pool.sparks.push({el:el,peakY:-h*(1.8+Math.random()*0.8),fallY:h*(0.15+Math.random()*0.1),rot:180+Math.random()*360,delay:(i*3*0.065)+0.03,ss:0.6+Math.random()*0.8,es:0.4+Math.random()*0.6,dur:2.8,peakT:0.28,fadeIn:0.1,fadeOut:0.85,isSpark:true});
           }
