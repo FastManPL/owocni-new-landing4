@@ -1188,9 +1188,12 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         }
       }
       frameCount++;
-      if(currentMode==='pull'&&hasStarted&&!isDead){
-        var now2=performance.now();if(now2-lastTriggerTime>800&&activeBubbleCount<3){lastTriggerTime=now2;triggerSpeechSequence();}
-        updateBubblePositions();
+      if(hasStarted&&!isDead){
+        if(currentMode==='pull'){
+          var now2=performance.now();if(now2-lastTriggerTime>800&&activeBubbleCount<3){lastTriggerTime=now2;triggerSpeechSequence();}
+        }
+        /* Dymki muszą śledzić litery także po zejściu z pull (escape + scroll Lenis) — wcześniej tylko w pull → „odklejały” się od napisu. */
+        if(activeBubbleCount>0){updateBubblePositions();}
       }
       updateMana();processParticles();
     }
@@ -1307,6 +1310,9 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     window.addEventListener('resize',onResizeMain,{passive:true});cleanups.push(function(){window.removeEventListener('resize',onResizeMain);if(resizeMainRaf!==null){cancelAnimationFrame(resizeMainRaf);resizeMainRaf=null;}});
     if(window.visualViewport){window.visualViewport.addEventListener('resize',onResizeMain,{passive:true});cleanups.push(function(){window.visualViewport!.removeEventListener('resize',onResizeMain);if(resizeMainRaf!==null){cancelAnimationFrame(resizeMainRaf);resizeMainRaf=null;}});}
     window.addEventListener('scroll',handleScrollWalking,{passive:true});cleanups.push(function(){window.removeEventListener('scroll',handleScrollWalking);});
+
+    function onLenisScrollBubbles(){if(hasStarted&&!isDead&&activeBubbleCount>0){updateBubblePositions();}}
+    scrollRuntime.on('scroll',onLenisScrollBubbles);cleanups.push(function(){scrollRuntime.off('scroll',onLenisScrollBubbles);});
 
     var stWalking=ScrollTrigger.create({trigger:'#blok-4-5-voidSection',start:'top 25%',once:true,onEnter:function(){hasStarted=true;anchorScrollY=lastScrollY;if((window as any)._blok45Debug)(window as any)._blok45Debug.walkingStarted=true;}});
     gsapInstances.push(stWalking);

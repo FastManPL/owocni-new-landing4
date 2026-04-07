@@ -418,17 +418,17 @@
   pointer-events: none;
 }
 
-/* Cień tylko w pasie 2rem nad dolną krawędzią — gradient do transparent (warstwa pod spodem = final, nie kolor FAQ). */
+/* Cień w pasie nad dolną krawędzią — gradient do transparent (warstwa pod spodem = final, nie kolor FAQ). */
 #faq-section::after {
   content: '';
   position: absolute;
   left: 0;
   right: 0;
   bottom: 0;
-  height: 2rem;
+  height: 5rem;
   pointer-events: none;
   z-index: 0;
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.05) 0%, transparent 100%);
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.14) 0%, transparent 100%);
 }
 
 #faq-section > *:not(.faq-overlay) {

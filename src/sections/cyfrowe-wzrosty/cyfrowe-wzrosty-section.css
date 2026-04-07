@@ -571,7 +571,11 @@
   #cyfrowe-wzrosty-section .tile-media-secondary--etap04 { bottom: 11rem; }
 }
 
-/* Etap 03: wideo nad mockupem iPhone */
+/* Etap 03: wideo nad mockupem iPhone — niżej w kafelku, jak wideo w etapach 1/2 */
+#cyfrowe-wzrosty-section .tile[data-index="2"] .tile-media.tile-media--iphone {
+  margin-top: clamp(1.25rem, 3.5vw, 3.5rem);
+}
+
 #cyfrowe-wzrosty-section .tile-media--iphone {
   overflow: visible;
   isolation: isolate;
