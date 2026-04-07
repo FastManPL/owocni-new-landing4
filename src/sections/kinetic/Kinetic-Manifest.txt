@@ -30,41 +30,36 @@ SECTION_MANIFEST — FINAL (P3-ready):
 
   warmup: []
 
-  scrollTriggersCount: 2
+  scrollTriggersCount: 1
 
-  geometryMutable:    false
-  geometryRefresh:    'self'
+  geometryMutable:          false
+  geometryRefresh:          'self'
+  geometryContract:         'sealed-fullscreen'
+  syntheticContextAllowed:  false
+  entryExitInvariant:       true
+  preserveExistingGuards:   true
 
-  geometryContract:        'pinned-narrative'
-  syntheticContextAllowed: false
-  entryExitInvariant:      true
-  preserveExistingGuards:  true
-
-  refreshSignals: ['resize-width-only']
+  refreshSignals: ['section-in-view', 'layout-settle']
 
   export:
     mode: 'default'
     name: 'KineticSection'
 
   slots: []
-
   dciProps: []
-
   timelineContract: undefined
 
   specialNotes:
-    breakpoints:          ['599px', '768px', '1200px', '2000px', '900px (max-height)']
+    breakpoints:          ['599px', '600px', '769px', '1024px', '1200px', '900px (max-height)']
     platformGuards:       ['IS_TOUCH', 'freezeFinal (iOS toolbar)', 'mobileResizeLock',
-                           'document.hidden (canvas guard)', 'visualViewport']
+                           'document.hidden (canvas guard)', 'visualViewport', 'svh-probe']
     cpuGatingMechanism:   'IO-pause/resume'
     cpuGatingPath:        1
     pinDisableSafe:       true
     internalGating:       '_sectionVisible flag (ST onEnter/onLeave)'
-    coexistence:          'Factory IO ~460px + ST-native 0px — bezpieczne'
-    deadCode:             'palette3 — write-only, bezpieczne do usunięcia'
-    perf_W6_note:         '6× gsap.ticker — intencjonalne, dirty check + 30fps gate'
-    perf_W7_note:         'Polskie znaki + Lexend — weryfikacja latin-ext OK (testy PASS)'
-    perf_W13_note:        '.blob CSS transform nadpisywany przez GSAP przy first touch'
+    coexistence:          'Factory IO 0.5×VH + ST-native 0px — bezpieczne'
+    scrollApiDebt:        'ENT-SCROLL-API-01 P3-WILL-REPLACE — scrollTo/On/Off via window.lenis'
+    newFeatures:          'Cień Liter (ghost clone B1), container-relative gravity drop'
 
   integrationNotes:
     hasPin:               true
@@ -76,7 +71,7 @@ SECTION_MANIFEST — FINAL (P3-ready):
   deliveryRisk: null
 
   perf:
-    dynamicImport:       false
+    dynamicImport:       true
     isHero:              false
     gracefulDegradation: false
     preloadCandidates:   []
@@ -84,7 +79,7 @@ SECTION_MANIFEST — FINAL (P3-ready):
     coldCandidates:      []
     preconnectDomains:   ['fonts.googleapis.com', 'fonts.gstatic.com']
     containApplied:      false
-    warnings:            ['PERF-W6', 'PERF-W7', 'PERF-W13']
+    warnings:            ['PERF-W6']
 
   scrollRuntimeRecommendations:
     - 'is-scrolling pointer-events guard: body.is-scrolling #kinetic-section * { pointer-events: none }'
