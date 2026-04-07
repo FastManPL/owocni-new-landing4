@@ -171,10 +171,19 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       var state = STATE_IDLE_CLOSED, currentTimeKipiel = 0, currentTimeOrg = 0, timeStart = 0;
       var tickFn: (() => void) | null = null;
 
+      /** Tło sekcji dopiero po domknięciu fali (STATE_IDLE_OPEN) — bez tego psuje przejście z Kinetic. */
+      function syncSectionBgReady() {
+        if (state === STATE_IDLE_OPEN) container.classList.add('blok45-bg-ready');
+        else container.classList.remove('blok45-bg-ready');
+      }
+
       function tickKipielOpen() {
         var now = performance.now(), elapsed = now - timeStart;
         timeStart = now; currentTimeKipiel = currentTimeKipiel + elapsed;
-        if (currentTimeKipiel >= kipiel.maxTime) { currentTimeKipiel = kipiel.maxTime; stopTicker(); state = STATE_IDLE_OPEN; currentTimeOrg = org.maxTime; }
+        if (currentTimeKipiel >= kipiel.maxTime) {
+          currentTimeKipiel = kipiel.maxTime; stopTicker(); state = STATE_IDLE_OPEN; currentTimeOrg = org.maxTime;
+          updateDebugStateW(); syncSectionBgReady();
+        }
         kipiel.render(currentTimeKipiel);
       }
       function startTicker() { if (tickFn) return; tickFn = tickKipielOpen; gsap.ticker.add(tickFn); }
@@ -189,7 +198,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       }
       function startKipielOpen() {
         (waveWrap as HTMLElement).style.display = '';
-        if (state === STATE_IDLE_OPEN) return;
+        if (state === STATE_IDLE_OPEN) { syncSectionBgReady(); return; }
         if (state === STATE_IDLE_CLOSED) { currentTimeKipiel = 0; }
         state = STATE_KIPIEL_OPENING;
         if ((window as any)._blok45Debug) (window as any)._blok45Debug.triggerFired = true;
@@ -214,6 +223,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
           case STATE_ORG_CLOSING: if (direction === 1) { state = STATE_ORG_OPENING; updateOrgCloseProgress(scrollProgress); } else { updateOrgCloseProgress(scrollProgress); } break;
           case STATE_ORG_OPENING: if (direction === -1) { state = STATE_ORG_CLOSING; updateOrgCloseProgress(scrollProgress); } else { updateOrgCloseProgress(scrollProgress); } break;
         }
+        syncSectionBgReady();
       }
 
       // ═══ Oryginał z blok-4-5.stack.html: tylko #blok-4-5-wave-wrap jako kurtyna, bez portalu ani dodatkowych warstw.
@@ -265,7 +275,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         invalidateOnRefresh: true,
         onUpdate: function(self) { handleScroll(self.progress, self.direction); },
         onLeaveBack: function() {
-          if (state !== STATE_IDLE_CLOSED) { kipiel.render(0); currentTimeKipiel = 0; currentTimeOrg = 0; state = STATE_IDLE_CLOSED; updateDebugStateW(); }
+          if (state !== STATE_IDLE_CLOSED) { kipiel.render(0); currentTimeKipiel = 0; currentTimeOrg = 0; state = STATE_IDLE_CLOSED; updateDebugStateW(); syncSectionBgReady(); }
           lastWaveD[0] = lastWaveD[1] = lastWaveD[2] = lastWaveD[3] = '';
         }
       });
@@ -281,6 +291,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         window.removeEventListener('orientationchange', refreshST);
         if (window.visualViewport) window.visualViewport.removeEventListener('resize', refreshST);
       });
+      requestAnimationFrame(syncSectionBgReady);
     })();
 
     var stUnderline = ScrollTrigger.create({
