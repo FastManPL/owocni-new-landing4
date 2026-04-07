@@ -36,8 +36,9 @@ function loveWallLogoInit(container: HTMLElement): { pause: () => void; resume: 
     SCROLL_FACTOR: 2.1,
     VELOCITY_SMOOTHING: 0.03,
     VELOCITY_CLAMP: 17,
-    // Continuous letter effects: larger epsilon cuts redundant style writes.
-    CONTINUOUS_DIST_EPSILON: 0.02
+    // Continuous letter effects: must be << per-frame |Δdist| at base marquee speed (~0.001–0.004),
+    // otherwise updates are skipped for many frames and WOW looks stepped/stuttery when not scrolling.
+    CONTINUOUS_DIST_EPSILON: 0.001
   };
 
   const SHADOW_HIDDEN = '0 0 2px currentColor, 0 0 4px currentColor, 0 0 8px currentColor, 0 0 16px currentColor, 0 0 32px currentColor, 0 0 48px currentColor, 0 0 64px currentColor, 0 0 80px currentColor';

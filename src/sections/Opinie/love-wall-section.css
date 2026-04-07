@@ -203,6 +203,9 @@ body.debug-mode #love-wall-section .debug-panel{display:block}
 
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  /* Isolate 3D transform from gradient + reduce jank when JS updates transform every frame */
+  will-change: transform;
 }
 
 #love-wall-section #love-wall-logo-section .debris-pool { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; }
@@ -213,7 +216,7 @@ body.debug-mode #love-wall-section .debug-panel{display:block}
 #love-wall-section #love-wall-logo-section .spark.plus::before { width: 3px; height: 100%; left: 50%; transform: translateX(-50%); }
 #love-wall-section #love-wall-logo-section .spark.plus::after { width: 100%; height: 3px; top: 50%; transform: translateY(-50%); }
 @media (prefers-reduced-motion: reduce) {
-  #love-wall-section #love-wall-logo-section .word[data-effect="rotate-3d-scale"] .char { animation: none !important; }
+  #love-wall-section #love-wall-logo-section .word[data-effect="rotate-3d-scale"] .char { animation: none !important; will-change: auto; }
   #love-wall-section #love-wall-logo-section .char { opacity: 1 !important; transform: none !important; filter: none !important; text-shadow: none !important; }
   #love-wall-section #love-wall-logo-section .char-wrapper { overflow: visible !important; }
   #love-wall-section #love-wall-logo-section .track { transition: transform 0.3s linear; }
