@@ -29,7 +29,7 @@ export function BridgeSection() {
         ref={pinSpacerRef}
         style={{
           minHeight: '100vh',
-          // Wcześniejsze wejście pinu (~60vh): nachodzi na Fakty; bridge z-index:10 > fakty.
+          // Wcześniejsze wejście pinu (~60vh): nachodzi na Fakty; bridge z-index > Fakty (niskie z-index w sekcji).
           marginTop: 'clamp(-68vh, -60vh, -52vh)',
         }}
       >
@@ -41,7 +41,8 @@ export function BridgeSection() {
             overflow: 'hidden',
             height: '100vh',
             isolation: 'isolate',
-            zIndex: 10,
+            /* Nad #blok-4-5-section (z-index 11 w CSS sekcji), żeby Kinetic był widoczny przed Blok45 mimo ujemnego margin-top Blok45. Wave nadal wygrywa: .wave-reveal-active → z-index 20. */
+            zIndex: 15,
           }}
         >
           <div
