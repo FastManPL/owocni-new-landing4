@@ -6,7 +6,7 @@
 
 /* ═══ CS1 (BANACH) ═══ */
     #cs1-section, .scroll-spacer { margin: 0 auto; }
-    .scroll-spacer { height: 100vh; }
+    .scroll-spacer { height: 5rem; }
     /* ═══ KONTENER ═══ */
     #cs1-section { --cs1-width: clamp(62.5rem, 88vw, 110rem); isolation: isolate; width: var(--cs1-width); max-width: 100%; }
     #cs1-section .cs1-card {
@@ -102,7 +102,7 @@
 
     /* ═══ CS2 (PRAGMILE) ═══ */
     #cs2-section, .scroll-spacer { margin: 0 auto; }
-    .scroll-spacer { height: 100vh; }
+    .scroll-spacer { height: 5rem; }
     /* ═══ KONTENER (system wyniki) ═══ */
     #cs2-section { --cs2-width: clamp(62.5rem, 88vw, 110rem); isolation: isolate; width: var(--cs2-width); max-width: 100%; }
     #cs2-section .cs2-card {
@@ -225,7 +225,7 @@
 
     /* ═══ CS3 (STUDIOOKO) ═══ */
     #cs3-section, .scroll-spacer { margin: 0 auto; }
-    .scroll-spacer { height: 100vh; }
+    .scroll-spacer { height: 5rem; }
     /* ═══ KONTENER (system wyniki) ═══ */
     #cs3-section { --cs3-width: clamp(62.5rem, 88vw, 110rem); isolation: isolate; width: var(--cs3-width); max-width: 100%; }
     #cs3-section .cs3-card {
