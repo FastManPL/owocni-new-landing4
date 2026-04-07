@@ -9,6 +9,9 @@
     --text-color: #141414;
     --highlight-color: #141414;
     position: relative;
+    /* Nieprzezroczyste tło: inaczej widać warstwy z #bridge-wrapper (#kinetic-block-1) przez „dziury”
+       w stacku mimo wyższego z-index niż bridge (12 vs 10). */
+    background: var(--bg-color);
     /* Nad #bridge-wrapper (z-index:10) — cała sekcja nad Kinetic. */
     z-index: 12;
     isolation: isolate; /* FACTORY: B-ISO-01 — stacking context */

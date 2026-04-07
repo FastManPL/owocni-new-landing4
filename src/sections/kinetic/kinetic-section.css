@@ -679,9 +679,11 @@
             }
         }
 
-/* Gdy Blok 4–5 jest już głównie w viewport (nagłówek „Możemy…”), Kinetic nie powinien malować się
-   przez transparent Blok45 ani wychodzić poza box (ghost / overflow). */
+/* Gdy Blok 4–5 jest już głównie w viewport (nagłówek „Możemy…”) — wyłącz Kinetic.
+   UWAGA: GSAP ustawia visibility na dzieciach (#kinetic-block-1); potomek z visibility:visible
+   NADAL się maluje przy visibility:hidden na #kinetic-section (reguły CSS). Stąd opacity:0 na sekcji. */
 html.kinetic-past #kinetic-section {
+    opacity: 0 !important;
     visibility: hidden !important;
     pointer-events: none !important;
 }
