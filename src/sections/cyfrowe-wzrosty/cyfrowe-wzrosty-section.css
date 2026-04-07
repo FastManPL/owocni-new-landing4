@@ -3,8 +3,8 @@
   position: relative;
   background: #f7f6f4;
   padding-top: 0;
-  /* Zbicie nadmiaru pustki nad blokiem „4 etapy / WZROSTU” (ok. −25vh) */
-  margin-top: -25vh;
+  /* Zbicie nadmiaru pustki nad blokiem „4 etapy / WZROSTU” — połowa poprzedniej luki względem −25vh */
+  margin-top: -37.5vh;
   isolation: isolate;           /* FACTORY:AUTO-FIX B-ISO-01 */
   contain: layout style;        /* FACTORY:ADDED — geometryMutable:false, no pin, no bleed */
   /* PROD: brak fixed, brak overflow:hidden, brak touch-action:none
@@ -495,6 +495,12 @@
   transform-origin: bottom center;
 }
 
+/* Etap 01 / 02 — węższy „main”, żeby wideo nie wystawały tak szeroko */
+#cyfrowe-wzrosty-section .tile[data-index="0"] .tile-media--masked-stack .tile-media-main,
+#cyfrowe-wzrosty-section .tile[data-index="1"] .tile-media--masked-stack .tile-media-main {
+  transform: scale(1.38);
+}
+
 #cyfrowe-wzrosty-section .tile-media--masked-stack .tile-media-main video {
   width: 100%;
   height: auto;
@@ -586,20 +592,23 @@
   border-radius: 0.75rem 0.75rem 0 0;
 }
 
+/* Ten sam prostokąt co .tile-media-bg (mockup iPhone) — float wypełnia rodzica .tile-media--iphone */
 #cyfrowe-wzrosty-section .tile-media-float--etap03 {
   position: absolute;
-  left: clamp(0.75rem, 12vw, 3.5rem);
-  bottom: 0;
+  inset: 0;
   z-index: 1;
-  width: min(17rem, 58%);
-  border-radius: 0.5rem;
+  width: 100%;
+  height: 100%;
+  border-radius: 0.75rem 0.75rem 0 0;
   overflow: hidden;
   pointer-events: none;
 }
 
 #cyfrowe-wzrosty-section .tile-media-float--etap03 video {
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: cover;
+  object-position: bottom center;
   display: block;
 }
 
