@@ -97,7 +97,7 @@ function loveWallLogoInit(container: HTMLElement): { pause: () => void; resume: 
         const isCircle = i % 2 === 0;
         const doesStrobe = isCircle && (i % 4 === 0);
         if (isCircle) el.style.borderRadius = '50%';
-        el.style.background = rainbowColors[i % rainbowColors.length];
+        el.style.background = rainbowColors[i % rainbowColors.length]!;
 
         let startX: number;
         if (i <= 2) startX = 20 + Math.random() * 15;
@@ -125,7 +125,7 @@ function loveWallLogoInit(container: HTMLElement): { pause: () => void; resume: 
       for (let i = 0; i < 8; i++) {
         const el = document.createElement('div');
         el.className = i % 2 === 0 ? 'spark plus' : 'spark';
-        const sparkColor = rainbowColors[(i + 2) % rainbowColors.length];
+        const sparkColor = rainbowColors[(i + 2) % rainbowColors.length]!;
         if (i % 2 === 0) {
           el.style.setProperty('--spark-color', sparkColor);
         } else {
