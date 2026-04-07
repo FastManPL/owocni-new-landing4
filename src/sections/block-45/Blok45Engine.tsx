@@ -849,12 +849,13 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     function updateBubblePositions() {
       (['b1','b2','b3'] as const).forEach(function(k) {
         var charIndex = activeTargets[k], bubble = bubbles[k];
-        if (charIndex === null || !bubble || !frameCache.valid || !chars[charIndex]) return;
-        var s = charStates[charIndex];
-        // frameCache.containerLeft pochodzi z getBoundingClientRect() kontenera i uwzględnia już translateX kontenera.
-        var x = frameCache.containerLeft + s.baseOffsetLeft + s.finalX + (frameCache.charOffsetWidths[charIndex]||0)*0.5;
+        if (charIndex === null || !bubble || !chars[charIndex]) return;
+        // Viewport coords z layoutu znaku (łącznie z translate kontenera + transform znaku) — bez frameCache,
+        // żeby dymki nie „jeździły” ze scrollem przy Lenis / kolejności aktualizacji cache vs. transform.
+        var rect = chars[charIndex].getBoundingClientRect();
+        var x = rect.left + rect.width * 0.5;
         var yOff = bubbleTypes[k] === 'thought' ? -55 : -25;
-        var y = frameCache.containerTop + frameCache.charOffsetTop + s.finalY + yOff;
+        var y = rect.top + yOff;
         var visScale = bubble.classList.contains('visible') ? 'scale(1) translateY(0)' : 'scale(0.8) translateY(5px)';
         bubble.style.transform = 'translate3d('+x+'px,'+y+'px,0) translateX(-50%) '+visScale;
       });
