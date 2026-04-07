@@ -1475,9 +1475,8 @@ export default function Blok45Engine() {
         <div id="blok-4-5-block-4">
           <div className="illustration-container">
             <div className="text-above-illustration">
-              <div className="blok45-intro-line3">Potencjalni klienci wchodzą</div>
-              <div className="blok45-intro-line3">na stronę rozglądają się</div>
-              <div className="blok45-intro-line3">i wychodzą</div>
+              <div className="blok45-intro-line blok45-intro-anchor-match">Potencjalni klienci wchodzą</div>
+              <div className="blok45-intro-line blok45-intro-anchor-match">na stronę rozglądają się</div>
             </div>
             <div className="blok-4-5-wave-wrap" id="blok-4-5-wave-wrap">
               <svg className="blok-4-5-wave-overlay" id="blok-4-5-wave-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
