@@ -88,7 +88,6 @@ import './kinetic-section.css';
         // freezeFinal: blokuje resize-handlery gdy animacja na końcu (ostatnia klatka)
         // mobileResizeLock: blokuje snap podczas toolbar/resize na touch devices
         let freezeFinal = false;
-        var _freezeClampBusy = false;
         var FREEZE_ON  = 0.95;
         var FREEZE_OFF = 0.94;
 
@@ -2480,17 +2479,9 @@ import './kinetic-section.css';
                             freezeFinal = false;
                         }
                         adaptiveDPR.lockForScroll();
-                        if (freezeFinal && !_freezeClampBusy) {
-                            var _snap3Px = _getSnapGeometry();
-                            if (_snap3Px) {
-                                var _s3 = _snap3Px.snaps[2];
-                                if (getScroll() > _s3 + 15) {
-                                    _freezeClampBusy = true;
-                                    scrollTo(_s3, { immediate: true, force: true });
-                                    requestAnimationFrame(function() { _freezeClampBusy = false; });
-                                }
-                            }
-                        }
+                        // UWAGA: nie clampuj scrolla do snap3 przy freezeFinal — przy działającym
+                        // Lenis (scrollRuntime.scrollTo) blokuje dojazd do st.end i wyjście z pinu.
+                        // Overshoot przy formProgress obsługuje debounce w ticku cząsteczek (wyżej).
                         if (_sm.state === 'idle' || _sm.state === 'cooldown') {
                             _reconcileFromScroll();
                         }
