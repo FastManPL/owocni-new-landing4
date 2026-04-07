@@ -2,6 +2,7 @@
 "use client";
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import Image from 'next/image';
 import './FormCore.css';
 
 // ============================================================================
@@ -1419,7 +1420,14 @@ const OwocniForm = ({ initialProduct = null, embed = false }: OwocniFormProps = 
                   <li>Wytyczne marketingu</li>
                 </ul>
               </div>
-              <img src="/assets/images/Mailing_puwdzr.png" alt="" className="frm-mailing__list-img" />
+              <Image
+                src="/assets/images/Mailing_puwdzr.png"
+                alt=""
+                width={120}
+                height={150}
+                sizes="120px"
+                className="frm-mailing__list-img"
+              />
             </div>
           </div>
 

@@ -17,7 +17,7 @@ export function ResourceHints() {
       <link rel="dns-prefetch" href="https://i.pravatar.cc" />
 
       {/* book-stats — LCP/obraz powyżej foldu */}
-      <link rel="preload" href="/books/Statystyki-stron.png" as="image" />
+      <link rel="preload" href="/books/Statystyki-stron.webp" as="image" type="image/webp" />
 
       {/* hero — perf.preloadCandidates (SECTION_MANIFEST): logo Lottie JSON, same-origin fetch */}
       <link rel="preload" href="/animations/LOGO_OWOCNI.json" as="fetch" />

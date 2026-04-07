@@ -2,6 +2,7 @@
 'use client';
 
 import { useRef, useEffect, createElement } from 'react';
+import Image from 'next/image';
 import logoA from './logo-A.jpg';
 import logoB from './logo-B.jpg';
 import { useGSAP } from '@gsap/react';
@@ -486,13 +487,17 @@ function init(container) {
                 '/assets/people/marta.jpg',
                 '/assets/people/paulina.jpg'
             ];
+            function optPeopleRasterUrl(path) {
+                if (!path || path.toLowerCase().endsWith('.mp4')) return path;
+                return '/_next/image?url=' + encodeURIComponent(path) + '&w=800&q=75';
+            }
             /* Per-card media: 1 asset (image/video) per base card. */
             var _bgCache=new Array(base);
             for(var bi=0;bi<base;bi++){
                 var mediaPath=PEOPLE_MEDIA[bi%PEOPLE_MEDIA.length];
                 var posterPath=(mediaPath&&mediaPath.toLowerCase().endsWith('.mp4'))
-                    ? PEOPLE_MEDIA[0]
-                    : mediaPath;
+                    ? optPeopleRasterUrl(PEOPLE_MEDIA[0])
+                    : optPeopleRasterUrl(mediaPath);
                 _bgCache[bi]='url("'+posterPath+'")';
             }
             /* VIDEO CARD: loop MP4 na kafelku; tap → popup Wistia (fullSrc) */
@@ -2767,10 +2772,8 @@ export default function OnasEngine() {
       których znasz z publikacji na łamach:</p>
     </div>
     <div className="onas-press__logos">
-      {/* eslint-disable-next-line @next/next/no-img-element — lokalne JPG z sekcji */}
-      <img decoding="async" src={logoA.src} alt="Logo publikacji" className="onas-press__logo" />
-      {/* eslint-disable-next-line @next/next/no-img-element — lokalne JPG z sekcji */}
-      <img fetchPriority="high" decoding="async" src={logoB.src} alt="Logo publikacji" className="onas-press__logo" />
+      <Image decoding="async" src={logoA} alt="Logo publikacji" className="onas-press__logo" width={320} height={80} sizes="(max-width: 600px) 40vw, 20vw" />
+      <Image fetchPriority="high" decoding="async" src={logoB} alt="Logo publikacji" className="onas-press__logo" width={320} height={80} sizes="(max-width: 600px) 40vw, 20vw" />
     </div>
   </div>
 

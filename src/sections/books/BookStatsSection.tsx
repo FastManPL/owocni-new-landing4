@@ -11,7 +11,7 @@ function scrollTriggerIsRefreshing(): boolean {
   return !!(ScrollTrigger as unknown as { isRefreshing?: boolean }).isRefreshing;
 }
 
-// Poster wideo: public/books/Statystyki-stron.png → /books/Statystyki-stron.png
+// Poster wideo: /books/Statystyki-stron.webp (+ Statystyki-stron.avif w public jako alternatywa statyczna)
 
 // ⚠️ GSAP-SSR-01: ZAKAZ gsap.registerPlugin() na module top-level.
 // Next.js pre-renderuje Client Components na serwerze — window/document nie istnieją.
@@ -752,7 +752,7 @@ export function BookStatsSection() {
               <video
                 className="cs-img--stats cs-video"
                 src="/books/Kalendarz_1-mute-video.mp4"
-                poster="/books/Statystyki-stron.png"
+                poster="/books/Statystyki-stron.webp"
                 playsInline
                 muted
                 loop

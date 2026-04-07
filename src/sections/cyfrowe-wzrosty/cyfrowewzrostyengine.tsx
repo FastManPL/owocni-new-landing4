@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useEffect } from 'react';
+import Image from 'next/image';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollToPlugin } from 'gsap/ScrollToPlugin';
@@ -1199,7 +1200,14 @@ export default function CyfroweWzrostyEngine() {
                   />
                 </div>
                 <div className="tile-media-bg">
-                  <img src={`${CW_TILE_ASSETS}/iphone.jpg`} alt="" decoding="async" />
+                  <Image
+                    src={`${CW_TILE_ASSETS}/iphone.jpg`}
+                    alt=""
+                    width={800}
+                    height={1200}
+                    sizes="(max-width: 768px) 90vw, 400px"
+                    decoding="async"
+                  />
                 </div>
               </div>
             </article>
