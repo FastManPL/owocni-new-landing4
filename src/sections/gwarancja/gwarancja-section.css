@@ -13,11 +13,10 @@
   --ease-silk: cubic-bezier(0.25, 0.46, 0.45, 0.94);
   --ease-press: cubic-bezier(0.32, 0, 0.67, 0);
   --ease-release: cubic-bezier(0.33, 1, 0.68, 1);
-  /* Section base */
+  /* Section base — minimalne paddingi górne/dolne, mocniejsze podciągnięcie pod kalkulator */
   background: #f7f6f4; display: flex; align-items: center; justify-content: center;
-  padding: clamp(0.5rem, 1.5vw, 1.5rem) 0; position: relative; width: 100%;
-  /* Zacieśnienie odstępu od sekcji kalkulator (−4rem) */
-  margin-top: -4rem;
+  padding: clamp(0.15rem, 0.4vw, 0.35rem) 0; position: relative; width: 100%;
+  margin-top: -7rem;
   /* B-ISO-01 AUTO-FIX */
   isolation: isolate;
   contain: layout style;
@@ -37,11 +36,11 @@
     linear-gradient(to bottom, #f7f6f4 0%, transparent clamp(40px, 12%, 100px)),
     linear-gradient(to top,   #f7f6f4 0%, transparent clamp(60px, 20%, 140px));
 }
-/* Obcięcie ~4rem od góry kadru — niższa widoczna „wysokość” wideo */
+/* Lekkie podcięcie od góry — wideo bliżej górnej krawędzi kontenera niż przy 4rem */
 #gwarancja-section #gwarancja-layer-bottom {
   display: block;
   position: absolute;
-  top: 4rem;
+  top: 0.75rem;
   left: 0;
   right: 0;
   bottom: 0;
@@ -65,7 +64,7 @@
   flex-direction: column;
   align-items: center;
   pointer-events: auto;
-  padding: 0 1rem clamp(2.5rem, 7vw, 5rem);
+  padding: 0 1rem clamp(1.5rem, 4vw, 3rem);
   width: 100%;
 }
 #gwarancja-section .lens-pill-wrapper {
@@ -179,7 +178,7 @@
   line-height: 1.15;
   letter-spacing: -0.03em;
   text-align: center;
-  margin: 10px 0 0 0;
+  margin: 4px 0 0 0;
   padding: 0.12em 0 0.15em 0; /* ascender & descender clip protection for background-clip:text */
   font-size: clamp(1.6rem, 4.5vw, 2.8rem);
 }
@@ -210,7 +209,7 @@
   font-weight: 500;
   line-height: 1.5;
   text-align: center;
-  margin: 16px 0 0 0;
+  margin: 10px 0 0 0;
   font-size: clamp(0.8rem, 3.5vw, 1.25rem);
 }
 @media (min-width: 1201px) {
@@ -245,7 +244,7 @@
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
   position: relative;
-  margin-top: clamp(64px, 10vw, 112px);
+  margin-top: clamp(40px, 6vw, 72px);
   width: 100%;
 }
 /* Niezawodne skalowanie dla WSZYSTKICH przeglądarek (transform zamiast zbugowanego zoom) */
@@ -516,7 +515,7 @@
 #gwarancja-section #gwarancja-layer-top-wrap video { display: block; width: 100%; height: 100%; object-fit: cover; }
 #gwarancja-section #gwarancja-layer-top-wrap video {
   position: absolute;
-  top: 4rem;
+  top: 0.75rem;
   left: 0;
   right: 0;
   bottom: 0;

@@ -9,9 +9,9 @@
     --text-color: #141414;
     --highlight-color: #141414;
     position: relative;
-    /* Nad #bridge-wrapper (z-index:10) — cała sekcja nad Kinetic; bez tła, treść i fala układane wewnętrznymi z-indexami. */
+    /* Nad #bridge-wrapper (z-index:10) — cała sekcja nad Kinetic. Nieprzezroczyste tło: inaczej widać #kinetic-block-1 „przez” sekcję przy scrollu. */
     z-index: 12;
-    background: transparent;
+    background: var(--bg-color);
     isolation: isolate; /* FACTORY: B-ISO-01 — stacking context */
     /* Integracja LP: sekcja wyżej w flow — intro widać wcześniej u dołu ekranu podczas końcówki Kinetic + wave */
     margin-top: clamp(-92vh, -64vh, -44vh);
