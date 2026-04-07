@@ -1419,7 +1419,13 @@ export default function Blok45Engine() {
     return () => { if (id1) cancelAnimationFrame(id1); if (id2) cancelAnimationFrame(id2); };
   }, []);
 
-  /** Gdy nagłówek „Możemy to zmienić” jest w viewport — ukryj Kinetic (html.kinetic-past) i pauzuj silnik; cofnięcie scrolla = wznowienie. */
+  /**
+   * Ukrycie Kinetic (html.kinetic-past) gdy użytkownik jest przy Blok45.
+   * Poprzednio: past = intersectionRatio>=0.45 — przy przewijaniu W DÓŁ ratio spadał poniżej progu
+   * mimo że nadal jesteśmy w Blok45 → kinetic-past znikało i Kinetic wracał (znikanie Blok45).
+   * Teraz: histereza + jeśli nagłówek jest już NAD viewportem (zjechaliśmy w dół) — zostaw ukryte.
+   * Cofnięcie Kinetic tylko gdy cały nagłówek jest z powrotem PONIŻEJ ekranu (scroll do góry przed Blok45).
+   */
   useEffect(() => {
     const KINETIC_PAST_CLASS = 'kinetic-past';
     const moz = document.getElementById('blok-4-5-mozemy-to-zmienic');
@@ -1435,22 +1441,57 @@ export default function Blok45Engine() {
       }
     };
 
-    let last = false;
-    const io = new IntersectionObserver(
-      (entries) => {
-        const e = entries[0];
-        if (!e) return;
-        const past = e.isIntersecting && e.intersectionRatio >= 0.45;
-        if (past === last) return;
-        last = past;
+    let lastPast = false;
+    let raf = 0;
+
+    const recompute = () => {
+      const vh = window.innerHeight || 1;
+      const r = moz.getBoundingClientRect();
+
+      let past: boolean;
+      if (r.top > vh) {
+        past = false;
+      } else if (r.bottom < 0) {
+        past = true;
+      } else {
+        const visibleH = Math.max(0, Math.min(r.bottom, vh) - Math.max(r.top, 0));
+        const ratio = r.height > 0 ? visibleH / r.height : 0;
+        if (ratio >= 0.45) {
+          past = true;
+        } else {
+          past = lastPast === true;
+        }
+      }
+
+      if (past !== lastPast) {
+        lastPast = past;
         setPast(past);
-      },
-      { threshold: [0, 0.25, 0.45, 0.5, 0.75, 1] }
-    );
-    io.observe(moz);
+      }
+    };
+
+    const schedule = () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => {
+        raf = 0;
+        recompute();
+      });
+    };
+
+    window.addEventListener('scroll', schedule, { passive: true });
+    window.addEventListener('resize', schedule, { passive: true });
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', schedule, { passive: true });
+    }
+    schedule();
+    requestAnimationFrame(recompute);
 
     return () => {
-      io.disconnect();
+      window.removeEventListener('scroll', schedule);
+      window.removeEventListener('resize', schedule);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener('resize', schedule);
+      }
+      if (raf) cancelAnimationFrame(raf);
       document.documentElement.classList.remove(KINETIC_PAST_CLASS);
       window.dispatchEvent(new CustomEvent('kinetic-visibility', { detail: { past: false } }));
     };
