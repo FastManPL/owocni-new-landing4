@@ -1,9 +1,5 @@
-// ═══════════════════════════════════════════════════════════════
-// SECTION MANIFEST — case-studies (3 tiles, silnik z SEKCJA-PORTFOLIO)
-// ═══════════════════════════════════════════════════════════════
-
 export const SECTION_MANIFEST = {
-  slug: 'case-studies',
+  slug: 'wyniki-cs-tiles',
   type: 'B' as const,
   requires: ['scrollRuntime', 'gsap', 'ScrollTrigger'],
 
@@ -30,19 +26,12 @@ export const SECTION_MANIFEST = {
     { kind: 'img', src: 'dlon-artefakt.png', priority: 'HOT', critical: true, lcp: false },
     { kind: 'img', src: 'dlon-mobile-design.png', priority: 'HOT', critical: true, lcp: false },
     { kind: 'img', src: 'tlum.png', priority: 'HOT', critical: true, lcp: false },
-    { kind: 'img', src: 'hipnotyzuj.gif', priority: 'HOT', critical: true, lcp: false },
     { kind: 'img', src: 'przyklady-strony.png', priority: 'HOT', critical: true, lcp: false },
-    { kind: 'video', src: 'portfolios/strona-pattern1.mp4', priority: 'HOT', critical: true, lcp: false },
-    { kind: 'video', src: 'portfolios/strona-pattern2.mp4', priority: 'HOT', critical: true, lcp: false },
-    { kind: 'video', src: 'portfolios/strona-pattern3.mp4', priority: 'HOT', critical: true, lcp: false },
-    { kind: 'video', src: 'portfolios/mobile-design.mp4', priority: 'HOT', critical: true, lcp: false },
-    {
-      kind: 'canvas',
-      src: 'portfolios/canvas/000-040.jpg (41 frames)',
-      priority: 'HOT',
-      critical: true,
-      lcp: false,
-    },
+    { kind: 'video', src: 'strona-pattern1.mp4', priority: 'HOT', critical: true, lcp: false },
+    { kind: 'video', src: 'strona-pattern2.mp4', priority: 'HOT', critical: true, lcp: false },
+    { kind: 'video', src: 'strona-pattern3.mp4', priority: 'HOT', critical: true, lcp: false },
+    { kind: 'video', src: 'mobile-design.mp4', priority: 'HOT', critical: true, lcp: false },
+    { kind: 'canvas', src: 'assets/portfolios/canvas/000-040.jpg (41 frames)', priority: 'HOT', critical: true, lcp: false },
   ],
 
   warmup: [],
@@ -59,7 +48,7 @@ export const SECTION_MANIFEST = {
 
   export: {
     mode: 'named' as const,
-    name: 'CaseStudiesSection',
+    name: 'WynikiCsTilesSection',
   },
 
   slots: [],

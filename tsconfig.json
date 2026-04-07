@@ -55,6 +55,7 @@
     "node_modules",
     ".next",
     "out",
-    "src/sections/case-study2"
+    "src/sections/case-study2",
+    "src/sections/SEKCJA-PORTFOLIO"
   ]
 }

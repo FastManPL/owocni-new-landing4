@@ -1,10 +1,5 @@
-/* case-studies — layout z SEKCJA-PORTFOLIO / wyniki-cs-tiles; html font-size w globals.css */
-#case-studies-section {
-  isolation: isolate;
-  position: relative;
-}
-
 /* ═══ CS1 (BANACH) ═══ */
+    html { font-size: 16px; }
     #cs1-section, .scroll-spacer { margin: 0 auto; }
     .scroll-spacer { height: 100vh; }
     /* ═══ KONTENER ═══ */
@@ -100,6 +95,7 @@
     .cs1-mp button:hover { background: #3b82f6; }
 
     /* ═══ CS2 (PRAGMILE) ═══ */
+    html { font-size: 16px; }
     #cs2-section, .scroll-spacer { margin: 0 auto; }
     .scroll-spacer { height: 100vh; }
     /* ═══ KONTENER (system wyniki) ═══ */
@@ -220,6 +216,7 @@
     .cs2-mp button:hover { background: #3b82f6; }
 
     /* ═══ CS3 (STUDIOOKO) ═══ */
+    html { font-size: 16px; }
     #cs3-section, .scroll-spacer { margin: 0 auto; }
     .scroll-spacer { height: 100vh; }
     /* ═══ KONTENER (system wyniki) ═══ */
