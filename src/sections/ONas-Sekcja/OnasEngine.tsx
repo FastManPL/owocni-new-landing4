@@ -487,17 +487,14 @@ function init(container) {
                 '/assets/people/marta.jpg',
                 '/assets/people/paulina.jpg'
             ];
-            function optPeopleRasterUrl(path) {
-                if (!path || path.toLowerCase().endsWith('.mp4')) return path;
-                return '/_next/image?url=' + encodeURIComponent(path) + '&w=800&q=75';
-            }
-            /* Per-card media: 1 asset (image/video) per base card. */
+            /* Per-card media: 1 asset (image/video) per base card.
+               Bez /_next/image w url() — query (&w, &q) potrafi psuć background-image w części przeglądarek. */
             var _bgCache=new Array(base);
             for(var bi=0;bi<base;bi++){
                 var mediaPath=PEOPLE_MEDIA[bi%PEOPLE_MEDIA.length];
                 var posterPath=(mediaPath&&mediaPath.toLowerCase().endsWith('.mp4'))
-                    ? optPeopleRasterUrl(PEOPLE_MEDIA[0])
-                    : optPeopleRasterUrl(mediaPath);
+                    ? PEOPLE_MEDIA[0]
+                    : mediaPath;
                 _bgCache[bi]='url("'+posterPath+'")';
             }
             /* VIDEO CARD: loop MP4 na kafelku; tap → popup Wistia (fullSrc) */
@@ -2772,8 +2769,8 @@ export default function OnasEngine() {
       których znasz z publikacji na łamach:</p>
     </div>
     <div className="onas-press__logos">
-      <Image decoding="async" src={logoA} alt="Logo publikacji" className="onas-press__logo" width={320} height={80} sizes="(max-width: 600px) 40vw, 20vw" />
-      <Image fetchPriority="high" decoding="async" src={logoB} alt="Logo publikacji" className="onas-press__logo" width={320} height={80} sizes="(max-width: 600px) 40vw, 20vw" />
+      <Image decoding="async" src={logoA} alt="Logo publikacji" className="onas-press__logo" width={446} height={67} sizes="(max-width: 600px) 40vw, 20vw" />
+      <Image fetchPriority="high" decoding="async" src={logoB} alt="Logo publikacji" className="onas-press__logo" width={466} height={91} sizes="(max-width: 600px) 40vw, 20vw" />
     </div>
   </div>
 

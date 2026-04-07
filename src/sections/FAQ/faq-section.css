@@ -394,8 +394,8 @@
 }
 
 /* ====== LAYOUT ====== */
-/* Nad #final-section (z-index:0). Tło tylko w ::before — ostatnie 2rem sekcji zostaje przezroczyste, żeby gradient ::after
-   schodził do prawdziwej przezroczystości i widać było #final-section (margin-top:-100vh), a nie „kolor” tła FAQ. */
+/* Nad #final-section (z-index:0). Tło tylko w ::before — dolny pas musi być tak wysoki jak ::after (cień), inaczej gradient
+   kończy na #f7f6f4 z ::before i „transparent” nie pokazuje #final-section (margin-top:-100vh). */
 #faq-section {
   position: relative;
   z-index: 1;
@@ -412,13 +412,14 @@
   left: 0;
   right: 0;
   top: 0;
-  bottom: 2rem;
+  /* Synchron z height ::after — całe pasmo cienia nad przezroczystym tłem sekcji */
+  bottom: 5rem;
   background: #f7f6f4;
   z-index: 0;
   pointer-events: none;
 }
 
-/* Cień w pasie nad dolną krawędzią — gradient do transparent (warstwa pod spodem = final, nie kolor FAQ). */
+/* Cień: gradient do rgba(0,0,0,0) — dolna część pasma nie ma już kremowego ::before pod spodem */
 #faq-section::after {
   content: '';
   position: absolute;
@@ -428,7 +429,7 @@
   height: 5rem;
   pointer-events: none;
   z-index: 0;
-  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.14) 0%, transparent 100%);
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0.12) 0%, rgba(0, 0, 0, 0) 100%);
 }
 
 #faq-section > *:not(.faq-overlay) {

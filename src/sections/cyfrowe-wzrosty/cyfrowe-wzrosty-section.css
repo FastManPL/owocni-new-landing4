@@ -178,7 +178,8 @@
   padding-left: max(var(--container-gutter), calc((100vw - var(--container-max)) / 2));
   padding-right: max(var(--container-gutter), calc((100vw - var(--container-max)) / 2));
   padding-top: 3rem;
-  padding-bottom: 2.5rem;
+  /* +2rem: miejsce na wystające wideo (etap 3); overflow-x:auto i tak obcina w pionie bez dodatkowego paddingu */
+  padding-bottom: calc(2.5rem + 2rem);
 
   overflow-x: auto;
   scroll-snap-type: x mandatory;
@@ -208,7 +209,7 @@
     padding-left: 0;
     padding-right: 0;
     padding-top: 3rem;
-    padding-bottom: 3rem;
+    padding-bottom: calc(3rem + 2rem);
     justify-content: space-between;
     overflow: visible;
     scroll-snap-type: none;
@@ -218,7 +219,7 @@
 
 @media (min-width: 600px) and (max-width: 1699px) {
   #cyfrowe-wzrosty-section .tiles-track {
-    padding-bottom: 3.5rem;
+    padding-bottom: calc(3.5rem + 2rem);
   }
 }
 
@@ -266,9 +267,10 @@
   -webkit-clip-path: inset(-2rem round var(--tile-radius));
   clip-path: inset(-2rem round var(--tile-radius));
 }
+/* Dolna krawęć: min. 2rem wystające poza biały kafelek (::before), jak margin-bottom na .tile-media-main */
 #cyfrowe-wzrosty-section .tile:has(.tile-media--iphone) {
-  -webkit-clip-path: inset(-2rem -2rem -3.5rem -2rem round var(--tile-radius));
-  clip-path: inset(-2rem -2rem -3.5rem -2rem round var(--tile-radius));
+  -webkit-clip-path: inset(-2rem -2rem -2.5rem -2rem round var(--tile-radius));
+  clip-path: inset(-2rem -2rem -2.5rem -2rem round var(--tile-radius));
 }
 
 /* STAGE LABEL */
@@ -574,10 +576,10 @@
   #cyfrowe-wzrosty-section .tile-media-secondary--etap04 { bottom: 11rem; }
 }
 
-/* Etap 03: cały blok mediów niżej + wystaje w dół jak wideo w etapach 1/2 (scale / ujemny margin) */
+/* Etap 03: jak .tile-media-main — dokładnie 2rem poza dolną krawędzią kafelka (ujemny margin + padding na .tiles-track) */
 #cyfrowe-wzrosty-section .tile[data-index="2"] .tile-media.tile-media--iphone {
-  margin-top: clamp(2.25rem, 5.5vw, 4.5rem);
-  margin-bottom: -clamp(2rem, 4.5vw, 3.25rem);
+  margin-top: clamp(2rem, 5vw, 4rem);
+  margin-bottom: -2rem;
   align-self: stretch;
 }
 
