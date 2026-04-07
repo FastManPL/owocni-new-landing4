@@ -15,6 +15,8 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     var _cleanups=[],_observers=[];
     var _isMobile=window.innerWidth<=640;
     var _flywheel = { spinRafId: 0, startSpin: function() {} as () => void };
+    /** Lenis + scrollRuntime: scrollerProxy jest na document.body — ST musi używać tego samego scrollera. */
+    var _stScroller = document.body;
     function _addWL(e,f,o){window.addEventListener(e,f,o);_cleanups.push(function(){window.removeEventListener(e,f,o);});}
     _addWL('resize',function(){_isMobile=window.innerWidth<=640;});
 
@@ -47,6 +49,8 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
 
     function buildTimeline() {
       if(scrollTl){ if(scrollTl.scrollTrigger) scrollTl.scrollTrigger.kill(); scrollTl.kill(); scrollTl=null; }
+      var trig = container.querySelector('#cs1-section');
+      if (!trig) return;
       var sv = getVals('start'), ev = getVals('end');
       applyCSS(sv);
 
@@ -62,7 +66,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       });
 
       scrollTl = gsap.timeline({
-        scrollTrigger: { trigger:'#cs1-section', start:'60% bottom', end:window.innerWidth<=640?'center 50%':'center 30%', scrub:0.6 }
+        scrollTrigger: { trigger: trig, scroller: _stScroller, start:'60% bottom', end:window.innerWidth<=640?'center 50%':'center 30%', scrub:0.6 }
       });
 
       /* Right panel */
@@ -150,6 +154,9 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         scrollTl = null;
       }
 
+      var trig = container.querySelector('#cs2-section');
+      if (!trig) return;
+
       /* Read current slider values */
       var startVals = getSliderValues('start');
       var endVals = getSliderValues('end');
@@ -182,7 +189,8 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
 
       scrollTl = gsap.timeline({
         scrollTrigger: {
-          trigger: '#cs2-section',
+          trigger: trig,
+          scroller: _stScroller,
           start: '60% bottom',
           end: window.innerWidth<=640 ? 'center 50%' : 'center 30%',
           scrub: 0.6
@@ -439,11 +447,13 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
 
     function buildTimeline() {
       if(scrollTl){if(scrollTl.scrollTrigger)scrollTl.scrollTrigger.kill();scrollTl.kill();scrollTl=null;}
+      var trig = container.querySelector('#cs3-section');
+      if (!trig) return;
       var sv=getVals('start'), ev=getVals('end');
       applyCSS(sv);
       var proxy={},target={},props=[];
       Object.keys(sv).forEach(function(p){var k=p.replace(/--/g,'').replace(/-/g,'_');proxy[k]=sv[p];target[k]=ev[p];props.push({key:k,prop:p});});
-      scrollTl=gsap.timeline({scrollTrigger:{trigger:'#cs3-section',start:'60% bottom',end:window.innerWidth<=640?'center 50%':'center 30%',scrub:0.6}});
+      scrollTl=gsap.timeline({scrollTrigger:{trigger:trig,scroller:_stScroller,start:'60% bottom',end:window.innerWidth<=640?'center 50%':'center 30%',scrub:0.6}});
       if(tloEl)scrollTl.fromTo(tloEl,{filter:'brightness(0.15)'},{filter:'brightness(1)',ease:'power2.inOut',duration:1},0);
       var at=Object.assign({},target);at.ease='power2.inOut';at.duration=1;
       at.onUpdate=function(){props.forEach(function(p){rpEl.style.setProperty(p.prop,(p.prop==='--eye-radial-opacity'||p.prop==='--tlum-opacity'||p.prop==='--hipno-opacity'||p.prop==='--hand1-opacity'||p.prop==='--hand2-opacity'||p.prop==='--przyklady-opacity'||p.prop==='--przyklady-rad-opacity')?String(Math.round(proxy[p.key])):proxy[p.key].toFixed(1)+'%');});};
@@ -571,7 +581,7 @@ export function CaseStudiesTilesEngine() {
   }, []);
 
   return (
-    <div id="case-studies-section">
+    <div id="case-studies-section" ref={rootRef}>
   <section id="cs1-section">
     <div className="cs1-card" id="cs1-card">
       <div className="cs1-content">
@@ -609,10 +619,6 @@ export function CaseStudiesTilesEngine() {
       <video className="cs-tile1-phone-video" src={getAssetPath('/assets/portfolios/mobile-design.mp4')} autoPlay loop playsInline muted></video>
     </div>
   </section>
-  <div className="scroll-spacer"></div>
-
-    <div className="cs-spacer">↓ CS2 Pragmile ↓</div>
-
   <div className="scroll-spacer"></div>
   <section id="cs2-section">
     <div className="cs2-card" id="cs2-card">
@@ -659,10 +665,6 @@ export function CaseStudiesTilesEngine() {
       </div>
     </div>
   </section>
-  <div className="scroll-spacer"></div>
-
-    <div className="cs-spacer">↓ CS3 StudioOko ↓</div>
-
   <div className="scroll-spacer"></div>
   <section id="cs3-section">
     <div className="cs3-card" id="cs3-card">
