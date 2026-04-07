@@ -6,14 +6,13 @@ import { resolveHeroVariant } from '@/config/heroVariants.generated';
 import { HeroSection } from '@/sections/hero/HeroSection';
 import { WynikiSection } from '@/sections/wyniki/WynikiSection';
 import { SectionsClient } from './SectionsClient';
+import { BridgeSection } from './BridgeSection';
+
 const BookStatsSection = dynamic(() =>
   import('@/sections/books/BookStatsSection').then((m) => ({ default: m.BookStatsSection }))
 );
 const FaktySection = dynamic(() =>
   import('@/sections/fakty/FaktySection').then((m) => ({ default: m.FaktySection }))
-);
-const BridgeSection = dynamic(() =>
-  import('@/app/BridgeSection').then((m) => ({ default: m.BridgeSection }))
 );
 
 const KalkulatorSection = dynamic(() =>
@@ -86,10 +85,13 @@ async function HomePageContent({
       <DeferredMount minHeight="min(120vh, 1100px)">
         <FaktySection />
       </DeferredMount>
-      <DeferredMount minHeight="min(100vh, 900px)">
+      {/*
+        Jeden slot: Bridge (Kinetic + #bridge-pin-end-sentinel) musi być w DOM zanim zainicjuje się Blok45.
+        Dwa osobne DeferredMount mogły montować Blok45 bez sentinela → ST w Blok45Engine pada na `container`
+        i kolejność scrollowa wygląda jak Fakty → Blok45 → Kinetic.
+      */}
+      <DeferredMount minHeight="min(200vh, 1800px)">
         <BridgeSection />
-      </DeferredMount>
-      <DeferredMount minHeight="min(100vh, 900px)">
         <SectionsClient />
       </DeferredMount>
       <DeferredMount minHeight="min(110vh, 1000px)">
