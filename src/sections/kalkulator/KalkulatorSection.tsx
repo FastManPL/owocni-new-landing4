@@ -10,7 +10,11 @@ export function KalkulatorSection() {
   return (
     <section
       id="kalkulator-section"
-      style={{ isolation: 'isolate' }}
+      style={{
+        isolation: 'isolate',
+        position: 'relative',
+        zIndex: 2,
+      }}
     >
       <ConversionCalculator />
     </section>

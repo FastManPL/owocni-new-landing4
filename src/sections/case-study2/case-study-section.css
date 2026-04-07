@@ -860,10 +860,11 @@
       #case-study-section .mockup-zoom-layer {
         --img-y: -10.1%;
       }
+      /* Wideo na ekranie laptopa — skala zsynchronizowana z GSAP (CaseStudy2Section) */
       #case-study-section .mockup-video {
         --scrvid-x: 49%;
         --scrvid-y: 55%;
-        --scrvid-scale: 0.68;
+        --scrvid-scale: 0.96;
       }
 
       /* Lewy panel: padding symetryczny - bottom = top = 8vw
