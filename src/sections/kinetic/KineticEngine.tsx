@@ -22,10 +22,10 @@ import './kinetic-section.css';
         const tickerFns = [];
         const observers = [];
         const getScroll = (): number => scrollRuntime.getScroll();
-        // P3-WILL-REPLACE: scrollTo/scrollOn/scrollOff → scrollRuntime.ts
-        const scrollTo  = (px, opts) => window.lenis?.scrollTo(px, opts);
-        const scrollOn  = (ev, fn)   => window.lenis?.on(ev, fn);
-        const scrollOff = (ev, fn)   => window.lenis?.off(ev, fn);
+        // ENT-SCROLL-API-01: Lenis nie jest na window.lenis — jedyny most to scrollRuntime
+        const scrollTo  = (px, opts) => scrollRuntime.scrollTo(px, opts);
+        const scrollOn  = (ev, fn)   => scrollRuntime.on(ev, fn);
+        const scrollOff = (ev, fn)   => scrollRuntime.off(ev, fn);
 
         // ── Shared state (closure) — replaces window.* event bus (ENT-JS-09) ──
         const _s = {
