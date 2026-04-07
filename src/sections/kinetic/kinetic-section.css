@@ -678,3 +678,10 @@
                 font-size: 6.6vw;
             }
         }
+
+/* Gdy Blok 4–5 jest już głównie w viewport (nagłówek „Możemy…”), Kinetic nie powinien malować się
+   przez transparent Blok45 ani wychodzić poza box (ghost / overflow). */
+html.kinetic-past #kinetic-section {
+    visibility: hidden !important;
+    pointer-events: none !important;
+}

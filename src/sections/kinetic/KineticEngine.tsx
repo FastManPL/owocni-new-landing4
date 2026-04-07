@@ -69,6 +69,11 @@ import './kinetic-section.css';
         // Gate ticker — MUSI być dodany jako PIERWSZY (GSAP wywołuje w kolejności dodania)
         const _tickSectionGate = function() {
             if (_s._killed) return;
+            if (typeof document !== 'undefined' && document.documentElement.classList.contains('kinetic-past')) {
+                _sectionTickOk = false;
+                _deferredTickOk = false;
+                return;
+            }
             // H7 FIX: Safety net — jeśli timeline aktywny, sekcja MUSI być widoczna
             // Chroni przed race condition gdy ScrollTrigger refresh wywoła onLeave przed onEnter
             if (!_sectionVisible && _s.pinnedTl && _s.pinnedTl.progress() > 0 && _s.pinnedTl.progress() < 1) {
@@ -4257,6 +4262,7 @@ import './kinetic-section.css';
     }
 
     function resume() {
+        if (typeof document !== 'undefined' && document.documentElement.classList.contains('kinetic-past')) return;
         if (!_paused) return;
         _paused = false;
         // Podłącz ticker functions
@@ -4333,6 +4339,10 @@ import './kinetic-section.css';
     function _factoryIoCallback(entries) {
         var e = entries[0];
         if (!e) return;
+        if (typeof document !== 'undefined' && document.documentElement.classList.contains('kinetic-past')) {
+            pause();
+            return;
+        }
         if (e.isIntersecting) {
             resume();
         } else {
@@ -4389,6 +4399,7 @@ import './kinetic-section.css';
 
 export default function KineticEngine() {
   const rootRef = useRef<HTMLElement | null>(null);
+  const kineticApiRef = useRef<{ pause: () => void; resume: () => void } | null>(null);
 
   useGSAP(() => {
     gsap.registerPlugin(ScrollTrigger);
@@ -4400,8 +4411,23 @@ export default function KineticEngine() {
       return;
     }
     const inst = init(el);
-    return () => inst?.kill?.();
+    kineticApiRef.current = inst;
+    return () => {
+      kineticApiRef.current = null;
+      inst?.kill?.();
+    };
   }, { scope: rootRef });
+
+  useEffect(() => {
+    const syncKineticPast = () => {
+      const past = document.documentElement.classList.contains('kinetic-past');
+      if (past) kineticApiRef.current?.pause();
+      else kineticApiRef.current?.resume();
+    };
+    window.addEventListener('kinetic-visibility', syncKineticPast);
+    requestAnimationFrame(syncKineticPast);
+    return () => window.removeEventListener('kinetic-visibility', syncKineticPast);
+  }, []);
 
   useEffect(() => {
     scrollRuntime.requestRefresh('dynamic-mounted');

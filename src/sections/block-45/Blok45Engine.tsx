@@ -1419,6 +1419,43 @@ export default function Blok45Engine() {
     return () => { if (id1) cancelAnimationFrame(id1); if (id2) cancelAnimationFrame(id2); };
   }, []);
 
+  /** Gdy nagłówek „Możemy to zmienić” jest w viewport — ukryj Kinetic (html.kinetic-past) i pauzuj silnik; cofnięcie scrolla = wznowienie. */
+  useEffect(() => {
+    const KINETIC_PAST_CLASS = 'kinetic-past';
+    const moz = document.getElementById('blok-4-5-mozemy-to-zmienic');
+    if (!moz) return undefined;
+
+    const setPast = (past: boolean) => {
+      if (past) {
+        document.documentElement.classList.add(KINETIC_PAST_CLASS);
+        window.dispatchEvent(new CustomEvent('kinetic-visibility', { detail: { past: true } }));
+      } else {
+        document.documentElement.classList.remove(KINETIC_PAST_CLASS);
+        window.dispatchEvent(new CustomEvent('kinetic-visibility', { detail: { past: false } }));
+      }
+    };
+
+    let last = false;
+    const io = new IntersectionObserver(
+      (entries) => {
+        const e = entries[0];
+        if (!e) return;
+        const past = e.isIntersecting && e.intersectionRatio >= 0.45;
+        if (past === last) return;
+        last = past;
+        setPast(past);
+      },
+      { threshold: [0, 0.25, 0.45, 0.5, 0.75, 1] }
+    );
+    io.observe(moz);
+
+    return () => {
+      io.disconnect();
+      document.documentElement.classList.remove(KINETIC_PAST_CLASS);
+      window.dispatchEvent(new CustomEvent('kinetic-visibility', { detail: { past: false } }));
+    };
+  }, []);
+
   return (
     <section id="blok-4-5-section" ref={rootRef}>
       <canvas id="blok-4-5-sparksCanvas"></canvas>
