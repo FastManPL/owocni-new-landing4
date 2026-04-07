@@ -860,12 +860,12 @@
       #case-study-section .mockup-zoom-layer {
         --img-y: -10.1%;
       }
-      /* Wideo na ekranie laptopa — skala + szerokość vs desktop (większy fill) */
+      /* Mobile: skala/szerokość zsynchronizowane z GSAP */
       #case-study-section .mockup-video {
         --scrvid-x: 49%;
         --scrvid-y: 55%;
-        --scrvid-scale: 1.08;
-        width: 74%;
+        --scrvid-scale: 1.02;
+        width: 70%;
       }
 
       /* Lewy panel: padding symetryczny - bottom = top = 8vw
