@@ -479,13 +479,13 @@ function init(container) {
             if(this._hoverListeners){for(var hl=0;hl<this._hoverListeners.length;hl++){var li=this._hoverListeners[hl];if(li.type==='pointermove')li.el.removeEventListener('pointermove',li.enter);else if(li.type==='pointerleave')li.el.removeEventListener('pointerleave',li.leave);else{li.el.removeEventListener('mouseenter',li.enter);li.el.removeEventListener('mouseleave',li.leave);}}}
             this._hoverTimelines=[]; this._hoverListeners=[]; this._cardStyleIdx=[];
             var PEOPLE_MEDIA = [
-                '/assets/people/adam.jpg',
-                '/assets/people/iwona.jpg',
-                '/assets/people/jakub.jpg',
+                '/assets/people/adam.webp',
+                '/assets/people/iwona.webp',
+                '/assets/people/jakub.webp',
                 '/assets/people/mariusz.mp4',
-                '/assets/people/kinga.jpg',
-                '/assets/people/marta.jpg',
-                '/assets/people/paulina.jpg'
+                '/assets/people/kinga.webp',
+                '/assets/people/marta.webp',
+                '/assets/people/paulina.webp'
             ];
             /* Per-card media: 1 asset (image/video) per base card.
                Bez /_next/image w url() — query (&w, &q) potrafi psuć background-image w części przeglądarek. */

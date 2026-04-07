@@ -19,12 +19,12 @@ export const SECTION_MANIFEST = {
     '/assets/cyfrowe-wzrosty-tiles/maska_dicaprioSV.svg',
     '/assets/cyfrowe-wzrosty-tiles/nr1-strony2.mp4',
     '/assets/cyfrowe-wzrosty-tiles/optymalne-strony3.mp4',
-    '/assets/cyfrowe-wzrosty-tiles/iphone.jpg',
+    '/assets/cyfrowe-wzrosty-tiles/iphone.webp',
     '/assets/cyfrowe-wzrosty-tiles/Konwersja.mp4',
     '/assets/cyfrowe-wzrosty-tiles/maska_ziomkiSV.svg',
     '/assets/cyfrowe-wzrosty-tiles/klient-strony2.mp4',
   ],
-  // Wideo + maski SVG + jpg z karuzeli benefits (landing2), katalog public/assets/cyfrowe-wzrosty-tiles/.
+  // Wideo + maski SVG + rastry webp/avif z karuzeli benefits, katalog public/assets/cyfrowe-wzrosty-tiles/.
 
   warmup: [],
   // Typ B: ticker startuje natychmiast w resume(). Brak async warm-up.
@@ -107,7 +107,7 @@ export const SECTION_MANIFEST = {
       '/assets/cyfrowe-wzrosty-tiles/LogoIdentyfikacja.mp4',
       '/assets/cyfrowe-wzrosty-tiles/nr1-strony2.mp4',
       '/assets/cyfrowe-wzrosty-tiles/optymalne-strony3.mp4',
-      '/assets/cyfrowe-wzrosty-tiles/iphone.jpg',
+      '/assets/cyfrowe-wzrosty-tiles/iphone.webp',
       '/assets/cyfrowe-wzrosty-tiles/Konwersja.mp4',
       '/assets/cyfrowe-wzrosty-tiles/klient-strony2.mp4',
     ],

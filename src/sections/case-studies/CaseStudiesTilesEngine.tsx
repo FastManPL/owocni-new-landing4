@@ -2,8 +2,8 @@
 'use client';
 
 import { useRef, useEffect } from 'react';
-import Image from 'next/image';
 import { useGSAP } from '@gsap/react';
+import { PictureAsset } from '@/components/PictureAsset';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { scrollRuntime } from '@/lib/scrollRuntime';
@@ -356,12 +356,9 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         ro.observe(phoneContainer);_observers.push(ro);
       }
 
-      function optRasterUrl(absPath) {
-        return '/_next/image?url=' + encodeURIComponent(absPath) + '&w=640&q=75';
-      }
       function preloadFrame(index) {
         return new Promise(function(resolve) {
-          var url = optRasterUrl(getAssetPath('/assets/portfolios/canvas/' + String(index).padStart(3, '0') + '.jpg'));
+          var url = getAssetPath('/assets/portfolios/canvas/' + String(index).padStart(3, '0') + '.webp');
           var img = new Image();
           img.onload = function() {
             if (img.decode) {
@@ -600,7 +597,7 @@ export function CaseStudiesTilesEngine() {
           </div>
           <p className="cs-body">Owocni zmienili naszą firmę z &apos;nudnej księgowości&apos; w zaufanego partnera CFO. Praca jak w zegarku. Polecam z czystym sumieniem.</p>
           <div className="cs-author">
-            <div className="cs-author-avatar"><Image src={getAssetPath('/assets/ptr.png')} alt="" width={37} height={37} sizes="37px" loading="lazy" /></div>
+            <div className="cs-author-avatar"><PictureAsset stem="/assets/ptr" alt="" width={37} height={37} sizes="37px" loading="lazy" /></div>
             <div>
               <div className="cs-author-name">Piotr Banach</div>
               <div className="cs-author-role">DYREKTOR OPERACYJNY</div>
@@ -609,14 +606,14 @@ export function CaseStudiesTilesEngine() {
         </div>
         <div className="cs1-right" id="cs1-right">
           <div className="cs-tile1-bg-mobile" aria-hidden="true"></div>
-          <div className="cs-tile1-banach-desktop" aria-hidden="true"><Image src={getAssetPath('/assets/banach-1wszyi-planFIN-1.png')} alt="" width={1400} height={803} sizes="(max-width: 640px) 100vw, 55vw" loading="lazy" /></div>
+          <div className="cs-tile1-banach-desktop" aria-hidden="true"><PictureAsset stem="/assets/banach-1wszyi-planFIN-1" alt="" width={1400} height={803} sizes="(max-width: 640px) 100vw, 55vw" loading="lazy" /></div>
           <div className="cs-tile1-consulting">
-            <Image src={getAssetPath('/assets/tworzenie-strony-konsulting.jpg')} alt="" width={350} height={410} sizes="(max-width: 640px) 50vw, 25vw" loading="lazy" />
+            <PictureAsset stem="/assets/tworzenie-strony-konsulting" alt="" width={350} height={410} sizes="(max-width: 640px) 50vw, 25vw" loading="lazy" />
             <video className="cs-vid cs-vid--1" src={getAssetPath('/assets/portfolios/strona-pattern1.mp4')} autoPlay loop playsInline muted></video>
             <video className="cs-vid cs-vid--2" src={getAssetPath('/assets/portfolios/strona-pattern2.mp4')} autoPlay loop playsInline muted></video>
             <video className="cs-vid cs-vid--3" src={getAssetPath('/assets/portfolios/strona-pattern3.mp4')} autoPlay loop playsInline muted></video>
           </div>
-          <div className="cs-tile1-finanse"><Image src={getAssetPath('/assets/tworzenie-strony-finanse.jpg')} alt="" width={350} height={295} sizes="(max-width: 640px) 50vw, 25vw" loading="lazy" /></div>
+          <div className="cs-tile1-finanse"><PictureAsset stem="/assets/tworzenie-strony-finanse" alt="" width={350} height={295} sizes="(max-width: 640px) 50vw, 25vw" loading="lazy" /></div>
         </div>
       </div>
       <video className="cs-tile1-phone-video" src={getAssetPath('/assets/portfolios/mobile-design.mp4')} autoPlay loop playsInline muted></video>
@@ -638,7 +635,7 @@ export function CaseStudiesTilesEngine() {
           </div>
           <p className="cs-body">Strona przyciąga dokładnie tych klientów, których szukamy. Tempo ekspresowe, terminy co do dnia! Będziemy wracać.</p>
           <div className="cs-author">
-            <div className="cs-author-avatar"><Image src={getAssetPath('/assets/mar.png')} alt="" width={37} height={37} sizes="37px" loading="lazy" /></div>
+            <div className="cs-author-avatar"><PictureAsset stem="/assets/mar" alt="" width={37} height={37} sizes="37px" loading="lazy" /></div>
             <div>
               <div className="cs-author-name">Marcin Jabłonowski</div>
               <div className="cs-author-role">DYREKTOR ZARZĄDZAJĄCY</div>
@@ -648,22 +645,22 @@ export function CaseStudiesTilesEngine() {
         <div className="cs2-right" id="cs2-right">
           <div className="cs2-bg" aria-hidden="true"></div>
           <div className="cs2-plate" aria-hidden="true"></div>
-          <div className="cs2-kratki"><Image src={getAssetPath('/assets/kratki.png')} alt="" width={200} height={200} sizes="(max-width: 640px) 30vw, 200px" loading="lazy" /></div>
-          <div className="cs2-tekst1"><Image src={getAssetPath('/assets/tekst-strony1.png')} alt="" width={320} height={144} sizes="(max-width: 640px) 45vw, 320px" loading="lazy" /></div>
-          <div className="cs2-tekst2"><Image src={getAssetPath('/assets/tekst-strony2.png')} alt="" width={145} height={120} sizes="150px" loading="lazy" /></div>
-          <div className="cs2-imgit"><Image src={getAssetPath('/assets/projektowanie-stron-it.jpg')} alt="" width={480} height={250} sizes="(max-width: 640px) 70vw, 480px" loading="lazy" /></div>
+          <div className="cs2-kratki"><PictureAsset stem="/assets/kratki" alt="" width={200} height={200} sizes="(max-width: 640px) 30vw, 200px" loading="lazy" /></div>
+          <div className="cs2-tekst1"><PictureAsset stem="/assets/tekst-strony1" alt="" width={320} height={144} sizes="(max-width: 640px) 45vw, 320px" loading="lazy" /></div>
+          <div className="cs2-tekst2"><PictureAsset stem="/assets/tekst-strony2" alt="" width={145} height={120} sizes="150px" loading="lazy" /></div>
+          <div className="cs2-imgit"><PictureAsset stem="/assets/projektowanie-stron-it" alt="" width={480} height={250} sizes="(max-width: 640px) 70vw, 480px" loading="lazy" /></div>
         </div>
       </div>
       {/* Elementy wystawające — poza .cs2-content */}
-      <div className="cs2-pragma" aria-hidden="true"><Image src={getAssetPath('/assets/pragma-marcin.png')} alt="" width={288} height={339} sizes="(max-width: 640px) 40vw, 288px" loading="lazy" /></div>
-      <div className="cs2-kw1" aria-hidden="true"><Image src={getAssetPath('/assets/kwadrat-tyl.png')} alt="" width={36} height={34} sizes="40px" loading="lazy" /></div>
-      <div className="cs2-kw2" aria-hidden="true"><Image src={getAssetPath('/assets/kwadrat-srodek.png')} alt="" width={53} height={52} sizes="60px" loading="lazy" /></div>
-      <div className="cs2-kw3" aria-hidden="true"><Image src={getAssetPath('/assets/kwadrat-przod.png')} alt="" width={82} height={78} sizes="90px" loading="lazy" /></div>
+      <div className="cs2-pragma" aria-hidden="true"><PictureAsset stem="/assets/pragma-marcin" alt="" width={288} height={339} sizes="(max-width: 640px) 40vw, 288px" loading="lazy" /></div>
+      <div className="cs2-kw1" aria-hidden="true"><PictureAsset stem="/assets/kwadrat-tyl" alt="" width={36} height={34} sizes="40px" loading="lazy" /></div>
+      <div className="cs2-kw2" aria-hidden="true"><PictureAsset stem="/assets/kwadrat-srodek" alt="" width={53} height={52} sizes="60px" loading="lazy" /></div>
+      <div className="cs2-kw3" aria-hidden="true"><PictureAsset stem="/assets/kwadrat-przod" alt="" width={82} height={78} sizes="90px" loading="lazy" /></div>
       <div className="cs2-dlon">
-        <Image src={getAssetPath('/assets/dlon-mobilna.png')} alt="" width={640} height={410} sizes="(max-width: 640px) 90vw, 640px" loading="lazy" />
+        <PictureAsset stem="/assets/dlon-mobilna" alt="" width={640} height={410} sizes="(max-width: 640px) 90vw, 640px" loading="lazy" />
         <div className="cs2-canvas-phone">
           <canvas id="cs2-phone-canvas" aria-hidden="true"></canvas>
-          <Image className="cs2-phone-fallback" src={getAssetPath('/assets/portfolios/canvas/000.jpg')} alt="" width={242} height={397} sizes="242px" loading="lazy" />
+          <PictureAsset className="cs2-phone-fallback" stem="/assets/portfolios/canvas/000" alt="" width={242} height={397} sizes="242px" loading="lazy" />
         </div>
       </div>
     </div>
@@ -684,7 +681,7 @@ export function CaseStudiesTilesEngine() {
           </div>
           <p className="cs-body">Wreszcie mamy narzędzie, które pokazuje prawdziwą jakość naszego projektu. Niespotykana dbałość o detale. Pełen profesjonalizm.</p>
           <div className="cs-author">
-            <div className="cs-author-avatar"><Image src={getAssetPath('/assets/vit.png')} alt="" width={37} height={37} sizes="37px" loading="lazy" /></div>
+            <div className="cs-author-avatar"><PictureAsset stem="/assets/vit" alt="" width={37} height={37} sizes="37px" loading="lazy" /></div>
             <div>
               <div className="cs-author-name">Witalij Bińkowski</div>
               <div className="cs-author-role">WŁAŚCICIEL</div>
@@ -693,16 +690,16 @@ export function CaseStudiesTilesEngine() {
         </div>
         <div className="cs3-right" id="cs3-right">
           <div className="cs3-bg" aria-hidden="true"></div>
-          <div className="cs3-tlo"><Image src={getAssetPath('/assets/tlo-strony.png')} alt="" width={320} height={295} sizes="(max-width: 640px) 50vw, 320px" loading="lazy" /></div>
+          <div className="cs3-tlo"><PictureAsset stem="/assets/tlo-strony" alt="" width={320} height={295} sizes="(max-width: 640px) 50vw, 320px" loading="lazy" /></div>
           <div className="cs3-eye">
-            <Image src={getAssetPath('/assets/projektowanie-strony-oko.jpg')} alt="" width={560} height={289} sizes="(max-width: 640px) 85vw, 560px" loading="lazy" />
+            <PictureAsset stem="/assets/projektowanie-strony-oko" alt="" width={560} height={289} sizes="(max-width: 640px) 85vw, 560px" loading="lazy" />
             <div className="cs3-eye-radial" aria-hidden="true"></div>
           </div>
-          <div className="cs3-hand1"><Image src={getAssetPath('/assets/dlon-artefakt.png')} alt="" width={160} height={187} sizes="160px" loading="lazy" /></div>
-          <div className="cs3-hand2"><Image src={getAssetPath('/assets/dlon-mobile-design.png')} alt="" width={160} height={107} sizes="160px" loading="lazy" /></div>
-          <div className="cs3-tlum"><Image src={getAssetPath('/assets/tlum.png')} alt="" width={560} height={115} sizes="(max-width: 640px) 90vw, 560px" loading="lazy" /></div>
+          <div className="cs3-hand1"><PictureAsset stem="/assets/dlon-artefakt" alt="" width={160} height={187} sizes="160px" loading="lazy" /></div>
+          <div className="cs3-hand2"><PictureAsset stem="/assets/dlon-mobile-design" alt="" width={160} height={107} sizes="160px" loading="lazy" /></div>
+          <div className="cs3-tlum"><PictureAsset stem="/assets/tlum" alt="" width={560} height={115} sizes="(max-width: 640px) 90vw, 560px" loading="lazy" /></div>
           <div className="cs3-hipno"><img src={getAssetPath('/assets/hipnotyzuj.gif')} alt="" width="400" height="114" loading="lazy" /></div>
-          <div className="cs3-przyklady"><Image src={getAssetPath('/assets/przyklady-strony.png')} alt="" width={432} height={213} sizes="(max-width: 640px) 90vw, 432px" loading="lazy" />
+          <div className="cs3-przyklady"><PictureAsset stem="/assets/przyklady-strony" alt="" width={432} height={213} sizes="(max-width: 640px) 90vw, 432px" loading="lazy" />
             <div className="cs3-przyklady-radial" aria-hidden="true"></div>
           </div>
         </div>

@@ -205,7 +205,8 @@
     #cs2-section #cs2-phone-canvas { position: absolute; top: 0; left: 0; right: 0; bottom: 0; inset: 0; width: 100%; height: 100%; display: block; opacity: 0; transition: opacity 0.4s ease; }
     #cs2-section #cs2-phone-canvas.is-ready { opacity: 1; }
     #cs2-section .cs2-phone-fallback { width: 100%; height: auto; display: block; transition: opacity 0.4s ease; }
-    /* next/image: klasa na <img> wewnątrz opcjonalnego <span> obok canvas */
+    /* <picture> obok canvas — ukryj fallback po is-ready */
+    #cs2-section #cs2-phone-canvas.is-ready ~ picture .cs2-phone-fallback,
     #cs2-section #cs2-phone-canvas.is-ready ~ .cs2-phone-fallback,
     #cs2-section #cs2-phone-canvas.is-ready ~ span .cs2-phone-fallback { opacity: 0; }
     /* ═══ MEGA PANEL ═══ */

@@ -17,7 +17,8 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint .",
     "lint:fix": "eslint . --fix",
-    "analyze": "cross-env ANALYZE=true next build"
+    "analyze": "cross-env ANALYZE=true next build",
+    "assets:encode": "node scripts/encode-public-assets.cjs"
   },
   "dependencies": {
     "@owocni/cennik-form": "workspace:*",
