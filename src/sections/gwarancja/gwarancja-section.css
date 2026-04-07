@@ -526,9 +526,20 @@
 }
 
 @media (max-width: 600px) {
+  /* Normalny flow — bez podciągania pod kalkulator / nachodzenia na poprzednią sekcję */
+  #gwarancja-section {
+    margin-top: 0;
+  }
+  #gwarancja-section .lens-content-group {
+    margin-top: 0;
+    padding-top: clamp(1rem, 3vw, 1.5rem);
+  }
   #gwarancja-section #gwarancja-container { aspect-ratio: 16/9; }
   /* Mobile: tylko szkło (bottom). Warstwa mechanizmu ukryta; src video jest usuwany w JS — brak pobrania pliku. */
-  #gwarancja-section #gwarancja-layer-bottom { display: block; }
+  #gwarancja-section #gwarancja-layer-bottom {
+    display: block;
+    top: 0;
+  }
   #gwarancja-section #gwarancja-layer-top-wrap {
     position: relative;
     width: 100%;

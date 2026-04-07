@@ -210,16 +210,16 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
     }
 
     /* Screen Video: proxy → CSS vars (breakpoint-aware)
-     * MOBILE (≤600):   MIN x:49  y:55  s:0.96  →  MAX x:51   y:52.5 s:1.12 (było 0.68→0.83 — za małe vs otwór ekranu)
+     * MOBILE (≤600):   MIN … s:1.08  →  MAX … s:1.26 (większy fill otworu ekranu)
      * DESKTOP (>600):  MIN x:49.5 y:55 s:1.02  →  MAX x:50.5 y:52   s:1.27
      */
     if (bgVideo) {
       var isMobile = window.innerWidth <= 600;
       var vidMin = isMobile
-        ? { x: 49,   y: 55,  s: 0.96 }
+        ? { x: 49,   y: 55,  s: 1.08 }
         : { x: 49.5, y: 55,  s: 1.02 };
       var vidMax = isMobile
-        ? { x: 51,   y: 52.5, s: 1.12 }
+        ? { x: 51,   y: 52.5, s: 1.26 }
         : { x: 50.5, y: 52,   s: 1.27 };
 
       var vidP = { x: vidMin.x, y: vidMin.y, s: vidMin.s };
