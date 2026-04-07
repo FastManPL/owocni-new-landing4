@@ -221,8 +221,8 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       var pinEndSentinel = typeof document !== 'undefined' ? document.getElementById('bridge-pin-end-sentinel') : null;
       var waveAnchor = $id('blok-4-5-voidSectionWrapper') || container.querySelector('.text-above-illustration');
 
-      // W stacku trigger = sekcja, więc gdy wjeżdża, wave (fixed) jest nad poprzednią sekcją. U nas bridge ma z-index 10 > sekcja 2,
-      // więc bez podniesienia z-index wave jest niewidoczny. Klasa wave-reveal-active tylko na czas pokazywania wave — żeby fala była nad Kinetic.
+      // Stack: #bridge-wrapper z-index 10, #blok-4-5-section 12, .blok-4-5-wave-wrap 14, napisy 25+.
+      // wave-reveal-active podbija sekcję do 20 gdy trzeba (kurtyna nad Kinetic, pod najwyższymi warstwami UI).
       var visTrigger = pinEndSentinel || container;
       var stWaveVis = ScrollTrigger.create({
         trigger: visTrigger,
@@ -1414,11 +1414,6 @@ export default function Blok45Engine() {
 
   return (
     <section id="blok-4-5-section" ref={rootRef}>
-      <div className="blok-4-5-wave-wrap" id="blok-4-5-wave-wrap">
-        <svg className="blok-4-5-wave-overlay" id="blok-4-5-wave-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
-          <path className="wave-path"></path><path className="wave-path"></path><path className="wave-path"></path><path className="wave-path"></path>
-        </svg>
-      </div>
       <canvas id="blok-4-5-sparksCanvas"></canvas>
       <div id="blok-4-5-bubble-layer"></div>
       <div className="morph-ghost" id="blok-4-5-morphGhost"></div>
@@ -1483,6 +1478,11 @@ export default function Blok45Engine() {
               <div className="blok45-intro-line1">Potencjalni klienci</div>
               <div className="blok45-intro-line2" id="blok-4-5-introLine2">wchodzą na stronę,</div>
               <div className="blok45-intro-line3">rozglądają się &#x2013;&nbsp;<span className="blok45-eyes-wrap"><span className="blok45-letter">Ł</span><span className="blok45-eye blok45-pair-a">o<span className="blok45-pupil-arm"><span className="blok45-pupil"></span></span></span><span className="blok45-eye blok45-pair-a">o<span className="blok45-pupil-arm"><span className="blok45-pupil"></span></span></span><span className="blok45-eye blok45-pair-b">o<span className="blok45-pupil-arm"><span className="blok45-pupil"></span></span></span><span className="blok45-eye blok45-pair-b">o<span className="blok45-pupil-arm"><span className="blok45-pupil"></span></span></span><span className="blok45-letter">ł</span></span></div>
+            </div>
+            <div className="blok-4-5-wave-wrap" id="blok-4-5-wave-wrap">
+              <svg className="blok-4-5-wave-overlay" id="blok-4-5-wave-svg" viewBox="0 0 100 100" preserveAspectRatio="none">
+                <path className="wave-path"></path><path className="wave-path"></path><path className="wave-path"></path><path className="wave-path"></path>
+              </svg>
             </div>
             <div className="text-on-illustration-top">
               <div className="void-section-wrapper" id="blok-4-5-voidSectionWrapper">

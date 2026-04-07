@@ -44,9 +44,9 @@
             z-index: 1;
         }
 
-        /* STREFA 1: Pinowana - dziedziczy z .stage */
+        /* STREFA 1: Pinowana — bez pełnego tła sekcji (nachodzi na Fakty; widać canvas/bloby, nie zasłania tła strony). */
         #kinetic-section {
-            background-color: var(--bg-color);
+            background-color: transparent;
         }
 
         /* ============================================

@@ -48,8 +48,8 @@ export function BridgeSection() {
             overflow: 'visible',
             minHeight: '100vh',
             isolation: 'isolate',
-            /* Nad #blok-4-5-section (z-index 11). Wave: .wave-reveal-active → z-index 20. */
-            zIndex: 15,
+            /* Poniżej #blok-4-5-section (z≥12), żeby napisy Blok45 i fala były nad Kinetic. */
+            zIndex: 10,
           }}
         >
           <div
