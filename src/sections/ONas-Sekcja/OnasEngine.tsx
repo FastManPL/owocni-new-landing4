@@ -11,6 +11,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Draggable } from 'gsap/Draggable';
 import { scrollRuntime } from '@/lib/scrollRuntime';
 import './onas-section.css';
+import { CENNIK_STRONY_URL } from '@/config/ctaUrls';
 
 // GSAP-SSR-01: ZAKAZ gsap.registerPlugin() na module top-level.
 // registerPlugin() WYLACZNIE wewnatrz useGSAP(() => { ... }) ponizej.
@@ -2817,7 +2818,7 @@ export default function OnasEngine() {
         <span className="popup-tag">Porozmawiajmy o twoich liczbach</span>
         <h3 className="popup-title"><b>Otrzymaj 3 propozycje cenowe</b> na projekt dla swojej firmy.</h3>
         <div className="popup-buttons">
-          <a className="popup-cta" href="#kontakt">Otrzymaj wycenę teraz →</a>
+          <a className="popup-cta" href={CENNIK_STRONY_URL}>Otrzymaj wycenę teraz →</a>
           <button className="popup-close-text" type="button">Zamknij wideo</button>
         </div>
       </div>

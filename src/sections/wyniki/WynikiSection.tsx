@@ -11,6 +11,7 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
 import imgTlo from './TLO-Monitor.jpg';
 import imgMonitor from './Monitor1.webp';
 import './wyniki-section.css';
+import { CENNIK_STRONY_URL } from '@/config/ctaUrls';
 
 /** Ten sam media-id co sekcja „wzrost przychodów” (hero2) — demo w Wistii zamiast MP4 w popupie. */
 const WISTIA_MEDIA_ID = 'kmqidz4bso';
@@ -693,7 +694,7 @@ export function WynikiSection() {
               </h3>
               <div className="wp-buttons">
                 <div className="wyniki-btn-wrapper-wave">
-                  <a href="#kontakt" className="wyniki-cta" id="wyniki-popup-cta">
+                  <a href={CENNIK_STRONY_URL} className="wyniki-cta" id="wyniki-popup-cta">
                     <span className="wyniki-btn-hole" />
                     <span className="wyniki-btn-cap" />
                     <span className="wyniki-btn-text" data-text="Otrzymaj wycenę teraz →">

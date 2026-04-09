@@ -6,6 +6,7 @@ import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { scrollRuntime } from '@/lib/scrollRuntime';
 import type { HeroVariant } from '@/config/heroVariantTypes';
+import { CENNIK_STRONY_URL } from '@/config/ctaUrls';
 import './hero-section.css';
 
 /** Jedna obietnica na całą sekcję — lottie-web poza krytycznym parse głównego chunka Hero. */
@@ -4057,7 +4058,7 @@ export function HeroSection({ variant }: { variant: HeroVariant }) {
                 </div>
               </div>
               <div className="btn-wrapper-wave">
-                <a href="#" className="cta-button">
+                <a href={CENNIK_STRONY_URL} className="cta-button">
                   <span className="btn-hole"></span>
                   <span className="btn-cap"></span>
                   <span className="btn-text" data-text="Otrzymaj wycenę teraz">Otrzymaj wycenę teraz</span>

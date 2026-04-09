@@ -9,6 +9,7 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { scrollRuntime } from '@/lib/scrollRuntime';
 import './case-study-section.css';
+import { CENNIK_STRONY_URL } from '@/config/ctaUrls';
 
 /** Wistia embed — ładowany dopiero po pierwszym otwarciu popupu (jak Wyniki / wzrost przychodów). */
 const WISTIA_MEDIA_ID = '7agfboivfi';
@@ -447,13 +448,14 @@ function init(
       cleanups.push(function() { ctaBtn.removeEventListener('click', onCtaClick); });
     }
 
-    /* Popup CTA "Otrzymaj wycenę" — zamyka modal; bez tego #kontakt + Lenis skacze na górę */
+    /* Popup CTA „Otrzymaj wycenę” — zamknięcie modala, potem przejście na cennik (bez #kontakt + Lenis). */
     var popupCta = popup.querySelector('#case-study-popup-cta');
     if (popupCta) {
       var onPopupCtaClick = function(e) {
         e.preventDefault();
         e.stopPropagation();
         closePopup();
+        window.location.href = CENNIK_STRONY_URL;
       };
       popupCta.addEventListener('click', onPopupCtaClick);
       cleanups.push(function() { popupCta.removeEventListener('click', onPopupCtaClick); });
@@ -682,7 +684,7 @@ export function CaseStudy2Section() {
             <h3 className="wp-title"><b>Otrzymaj 3 propozycje cenowe</b> na projekt dla swojej firmy.</h3>
             <div className="wp-buttons">
               <div className="case-study-btn-wrapper-wave">
-                <a href="#kontakt" className="case-study-cta" id="case-study-popup-cta">
+                <a href={CENNIK_STRONY_URL} className="case-study-cta" id="case-study-popup-cta">
                   <span className="case-study-btn-hole"></span>
                   <span className="case-study-btn-cap"></span>
                   <span className="case-study-btn-text" data-text="Otrzymaj wycenę teraz →">Otrzymaj wycenę teraz →</span>

@@ -5,6 +5,7 @@ import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 import "./gwarancja-section.css";
+import { CENNIK_STRONY_URL } from "@/config/ctaUrls";
 
 /** ≤600px: tylko szkło — plik mechanizmu nie jest ładowany (brak src na video). */
 const GWARANCJA_MOBILE_MAX_W = 600;
@@ -2353,7 +2354,7 @@ export function GwarancjaSection() {
             </div>
             <div className="cta-center">
               <div className="btn-wrapper-wave">
-                <a href="#" className="cta-button">
+                <a href={CENNIK_STRONY_URL} className="cta-button">
                   <span className="btn-hole"></span>
                   <span className="btn-cap"></span>
                   <span className="btn-text" data-text="Otrzymaj wycenę teraz">
