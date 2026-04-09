@@ -226,18 +226,25 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         syncSectionBgReady();
       }
 
-      // ═══ Oryginał z blok-4-5.stack.html: tylko #blok-4-5-wave-wrap jako kurtyna, bez portalu ani dodatkowych warstw.
-      // Integracja: gdy jest bridge-pin-end-sentinel używamy go do triggera (start przed odmrożeniem ~100vh).
-      var pinEndSentinel = typeof document !== 'undefined' ? document.getElementById('bridge-pin-end-sentinel') : null;
+      // ═══ Fala (kipiel): NAPĘD to wyłącznie stWaveScroll → handleScroll.
+      // Błąd wcześniejszy: trigger = #blok-4-5-voidSectionWrapper + start 'top bottom' → przy ~2 liniach
+      // scrollProgress > 0 i STATE_IDLE_CLOSED wołało startKipielOpen() — niezależnie od innych ST.
+      // Teraz: ten sam „główny blok” co treść + start dopiero gdy blok jest wysoko w kadrze (nie wejście z dołu).
       var waveAnchor = $id('blok-4-5-voidSectionWrapper') || container.querySelector('.text-above-illustration');
+      var waveDriveEl =
+        (typeof document !== 'undefined' ? document.getElementById('blok-4-5-block-4') : null) ||
+        waveAnchor ||
+        container;
+      function waveDriveStart(): string {
+        return window.innerWidth < 600 ? 'top 86%' : 'top 68%';
+      }
 
       // Stack: #bridge-wrapper z-index 10, #blok-4-5-section 12, .blok-4-5-wave-wrap 14, napisy 25+.
-      // wave-reveal-active podbija sekcję do 20 gdy trzeba (kurtyna nad Kinetic, pod najwyższymi warstwami UI).
-      var visTrigger = pinEndSentinel || container;
       var stWaveVis = ScrollTrigger.create({
-        trigger: visTrigger,
-        start: 'top bottom',
+        trigger: waveDriveEl,
+        start: waveDriveStart,
         end: 'bottom top',
+        invalidateOnRefresh: true,
         onEnter: function() {
           (waveWrap as HTMLElement).style.display = '';
           container.classList.add('wave-reveal-active');
@@ -258,24 +265,11 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       gsapInstances.push(stWaveVis);
       (waveWrap as HTMLElement).style.display = 'none';
 
-      // Start animacji fali dopiero gdy blok z treścią (nie sentinel końca pinu) jest wyżej w kadrze —
-      // wcześniej: pinEndSentinel + top bottom = fala zaraz przy końcu pinu Kinetic, mało Blok45 widać.
-      var waveKipielEl =
-        typeof document !== 'undefined' ? document.getElementById('blok-4-5-block-4') : null;
-      var openTrigger = waveKipielEl || waveAnchor || pinEndSentinel || container;
-      var stWaveTrigger = ScrollTrigger.create({
-        trigger: openTrigger,
-        start: 'top 62%',
-        invalidateOnRefresh: true,
-        onEnter: function() { startKipielOpen(); }
-      });
-      gsapInstances.push(stWaveTrigger);
-
-      // Scroll-driven CLOSE (jak w stacku): anchor = voidSectionWrapper, ten sam zakres co oryginał
+      // Jedyny driver animacji fali względem scrolla (otwarcie kipiel przy progress>0 tylko po starcie poniżej).
       var getTriggerPercent = function() { return window.innerWidth < 600 ? 80 : 75; };
       var stWaveScroll = ScrollTrigger.create({
-        trigger: waveAnchor || container,
-        start: 'top bottom',
+        trigger: waveDriveEl,
+        start: waveDriveStart,
         end: function() { return 'bottom ' + getTriggerPercent() + '%'; },
         invalidateOnRefresh: true,
         onUpdate: function(self) { handleScroll(self.progress, self.direction); },
@@ -1061,17 +1055,26 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     // =========================================================
     function initMana() {
       manaContainer=$id('blok-4-5-manaContainer') as HTMLElement|null;manaBar=$id('blok-4-5-manaBar') as HTMLElement|null;
-      var textSection=$id('blok-4-5-voidSectionWrapper');
-      if(textSection&&manaContainer){
-        var observer=new IntersectionObserver(function(entries){entries.forEach(function(entry){if(entry.isIntersecting&&!isDead){manaContainer!.classList.add('in-viewport');}else{manaContainer!.classList.remove('in-viewport');}});},{threshold:0.1});
-        observer.observe(textSection);observers.push(observer);
+      var gateEl=$id('blok-4-5-voidSection')||$id('blok-4-5-voidSectionWrapper');
+      if(gateEl&&manaContainer){
+        var MIN_RATIO=0.28;
+        var observer=new IntersectionObserver(function(entries){entries.forEach(function(entry){
+          var ok=entry.isIntersecting&&!isDead&&entry.intersectionRatio>=MIN_RATIO;
+          if(ok){manaContainer!.classList.add('in-viewport');}
+          else{
+            manaContainer!.classList.remove('in-viewport');
+            if(!manaComplete){mana=0;manaActivated=false;if(manaBar)manaBar.style.width='0%';manaContainer!.classList.remove('visible');}
+          }
+        });},{threshold:[0,0.1,0.2,0.28,0.35,0.5,0.75,1]});
+        observer.observe(gateEl);observers.push(observer);
       }
     }
     function killMana() { if(manaContainer){manaContainer.classList.remove('visible','in-viewport');} }
     function updateMana() {
       if(manaComplete)return;
+      if(!manaContainer||!manaContainer.classList.contains('in-viewport'))return;
       if(currentMode==='pull'&&scrollUpVelocity<-1){
-        if(!manaActivated){manaActivated=true;manaContainer?.classList.add('visible');}
+        if(!manaActivated){manaActivated=true;manaContainer.classList.add('visible');}
         var vel=Math.abs(scrollUpVelocity),gain=2.0+Math.min(vel/25,1.0);gain*=(window.innerWidth<600?3:1);
         mana=Math.min(MANA_MAX,mana+gain);if(manaBar)manaBar.style.width=(mana/MANA_MAX*100)+'%';
         if(mana>=MANA_MAX)onManaComplete();
@@ -1223,9 +1226,18 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
 
     function initBurstCanvas() { burstCanvas=$id('blok-4-5-burstCanvas') as HTMLCanvasElement|null; if(burstCanvas)burstCtx=burstCanvas.getContext('2d'); morphGhost=$id('blok-4-5-morphGhost') as HTMLElement|null; }
 
+    function isWalkSceneOnScreen(): boolean {
+      var el=$id('blok-4-5-voidSection') as HTMLElement|null;
+      if(!el)return true;
+      var r=el.getBoundingClientRect(),vh=window.innerHeight||1;
+      var vis=Math.min(r.bottom,vh)-Math.max(r.top,0);
+      var need=Math.min(120,Math.max(48,r.height*0.22));
+      return vis>=need;
+    }
     function showPopup() {
       var overlay=$id('blok-4-5-popupOverlay') as HTMLElement|null,popup=$id('blok-4-5-popup') as HTMLElement|null;
       if(!overlay||!popup||!manaContainer||!burstCanvas||!burstCtx||!morphGhost)return;
+      if(!isWalkSceneOnScreen())return;
       // Guard przed re-entry: nie uruchamiaj burst/popup ponownie, jeśli overlay już aktywny.
       if(overlay.classList.contains('visible')||overlay.style.display==='grid')return;
       if(popupOpenTid1!==null){clearTimeout(popupOpenTid1);popupOpenTid1=null;}
