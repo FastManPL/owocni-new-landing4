@@ -267,12 +267,15 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
           return;
         }
         if (show) {
+          // Jedna kurtyna na „sesję” — reset tylko gdy syncWaveRevealAllowed (cała sekcja z powrotem pod Kinetic).
+          // Bez tego refresh ST / ponowne onEnter montuje wave-wrap ponownie mimo że animacja już się odpaliła.
+          if (waveCommittedOnce) {
+            return;
+          }
           (waveWrap as HTMLElement).style.display = '';
           container.classList.add('wave-reveal-active');
-          if (!waveCommittedOnce) {
-            waveCommittedOnce = true;
-            window.dispatchEvent(new CustomEvent('blok45-wave-committed'));
-          }
+          waveCommittedOnce = true;
+          window.dispatchEvent(new CustomEvent('blok45-wave-committed'));
         } else {
           resetWaveStateFromScroll();
           (waveWrap as HTMLElement).style.display = 'none';
@@ -777,9 +780,14 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     var glowIO = new IntersectionObserver(function(entries) {
       if (!entries[0]) return;
       tickIOVisible = entries[0].isIntersecting;
-      if (tickIOVisible && !document.hidden) startGlowTick();
-      else { gsap.ticker.remove(glowTickFn); scheduleAutoWake(); }
-    }, { threshold: 0.1 });
+      if (tickIOVisible && !document.hidden) {
+        startGlowTick();
+        // Prewarm WebGL (Three + PMREM) zanim pierwszy hover — pierwszy mouseenter nie czeka na chunk.
+        if (_webglSupported) ensureStarsEngine();
+      } else {
+        gsap.ticker.remove(glowTickFn); scheduleAutoWake();
+      }
+    }, { threshold: 0.05, rootMargin: '28% 0px' });
     var konwersjaWrap = $('.konwersja-wrap');
     if (konwersjaWrap) glowIO.observe(konwersjaWrap);
     observers.push(glowIO);
