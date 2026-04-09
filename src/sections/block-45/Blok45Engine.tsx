@@ -247,16 +247,21 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         return waveEndEl ? 'bottom top' : 'bottom ' + (window.innerWidth < 600 ? 80 : 75) + '%';
       }
 
-      // Po zejściu z zakresu fali (w dół): nie pokazuj wave ponownie aż użytkownik wróci nad Blok45
-      // (cała sekcja z powrotem poniżej viewportu — jak przy pierwszym wejściu z Kinetic).
+      // Po zejściu z zakresu fali (w dół): nie pokazuj wave ponownie aż handoff z Kinetic (patrz niżej).
       var waveRevealAllowed = true;
       function syncWaveRevealAllowed() {
         var rs = container.getBoundingClientRect();
         var vh = window.innerHeight || 1;
-        if (rs.top > vh) {
-          waveRevealAllowed = true;
-          waveCommittedOnce = false;
-        }
+        // Sam fakt rs.top > vh (Blok45 pod viewportem) to za mało: popup, ujemny margin, refresh ST
+        // potrafią na chwilę spełnić warunek bez „prawdziwego” powrotu na Kinetic → ponowna fala + psucie kinetic-past.
+        if (rs.top <= vh) return;
+        var kin = typeof document !== 'undefined' ? document.getElementById('kinetic-section') : null;
+        if (!kin) return;
+        var kr = kin.getBoundingClientRect();
+        var kineticInView = kr.bottom > 40 && kr.top < vh * 0.94;
+        if (!kineticInView) return;
+        waveRevealAllowed = true;
+        waveCommittedOnce = false;
       }
       var waveCommittedOnce = false;
       function applyWaveVisIfAllowed(show: boolean) {
@@ -1554,9 +1559,9 @@ export default function Blok45Engine() {
       const vh = window.innerHeight || 1;
       const rs = section.getBoundingClientRect();
       const r = lastIoRatio;
-      if (rs.top > vh) {
-        waveCommitted = false;
-      }
+      // Nie resetuj waveCommitted przy rs.top > vh: po cofnięciu na Kinetic i powrocie do Blok45
+      // (np. po popupie) inaczej kinetic-past nie wraca aż do nowej fali → litery Kinetic pod „Możemy…”.
+      // waveCommitted = latch na sesję strony po pierwszym blok45-wave-committed.
       let next: boolean;
       if (!waveCommitted) {
         next = false;
