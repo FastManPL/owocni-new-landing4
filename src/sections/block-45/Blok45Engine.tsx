@@ -1432,15 +1432,17 @@ export default function Blok45Engine() {
 
   /**
    * Ukrycie Kinetic (html.kinetic-past) gdy użytkownik jest przy Blok45.
-   * Poprzednio: past = intersectionRatio>=0.45 — przy przewijaniu W DÓŁ ratio spadał poniżej progu
-   * mimo że nadal jesteśmy w Blok45 → kinetic-past znikało i Kinetic wracał (znikanie Blok45).
-   * Teraz: histereza + jeśli nagłówek jest już NAD viewportem (zjechaliśmy w dół) — zostaw ukryte.
-   * Cofnięcie Kinetic tylko gdy cały nagłówek jest z powrotem PONIŻEJ ekranu (scroll do góry przed Blok45).
+   * WAŻNE: progi liczyć na CAŁEJ #blok-4-5-section, nie na nagłówku „Możemy…” — nagłówek to ~2 linie;
+   * przy ratio względem niego Kinetic znikał po ułamku scrolla (wyglądało jak „zaraz po dwóch liniach”).
+   * Wymóg: minimum połowa wysokości sekcji w viewport (przy sekcji >2×vh: ≥50% wysokości okna zajęte treścią sekcji).
+   * Histereza: po wejściu w „past” nie gasimy przy lekkim cofnięciu; pełny reset gdy sekcja z powrotem POD ekranem.
    */
   useEffect(() => {
     const KINETIC_PAST_CLASS = 'kinetic-past';
-    const moz = document.getElementById('blok-4-5-mozemy-to-zmienic');
-    if (!moz) return undefined;
+    const section = document.getElementById('blok-4-5-section');
+    if (!section) return undefined;
+
+    const MIN_SECTION_VISIBLE = 0.5;
 
     const setPast = (past: boolean) => {
       if (past) {
@@ -1457,7 +1459,8 @@ export default function Blok45Engine() {
 
     const recompute = () => {
       const vh = window.innerHeight || 1;
-      const r = moz.getBoundingClientRect();
+      const r = section.getBoundingClientRect();
+      const secH = r.height;
 
       let past: boolean;
       if (r.top > vh) {
@@ -1466,10 +1469,13 @@ export default function Blok45Engine() {
         past = true;
       } else {
         const visibleH = Math.max(0, Math.min(r.bottom, vh) - Math.max(r.top, 0));
-        const ratio = r.height > 0 ? visibleH / r.height : 0;
-        // Wyższy próg = więcej Blok45 w kadrze zanim html.kinetic-past chowa Kinetic (!important opacity).
-        // Zapobiega „ucięciu” długiego zaniku cienia (ghost) GSAP-em na końcu snapu.
-        if (ratio >= 0.62) {
+        const ratio = secH > 0 ? visibleH / secH : 0;
+        // ≥50% wysokości sekcji naraz; gdy sekcja wyższa niż 2× viewport, 50% sekcji jest nierealne — wtedy ≥50% vh.
+        const halfSectionOnScreen =
+          secH <= vh * 2
+            ? ratio >= MIN_SECTION_VISIBLE
+            : visibleH >= vh * MIN_SECTION_VISIBLE;
+        if (halfSectionOnScreen) {
           past = true;
         } else {
           past = lastPast === true;
