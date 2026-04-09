@@ -263,9 +263,10 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
           (waveWrap as HTMLElement).style.display = 'none';
           container.classList.remove('wave-reveal-active');
         },
+        // Przewijanie w górę z treści pod Blok45 — nie pokazuj ponownie fixed wave (flash pod sekcją).
         onEnterBack: function() {
-          (waveWrap as HTMLElement).style.display = '';
-          container.classList.add('wave-reveal-active');
+          (waveWrap as HTMLElement).style.display = 'none';
+          container.classList.remove('wave-reveal-active');
         },
         onLeaveBack: function() {
           (waveWrap as HTMLElement).style.display = 'none';
@@ -1462,21 +1463,17 @@ export default function Blok45Engine() {
   }, []);
 
   /**
-   * Ukrycie Kinetic (html.kinetic-past) gdy użytkownik jest przy Blok45.
+   * Ukrycie Kinetic (html.kinetic-past) przy Blok45.
    *
-   * Pułapka: #blok-4-5-section ma duży ujemny margin-top → getBoundingClientRect() sekcji często ma
-   * top << 0, więc visibleH = vh − max(top,0) = pełne okno przy ledwo widocznym tekście z dołu.
-   * Wtedy próg „50% vh” spełniał się od razu → Kinetic (i cień liter) gasły natychmiast.
-   *
-   * Rozwiązanie: IntersectionObserver na #blok-4-5-block-4 (główny blok z falą / treścią) —
-   * intersectionRatio to prawdziwy ułamek **powierzchni elementu** w viewport, nie błędny strip sekcji.
-   * Wymóg: ≥50% bloku 4 widoczne. Histereza 0.35–0.5. Reset gdy cała sekcja z powrotem POD ekranem.
+   * IO na #blok-4-5-block-4 (ratio) — ujemny margin sekcji nadal wymaga histerezy 0.35 / 0.5 przy wejściu
+   * z góry (Kinetic). Dodatkowo: przy przewijaniu W GÓRĘ z dołu strony mały ratio nie może zdejmować
+   * kinetic-past (flash Kinetic pod Blok45 / falą) — wtedy zostajemy przy ukryciu.
    */
   useEffect(() => {
     const KINETIC_PAST_CLASS = 'kinetic-past';
     const section = document.getElementById('blok-4-5-section');
     const block4 = document.getElementById('blok-4-5-block-4');
-    if (!section) return undefined;
+    if (!section || !block4) return undefined;
 
     const IO_THRESHOLDS = [0, 0.1, 0.2, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.7, 0.8, 0.9, 1];
 
@@ -1492,21 +1489,26 @@ export default function Blok45Engine() {
 
     let lastPast = false;
     let lastIoRatio = 0;
+    let lastScrollY = typeof window !== 'undefined' ? window.scrollY : 0;
+    let scrollUp = false;
     let raf = 0;
 
     const apply = () => {
       const vh = window.innerHeight || 1;
       const rs = section.getBoundingClientRect();
+      const b4 = block4.getBoundingClientRect();
+      const r = lastIoRatio;
       let next: boolean;
       if (rs.top > vh) {
         next = false;
       } else if (rs.bottom < 0) {
         next = true;
+      } else if (r >= 0.5) {
+        next = true;
+      } else if (r <= 0.35) {
+        next = scrollUp ? true : lastPast;
       } else {
-        const r = lastIoRatio;
-        if (r >= 0.5) next = true;
-        else if (r <= 0.35) next = false;
-        else next = lastPast;
+        next = lastPast;
       }
       if (next !== lastPast) {
         lastPast = next;
@@ -1515,6 +1517,9 @@ export default function Blok45Engine() {
     };
 
     const schedule = () => {
+      const y = window.scrollY;
+      scrollUp = y < lastScrollY;
+      lastScrollY = y;
       if (raf) return;
       raf = requestAnimationFrame(() => {
         raf = 0;
@@ -1522,7 +1527,6 @@ export default function Blok45Engine() {
       });
     };
 
-    const ioTarget = block4 || section;
     const io = new IntersectionObserver(
       (entries) => {
         const e = entries[0];
@@ -1531,7 +1535,7 @@ export default function Blok45Engine() {
       },
       { root: null, rootMargin: '0px', threshold: IO_THRESHOLDS },
     );
-    io.observe(ioTarget);
+    io.observe(block4);
 
     window.addEventListener('scroll', schedule, { passive: true });
     window.addEventListener('resize', schedule, { passive: true });
