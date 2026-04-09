@@ -258,10 +258,15 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       gsapInstances.push(stWaveVis);
       (waveWrap as HTMLElement).style.display = 'none';
 
-      var openTrigger = pinEndSentinel || waveAnchor || container;
+      // Start animacji fali dopiero gdy blok z treścią (nie sentinel końca pinu) jest wyżej w kadrze —
+      // wcześniej: pinEndSentinel + top bottom = fala zaraz przy końcu pinu Kinetic, mało Blok45 widać.
+      var waveKipielEl =
+        typeof document !== 'undefined' ? document.getElementById('blok-4-5-block-4') : null;
+      var openTrigger = waveKipielEl || waveAnchor || pinEndSentinel || container;
       var stWaveTrigger = ScrollTrigger.create({
         trigger: openTrigger,
-        start: 'top bottom',
+        start: 'top 62%',
+        invalidateOnRefresh: true,
         onEnter: function() { startKipielOpen(); }
       });
       gsapInstances.push(stWaveTrigger);
@@ -1432,17 +1437,22 @@ export default function Blok45Engine() {
 
   /**
    * Ukrycie Kinetic (html.kinetic-past) gdy użytkownik jest przy Blok45.
-   * WAŻNE: progi liczyć na CAŁEJ #blok-4-5-section, nie na nagłówku „Możemy…” — nagłówek to ~2 linie;
-   * przy ratio względem niego Kinetic znikał po ułamku scrolla (wyglądało jak „zaraz po dwóch liniach”).
-   * Wymóg: minimum połowa wysokości sekcji w viewport (przy sekcji >2×vh: ≥50% wysokości okna zajęte treścią sekcji).
-   * Histereza: po wejściu w „past” nie gasimy przy lekkim cofnięciu; pełny reset gdy sekcja z powrotem POD ekranem.
+   *
+   * Pułapka: #blok-4-5-section ma duży ujemny margin-top → getBoundingClientRect() sekcji często ma
+   * top << 0, więc visibleH = vh − max(top,0) = pełne okno przy ledwo widocznym tekście z dołu.
+   * Wtedy próg „50% vh” spełniał się od razu → Kinetic (i cień liter) gasły natychmiast.
+   *
+   * Rozwiązanie: IntersectionObserver na #blok-4-5-block-4 (główny blok z falą / treścią) —
+   * intersectionRatio to prawdziwy ułamek **powierzchni elementu** w viewport, nie błędny strip sekcji.
+   * Wymóg: ≥50% bloku 4 widoczne. Histereza 0.35–0.5. Reset gdy cała sekcja z powrotem POD ekranem.
    */
   useEffect(() => {
     const KINETIC_PAST_CLASS = 'kinetic-past';
     const section = document.getElementById('blok-4-5-section');
+    const block4 = document.getElementById('blok-4-5-block-4');
     if (!section) return undefined;
 
-    const MIN_SECTION_VISIBLE = 0.5;
+    const IO_THRESHOLDS = [0, 0.1, 0.2, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.7, 0.8, 0.9, 1];
 
     const setPast = (past: boolean) => {
       if (past) {
@@ -1455,36 +1465,26 @@ export default function Blok45Engine() {
     };
 
     let lastPast = false;
+    let lastIoRatio = 0;
     let raf = 0;
 
-    const recompute = () => {
+    const apply = () => {
       const vh = window.innerHeight || 1;
-      const r = section.getBoundingClientRect();
-      const secH = r.height;
-
-      let past: boolean;
-      if (r.top > vh) {
-        past = false;
-      } else if (r.bottom < 0) {
-        past = true;
+      const rs = section.getBoundingClientRect();
+      let next: boolean;
+      if (rs.top > vh) {
+        next = false;
+      } else if (rs.bottom < 0) {
+        next = true;
       } else {
-        const visibleH = Math.max(0, Math.min(r.bottom, vh) - Math.max(r.top, 0));
-        const ratio = secH > 0 ? visibleH / secH : 0;
-        // ≥50% wysokości sekcji naraz; gdy sekcja wyższa niż 2× viewport, 50% sekcji jest nierealne — wtedy ≥50% vh.
-        const halfSectionOnScreen =
-          secH <= vh * 2
-            ? ratio >= MIN_SECTION_VISIBLE
-            : visibleH >= vh * MIN_SECTION_VISIBLE;
-        if (halfSectionOnScreen) {
-          past = true;
-        } else {
-          past = lastPast === true;
-        }
+        const r = lastIoRatio;
+        if (r >= 0.5) next = true;
+        else if (r <= 0.35) next = false;
+        else next = lastPast;
       }
-
-      if (past !== lastPast) {
-        lastPast = past;
-        setPast(past);
+      if (next !== lastPast) {
+        lastPast = next;
+        setPast(next);
       }
     };
 
@@ -1492,9 +1492,20 @@ export default function Blok45Engine() {
       if (raf) return;
       raf = requestAnimationFrame(() => {
         raf = 0;
-        recompute();
+        apply();
       });
     };
+
+    const ioTarget = block4 || section;
+    const io = new IntersectionObserver(
+      (entries) => {
+        const e = entries[0];
+        if (e) lastIoRatio = e.intersectionRatio;
+        apply();
+      },
+      { root: null, rootMargin: '0px', threshold: IO_THRESHOLDS },
+    );
+    io.observe(ioTarget);
 
     window.addEventListener('scroll', schedule, { passive: true });
     window.addEventListener('resize', schedule, { passive: true });
@@ -1502,9 +1513,10 @@ export default function Blok45Engine() {
       window.visualViewport.addEventListener('resize', schedule, { passive: true });
     }
     schedule();
-    requestAnimationFrame(recompute);
+    requestAnimationFrame(apply);
 
     return () => {
+      io.disconnect();
       window.removeEventListener('scroll', schedule);
       window.removeEventListener('resize', schedule);
       if (window.visualViewport) {
