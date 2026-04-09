@@ -295,11 +295,13 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
           waveRevealAllowed = false;
           applyWaveVisIfAllowed(false);
         },
+        // Scroll w górę w Blok45 — nigdy nie włączaj kurtyny z powrotem (tylko onEnter po powrocie nad sekcję = Kinetic).
         onEnterBack: function() {
           syncWaveRevealAllowed();
-          applyWaveVisIfAllowed(true);
+          applyWaveVisIfAllowed(false);
         },
         onLeaveBack: function() {
+          waveRevealAllowed = false;
           applyWaveVisIfAllowed(false);
         }
       });
