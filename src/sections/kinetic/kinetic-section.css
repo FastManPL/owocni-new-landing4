@@ -719,3 +719,9 @@ html.kinetic-past #kinetic-section {
     visibility: hidden !important;
     pointer-events: none !important;
 }
+/* GSAP może ustawiać autoAlpha na dzieciach — wymuszamy ukrycie bloku GEMIUS przy Blok45. */
+html.kinetic-past #kinetic-section #kinetic-block-3 {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}

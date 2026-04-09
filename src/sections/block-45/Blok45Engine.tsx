@@ -248,6 +248,29 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         return waveEndEl ? 'bottom top' : 'bottom ' + (window.innerWidth < 600 ? 80 : 75) + '%';
       }
 
+      // Po zejściu z zakresu fali (w dół): nie pokazuj wave ponownie aż użytkownik wróci nad Blok45
+      // (cała sekcja z powrotem poniżej viewportu — jak przy pierwszym wejściu z Kinetic).
+      var waveRevealAllowed = true;
+      function syncWaveRevealAllowed() {
+        var rs = container.getBoundingClientRect();
+        var vh = window.innerHeight || 1;
+        if (rs.top > vh) waveRevealAllowed = true;
+      }
+      function applyWaveVisIfAllowed(show: boolean) {
+        if (show && !waveRevealAllowed) {
+          (waveWrap as HTMLElement).style.display = 'none';
+          container.classList.remove('wave-reveal-active');
+          return;
+        }
+        if (show) {
+          (waveWrap as HTMLElement).style.display = '';
+          container.classList.add('wave-reveal-active');
+        } else {
+          (waveWrap as HTMLElement).style.display = 'none';
+          container.classList.remove('wave-reveal-active');
+        }
+      }
+
       // Stack: #bridge-wrapper z-index 10, #blok-4-5-section 12, .blok-4-5-wave-wrap 14, napisy 25+.
       var stWaveVis = ScrollTrigger.create({
         trigger: waveDriveEl,
@@ -256,25 +279,27 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         end: waveScrollEnd,
         invalidateOnRefresh: true,
         onEnter: function() {
-          (waveWrap as HTMLElement).style.display = '';
-          container.classList.add('wave-reveal-active');
+          syncWaveRevealAllowed();
+          applyWaveVisIfAllowed(true);
         },
         onLeave: function() {
-          (waveWrap as HTMLElement).style.display = 'none';
-          container.classList.remove('wave-reveal-active');
+          waveRevealAllowed = false;
+          applyWaveVisIfAllowed(false);
         },
-        // Przewijanie w górę z treści pod Blok45 — nie pokazuj ponownie fixed wave (flash pod sekcją).
         onEnterBack: function() {
-          (waveWrap as HTMLElement).style.display = 'none';
-          container.classList.remove('wave-reveal-active');
+          syncWaveRevealAllowed();
+          applyWaveVisIfAllowed(true);
         },
         onLeaveBack: function() {
-          (waveWrap as HTMLElement).style.display = 'none';
-          container.classList.remove('wave-reveal-active');
+          applyWaveVisIfAllowed(false);
         }
       });
       gsapInstances.push(stWaveVis);
       (waveWrap as HTMLElement).style.display = 'none';
+      syncWaveRevealAllowed();
+      var waveAllowScroll = function() { syncWaveRevealAllowed(); };
+      scrollRuntime.on('scroll', waveAllowScroll);
+      cleanups.push(function() { scrollRuntime.off('scroll', waveAllowScroll); });
 
       // Jedyny driver animacji fali względem scrolla (otwarcie kipiel przy progress>0 tylko po starcie poniżej).
       function resetWaveStateFromScroll() {
@@ -1473,9 +1498,18 @@ export default function Blok45Engine() {
     const KINETIC_PAST_CLASS = 'kinetic-past';
     const section = document.getElementById('blok-4-5-section');
     const block4 = document.getElementById('blok-4-5-block-4');
+    const mozemyEl = document.getElementById('blok-4-5-mozemy-to-zmienic');
+    const block5El = document.getElementById('blok-4-5-block-5-content');
+    const voidWrapEl = document.getElementById('blok-4-5-voidSectionWrapper');
     if (!section || !block4) return undefined;
 
     const IO_THRESHOLDS = [0, 0.1, 0.2, 0.3, 0.35, 0.4, 0.45, 0.5, 0.55, 0.6, 0.7, 0.8, 0.9, 1];
+
+    function elIntersectsViewport(el: HTMLElement | null, vh: number) {
+      if (!el) return false;
+      const r = el.getBoundingClientRect();
+      return r.top < vh && r.bottom > 0;
+    }
 
     const setPast = (past: boolean) => {
       if (past) {
@@ -1496,10 +1530,15 @@ export default function Blok45Engine() {
     const apply = () => {
       const vh = window.innerHeight || 1;
       const rs = section.getBoundingClientRect();
-      const b4 = block4.getBoundingClientRect();
       const r = lastIoRatio;
       let next: boolean;
-      if (rs.top > vh) {
+      const forcePastBlok45Content =
+        elIntersectsViewport(voidWrapEl, vh) ||
+        elIntersectsViewport(mozemyEl, vh) ||
+        elIntersectsViewport(block5El, vh);
+      if (forcePastBlok45Content) {
+        next = true;
+      } else if (rs.top > vh) {
         next = false;
       } else if (rs.bottom < 0) {
         next = true;
