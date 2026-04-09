@@ -197,7 +197,6 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         }
       }
       function startKipielOpen() {
-        (waveWrap as HTMLElement).style.display = '';
         if (state === STATE_IDLE_OPEN) { syncSectionBgReady(); return; }
         if (state === STATE_IDLE_CLOSED) { currentTimeKipiel = 0; }
         state = STATE_KIPIEL_OPENING;
@@ -256,6 +255,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         var vh = window.innerHeight || 1;
         if (rs.top > vh) waveRevealAllowed = true;
       }
+      var waveCommittedOnce = false;
       function applyWaveVisIfAllowed(show: boolean) {
         if (show && !waveRevealAllowed) {
           (waveWrap as HTMLElement).style.display = 'none';
@@ -265,6 +265,10 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         if (show) {
           (waveWrap as HTMLElement).style.display = '';
           container.classList.add('wave-reveal-active');
+          if (!waveCommittedOnce) {
+            waveCommittedOnce = true;
+            window.dispatchEvent(new CustomEvent('blok45-wave-committed'));
+          }
         } else {
           (waveWrap as HTMLElement).style.display = 'none';
           container.classList.remove('wave-reveal-active');
@@ -314,7 +318,10 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         endTrigger: waveEndEl || waveDriveEl,
         end: waveScrollEnd,
         invalidateOnRefresh: true,
-        onUpdate: function(self) { handleScroll(self.progress, self.direction); },
+        onUpdate: function(self) {
+          if (!container.classList.contains('wave-reveal-active')) return;
+          handleScroll(self.progress, self.direction);
+        },
         onLeave: function() { resetWaveStateFromScroll(); },
         onLeaveBack: function() { resetWaveStateFromScroll(); }
       });
@@ -1488,11 +1495,9 @@ export default function Blok45Engine() {
   }, []);
 
   /**
-   * Ukrycie Kinetic (html.kinetic-past) przy Blok45.
-   *
-   * IO na #blok-4-5-block-4 (ratio) — ujemny margin sekcji nadal wymaga histerezy 0.35 / 0.5 przy wejściu
-   * z góry (Kinetic). Dodatkowo: przy przewijaniu W GÓRĘ z dołu strony mały ratio nie może zdejmować
-   * kinetic-past (flash Kinetic pod Blok45 / falą) — wtedy zostajemy przy ukryciu.
+   * Ukrycie Kinetic (html.kinetic-past) — dopiero po pierwszym pokazaniu kurtyny fali (blok45-wave-committed).
+   * Wcześniej: ratio/void wymuszało past od wejścia Blok45 → cały ekran „przykrywał” Kinetic zanim weszła fala.
+   * Po fali: ratio + strefy void/Mozemy/block-5 żeby litery nie wracały pod nagłówkami.
    */
   useEffect(() => {
     const KINETIC_PAST_CLASS = 'kinetic-past';
@@ -1510,6 +1515,8 @@ export default function Blok45Engine() {
       const r = el.getBoundingClientRect();
       return r.top < vh && r.bottom > 0;
     }
+
+    let waveCommitted = false;
 
     const setPast = (past: boolean) => {
       if (past) {
@@ -1532,28 +1539,38 @@ export default function Blok45Engine() {
       const rs = section.getBoundingClientRect();
       const r = lastIoRatio;
       let next: boolean;
-      const forcePastBlok45Content =
-        elIntersectsViewport(voidWrapEl, vh) ||
-        elIntersectsViewport(mozemyEl, vh) ||
-        elIntersectsViewport(block5El, vh);
-      if (forcePastBlok45Content) {
-        next = true;
-      } else if (rs.top > vh) {
+      if (!waveCommitted) {
         next = false;
-      } else if (rs.bottom < 0) {
-        next = true;
-      } else if (r >= 0.5) {
-        next = true;
-      } else if (r <= 0.35) {
-        next = scrollUp ? true : lastPast;
       } else {
-        next = lastPast;
+        const forcePastBlok45Content =
+          elIntersectsViewport(voidWrapEl, vh) ||
+          elIntersectsViewport(mozemyEl, vh) ||
+          elIntersectsViewport(block5El, vh);
+        if (forcePastBlok45Content) {
+          next = true;
+        } else if (rs.top > vh) {
+          next = false;
+        } else if (rs.bottom < 0) {
+          next = true;
+        } else if (r >= 0.5) {
+          next = true;
+        } else if (r <= 0.35) {
+          next = scrollUp ? true : lastPast;
+        } else {
+          next = lastPast;
+        }
       }
       if (next !== lastPast) {
         lastPast = next;
         setPast(next);
       }
     };
+
+    const onWaveCommitted = () => {
+      waveCommitted = true;
+      apply();
+    };
+    window.addEventListener('blok45-wave-committed', onWaveCommitted);
 
     const schedule = () => {
       const y = window.scrollY;
@@ -1585,6 +1602,7 @@ export default function Blok45Engine() {
     requestAnimationFrame(apply);
 
     return () => {
+      window.removeEventListener('blok45-wave-committed', onWaveCommitted);
       io.disconnect();
       window.removeEventListener('scroll', schedule);
       window.removeEventListener('resize', schedule);
