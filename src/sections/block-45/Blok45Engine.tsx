@@ -1467,7 +1467,9 @@ export default function Blok45Engine() {
       } else {
         const visibleH = Math.max(0, Math.min(r.bottom, vh) - Math.max(r.top, 0));
         const ratio = r.height > 0 ? visibleH / r.height : 0;
-        if (ratio >= 0.45) {
+        // Wyższy próg = więcej Blok45 w kadrze zanim html.kinetic-past chowa Kinetic (!important opacity).
+        // Zapobiega „ucięciu” długiego zaniku cienia (ghost) GSAP-em na końcu snapu.
+        if (ratio >= 0.62) {
           past = true;
         } else {
           past = lastPast === true;

@@ -2858,13 +2858,16 @@ import './kinetic-section.css';
             var _lineStagger = 0.5;
             
             // SYNCED wrap: overlaps with forward push, all lines end at SNAP2
-            // Późniejszy start fali — napisy wyżej w kadrze (dalsze opóźnienie vs +5.6)
-            var WRAP_START_U = SNAP1_U + 7.85;
+            // Większy offset = późniejszy start cylindra (więcej scrollu / więcej treści poniżej w kadrze).
+            // Mniejszy offset = wcześniejszy wrap — nie mylić kierunku.
+            var WRAP_START_U = SNAP1_U + 10.35;
             var WRAP_DUR_BASE = Math.max(
               0.35,
               SNAP2_U - (WRAP_START_U + 3 * _lineStagger),
             );
             var _wrapEndU = SNAP2_U;
+            // Koniec wrapu = moment drop/ghost (≈ SNAP2 − 1.5U); używane też do startu zaniku cienia.
+            var _b1DropTriggerU = WRAP_START_U + WRAP_DUR_BASE;
             
             // ── Temporarily show b1 for geometry measurement ──
             var _b1WasHidden = (b1.style.visibility === 'hidden' || getComputedStyle(b1).visibility === 'hidden');
@@ -3243,28 +3246,44 @@ import './kinetic-section.css';
                 });
             })();
             
-            // CIEŃ LITER: jedna płynna animacja zaniku + spłaszczenia (bez skoków scale na liniach)
-            // Dłuższy czas + sine.inOut — delikatne jak w oryginale, tylko z widocznym „spłaszczeniem”
-            pinnedTl.to(_ghostB1, {
-                opacity: 0,
-                scaleY: 0.04,
-                transformOrigin: '50% 55%',
-                duration: 6.75,
-                ease: 'sine.inOut',
-            }, SNAP2_U);
-            
-            // CIEŃ LITER: linie tylko zbiegają (y) — bez scaleY na liniach = brak nagłych zmian szerokości
+            // CIEŃ LITER: zanik wyłącznie przez opacity (+ lekki ruch y na liniach).
+            // BEZ scaleY na kontenerze — inline transform z sync(b1) psuje / przerywa tween skali na scrub.
+            // Start od _b1DropTriggerU (ghost pojawia się tu) — dłuższy odcinek scrolla niż start od SNAP2;
+            // końcówka za SNAP2 żeby zanik był widoczny pod scrub (nie „migał” na końcu snapu).
+            var _ghostFadeStartU = _b1DropTriggerU;
+            var _ghostFadeDur = Math.max(11, SNAP2_U + 10 - _ghostFadeStartU);
+            var _ghostEase = 'sine.inOut';
+            pinnedTl.fromTo(
+                _ghostB1,
+                { opacity: 1 },
+                {
+                    opacity: 0,
+                    duration: _ghostFadeDur,
+                    ease: _ghostEase,
+                    immediateRender: false,
+                },
+                _ghostFadeStartU,
+            );
+            pinnedTl.to(
+                _ghostChars,
+                {
+                    opacity: 0,
+                    duration: _ghostFadeDur,
+                    ease: _ghostEase,
+                    overwrite: 'auto',
+                },
+                _ghostFadeStartU,
+            );
             if (_ghostLines.length >= 4) {
-                pinnedTl.to(_ghostLines[0], { y: '+=50', duration: 6.75, ease: 'sine.inOut' }, SNAP2_U);
-                pinnedTl.to(_ghostLines[2], { y: '-=50', duration: 6.75, ease: 'sine.inOut' }, SNAP2_U);
-                pinnedTl.to(_ghostLines[3], { y: '-=100', duration: 6.75, ease: 'sine.inOut' }, SNAP2_U);
+                pinnedTl.to(_ghostLines[0], { y: '+=50', duration: _ghostFadeDur, ease: _ghostEase }, _ghostFadeStartU);
+                pinnedTl.to(_ghostLines[2], { y: '-=50', duration: _ghostFadeDur, ease: _ghostEase }, _ghostFadeStartU);
+                pinnedTl.to(_ghostLines[3], { y: '-=100', duration: _ghostFadeDur, ease: _ghostEase }, _ghostFadeStartU);
             }
             
             // Drop at END of SNAP1→SNAP2 scroll (letters gone BEFORE SNAP2 pause)
             // Trigger 0.5U before SNAP2 → drop starts during scroll, done before pause
             // Drop triggers when line 0's wrap COMPLETES → falling starts while later lines still wrapping
             // Creates one continuous motion: wrap deceleration → drop acceleration (circ.in)
-            var _b1DropTriggerU = WRAP_START_U + WRAP_DUR_BASE;
             var _origChars = b1.querySelectorAll('.anim-char');
             pinnedTl.call(function() {
                 if (!_b1Dropped) {
