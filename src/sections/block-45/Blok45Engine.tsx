@@ -253,11 +253,15 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       function syncWaveRevealAllowed() {
         var rs = container.getBoundingClientRect();
         var vh = window.innerHeight || 1;
-        if (rs.top > vh) waveRevealAllowed = true;
+        if (rs.top > vh) {
+          waveRevealAllowed = true;
+          waveCommittedOnce = false;
+        }
       }
       var waveCommittedOnce = false;
       function applyWaveVisIfAllowed(show: boolean) {
         if (show && !waveRevealAllowed) {
+          resetWaveStateFromScroll();
           (waveWrap as HTMLElement).style.display = 'none';
           container.classList.remove('wave-reveal-active');
           return;
@@ -270,6 +274,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
             window.dispatchEvent(new CustomEvent('blok45-wave-committed'));
           }
         } else {
+          resetWaveStateFromScroll();
           (waveWrap as HTMLElement).style.display = 'none';
           container.classList.remove('wave-reveal-active');
         }
@@ -319,6 +324,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         end: waveScrollEnd,
         invalidateOnRefresh: true,
         onUpdate: function(self) {
+          if (!waveRevealAllowed) return;
           if (!container.classList.contains('wave-reveal-active')) return;
           handleScroll(self.progress, self.direction);
         },
@@ -1538,6 +1544,9 @@ export default function Blok45Engine() {
       const vh = window.innerHeight || 1;
       const rs = section.getBoundingClientRect();
       const r = lastIoRatio;
+      if (rs.top > vh) {
+        waveCommitted = false;
+      }
       let next: boolean;
       if (!waveCommitted) {
         next = false;
