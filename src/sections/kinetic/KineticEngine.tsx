@@ -2858,8 +2858,8 @@ import './kinetic-section.css';
             var _lineStagger = 0.5;
             
             // SYNCED wrap: overlaps with forward push, all lines end at SNAP2
-            // Późniejszy start fali — napisy wyżej w kadrze zanim cylinder się zacznie (było +2.1, potem +4.0)
-            var WRAP_START_U = SNAP1_U + 5.6;
+            // Późniejszy start fali — napisy wyżej w kadrze (dalsze opóźnienie vs +5.6)
+            var WRAP_START_U = SNAP1_U + 7.85;
             var WRAP_DUR_BASE = Math.max(
               0.35,
               SNAP2_U - (WRAP_START_U + 3 * _lineStagger),
@@ -3243,50 +3243,21 @@ import './kinetic-section.css';
                 });
             })();
             
-            // CIEŃ LITER: Ghost fades on SCRUB (not real-time)
-            // Visible during SNAP2 pause → fades as user scrolls toward SNAP3
-            // Gone by B2 "Wg badań" halfway
+            // CIEŃ LITER: jedna płynna animacja zaniku + spłaszczenia (bez skoków scale na liniach)
+            // Dłuższy czas + sine.inOut — delikatne jak w oryginale, tylko z widocznym „spłaszczeniem”
             pinnedTl.to(_ghostB1, {
                 opacity: 0,
-                scaleY: 0.22,
-                transformOrigin: '50% 50%',
-                duration: 4.0,
-                ease: "power2.in"
+                scaleY: 0.04,
+                transformOrigin: '50% 55%',
+                duration: 6.75,
+                ease: 'sine.inOut',
             }, SNAP2_U);
             
-            // CIEŃ LITER: Ghost lines converge toward line 1 + spłaszczenie (jak index_clean ref)
-            // Line 0 "W internecie"          ↓ DOWN toward center
-            // Line 1 "jest więcej klientów,"  — anchor
-            // Line 2 "niż Twoja firma jest"  ↑ UP toward center
-            // Line 3 "w stanie obsłużyć!"    ↑ UP faster toward center
+            // CIEŃ LITER: linie tylko zbiegają (y) — bez scaleY na liniach = brak nagłych zmian szerokości
             if (_ghostLines.length >= 4) {
-                pinnedTl.to(_ghostLines[0], {
-                  y: '+=50',
-                  scaleY: 0.14,
-                  transformOrigin: '50% 50%',
-                  duration: 4.0,
-                  ease: 'power2.in',
-                }, SNAP2_U);
-                pinnedTl.to(_ghostLines[2], {
-                  y: '-=50',
-                  scaleY: 0.14,
-                  transformOrigin: '50% 50%',
-                  duration: 4.0,
-                  ease: 'power2.in',
-                }, SNAP2_U);
-                pinnedTl.to(_ghostLines[3], {
-                  y: '-=100',
-                  scaleY: 0.12,
-                  transformOrigin: '50% 50%',
-                  duration: 4.0,
-                  ease: 'power2.in',
-                }, SNAP2_U);
-                pinnedTl.to(_ghostLines[1], {
-                  scaleY: 0.18,
-                  transformOrigin: '50% 50%',
-                  duration: 4.0,
-                  ease: 'power2.in',
-                }, SNAP2_U);
+                pinnedTl.to(_ghostLines[0], { y: '+=50', duration: 6.75, ease: 'sine.inOut' }, SNAP2_U);
+                pinnedTl.to(_ghostLines[2], { y: '-=50', duration: 6.75, ease: 'sine.inOut' }, SNAP2_U);
+                pinnedTl.to(_ghostLines[3], { y: '-=100', duration: 6.75, ease: 'sine.inOut' }, SNAP2_U);
             }
             
             // Drop at END of SNAP1→SNAP2 scroll (letters gone BEFORE SNAP2 pause)
@@ -3356,8 +3327,27 @@ import './kinetic-section.css';
 
                 // BLOCK 3
                 // b3Header usunięty z sekwencji - animacja fali dodana NA KOŃCU na pozycji 14
-            // Przejmujemy transform z CSS, transformOrigin na lewą stronę (justowanie do lewej)
-            gsap.set(b3, { yPercent: -50, transformOrigin: "left center" });
+            // Na niskich viewportach yPercent:-50 ciągnie blok w górę o ~½ wysokości → ucina od góry.
+            // Przy wysokości < 920px: kotwicz od góry bloku (0), nie od środka.
+            function applyKineticB3VerticalAlign() {
+                if (!b3) return;
+                var shortVp = typeof window !== 'undefined' && window.innerHeight < 920;
+                gsap.set(b3, {
+                    yPercent: shortVp ? 0 : -50,
+                    transformOrigin: 'left center',
+                });
+            }
+            applyKineticB3VerticalAlign();
+            var _b3AlignRaf = 0;
+            function onKineticB3Resize() {
+                cancelAnimationFrame(_b3AlignRaf);
+                _b3AlignRaf = requestAnimationFrame(applyKineticB3VerticalAlign);
+            }
+            window.addEventListener('resize', onKineticB3Resize, { passive: true });
+            cleanups.push(function() {
+                window.removeEventListener('resize', onKineticB3Resize);
+                cancelAnimationFrame(_b3AlignRaf);
+            });
             gsap.set([b3Lines, b3Bold], { transformOrigin: "left center" });
             
             // BLOCK 3 - POZYCJA ABSOLUTNA 10.04 (przesunięte -2.7)

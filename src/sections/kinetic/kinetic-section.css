@@ -486,9 +486,16 @@
             align-items: flex-start;
             text-align: left;
             z-index: 15; /* Nad cylindrem */
-            /* Zapas nad nagłówkiem GEMIUS — mniej przycinania od góry na niższych viewportach */
             padding-top: clamp(0.35rem, 1.2vw, 1rem);
             box-sizing: border-box;
+        }
+        /* Niskie okna (np. 1361×736): kotwica od góry sekcji zamiast „środka −294px” — zgodnie z yPercent:0 w JS */
+        @media (min-width: 600px) and (max-height: 920px) {
+            #kinetic-section #kinetic-block-3 {
+                top: clamp(2.5rem, 7vh, 10rem);
+                left: 5%;
+                width: min(90%, 42rem);
+            }
         }
         #kinetic-section #kinetic-block-3 .line {
             justify-content: flex-start;
