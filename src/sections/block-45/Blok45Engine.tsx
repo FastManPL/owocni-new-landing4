@@ -247,22 +247,16 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         return waveEndEl ? 'bottom top' : 'bottom ' + (window.innerWidth < 600 ? 80 : 75) + '%';
       }
 
-      // Po zejściu z zakresu fali (w dół): nie pokazuj wave ponownie aż handoff z Kinetic (patrz niżej).
+      // Fala jednorazowa po każdym „wejściu” z Fakty: po pokazaniu znika; ponownie tylko po powrocie do #fakty-section
+      // (cofanie w Blok45 / Kinetic bez Fakty nie resetuje — eliminuje przypadkowe falki).
       var waveRevealAllowed = true;
       function syncWaveRevealAllowed() {
-        var rs = container.getBoundingClientRect();
+        var fakty = typeof document !== 'undefined' ? document.getElementById('fakty-section') : null;
+        if (!fakty) return;
+        var fr = fakty.getBoundingClientRect();
         var vh = window.innerHeight || 1;
-        // Sam fakt rs.top > vh (Blok45 pod viewportem) to za mało: popup, ujemny margin, refresh ST
-        // potrafią na chwilę spełnić warunek bez „prawdziwego” powrotu na Kinetic → ponowna fala + psucie kinetic-past.
-        if (rs.top <= vh) return;
-        var kin = typeof document !== 'undefined' ? document.getElementById('kinetic-section') : null;
-        if (!kin) return;
-        var kr = kin.getBoundingClientRect();
-        if (kr.bottom < 80) return;
-        // Tylko góra Kinetic przy górze ekranu — nie resetuj w środku/końcówce Kinetic (tam też „w kadrze”).
-        var topBand = Math.min(220, vh * 0.34);
-        var atKineticStart = kr.top > -Math.min(100, vh * 0.12) && kr.top < topBand;
-        if (!atKineticStart) return;
+        var inFaktyZone = fr.top < vh * 0.9 && fr.bottom > vh * 0.1;
+        if (!inFaktyZone) return;
         waveRevealAllowed = true;
         waveCommittedOnce = false;
       }
@@ -275,8 +269,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
           return;
         }
         if (show) {
-          // Jedna kurtyna na „sesję” — reset tylko gdy syncWaveRevealAllowed (cała sekcja z powrotem pod Kinetic).
-          // Bez tego refresh ST / ponowne onEnter montuje wave-wrap ponownie mimo że animacja już się odpaliła.
+          // Jedna kurtyna od ostatniego wejścia w strefę Fakty — reset tylko w syncWaveRevealAllowed (#fakty-section).
           if (waveCommittedOnce) {
             return;
           }
@@ -306,7 +299,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
           waveRevealAllowed = false;
           applyWaveVisIfAllowed(false);
         },
-        // Scroll w górę w Blok45 — nigdy nie włączaj kurtyny z powrotem (tylko onEnter po powrocie nad sekcję = Kinetic).
+        // Scroll w górę w Blok45 — bez resetu z Fakty kurtyna się nie włączy (waveCommittedOnce).
         onEnterBack: function() {
           syncWaveRevealAllowed();
           applyWaveVisIfAllowed(false);
