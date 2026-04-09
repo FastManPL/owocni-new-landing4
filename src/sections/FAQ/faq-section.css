@@ -306,8 +306,8 @@
   width: calc(100% - 2rem);
   max-width: clamp(62.5rem, 88vw, 110rem);
   margin: 0 auto clamp(28px, 4.5vw, 52px);
-  padding: 0 1rem;
-  text-align: center;
+  padding: 0;
+  text-align: left;
 }
 #faq-section .faq-section-lead__title {
   /* ~−30% względem skali hero-h1 (2.4 / 6 / 6.9) */
@@ -317,9 +317,10 @@
   margin: 0;
   display: flex;
   flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   gap: 0.15em;
   font-family: 'Lexend', sans-serif;
+  text-align: left;
 }
 #faq-section .faq-section-lead__strong {
   display: block;
