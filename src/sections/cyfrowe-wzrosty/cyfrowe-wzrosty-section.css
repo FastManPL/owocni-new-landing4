@@ -1,7 +1,7 @@
 /* ═══ FACTORY: isolation + contain ═══ */
 #cyfrowe-wzrosty-section {
   position: relative;
-  background: #f7f6f4;
+  /* Bez stałego tła — ujemny margin-top nakładał #f7f6f4 na sekcję O nas (np. .onas-subtitle). */
   padding-top: 0;
   /* Zbicie nadmiaru pustki nad blokiem „4 etapy / WZROSTU” — połowa poprzedniej luki względem −25vh */
   margin-top: -37.5vh;
