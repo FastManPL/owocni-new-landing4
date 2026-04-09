@@ -2858,9 +2858,12 @@ import './kinetic-section.css';
             var _lineStagger = 0.5;
             
             // SYNCED wrap: overlaps with forward push, all lines end at SNAP2
-            // Późniejszy start fali (linia „klientów” ~środek viewportu) — było +2.1
-            var WRAP_START_U = SNAP1_U + 4.0;
-            var WRAP_DUR_BASE = SNAP2_U - (WRAP_START_U + 3 * _lineStagger);
+            // Późniejszy start fali — napisy wyżej w kadrze zanim cylinder się zacznie (było +2.1, potem +4.0)
+            var WRAP_START_U = SNAP1_U + 5.6;
+            var WRAP_DUR_BASE = Math.max(
+              0.35,
+              SNAP2_U - (WRAP_START_U + 3 * _lineStagger),
+            );
             var _wrapEndU = SNAP2_U;
             
             // ── Temporarily show b1 for geometry measurement ──
@@ -3245,19 +3248,45 @@ import './kinetic-section.css';
             // Gone by B2 "Wg badań" halfway
             pinnedTl.to(_ghostB1, {
                 opacity: 0,
+                scaleY: 0.22,
+                transformOrigin: '50% 50%',
                 duration: 4.0,
                 ease: "power2.in"
             }, SNAP2_U);
             
-            // CIEŃ LITER: Ghost lines converge toward line 1 during fade
+            // CIEŃ LITER: Ghost lines converge toward line 1 + spłaszczenie (jak index_clean ref)
             // Line 0 "W internecie"          ↓ DOWN toward center
             // Line 1 "jest więcej klientów,"  — anchor
             // Line 2 "niż Twoja firma jest"  ↑ UP toward center
             // Line 3 "w stanie obsłużyć!"    ↑ UP faster toward center
             if (_ghostLines.length >= 4) {
-                pinnedTl.to(_ghostLines[0], { y: '+=50', duration: 4.0, ease: 'power2.in' }, SNAP2_U);
-                pinnedTl.to(_ghostLines[2], { y: '-=50', duration: 4.0, ease: 'power2.in' }, SNAP2_U);
-                pinnedTl.to(_ghostLines[3], { y: '-=100', duration: 4.0, ease: 'power2.in' }, SNAP2_U);
+                pinnedTl.to(_ghostLines[0], {
+                  y: '+=50',
+                  scaleY: 0.14,
+                  transformOrigin: '50% 50%',
+                  duration: 4.0,
+                  ease: 'power2.in',
+                }, SNAP2_U);
+                pinnedTl.to(_ghostLines[2], {
+                  y: '-=50',
+                  scaleY: 0.14,
+                  transformOrigin: '50% 50%',
+                  duration: 4.0,
+                  ease: 'power2.in',
+                }, SNAP2_U);
+                pinnedTl.to(_ghostLines[3], {
+                  y: '-=100',
+                  scaleY: 0.12,
+                  transformOrigin: '50% 50%',
+                  duration: 4.0,
+                  ease: 'power2.in',
+                }, SNAP2_U);
+                pinnedTl.to(_ghostLines[1], {
+                  scaleY: 0.18,
+                  transformOrigin: '50% 50%',
+                  duration: 4.0,
+                  ease: 'power2.in',
+                }, SNAP2_U);
             }
             
             // Drop at END of SNAP1→SNAP2 scroll (letters gone BEFORE SNAP2 pause)
