@@ -84,7 +84,7 @@
 
 /* --- Piętro 1: Obrazy --- */
 #book-stats-section .cs-floor--images {
-  margin-bottom: var(--48);
+  margin-bottom: calc(2 * var(--48));
   align-items: center;
   gap: clamp(1.023rem, 1.65vw, 1.875rem);
 }
@@ -343,7 +343,7 @@
 /* --- FIX: <479px divider + piętro spacing --- */
 @media screen and (max-width: 479px) {
   #book-stats-section .cs-divider { display: none; }
-  #book-stats-section .cs-floor--images { margin-bottom: var(--gap-md); }
+  #book-stats-section .cs-floor--images { margin-bottom: calc(2 * var(--gap-md)); }
 }
 
 

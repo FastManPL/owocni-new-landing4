@@ -2858,7 +2858,8 @@ import './kinetic-section.css';
             var _lineStagger = 0.5;
             
             // SYNCED wrap: overlaps with forward push, all lines end at SNAP2
-            var WRAP_START_U = SNAP1_U + 2.1; // doc=19.75, adaptive to viewport
+            // Późniejszy start fali (linia „klientów” ~środek viewportu) — było +2.1
+            var WRAP_START_U = SNAP1_U + 4.0;
             var WRAP_DUR_BASE = SNAP2_U - (WRAP_START_U + 3 * _lineStagger);
             var _wrapEndU = SNAP2_U;
             

@@ -486,6 +486,9 @@
             align-items: flex-start;
             text-align: left;
             z-index: 15; /* Nad cylindrem */
+            /* Zapas nad nagłówkiem GEMIUS — mniej przycinania od góry na niższych viewportach */
+            padding-top: clamp(0.35rem, 1.2vw, 1rem);
+            box-sizing: border-box;
         }
         #kinetic-section #kinetic-block-3 .line {
             justify-content: flex-start;
@@ -501,7 +504,12 @@
         #kinetic-section .block-3-mobile { display: none; }
 
         @media (max-width: 768px) {
-            #kinetic-section #kinetic-block-3 { left: 5%; width: 90%; }
+            #kinetic-section #kinetic-block-3 {
+                left: 5%;
+                width: 90%;
+                top: calc(50% + max(var(--bp-b3y), -248px));
+                padding-top: clamp(0.75rem, 3vw, 1.35rem);
+            }
         }
 
         /* ============ MOBILE < 600px ============ */
@@ -539,11 +547,13 @@
                 top: calc(185px + 26.2svh);
             }
             #kinetic-section #kinetic-block-3 {
-                top: calc(145px + 21.1vh);
-                top: calc(145px + 21.1svh);
+                top: calc(158px + 22.5vh);
+                top: calc(158px + 22.5svh);
                 left: 5%;
                 width: 90%;
-                margin-top: -91px; /* baked from panel mob-b3y */
+                /* Mniej podciągania w górę + padding — nagłówek GEMIUS w całości */
+                margin-top: -58px;
+                padding-top: 1rem;
             }
             
             /* Cylinder 98% mobile positioning (baked from panel) */
