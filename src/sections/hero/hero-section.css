@@ -87,6 +87,9 @@
             /* Brands marquee */
             --marquee-right-space: 8rem;  /* TESTOWA WARTOŚĆ - do dostrojenia */
             
+            /* Odstęp do sekcji #wyniki-section (łącznie 90px → rem przy root 16px) */
+            --hero-next-section-gap: 5.625rem;
+            
             /* Mobile layout - domyślne wartości desktop */
             --content-padding-top: 2rem;
             --center-padding-top: calc(1.5rem + var(--h1-size) * 0.5);
@@ -166,8 +169,6 @@
         #hero-section {
             position: relative;
             width: 100%;
-            min-height: 100vh;
-            min-height: 100svh;
             overflow: hidden;
             isolation: isolate; /* FACTORY:B-ISO-01 AUTO-FIX — stacking context isolation */
         }
@@ -547,9 +548,7 @@
             position: relative;
             /* z-index: removed — no stacking context, allows z-index layering between trail/laury/text */
             width: 100%;
-            min-height: 100vh;
-            min-height: 100svh;
-            padding: var(--content-padding-top) 1rem 2rem 1rem;
+            padding: var(--content-padding-top) 1rem var(--hero-next-section-gap) 1rem;
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
