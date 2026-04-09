@@ -2858,12 +2858,18 @@ import './kinetic-section.css';
             var _lineStagger = 0.5;
             
             // SYNCED wrap: overlaps with forward push, all lines end at SNAP2
-            // Większy offset = późniejszy start cylindra (więcej scrollu / więcej treści poniżej w kadrze).
-            // Mniejszy offset = wcześniejszy wrap — nie mylić kierunku.
-            var WRAP_START_U = SNAP1_U + 11.0;
+            // Większy offset od SNAP1 = późniejszy start cylindra.
+            // Twardy limit: ostatnia linia startuje WRAP_START+1.5U, min. czas 0.35U → WRAP_START ≤ SNAP2−1.85
+            // (inaczej wrap „wystaje” poza SNAP2 przy krótkim SNAP2−SNAP1).
+            var _wrapStaggerSpan = 3 * _lineStagger;
+            var _wrapFloorDur = 0.35;
+            var WRAP_START_U = Math.min(
+              SNAP1_U + 11.75,
+              SNAP2_U - _wrapStaggerSpan - _wrapFloorDur,
+            );
             var WRAP_DUR_BASE = Math.max(
-              0.35,
-              SNAP2_U - (WRAP_START_U + 3 * _lineStagger),
+              _wrapFloorDur,
+              SNAP2_U - (WRAP_START_U + _wrapStaggerSpan),
             );
             var _wrapEndU = SNAP2_U;
             // Koniec wrapu = moment drop/ghost (≈ SNAP2 − 1.5U); używane też do startu zaniku cienia.
