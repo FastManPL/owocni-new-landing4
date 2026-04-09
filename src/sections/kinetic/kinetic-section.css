@@ -497,9 +497,17 @@
                 width: min(90%, 42rem);
             }
         }
+        /* Jak B1/B2: globalne .line ma flex-wrap + white-space:normal → GEMIUS łamał się na więcej wierszy.
+           Trzy jawne .line w HTML = trzy wizualne wiersze (bez wewnętrznego zawijania). */
         #kinetic-section #kinetic-block-3 .line {
             justify-content: flex-start;
             text-align: left;
+            white-space: nowrap;
+            flex-wrap: nowrap;
+            overflow: visible;
+        }
+        #kinetic-section #kinetic-block-3 .line .anim-char {
+            white-space: nowrap;
         }
         
         /* Desktop/Mobile switching for block-3 content */

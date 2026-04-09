@@ -2860,7 +2860,7 @@ import './kinetic-section.css';
             // SYNCED wrap: overlaps with forward push, all lines end at SNAP2
             // Większy offset = późniejszy start cylindra (więcej scrollu / więcej treści poniżej w kadrze).
             // Mniejszy offset = wcześniejszy wrap — nie mylić kierunku.
-            var WRAP_START_U = SNAP1_U + 10.35;
+            var WRAP_START_U = SNAP1_U + 11.0;
             var WRAP_DUR_BASE = Math.max(
               0.35,
               SNAP2_U - (WRAP_START_U + 3 * _lineStagger),
