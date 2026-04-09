@@ -258,8 +258,11 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         var kin = typeof document !== 'undefined' ? document.getElementById('kinetic-section') : null;
         if (!kin) return;
         var kr = kin.getBoundingClientRect();
-        var kineticInView = kr.bottom > 40 && kr.top < vh * 0.94;
-        if (!kineticInView) return;
+        if (kr.bottom < 80) return;
+        // Tylko góra Kinetic przy górze ekranu — nie resetuj w środku/końcówce Kinetic (tam też „w kadrze”).
+        var topBand = Math.min(220, vh * 0.34);
+        var atKineticStart = kr.top > -Math.min(100, vh * 0.12) && kr.top < topBand;
+        if (!atKineticStart) return;
         waveRevealAllowed = true;
         waveCommittedOnce = false;
       }
