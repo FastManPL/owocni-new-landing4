@@ -235,15 +235,25 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         (typeof document !== 'undefined' ? document.getElementById('blok-4-5-block-4') : null) ||
         waveAnchor ||
         container;
+      /** Koniec fali przed „Możemy…” / block-5 — inaczej fixed wave-wrap pełny ekran zasłania treść i Kalkulator (z-index 2) pod spodem. */
+      var waveEndEl =
+        typeof document !== 'undefined'
+          ? ((document.querySelector('#blok-4-5-block-4 .full-width-image') as HTMLElement | null) ||
+              document.getElementById('blok-4-5-mozemy-to-zmienic'))
+          : null;
       function waveDriveStart(): string {
-        return window.innerWidth < 600 ? 'top 86%' : 'top 68%';
+        return window.innerWidth < 600 ? 'top 82%' : 'top 58%';
+      }
+      function waveScrollEnd(): string {
+        return waveEndEl ? 'bottom top' : 'bottom ' + (window.innerWidth < 600 ? 80 : 75) + '%';
       }
 
       // Stack: #bridge-wrapper z-index 10, #blok-4-5-section 12, .blok-4-5-wave-wrap 14, napisy 25+.
       var stWaveVis = ScrollTrigger.create({
         trigger: waveDriveEl,
         start: waveDriveStart,
-        end: 'bottom top',
+        endTrigger: waveEndEl || waveDriveEl,
+        end: waveScrollEnd,
         invalidateOnRefresh: true,
         onEnter: function() {
           (waveWrap as HTMLElement).style.display = '';
@@ -266,17 +276,21 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       (waveWrap as HTMLElement).style.display = 'none';
 
       // Jedyny driver animacji fali względem scrolla (otwarcie kipiel przy progress>0 tylko po starcie poniżej).
-      var getTriggerPercent = function() { return window.innerWidth < 600 ? 80 : 75; };
+      function resetWaveStateFromScroll() {
+        if (state !== STATE_IDLE_CLOSED) {
+          kipiel.render(0); currentTimeKipiel = 0; currentTimeOrg = 0; state = STATE_IDLE_CLOSED; updateDebugStateW(); syncSectionBgReady();
+        }
+        lastWaveD[0] = lastWaveD[1] = lastWaveD[2] = lastWaveD[3] = '';
+      }
       var stWaveScroll = ScrollTrigger.create({
         trigger: waveDriveEl,
         start: waveDriveStart,
-        end: function() { return 'bottom ' + getTriggerPercent() + '%'; },
+        endTrigger: waveEndEl || waveDriveEl,
+        end: waveScrollEnd,
         invalidateOnRefresh: true,
         onUpdate: function(self) { handleScroll(self.progress, self.direction); },
-        onLeaveBack: function() {
-          if (state !== STATE_IDLE_CLOSED) { kipiel.render(0); currentTimeKipiel = 0; currentTimeOrg = 0; state = STATE_IDLE_CLOSED; updateDebugStateW(); syncSectionBgReady(); }
-          lastWaveD[0] = lastWaveD[1] = lastWaveD[2] = lastWaveD[3] = '';
-        }
+        onLeave: function() { resetWaveStateFromScroll(); },
+        onLeaveBack: function() { resetWaveStateFromScroll(); }
       });
       gsapInstances.push(stWaveScroll);
 
