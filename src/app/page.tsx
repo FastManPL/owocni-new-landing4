@@ -43,7 +43,9 @@ const FinalSection = dynamic(() =>
 
 function pickHeroParams(sp: Record<string, string | string[] | undefined>) {
   const out: { kw?: string | string[]; agid?: string | string[] } = {};
+  // Dokumentacja CSV / Ads: słowo kluczowe często przychodzi jako utm_term, nie jako kw.
   if (sp.kw !== undefined) out.kw = sp.kw;
+  else if (sp.utm_term !== undefined) out.kw = sp.utm_term;
   if (sp.agid !== undefined) out.agid = sp.agid;
   return out;
 }
