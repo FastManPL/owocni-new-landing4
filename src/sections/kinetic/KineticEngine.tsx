@@ -340,9 +340,11 @@ import './kinetic-section.css';
         const FORM_START   = 0;
         const FORM_END     = 2.0;
         const ROTATE_START = 3.5;
-        const ROTATE_END   = 9.5;
-        const COLLAPSE_START = 9.5;
-        const COLLAPSE_END = 12.10; // v140: was 10.80 — 2× longer collapse (1.3→2.6U)
+        // Zsynchronizowane z SNAP2_KINETIC_U (główny init): dłuższa faza „?” przed snap2 =
+        // więcej scrollu zanim cylinder wrap zasłoni B1 (Blok45 wjeżdża wyżej w kadrze).
+        const ROTATE_END   = 12.5;
+        const COLLAPSE_START = 12.5;
+        const COLLAPSE_END = 15.10; // +2.6U collapse (jak 9.5→12.10)
         
         // ═══════════════════════════════════════════════════════════
         // MAPPING: Bridge × BRIDGE_MULTIPLIER, liniowe formProgress
@@ -1022,13 +1024,13 @@ import './kinetic-section.css';
                 state.rotateProgress = 0;
                 state.collapseProgress = 0;
             }
-            // FAZA 2: Obrót + zmiana koloru (U:3.5 → U:9.5)
+            // FAZA 2: Obrót + zmiana koloru (U:3.5 → U:ROTATE_END)
             else if (currentUnit <= ROTATE_END) {
                 state.formProgress = 1;
                 state.rotateProgress = Math.max(0, (currentUnit - ROTATE_START) / (ROTATE_END - ROTATE_START));
                 state.collapseProgress = 0;
             }
-            // FAZA 3: Collapse (U:9.5 → U:12.10)
+            // FAZA 3: Collapse (COLLAPSE_START → COLLAPSE_END)
             // v140: ease-in on cp → slow start forward (mirrors the nice slow reassembly backward)
             else if (currentUnit <= COLLAPSE_END) {
                 state.formProgress = 1;
@@ -1539,7 +1541,7 @@ import './kinetic-section.css';
                     var kineticUnit = currentUnit - bridgeI;
                     // v139: Subtract DELTA so rotation/collapse fire at shifted timeline positions
                     // kU=3.5+DELTA → passes 3.5 → ROTATE_START → rp=0 (push moment)
-                    // kU=9.5+DELTA → passes 9.5 → ROTATE_END → rp=1 (SNAP2)
+                    // kU=SNAP2_KINETIC+DELTA → ROTATE_END → rp=1 (SNAP2)
                     var delta = _s.DELTA || 0;
                     updatePhases(Math.max(FORM_END, kineticUnit - delta));
                     // ROTATION OVERRIDE: bypass delta dead zone (4.13U pause at SNAP1)
@@ -2324,8 +2326,12 @@ import './kinetic-section.css';
             // ============================================
             // BRIDGE: Obliczenia dynamiczne
             // ============================================
-            const KINETIC_U = 23.0; // Speed Ramp v3: +4U (was 19.0)
-            const SCROLL_KINETIC = 3526; // Speed Ramp v3: 23 × 153.3 (was 2912)
+            // Całkowita „długość” odcinka kinetic w jednostkach U (musi się zgadzać ze SCROLL_KINETIC).
+            // +3U vs 23: późniejszy SNAP2 → więcej scrollu zanim wave-wrap; SNAP3 przesunięte o tyle samo.
+            const KINETIC_U = 26.0;
+            const SCROLL_KINETIC = Math.round((3526 * KINETIC_U) / 23); // zachowaj px/U ≈ jak 3526/23
+            /** Jednostki kinetic (po moście I): moment drugiego twardego snap / koniec obrotu „!→?”. */
+            const SNAP2_KINETIC_U = 12.5; // było 9.5 — więcej treści B1 w kadrze zanim Blok45 + wrap */
             
             // ═══════════════════════════════════════════════════════════
             // BRIDGE MULTIPLIER — kontrola tempa pierwszej fazy
@@ -2417,8 +2423,8 @@ import './kinetic-section.css';
             
             // SNAP1 = I + 4.5 (wizualnie identyczny z obecnym)
             const SNAP1_U = B1_FULL_DRAW_U;
-            const SNAP2_U = I + 9.5 + DELTA;
-            const SNAP3_U = I + 23.0 + DELTA;
+            const SNAP2_U = I + SNAP2_KINETIC_U + DELTA;
+            const SNAP3_U = I + KINETIC_U + DELTA;
             
             // SNAP GATE VALUES
             const KINETIC_SNAPS = [SNAP1_U, SNAP2_U, SNAP3_U].map(u => u / TOTAL_U);
@@ -2831,8 +2837,8 @@ import './kinetic-section.css';
             pinnedTl.addLabel("start", I);
             pinnedTl.addLabel("block1", SNAP1_U);
             pinnedTl.addLabel("block2", 9.0 + I + DELTA);
-            pinnedTl.addLabel("block3", 22.0 + I + DELTA);
-            pinnedTl.addLabel("end", 23.0 + I + DELTA);
+            pinnedTl.addLabel("block3", 25.0 + I + DELTA);
+            pinnedTl.addLabel("end", 26.0 + I + DELTA);
             
             // BLOCK 1 — tekst startuje na I, zero early offset
             // Text starts 60% earlier than b1Start — slower formation, more time to read
@@ -2857,14 +2863,13 @@ import './kinetic-section.css';
             var ROTATE_START_U = I + 3.5 + DELTA;
             var _lineStagger = 0.5;
             
-            // SYNCED wrap: overlaps with forward push, all lines end at SNAP2
-            // Większy offset od SNAP1 = późniejszy start cylindra.
-            // Twardy limit: ostatnia linia startuje WRAP_START+1.5U, min. czas 0.35U → WRAP_START ≤ SNAP2−1.85
-            // (inaczej wrap „wystaje” poza SNAP2 przy krótkim SNAP2−SNAP1).
+            // SYNCED wrap: overlaps with forward push, all lines end at SNAP2.
+            // SNAP2 przesunięty o +3U (SNAP2_KINETIC_U) → więcej scrollu zanim wrap / Blok45 nad Kinetic.
+            // Twardy limit: WRAP_START ≤ SNAP2−1.85 (ostatnia linia + min. czas cylindra).
             var _wrapStaggerSpan = 3 * _lineStagger;
             var _wrapFloorDur = 0.35;
             var WRAP_START_U = Math.min(
-              SNAP1_U + 11.75,
+              SNAP1_U + 12.5,
               SNAP2_U - _wrapStaggerSpan - _wrapFloorDur,
             );
             var WRAP_DUR_BASE = Math.max(
@@ -3204,7 +3209,7 @@ import './kinetic-section.css';
             // ═══ B1 GRAVITY DROP — trigger-to-play (ONLY B1, not B2) ═══
             // Forward: SNAP2 arrival → letters fall real-time
             // Backward: SNAP3→SNAP2 → letters return (reverse) real-time
-            var COLLAPSE_THIRD = (12.10 - 9.5) / 3;
+            var COLLAPSE_THIRD = (15.10 - 12.5) / 3;
             
             var _b1DropTl = gsap.timeline({ paused: true });
             var _b1Dropped = false;
@@ -3376,16 +3381,16 @@ import './kinetic-section.css';
             gsap.set([b3Lines, b3Bold], { transformOrigin: "left center" });
             
             // BLOCK 3 - POZYCJA ABSOLUTNA 10.04 (przesunięte -2.7)
-            pinnedTl.set(b3, { autoAlpha: 1 }, 10.04 + I + DELTA);
+            pinnedTl.set(b3, { autoAlpha: 1 }, 13.04 + I + DELTA);
             pinnedTl.fromTo(b3Lines, 
                 { y: 60, opacity: 0, scale: 1 }, 
                 { y: 0, opacity: 1, scale: 1.08, duration: 8.0, stagger: 0.6, ease: "none" },
-                10.04 + I + DELTA);
+                13.04 + I + DELTA);
             
             pinnedTl.fromTo(b3Bold, 
                 { opacity: 0, scale: 0.95, y: 60 }, 
                 { opacity: 1, scale: 1.12, y: 0, duration: 7.0, ease: "none" },
-                12.44 + I + DELTA);
+                15.44 + I + DELTA);
 
             // CYLINDER INTRO - Speed Ramp v3: 13+I (was 11+I), dur 9 (was 7)
             // Responsywne wartości z pomiarów użytkownika
@@ -3467,13 +3472,13 @@ import './kinetic-section.css';
                 scale: cylEndScale,
                 duration: 9.60,   // v140: was 11.96 — delayed start, same end point
                 ease: "none" 
-            }, 12.40 + I + DELTA);  // v140: after collapse end (was 10.04) — no overlap with particles
+            }, 15.40 + I + DELTA);  // po collapse cząsteczek (COLLAPSE_END 15.1 w U kinetic)
             pinnedTl.to(_s.cylinder ? _s.cylinder.state : {}, { 
                 opacity: 1, 
                 rotation: _s.cylinder ? _s.cylinder.getRotationForNumber(98) : 0,
                 duration: 9.60,   // v140: was 11.96
                 ease: "none" 
-            }, 12.40 + I + DELTA);  // v140: after collapse end
+            }, 15.40 + I + DELTA);
             
             // CYLINDER SCALE - już ustawiony wyżej w głównym gsap.set/pinnedTl.to
             
@@ -3507,14 +3512,14 @@ import './kinetic-section.css';
                 stagger: 0.06,
                 ease: "power2.out",
                 immediateRender: false
-            }, 14.3 + I + DELTA);
+            }, 17.3 + I + DELTA);
             
             pinnedTl.to(b3HeaderChars, {
                 color: "#141414",
                 duration: 5.5,
                 stagger: 0.06,
                 ease: "power1.inOut"
-            }, 14.6 + I + DELTA);
+            }, 17.6 + I + DELTA);
             
             // GEMIUS HEADER - pozostaje stabilny i widoczny na U:23
             
@@ -3528,7 +3533,7 @@ import './kinetic-section.css';
             gsap.set(b1, { scale: 0.95, transformOrigin: "center center" });
             pinnedTl.to(b1, {
                 scale: 1.08,
-                duration: 13 + DELTA, // covers B1 visibility until exit at 9.50+I+DELTA
+                duration: SNAP2_U - b1AnimStart,
                 ease: "power2.in"
             }, b1AnimStart);
             
@@ -3544,7 +3549,7 @@ import './kinetic-section.css';
                 scale: 1.12,
                 duration: 8.0,
                 ease: "power3.out"
-            }, 10.3 + I + DELTA);
+            }, 13.3 + I + DELTA);
             
             // ============================================
             // BLOCK 1 - SEKWENCYJNE ZWIJANIE LINII W DÓŁ
@@ -3569,7 +3574,7 @@ import './kinetic-section.css';
             // ============================================
             // PARTICLE QMARK - animacje canvasu w timeline
             // Pozycja a) SNAP1_U (B1_FULL_DRAW) → Scale 1.30, Y 14px, Opacity 1.0 ("!" uformowany)
-            // Pozycja b) SNAP2_U (I+9.5) → Scale 1.65, Y 55px ("?" widoczny)
+            // Pozycja b) SNAP2_U (I+SNAP2_KINETIC_U) → Scale 1.65, Y 55px ("?" widoczny)
             // U:10.80+I → Collapse zakończony, cząsteczki zniknęły
             // Fazy form/rot/collapse sterowane wewnętrznie przez komponent
             // ============================================
@@ -3617,12 +3622,12 @@ import './kinetic-section.css';
                 ease: "power2.inOut"
             }, SNAP1_U);
             
-            // U:9.50+I → U:12.10+I: COLLAPSE + FADE OUT canvasu (2× longer)
+            // Od SNAP2: fade canvasu równolegle z fazą collapse cząsteczek (2.6U → COLLAPSE_END 15.1)
             pinnedTl.to(pqCanvas, {
                 opacity: 0,
-                duration: 2.60, // v140: was 1.30 — synced with COLLAPSE_END 12.10
+                duration: 2.60,
                 ease: "power2.in"
-            }, 9.50 + I + DELTA);
+            }, SNAP2_U);
             
             // Brightness 60% — stały od początku (bez tweenu)
 
@@ -4084,11 +4089,11 @@ import './kinetic-section.css';
             gsap.set(nigdyGlow, { scale: 0, rotation: -185, transformOrigin: "center center" }); // v140: rotation baked from panel
             
             // Timing - przesunięty o -2.7 (cała animacja skrócona)
-            const bgStart = 13.80 + I + DELTA; // Speed Ramp v3: ORYGINALNA pozycja — 0.6U po junction, vel=36% burst
-            const textStart = 15.80 + I + DELTA; // Speed Ramp v3: ORYGINALNA pozycja — 2.6U po junction, vel=22% burst
+            const bgStart = 16.80 + I + DELTA; // +3U w zestawie z SNAP2/particle collapse
+            const textStart = 18.80 + I + DELTA;
             const textDuration = 7.2; // Speed Ramp v3: was 2.5 (2.9× stretch → NIGDY gęstnieje w slow-mo)
             const bgIntroDuration = 9.2; // Speed Ramp v3: was 4.5 (2× stretch → plate wypełnia do snap3)
-            const glowStart = 10.80 + I + DELTA; // Start glow intro
+            const glowStart = 13.80 + I + DELTA; // Start glow intro (z B3)
             
             // v140: luminosity removed — math proves ΔE=0 (white gradient on warm bg = identical in normal/luminosity)
             // Saves GPU isolated compositing group during peak load at SNAP2
@@ -4119,14 +4124,14 @@ import './kinetic-section.css';
             // === BLASZKA INTRO: ciągła organiczna animacja od pojawienia B3 ===
             // v140: was starting at bgStart (13.80) with 3.76U dead zone
             // Now: starts at 10.04 (B3 text), ends at same point (bgStart+bgIntroDuration)
-            var _plateFullDuration = (bgStart + bgIntroDuration) - (10.04 + I + DELTA);
+            var _plateFullDuration = (bgStart + bgIntroDuration) - (13.04 + I + DELTA);
             pinnedTl.to(nigdyPlate, {
                 opacity: 1,
                 scale: 0.85,
                 rotation: -9,
                 duration: _plateFullDuration,
                 ease: "power2.out"
-            }, 10.04 + I + DELTA);
+            }, 13.04 + I + DELTA);
             
             // === TEKST INTRO: fontWeight 300→700 in 8 steps (was 4 = visible jumps) ===
             // 50-unit increments: 300→350→400→450→500→550→600→650→700
@@ -4215,7 +4220,7 @@ import './kinetic-section.css';
                 duration: 2.0,
                 ease: "power2.out",
                 onUpdate: _vigApply
-            }, 22.0 + I + DELTA);
+            }, 25.0 + I + DELTA);
         }
 
         // ============ TEXT MARKERS — SVG stroke animations ============
