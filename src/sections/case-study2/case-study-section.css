@@ -214,8 +214,19 @@
       object-fit: contain;
       display: block;
     }
+    #case-study-video-popup .wp-video-wrap wistia-player {
+      display: block;
+      width: 100%;
+      height: 100%;
+    }
+    #case-study-video-popup .wp-video-wrap wistia-player[media-id='7agfboivfi']:not(:defined) {
+      background: center / contain no-repeat
+        url('https://fast.wistia.com/embed/medias/7agfboivfi/swatch');
+      filter: blur(5px);
+    }
     @supports not (aspect-ratio: 16 / 9) {
       #case-study-video-popup .wp-video-wrap video { position: absolute; top: 0; left: 0; }
+      #case-study-video-popup .wp-video-wrap wistia-player { position: absolute; top: 0; left: 0; }
     }
     #case-study-video-popup .wp-content {
       padding: clamp(1.2rem, 3.5vw, 2.2rem) clamp(1.5rem, 4vw, 2.5rem);

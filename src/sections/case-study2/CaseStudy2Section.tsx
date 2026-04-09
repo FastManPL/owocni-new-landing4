@@ -1,18 +1,30 @@
 // @ts-nocheck — sekcja robocza (silnie typowana w Fabryce); import z page.tsx wymusza check bez exclude.
 'use client';
 
-import { useLayoutEffect, useRef, useState } from 'react';
+import { createElement, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import Script from 'next/script';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { scrollRuntime } from '@/lib/scrollRuntime';
 import './case-study-section.css';
 
+/** Wistia embed — ładowany dopiero po pierwszym otwarciu popupu (jak Wyniki / wzrost przychodów). */
+const WISTIA_MEDIA_ID = '7agfboivfi';
+
+type CaseStudyInitCallbacks = {
+  onPopupOpen?: () => void;
+  onPopupClose?: () => void;
+};
+
 // ⚠️ GSAP-SSR-01: ZAKAZ gsap.registerPlugin() na module top-level.
 // registerPlugin() WYŁĄCZNIE wewnątrz useGSAP(() => { ... }).
 
-function init(container: HTMLElement): { kill: () => void; pause: () => void; resume: () => void } {
+function init(
+  container: HTMLElement,
+  callbacks?: CaseStudyInitCallbacks,
+): { kill: () => void; pause: () => void; resume: () => void } {
   /* FIX: null container guard — SPA / async mount safety */
   if (!container) return { pause: function(){}, resume: function(){}, kill: function(){} };
 
@@ -273,6 +285,8 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
   /* Popup renderowany przez portal na document.body — poza #case-study-section */
   var popup      = document.getElementById('case-study-video-popup');
   var bodyOverflowLocked = false;   /* N5: guard */
+  var popupIsOpen = false;
+  var closePopup = function() {};
 
   if (rightPanel && popup) {
     /* ─── CREATE PLAY BUTTON SVG ─────────────────────────────── */
@@ -392,17 +406,20 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
       cleanups.push(function() { bgVideo.removeEventListener('timeupdate', onTimeUpdate); });
     }
 
-    /* ─── POPUP LOGIC ────────────────────────────────────────── */
-    var popupVid = popup.querySelector('video');
+    /* ─── POPUP LOGIC (Wistia — skrypty dopiero po onPopupOpen, jak WynikiSection) ─── */
+    closePopup = function() {
+      if (!popupIsOpen) return;
+      popupIsOpen = false;
+      callbacks?.onPopupClose?.();
+      document.documentElement.style.overflow = '';
+      document.body.style.overflow = '';
+      bodyOverflowLocked = false;
+    };
 
     function openPopup() {
-      if (popup.classList.contains('is-open')) return;
-      if (popupVid) {
-        popupVid.src = '/wyniki/Parkapp.mp4';
-        popupVid.load();           /* FIX: wymuszenie bufora dla iOS Safari */
-        popupVid.currentTime = 0;
-      }
-      popup.classList.add('is-open');
+      if (popupIsOpen) return;
+      popupIsOpen = true;
+      callbacks?.onPopupOpen?.();
       /*
        * Blokada tła jak w WynikiSection (overflow) — BEZ position:fixed + top.
        * Wzorzec iOS (fixed body + scrollTo przy close) psuje Lenis: po unlock skok na górę.
@@ -410,22 +427,6 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
       document.documentElement.style.overflow = 'hidden';
       document.body.style.overflow = 'hidden';
       bodyOverflowLocked = true;
-      if (popupVid) {
-        var pp = popupVid.play();
-        if (pp !== undefined) pp.catch(function() {});
-      }
-    }
-
-    function closePopup() {
-      popup.classList.remove('is-open');
-      document.documentElement.style.overflow = '';
-      document.body.style.overflow = '';
-      bodyOverflowLocked = false;
-      if (popupVid) {
-        popupVid.pause();
-        popupVid.removeAttribute('src');
-        popupVid.load();
-      }
     }
 
     var onRightPanelClick = function(e) { e.preventDefault(); openPopup(); };
@@ -474,7 +475,7 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
     }
 
     var onEscKey = function(e) {
-      if (e.key === 'Escape' && popup.classList.contains('is-open')) closePopup();
+      if (e.key === 'Escape' && popupIsOpen) closePopup();
     };
     document.addEventListener('keydown', onEscKey);
     cleanups.push(function() { document.removeEventListener('keydown', onEscKey); });
@@ -554,11 +555,9 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
     pause(); /* ensure paused before teardown */
     /* Background video: tylko pause — src jest w statycznym HTML, nie usuwaj */
     if (bgVideo) { bgVideo.pause(); }
-    /* Domknij popup jeśli otwarty */
-    if (popup && popup.classList.contains('is-open')) {
-      popup.classList.remove('is-open');
-      var v = popup.querySelector('video');
-      if (v) { v.pause(); v.removeAttribute('src'); v.load(); }
+    /* Domknij popup jeśli otwarty — onPopupClose pauzuje Wistia po stronie React */
+    if (popup && popupIsOpen) {
+      closePopup();
     }
     /* B-CPU-05: tickery/RAF → listeners → observers → timelines → ST */
     cleanups.forEach(function(fn) { try { fn(); } catch(e) {} });
@@ -581,7 +580,54 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
 
 export function CaseStudy2Section() {
   const rootRef = useRef<HTMLElement | null>(null);
+  const popupContainerRef = useRef<HTMLDivElement | null>(null);
   const [portalReady, setPortalReady] = useState(false);
+  const [popupOpen, setPopupOpen] = useState(false);
+  const [wistiaActivated, setWistiaActivated] = useState(false);
+
+  const cbRef = useRef({
+    onPopupOpen: () => {},
+    onPopupClose: () => {},
+  });
+  cbRef.current.onPopupOpen = () => {
+    setPopupOpen(true);
+    setWistiaActivated(true);
+  };
+  cbRef.current.onPopupClose = () => {
+    setPopupOpen(false);
+    const host = popupContainerRef.current?.querySelector('wistia-player') as
+      | (HTMLElement & { pause?: () => Promise<unknown> | void })
+      | null;
+    if (host && typeof host.pause === 'function') {
+      try {
+        void host.pause();
+      } catch {}
+    }
+  };
+
+  useEffect(() => {
+    if (!wistiaActivated || !popupOpen) return;
+    let cancelled = false;
+    const playWhenReady = () => {
+      if (cancelled) return;
+      const host = popupContainerRef.current?.querySelector('wistia-player') as
+        | (HTMLElement & { play?: () => Promise<unknown> })
+        | null;
+      if (host && typeof host.play === 'function') {
+        host.play().catch(() => {});
+      }
+    };
+    customElements
+      .whenDefined('wistia-player')
+      .then(() => {
+        requestAnimationFrame(playWhenReady);
+        window.setTimeout(playWhenReady, 220);
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [wistiaActivated, popupOpen]);
 
   useLayoutEffect(() => {
     setPortalReady(true);
@@ -597,17 +643,39 @@ export function CaseStudy2Section() {
       }
       return;
     }
-    const inst = init(el);
+    const inst = init(el, {
+      onPopupOpen: () => cbRef.current.onPopupOpen(),
+      onPopupClose: () => cbRef.current.onPopupClose(),
+    });
     return () => inst?.kill?.();
   }, { scope: rootRef, dependencies: [portalReady], revertOnUpdate: true });
 
   const popupMarkup = (
-    <div id="case-study-video-popup">
+    <div
+      id="case-study-video-popup"
+      ref={popupContainerRef}
+      className={popupOpen ? 'is-open' : undefined}
+    >
       <div className="wp-wrapper">
         <div className="wp-close">✕</div>
         <div className="wp-panel">
           <div className="wp-video-wrap">
-            <video controls playsInline preload="none"></video>
+            {wistiaActivated && popupOpen ? (
+              <>
+                <Script src="https://fast.wistia.com/player.js" strategy="afterInteractive" />
+                <Script
+                  src={`https://fast.wistia.com/embed/${WISTIA_MEDIA_ID}.js`}
+                  strategy="afterInteractive"
+                  type="module"
+                />
+                {createElement('wistia-player', {
+                  'media-id': WISTIA_MEDIA_ID,
+                  seo: 'false',
+                  aspect: '1.7777777777777777',
+                  autoplay: 'true',
+                })}
+              </>
+            ) : null}
           </div>
           <div className="wp-content">
             <span className="wp-tag">Zobacz jak to działa</span>
