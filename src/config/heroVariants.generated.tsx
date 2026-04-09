@@ -274,6 +274,27 @@ export const KEYWORD_VARIANTS: Record<string, HeroVariant> = {
 }
 
 /**
+ * Utm / keyword z Google Ads często bez polskich znaków (krakow vs kraków).
+ * Lookup musi trafiać w te same wpisy co match_value z CSV (z diakrytykami).
+ */
+function foldPolishDiacritics(s: string): string {
+  return s
+    .replace(/ą/g, 'a')
+    .replace(/ć/g, 'c')
+    .replace(/ę/g, 'e')
+    .replace(/ł/g, 'l')
+    .replace(/ń/g, 'n')
+    .replace(/ó/g, 'o')
+    .replace(/ś/g, 's')
+    .replace(/ź/g, 'z')
+    .replace(/ż/g, 'z')
+}
+
+const KEYWORD_VARIANTS_FOLDED: Record<string, HeroVariant> = Object.fromEntries(
+  Object.entries(KEYWORD_VARIANTS).map(([k, v]) => [foldPolishDiacritics(k), v])
+)
+
+/**
  * TODO: uzupełnij realne mapowanie agid -> group_slug z Google Ads.
  * resolveHeroVariant działa już bez tego dla keywordów i fallbacku globalnego.
  */
@@ -299,11 +320,12 @@ export function resolveHeroVariant(params: {
   agid?: string | string[]
 }): HeroVariant {
   const kw = normalizeParam(params.kw)
+  const kwKey = foldPolishDiacritics(kw)
   const agid = normalizeParam(params.agid)
   const groupSlug = AGID_TO_GROUP[agid]
 
   return (
-    (kw && KEYWORD_VARIANTS[kw]) ||
+    (kw && KEYWORD_VARIANTS_FOLDED[kwKey]) ||
     (groupSlug && GROUP_DEFAULTS[groupSlug]) ||
     GLOBAL_DEFAULT
   )
