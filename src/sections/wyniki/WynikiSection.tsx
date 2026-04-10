@@ -496,20 +496,17 @@ export function WynikiSection() {
 
   useEffect(() => {
     if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') return;
-    const mqMobile = window.matchMedia('(max-width: 720px)');
     const mqReduced = window.matchMedia('(prefers-reduced-motion: reduce)');
 
     const apply = () => {
-      // Mobile i reduced-motion: mniej pracy CPU/GPU w sekcji hero-adjacent.
-      setAllowInlineAutoplay(!(mqMobile.matches || mqReduced.matches));
+      // Tylko reduced-motion wyłącza autoplay. Mobile: muted + playsInline — zgodne z polityką autoplay iOS/Android.
+      setAllowInlineAutoplay(!mqReduced.matches);
     };
     apply();
 
     const onChange = () => apply();
-    mqMobile.addEventListener?.('change', onChange);
     mqReduced.addEventListener?.('change', onChange);
     return () => {
-      mqMobile.removeEventListener?.('change', onChange);
       mqReduced.removeEventListener?.('change', onChange);
     };
   }, []);

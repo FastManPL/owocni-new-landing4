@@ -132,7 +132,8 @@
                 --badge20-ml: 0;
                 --cta-mr: 0;
                 --cta-mt: 2rem;
-                --cta-width: 100%;
+                /* Jak w gwarancja-section: szerokość dopasowana do CTA, nie 100% — ta sama skala wizualna na mobile */
+                --cta-width: auto;
                 --h1-lead-gap: 3rem;  /* 1.5x odstęp między H1 a opisem */
             }
         }
@@ -1235,30 +1236,8 @@
             #hero-section .cta-group { transform: scale(0.50); transform-origin: center top; }
         }
         
-        /* ENHANCEMENT: Safari/Chrome (zoom supported — better layout flow) */
-        @supports (zoom: 1) {
-            @media (max-width: 450px) {
-                #hero-section .cta-group { transform: none; zoom: 0.85; }
-            }
-            @media (max-width: 420px) {
-                #hero-section .cta-group { transform: none; zoom: 0.80; }
-            }
-            @media (max-width: 390px) {
-                #hero-section .cta-group { transform: none; zoom: 0.75; }
-            }
-            @media (max-width: 360px) {
-                #hero-section .cta-group { transform: none; zoom: 0.70; }
-            }
-            @media (max-width: 330px) {
-                #hero-section .cta-group { transform: none; zoom: 0.65; }
-            }
-            @media (max-width: 300px) {
-                #hero-section .cta-group { transform: none; zoom: 0.60; }
-            }
-            @media (max-width: 270px) {
-                #hero-section .cta-group { transform: none; zoom: 0.50; }
-            }
-        }
+        /* Mobile CTA: ten sam stos co #gwarancja-section (transform + transform-origin).
+           Zoom zostawiamy wyłączony — na iOS Safari dawał większy wizualnie przycisk niż w Gwarancji. */
 
         /* Badge caption - wspólne style */
         #hero-section .badge-caption {

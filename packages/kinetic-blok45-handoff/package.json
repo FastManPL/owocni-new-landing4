@@ -1,0 +1,32 @@
+{
+  "name": "kinetic-blok45-handoff",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Izolowana mini-aplikacja Next.js: tylko Kinetic + Blok 4–5 (ten sam kod silników co główny LP).",
+  "engines": {
+    "node": "20.x"
+  },
+  "scripts": {
+    "dev": "next dev -p 3001",
+    "build": "next build",
+    "start": "next start -p 3001",
+    "typecheck": "tsc --noEmit",
+    "sync": "node scripts/sync-from-main-lp.mjs"
+  },
+  "dependencies": {
+    "@gsap/react": "2.1.1",
+    "gsap": "3.12.7",
+    "lenis": "1.1.18",
+    "next": "16.1.6",
+    "react": "19.0.0",
+    "react-dom": "19.0.0",
+    "three": "^0.183.2"
+  },
+  "devDependencies": {
+    "@types/node": "20.17.19",
+    "@types/react": "19.0.10",
+    "@types/react-dom": "19.0.4",
+    "@types/three": "^0.183.1",
+    "typescript": "5.7.3"
+  }
+}

@@ -2,7 +2,7 @@
    SECTION CSS: love-wall — velocity cards (RENAMED + NAMESPACED)
    ============================================================ */
 #love-wall-section{--card-width:498px;--card-height:280px;--card-gap:32px;--card-padding:36px 45px 22px 45px;--card-radius:1.25rem;--card-bg:#f7f6f4;--section-bg:#f7f6f4;--star-gold:#f5c518;--text-primary:#222;--text-gray:#434343;--border-dark:#D0CEC8;--row-padding-block:60px;--row-padding-left:16px}
-#love-wall-section{position:relative;padding:80px 0;overflow:visible;margin-bottom:128px;background-color:var(--section-bg);isolation:isolate;contain:style}
+#love-wall-section{position:relative;padding:80px 0;overflow:visible;margin-bottom:128px;background-color:var(--section-bg);isolation:isolate;contain:layout}
 #love-wall-section .rows-wrapper{display:flex;flex-direction:column;overflow:visible;position:relative}
 @media(min-width:1700px){#love-wall-section .rows-wrapper{max-width:2500px;margin-left:auto;margin-right:auto}}
 /* Edge fade: overlay divs instead of mask-image.
@@ -115,7 +115,8 @@ body.debug-mode #love-wall-section .debug-panel{display:block}
   /* Mobile containment: rows-wrapper clips horizontal only — prevents iOS elastic scroll.
      overflow-x:clip does NOT coerce overflow-y (unlike hidden) → translateY offsets on rows stay visible.
      Does NOT create scroll container → GSAP ScrollTrigger unaffected. */
-  #love-wall-section .rows-wrapper{overflow-x:clip}
+  /* Safari iOS: overflow-x:clip na wrapperze potrafi obcinać dół sekcji — klip poziomy zostaje na .row-clip */
+  #love-wall-section .rows-wrapper{overflow-x:visible}
   #love-wall-section .row-clip{overflow-clip-margin:200px}
   #love-wall-section .row-viewport{overflow-clip-margin:200px;touch-action:pan-y}
   /* Mobile: narrower fade (8%/60px) to not eat into card visible area on ≤375px */

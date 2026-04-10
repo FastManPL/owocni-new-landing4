@@ -167,6 +167,13 @@
   }
 }
 
+/* Mobile: więcej powietrza nad pierwszym wierszem kafelków („4 etapy”), żeby nagłówek nie nachodził na blok WZROSTU */
+@media (max-width: 768px) {
+  #cyfrowe-wzrosty-section #cyfrowe-wzrosty-tiles-wrapper {
+    padding-top: calc(clamp(40px, 15.3vw, 220px) * 1.05 + 8.5rem);
+  }
+}
+
 /* TILES TRACK
    PROD: brak touch-action:pan-x — przeglądarka zarządza kierunkiem gestu natywnie,
    overflow-x:auto obsługuje horizontal scroll, Lenis obsługuje vertical */

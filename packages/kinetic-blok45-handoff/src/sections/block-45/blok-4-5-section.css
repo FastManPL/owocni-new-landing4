@@ -1,0 +1,820 @@
+/* ============================================================
+   SEKCJA: blok-4-5 — NAMESPACED CSS
+   Każdy selektor prefixowany #blok-4-5-section
+   ============================================================ */
+
+/* --- Lokalne custom properties (ex-:root) --- */
+#blok-4-5-section {
+    --bg-color: #f7f6f4;
+    --text-color: #141414;
+    --highlight-color: #141414;
+    position: relative;
+    /* Tło dopiero po klasie .blok45-bg-ready (po domknięciu fali w JS) — inaczej psuje przejście z Kinetic. */
+    /* Nad #bridge-wrapper (z-index:10) — cała sekcja nad Kinetic. */
+    z-index: 12;
+    isolation: isolate; /* FACTORY: B-ISO-01 — stacking context */
+    /* Integracja LP: sekcja wyżej w flow — intro widać wcześniej u dołu ekranu podczas końcówki Kinetic + wave */
+    margin-top: clamp(-92vh, -64vh, -44vh);
+    overflow: visible; /* „i wychodzą” — napis musi móc wychodzić w bok (translateX) */
+}
+@media (max-width: 599px) {
+    #blok-4-5-section {
+        margin-top: clamp(-68vh, -48vh, -32vh);
+    }
+}
+#blok-4-5-section.blok45-bg-ready {
+    background: var(--bg-color);
+}
+/* Gdy wave jest widoczna (kurtyna) — podbicie nad bridge; wave-wrap ma własny z-index między Kinetic a napisami. */
+#blok-4-5-section.wave-reveal-active {
+    z-index: 20;
+}
+/* Popup musi wygrać stacking context także nad sekcją kinetic (mobile/desktop). */
+#blok-4-5-section.popup-overlay-active {
+    z-index: 30001;
+    /* Sekcja bez tła + backdrop-filter na overlay próbkują warstwy spodu (Kinetic w #bridge-wrapper) — widać „przeświecanie” przy scrollu. */
+    background: var(--bg-color);
+}
+/* backdrop-filter miesza w live treść pod overlay; wyłączamy przy popupie i zostawiamy mocniejszy kolor (bez próbkowania Kinetic). */
+#blok-4-5-section.popup-overlay-active .overlay.visible {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    background: rgba(24, 20, 16, 0.94);
+}
+/* --- Globalne style tekstu --- */
+#blok-4-5-section .line {
+    font-size: clamp(1.8rem, 4vw, 3.5rem);
+    line-height: 1.2;
+    font-weight: 300;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    white-space: normal;
+    text-align: center;
+}
+
+#blok-4-5-section .line-large {
+    font-size: clamp(2.8rem, 6.2vw, 5.5rem);
+    line-height: 1.1;
+    letter-spacing: -0.02em;
+}
+
+#blok-4-5-section .line-small {
+    font-size: clamp(1rem, 2vw, 2rem);
+    line-height: 1.5;
+}
+
+#blok-4-5-section .body-copy-block {
+    display: block;
+}
+
+#blok-4-5-section .br-desktop-only { display: inline; }
+@media (max-width: 600px) { #blok-4-5-section .br-desktop-only { display: none; } }
+
+#blok-4-5-section .bold-line {
+    font-weight: 700;
+    color: var(--highlight-color);
+}
+
+/* --- BLOK 4 --- */
+#blok-4-5-section #blok-4-5-block-4 {
+    position: relative;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    z-index: 5;
+    overflow: visible;
+}
+
+#blok-4-5-section .illustration-container {
+    position: relative;
+    width: 100%;
+    overflow: visible;
+}
+
+#blok-4-5-section .text-above-illustration {
+    position: relative;
+    width: 100%;
+    text-align: center;
+    margin-bottom: 0.5rem;
+    z-index: 25;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.28em;
+}
+@media (min-width: 600px) {
+    #blok-4-5-section .text-above-illustration {
+        /* Intro jeszcze wyżej w sekcji */
+        padding-top: 0;
+        margin-top: clamp(-1.25rem, -2.2vh, -0.35rem);
+    }
+}
+@media (max-width: 599px) {
+    #blok-4-5-section .text-above-illustration {
+        margin-bottom: 0;
+        padding-top: 0;
+        margin-top: clamp(-0.75rem, -1.5vh, -0.2rem);
+    }
+}
+
+/* Intro nad ilustracją — ta sama skala co .void-section + ten sam „gradient text” co #blok-4-5-anchorChar */
+#blok-4-5-section .text-above-illustration .blok45-intro-line.blok45-intro-anchor-match {
+    position: relative;
+    display: block;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+    text-align: center;
+    font-size: clamp(1.6rem, 4vw, 4.6rem);
+    font-weight: 700;
+    line-height: 1.18;
+    white-space: normal;
+    transition: all 0.3s ease;
+    background: linear-gradient(180deg, #0a0a0a 0%, #0a0a0a 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+#blok-4-5-section .blok45-intro-line1 {
+    font-size: clamp(1.625rem, 3.6vw, 3.15rem);
+    line-height: 1.95;
+    font-weight: 700;
+    text-align: center;
+    color: #141414;
+}
+#blok-4-5-section .blok45-intro-line2 {
+    font-size: clamp(1.265rem, 2.68vw, 2.49rem);
+    line-height: 1.95;
+    font-weight: 500;
+    text-align: center;
+    color: #141414;
+}
+@media (min-width: 601px) {
+    #blok-4-5-section .blok45-intro-line1 { font-size: clamp(1.6rem, 4vw, 4.6rem); }
+    #blok-4-5-section .blok45-intro-line2 { font-size: clamp(1.625rem, 3.6vw, 3.15rem); }
+}
+#blok-4-5-section .blok45-intro-line3 {
+    font-size: clamp(1rem, 2vw, 2rem);
+    line-height: 1.95;
+    font-weight: 300;
+    text-align: center;
+    color: #141414;
+}
+
+/* ── Typograficzne oczy Łooooł ── */
+#blok-4-5-section .blok45-eyes-wrap {
+    display: inline-flex;
+    align-items: baseline;
+    white-space: nowrap;
+}
+#blok-4-5-section .blok45-letter {
+    display: inline-block;
+    line-height: 1;
+}
+#blok-4-5-section .blok45-eye {
+    position: relative;
+    display: inline-block;
+    line-height: 1;
+    margin-right: 0.05em;
+}
+#blok-4-5-section .blok45-pupil-arm {
+    position: absolute;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+    left: 50%; top: 60%;
+}
+#blok-4-5-section .blok45-pupil {
+    position: absolute;
+    width: 0.09em;
+    height: 0.09em;
+    background: #141414;
+    border-radius: 50%;
+    top: -0.045em;
+    left: -0.045em;
+    transform: translateX(0.06em);
+}
+
+/* MOBILE < 600px */
+@media (max-width: 599px) {
+    #blok-4-5-section .blok45-pair-a .blok45-pupil-arm {
+        animation: blok-4-5-gaze-a 7s cubic-bezier(0.7, 0, 0.3, 1) infinite;
+    }
+    #blok-4-5-section .blok45-pair-b .blok45-pupil-arm {
+        animation: blok-4-5-gaze-b 11s cubic-bezier(0.7, 0, 0.3, 1) infinite;
+    }
+    @keyframes blok-4-5-gaze-a {
+        0%   { transform: rotate(5deg);   }
+        12%  { transform: rotate(5deg);   }
+        22%  { transform: rotate(315deg); }
+        36%  { transform: rotate(315deg); }
+        44%  { transform: rotate(200deg); }
+        58%  { transform: rotate(200deg); }
+        65%  { transform: rotate(120deg); }
+        72%  { transform: rotate(120deg); }
+        79%  { transform: rotate(70deg);  }
+        90%  { transform: rotate(70deg);  }
+        100% { transform: rotate(5deg);   }
+    }
+    @keyframes blok-4-5-gaze-b {
+        0%   { transform: rotate(190deg); }
+        14%  { transform: rotate(190deg); }
+        22%  { transform: rotate(320deg); }
+        34%  { transform: rotate(320deg); }
+        40%  { transform: rotate(270deg); }
+        52%  { transform: rotate(270deg); }
+        55%  { transform: rotate(30deg);  }
+        59%  { transform: rotate(30deg);  }
+        68%  { transform: rotate(110deg); }
+        76%  { transform: rotate(110deg); }
+        82%  { transform: rotate(225deg); }
+        93%  { transform: rotate(225deg); }
+        100% { transform: rotate(190deg); }
+    }
+}
+
+/* DESKTOP >= 600px */
+@media (min-width: 600px) {
+    #blok-4-5-section .blok45-pair-a .blok45-pupil-arm {
+        animation: blok-4-5-gaze-a-desktop 7s cubic-bezier(0.7, 0, 0.3, 1) infinite;
+    }
+    #blok-4-5-section .blok45-pair-b .blok45-pupil-arm {
+        animation: none !important;
+    }
+    @keyframes blok-4-5-gaze-a-desktop {
+        0%   { transform: rotate(5deg);   }
+        12%  { transform: rotate(5deg);   }
+        22%  { transform: rotate(315deg); }
+        36%  { transform: rotate(315deg); }
+        44%  { transform: rotate(200deg); }
+        58%  { transform: rotate(200deg); }
+        65%  { transform: rotate(120deg); }
+        72%  { transform: rotate(120deg); }
+        79%  { transform: rotate(70deg);  }
+        90%  { transform: rotate(70deg);  }
+        100% { transform: rotate(5deg);   }
+    }
+}
+
+@media (max-width: 600px) {
+    #blok-4-5-section .blok45-intro-line1 { font-size: 8.25vw; }
+    #blok-4-5-section .blok45-intro-line2 { font-size: 5.94vw; }
+    #blok-4-5-section .blok45-intro-line3 { font-size: 4.27vw; }
+}
+
+#blok-4-5-section .text-on-illustration-top {
+    position: relative;
+    width: 100%;
+    text-align: center;
+    z-index: 25;
+    overflow: visible;
+}
+
+#blok-4-5-section .text-on-illustration-bottom {
+    position: relative;
+    width: 100%;
+    text-align: center;
+    margin-top: clamp(-7.8rem, -7.28vw, -1.3rem);
+    z-index: 25;
+}
+
+#blok-4-5-section .full-width-image {
+    position: relative;
+    z-index: 20;
+    background: transparent;
+    width: 100%;
+    max-width: 1800px;
+    margin-left: auto;
+    margin-right: auto;
+    margin-bottom: 0;
+    margin-top: -4rem;
+    aspect-ratio: 1800 / 627;
+    display: block;
+    mix-blend-mode: multiply;
+    opacity: 0.75;
+    -webkit-mask-image:
+        linear-gradient(to right,  transparent 0%, black 6.25%),
+        linear-gradient(to left,   transparent 0%, black 6.25%),
+        linear-gradient(to bottom, transparent 0%, black 6.25%),
+        linear-gradient(to top,    transparent 0%, black 6.25%);
+    -webkit-mask-composite: destination-in;
+    mask-image:
+        linear-gradient(to right,  transparent 0%, black 6.25%),
+        linear-gradient(to left,   transparent 0%, black 6.25%),
+        linear-gradient(to bottom, transparent 0%, black 6.25%),
+        linear-gradient(to top,    transparent 0%, black 6.25%);
+    mask-composite: intersect;
+}
+#blok-4-5-section .full-width-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+@media (min-width: 1200px) {
+    #blok-4-5-section .full-width-image { margin-top: -6rem; }
+}
+@media (max-width: 900px) and (min-width: 600px) {
+    #blok-4-5-section .full-width-image { margin-top: -3rem; }
+}
+@media (max-width: 599px) {
+    #blok-4-5-section .full-width-image {
+        max-width: 720px;
+        aspect-ratio: 720 / 627;
+        margin-top: -5.5rem;
+    }
+}
+
+/* --- ANIMACJA "ZMIENIĆ" --- */
+#blok-4-5-section .highlight-container {
+    position: relative;
+    display: inline-block;
+}
+
+#blok-4-5-section .gradient-text-reveal {
+    position: relative;
+    display: inline-block;
+    font-weight: 800;
+    background: linear-gradient(to right,
+        #111111 0%, #111111 15%,
+        #ff4836 35%, #fec501 50%,
+        #111111 70%, #111111 100%
+    );
+    background-size: 300% 100%;
+    background-position: 100% 0;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+#blok-4-5-section .gradient-text-reveal.active {
+    animation: blok-4-5-revealGradient 5.4s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+@keyframes blok-4-5-revealGradient {
+    from { background-position: 100% 0; }
+    to   { background-position: 0% 0; }
+}
+
+#blok-4-5-section .highlight-svg-box {
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transform: translate(0, 80%);
+    transform-origin: center;
+    pointer-events: none;
+    opacity: 0;
+}
+
+#blok-4-5-section .highlight-svg-box.active { opacity: 1; }
+
+#blok-4-5-section .highlight-svg-box.active .draw-anim {
+    animation: blok-4-5-drawStroke 3.2s cubic-bezier(0.22, 1, 0.36, 1) 0.3s forwards;
+}
+
+#blok-4-5-section .draw-anim {
+    fill: none;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+}
+
+@keyframes blok-4-5-drawStroke {
+    to { stroke-dashoffset: 0; }
+}
+
+/* --- BLOK 5 --- */
+
+@property --blok-4-5-angle-1 {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: -75deg;
+}
+
+@property --blok-4-5-angle-2 {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: -45deg;
+}
+
+#blok-4-5-section .konwersja-wrap {
+  --global--size: clamp(1.2308rem, 3.0769vw, 3.5385rem);
+  --btn-ease: cubic-bezier(0.16, 1, 0.3, 1);
+  --btn-dur: 1s;
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: var(--global--size);
+}
+
+#blok-4-5-section .glow {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 24.9em;
+  height: 11.34em;
+  transform: translate(-50%, -50%) scale(0);
+  transform-origin: center center;
+  border-radius: 50%;
+  pointer-events: none;
+  z-index: 0;
+  opacity: 0;
+  background: radial-gradient(
+    50% 37% at 50% 50%,
+    #ffffff 0%, #ffffff 25%, #fffffb 32%, #fefff9 35%,
+    #fffff7 39%, #fefdf8 42%, #fffcf5 44%, #fffaf6 47%,
+    #fef9f5 49%, #fdf8f5 51%, #fbf7f4 53%, #faf6f3 55%,
+    #f8f7f4 57%, #f7f6f4 60%, #f7f6f4 100%
+  );
+}
+
+#blok-4-5-section #blok-4-5-stars-canvas {
+  position: fixed;
+  top: 0; left: 0;
+  width: 100%; height: 100%;
+  z-index: 50;
+  pointer-events: none;
+}
+
+#blok-4-5-section .button-wrap {
+  position: relative;
+  z-index: 2;
+  border-radius: 999vw;
+  background: transparent;
+  pointer-events: none;
+  transition: all var(--btn-dur) var(--btn-ease);
+}
+
+#blok-4-5-section .button-shadow {
+  --shadow-cuttoff-fix: 2em;
+  position: absolute;
+  width: calc(100% + var(--shadow-cuttoff-fix));
+  height: calc(100% + var(--shadow-cuttoff-fix));
+  top: calc(0% - var(--shadow-cuttoff-fix) / 2);
+  left: calc(0% - var(--shadow-cuttoff-fix) / 2);
+  filter: blur(clamp(2px, 0.125em, 12px));
+  -webkit-filter: blur(clamp(2px, 0.125em, 12px));
+  overflow: visible;
+  pointer-events: none;
+}
+
+#blok-4-5-section .button-shadow::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  border-radius: 999vw;
+  background: linear-gradient(180deg, rgba(0, 0, 0, 0.2), rgba(0, 0, 0, 0.1));
+  width: calc(100% - var(--shadow-cuttoff-fix) - 0.25em);
+  height: calc(100% - var(--shadow-cuttoff-fix) - 0.25em);
+  top: calc(var(--shadow-cuttoff-fix) - 0.5em);
+  left: calc(var(--shadow-cuttoff-fix) - 0.875em);
+  padding: 0.125em;
+  box-sizing: border-box;
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  overflow: visible;
+  opacity: 1;
+  transition: all var(--btn-dur) var(--btn-ease);
+}
+
+#blok-4-5-section .konwersja-wrap button {
+  --border-width: clamp(1px, 0.0625em, 4px);
+  all: unset;
+  cursor: pointer;
+  position: relative;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+  pointer-events: auto;
+  z-index: 3;
+  background: linear-gradient(-75deg, rgba(255,255,255,0.05), rgba(255,255,255,0.2), rgba(255,255,255,0.05));
+  border-radius: 999vw;
+  box-shadow: inset 0 0.125em 0.125em rgba(0,0,0,0.05),
+    inset 0 -0.125em 0.125em rgba(255,255,255,0.5),
+    0 0.25em 0.125em -0.125em rgba(0,0,0,0.2),
+    0 0 0.1em 0.25em inset rgba(255,255,255,0.2),
+    0 0 0 0 rgba(255,255,255,1);
+  backdrop-filter: blur(clamp(1px, 0.125em, 4px));
+  -webkit-backdrop-filter: blur(clamp(1px, 0.125em, 4px));
+  transition: all var(--btn-dur) var(--btn-ease);
+}
+
+#blok-4-5-section .konwersja-wrap button span {
+  position: relative;
+  display: block;
+  user-select: none;
+  -webkit-user-select: none;
+  font-family: "Lexend", sans-serif;
+  font-weight: 400;
+  font-size: 1.3em;
+  color: rgba(50, 50, 50, 1);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-shadow: 0em 0.25em 0.05em rgba(0,0,0,0.1);
+  padding-inline: 0.932em;
+  padding-block: 0.482em;
+  letter-spacing: -0.02em;
+  transition: all var(--btn-dur) var(--btn-ease);
+}
+
+#blok-4-5-section .konwersja-wrap button span::after {
+  content: "";
+  display: block;
+  position: absolute;
+  z-index: 3;
+  width: calc(100% - var(--border-width));
+  height: calc(100% - var(--border-width));
+  top: calc(0% + var(--border-width) / 2);
+  left: calc(0% + var(--border-width) / 2);
+  box-sizing: border-box;
+  border-radius: 999vw;
+  overflow: hidden; overflow: clip;
+  background: linear-gradient(
+    var(--blok-4-5-angle-2, -45deg),
+    rgba(255,255,255,0) 0%,
+    rgba(255,255,255,0.5) 40% 50%,
+    rgba(255,255,255,0) 55%
+  );
+  mix-blend-mode: screen;
+  pointer-events: none;
+  background-size: 200% 200%;
+  background-position: 0% 50%;
+  background-repeat: no-repeat;
+  transition: background-position var(--btn-dur) var(--btn-ease),
+    --blok-4-5-angle-2 var(--btn-dur) var(--btn-ease);
+}
+
+#blok-4-5-section .konwersja-wrap button::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  border-radius: 999vw;
+  width: calc(100% + var(--border-width));
+  height: calc(100% + var(--border-width));
+  top: calc(0% - var(--border-width) / 2);
+  left: calc(0% - var(--border-width) / 2);
+  padding: var(--border-width);
+  box-sizing: border-box;
+  background: conic-gradient(
+      from var(--blok-4-5-angle-1, -75deg) at 50% 50%,
+      rgba(0,0,0,0.5),
+      rgba(0,0,0,0) 5% 40%,
+      rgba(0,0,0,0.5) 50%,
+      rgba(0,0,0,0) 60% 95%,
+      rgba(0,0,0,0.5)
+    ),
+    linear-gradient(180deg, rgba(255,255,255,0.5), rgba(255,255,255,0.5));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  mask-composite: exclude;
+  box-shadow: inset 0 0 0 calc(var(--border-width) / 2) rgba(255,255,255,0.5);
+  transition: all var(--btn-dur) var(--btn-ease),
+    --blok-4-5-angle-1 var(--btn-dur) var(--btn-ease);
+}
+
+@media (hover: none) and (pointer: coarse) {
+  #blok-4-5-section .konwersja-wrap button span::after,
+  #blok-4-5-section .konwersja-wrap button:active span::after { --blok-4-5-angle-2: -45deg; }
+  #blok-4-5-section .konwersja-wrap button::after,
+  #blok-4-5-section .konwersja-wrap button:active::after { --blok-4-5-angle-1: -75deg; }
+}
+
+#blok-4-5-section .anim-hover button {
+  transform: scale(0.975);
+  backdrop-filter: blur(0.01em);
+  -webkit-backdrop-filter: blur(0.01em);
+  box-shadow: inset 0 0.125em 0.125em rgba(0,0,0,0.05),
+    inset 0 -0.125em 0.125em rgba(255,255,255,0.5),
+    0 0.15em 0.05em -0.1em rgba(0,0,0,0.25),
+    0 0 0.05em 0.1em inset rgba(255,255,255,0.5),
+    0 0 0 0 rgba(255,255,255,1);
+}
+
+#blok-4-5-section .anim-hover button span { text-shadow: 0.025em 0.025em 0.025em rgba(0,0,0,0.12); }
+#blok-4-5-section .anim-hover button span::after { background-position: 25% 50%; }
+#blok-4-5-section .anim-hover button::after { --blok-4-5-angle-1: -125deg; }
+
+#blok-4-5-section .anim-hover .button-shadow {
+  filter: blur(clamp(2px, 0.0625em, 6px));
+  -webkit-filter: blur(clamp(2px, 0.0625em, 6px));
+  transition: filter var(--btn-dur) var(--btn-ease);
+}
+
+#blok-4-5-section .anim-hover .button-shadow::after {
+  top: calc(var(--shadow-cuttoff-fix) - 0.875em);
+  opacity: 1;
+}
+
+#blok-4-5-section .button-wrap.is-active { transform: rotate3d(1, 0, 0, 25deg); }
+
+#blok-4-5-section .button-wrap.is-active button {
+  box-shadow: inset 0 0.125em 0.125em rgba(0,0,0,0.05),
+    inset 0 -0.125em 0.125em rgba(255,255,255,0.5),
+    0 0.125em 0.125em -0.125em rgba(0,0,0,0.2),
+    0 0 0.1em 0.25em inset rgba(255,255,255,0.2),
+    0 0.225em 0.05em 0 rgba(0,0,0,0.05),
+    0 0.25em 0 0 rgba(255,255,255,0.75),
+    inset 0 0.25em 0.05em 0 rgba(0,0,0,0.15);
+}
+
+#blok-4-5-section .button-wrap.is-active .button-shadow { filter: blur(clamp(2px, 0.125em, 12px)); }
+#blok-4-5-section .button-wrap.is-active .button-shadow::after { top: calc(var(--shadow-cuttoff-fix) - 0.5em); opacity: 0.75; }
+#blok-4-5-section .button-wrap.is-active span { text-shadow: 0.025em 0.25em 0.05em rgba(0,0,0,0.12); }
+
+#blok-4-5-section .konwersja-wrap button:active span::after { background-position: 50% 15%; --blok-4-5-angle-2: -15deg; }
+#blok-4-5-section .konwersja-wrap button:active::after { --blok-4-5-angle-1: -75deg; }
+
+/* --- H1 --- */
+#blok-4-5-section .hero-h1 {
+    font-size: clamp(2.4rem, 6vw, 6.9rem);
+    line-height: 0.92;
+    letter-spacing: -0.02em;
+    font-weight: 800;
+}
+
+#blok-4-5-section #blok-4-5-zobaczH1 {
+    font-size: clamp(1.6rem, 4vw, 4.6rem);
+    line-height: 1.15;
+    font-weight: 300;
+    padding-left: 8px;
+    padding-right: 8px;
+    margin-bottom: 1rem;
+}
+
+@media (max-width: 370px) {
+    #blok-4-5-section .hero-h1 { line-height: 0.945; font-size: clamp(2.88rem, 7.2vw, 8.28rem); }
+    #blok-4-5-section #blok-4-5-zobaczH1 { line-height: 1.35; padding-left: 1.5rem; padding-right: 1.5rem; }
+}
+
+@media (min-width: 371px) and (max-width: 600px) {
+    #blok-4-5-section .hero-h1 { line-height: 0.91; font-size: clamp(2.88rem, 7.2vw, 8.28rem); }
+    #blok-4-5-section #blok-4-5-zobaczH1 { line-height: 1.3; padding-left: 1.5rem; padding-right: 1.5rem; }
+}
+
+/* Tło kolumny + z-index > .blok-4-5-wave-wrap (fixed z-index 14), inaczej kurtyna maluje się NAD treścią mimo późniejszego miejsca w DOM. */
+#blok-4-5-section #blok-4-5-block-5-content {
+    position: relative;
+    z-index: 25;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 0.5rem;
+    background-color: var(--bg-color);
+    width: 100%;
+    padding-bottom: 2rem;
+}
+
+#blok-4-5-section #blok-4-5-block-5-content > .line {
+    position: relative;
+    z-index: 3;
+}
+
+/* --- ANIMACJA "i wychodzą" — overflow: visible żeby napis mógł wychodzić w bok ekranu --- */
+#blok-4-5-section .void-section-wrapper { position: relative; display: flex; flex-direction: column; align-items: center; width: 100%; overflow: visible; }
+#blok-4-5-section .void-section { display: flex; justify-content: center; align-items: baseline; width: 100%; padding: 1rem 1px; font-size: clamp(1.6rem, 4vw, 4.6rem); white-space: nowrap; margin: 0; overflow: visible; }
+#blok-4-5-section #blok-4-5-anchorChar { position: relative; display: inline-block; transition: all 0.3s ease; background: linear-gradient(180deg, #0a0a0a 0%, #0a0a0a 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+#blok-4-5-section #blok-4-5-anchorChar.mana-active { background: linear-gradient(180deg, #252030 0%, #2a2130 40%, #512b2b 70%, #7d3527 100%); -webkit-background-clip: text; background-clip: text; }
+#blok-4-5-section #blok-4-5-iHeatWrapper { position: fixed; pointer-events: none; z-index: 150; overflow: visible; }
+#blok-4-5-section #blok-4-5-iHeatCanvas { position: absolute; top: 0; left: 0; pointer-events: none; }
+#blok-4-5-section .walking-text-container { display: inline-flex; font-family: 'Lexend', sans-serif; font-weight: 700; font-size: 1em; line-height: 1; white-space: pre; margin-left: 0.25em; overflow: visible; perspective: 300px; perspective-origin: 50% 50%; position: relative; will-change: transform; }
+#blok-4-5-section .walking-char { display: inline-block; transform-origin: 50% 100%; position: relative; backface-visibility: hidden; }
+#blok-4-5-section #blok-4-5-particleCanvas { position: absolute; top: -50px; left: -100px; pointer-events: none; z-index: 1; }
+/* Nad warstwą tekstu na ilustracji (25), pod dymkami many (100) — iskry 2D przy „wychodzą” muszą być widoczne */
+#blok-4-5-section #blok-4-5-sparksCanvas { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 40; }
+#blok-4-5-section #blok-4-5-bubble-layer { position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 100; }
+#blok-4-5-section .mana-container { position: fixed; top: 60vh; left: 50%; transform: translateX(-50%); width: 30vw; min-width: 200px; display: flex; justify-content: center; pointer-events: none; opacity: 0; transition: opacity 1s ease; z-index: 100; }
+#blok-4-5-section .mana-container.visible.in-viewport { opacity: 1; transition: opacity 0.3s ease; }
+#blok-4-5-section .mana-progress { width: 100%; padding: 2px; background: #ffffff; border-radius: 20px; box-shadow: 0 1px 4px #e3e3e3; }
+#blok-4-5-section .mana-bar { height: clamp(15px, 2vw, 30px); width: 0%; border-radius: 18px; background-image: linear-gradient(-45deg, rgba(255,255,255,0.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.15) 75%, transparent 75%), linear-gradient(to right, #D90000, #FFAB36); background-size: 20px 20px, 100% 100%; box-shadow: inset 0 2px 2px rgba(255,255,255,0.4), inset 0 -2px 2px rgba(0,0,0,0.2); animation: blok-4-5-manaStripes 0.9s linear infinite; animation-play-state: paused; transition: width 0.15s ease-out, background-image 0.5s ease; }
+#blok-4-5-section .mana-container.visible.in-viewport .mana-bar { animation-play-state: running; }
+#blok-4-5-section .mana-bar.complete { background-image: linear-gradient(-45deg, rgba(255,255,255,0.15) 25%, transparent 25%, transparent 50%, rgba(255,255,255,0.15) 50%, rgba(255,255,255,0.15) 75%, transparent 75%), linear-gradient(to right, #298f61, #8cd3b3); animation: blok-4-5-manaStripes 0.9s linear infinite, blok-4-5-manaPulse 0.5s ease-out; }
+@keyframes blok-4-5-manaStripes { from { background-position: 0 0, 0 0; } to { background-position: 20px 0, 0 0; } }
+@keyframes blok-4-5-manaPulse { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(1.3); } }
+#blok-4-5-section .speech-bubble { position: fixed; left: 0; top: 0; background: white; border: 1px solid rgba(0,0,0,0.1); border-radius: 8px; padding: 4px 8px; font-size: 12px; font-weight: 600; white-space: nowrap; color: #111; font-family: 'Lexend', sans-serif; opacity: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: opacity 0.2s ease; }
+#blok-4-5-section .speech-bubble::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 4px solid transparent; border-top-color: white; }
+#blok-4-5-section .speech-bubble.visible { opacity: 1; }
+#blok-4-5-section .thought-bubble { position: fixed; left: 0; top: 0; background: white; border: 1px solid rgba(0,0,0,0.1); border-radius: 20px; padding: 5px 10px; font-size: 11px; font-weight: 600; white-space: nowrap; color: #111; font-family: 'Lexend', sans-serif; opacity: 0; box-shadow: 0 2px 8px rgba(0,0,0,0.08); transition: opacity 0.25s ease; }
+#blok-4-5-section .thought-bubble::before { content: ''; position: absolute; bottom: -8px; left: 50%; transform: translateX(-50%); width: 8px; height: 8px; background: white; border: 1px solid rgba(0,0,0,0.1); border-radius: 50%; }
+#blok-4-5-section .thought-bubble::after { content: ''; position: absolute; bottom: -16px; left: 50%; transform: translateX(-50%); width: 5px; height: 5px; background: white; border: 1px solid rgba(0,0,0,0.1); border-radius: 50%; }
+#blok-4-5-section .thought-bubble.visible { opacity: 1; }
+
+@property --blok-4-5-tile-border-angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+
+#blok-4-5-section .overlay { display: none; position: fixed; top: 0; right: 0; bottom: 0; left: 0; inset: 0; place-items: center; padding: clamp(12px, 3.5vw, 28px); background: rgba(24,20,16,.82); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); z-index: 30000; opacity: 0; visibility: hidden; transition: opacity 0.4s ease, visibility 0.4s ease; }
+#blok-4-5-section .overlay.visible { display: grid; align-items: start; overflow-y: auto; opacity: 1; visibility: visible; }
+#blok-4-5-section .popup-wrapper { position: relative; width: min(960px, 100%); margin: auto; padding: 24px 0; transform: scale(0.9) translateY(20px); transition: transform 0.5s cubic-bezier(0.34, 1.56, 0.64, 1); }
+#blok-4-5-section .overlay.visible .popup-wrapper { transform: scale(1) translateY(0); }
+#blok-4-5-section .popup { --paper: #faf7f2; --paper-deep: #f3ede4; --ink: #2a2420; --ink-light: #8c7e72; --ink-faint: #b5a898; --terracotta: #c2703e; --card-bg: #fff; --card-border: #e8e0d4; --divider: #ddd2c4; --accent: rgb(254,199,8); --accent-light: rgb(255,225,100); --accent-warm: rgb(255,165,50); --spark-red: #fa4900; --spark-orange: #fc7900; --spark-amber: #fd9b00; --spark-gold: #fec708; width: 100%; max-height: 100vh; max-height: 100dvh; border-radius: 26px; overflow: visible; position: relative; box-shadow: 0 30px 80px rgba(42,36,32,.22), 0 0 0 1px rgba(42,36,32,.06); background: var(--paper, #faf7f2); color: var(--ink, #2a2420); }
+#blok-4-5-section .popup-inner { border-radius: 26px; overflow: hidden; position: relative; z-index: 1; background: var(--paper, #faf7f2); }
+#blok-4-5-section .popup::before { content: ''; position: absolute; inset: 0; background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23000' fill-opacity='0.018'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E"); pointer-events: none; border-radius: 26px; z-index: -1; }
+#blok-4-5-section .burst-bg { position: absolute; top: 0; right: 0; bottom: 0; left: 0; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; border-radius: 26px; }
+#blok-4-5-section .burst-container { position: absolute; top: 63px; left: 50%; transform: translateX(-50%); width: 1400px; height: 1000px; }
+#blok-4-5-section .burst-ripple { position: absolute; top: 0; left: 50%; transform: translateX(-50%) translateY(-50%); width: 100%; height: 100%; opacity: 0; }
+#blok-4-5-section .burst-ripple--1 { background: radial-gradient(ellipse 200px 100px at center, transparent 0%, color-mix(in oklab, var(--accent) 35%, transparent) 45%, color-mix(in oklab, var(--accent) 18%, transparent) 55%, transparent 65%); }
+#blok-4-5-section .burst-ripple--2 { background: radial-gradient(ellipse 200px 100px at center, transparent 0%, color-mix(in oklab, var(--accent-warm) 28%, transparent) 45%, color-mix(in oklab, var(--accent-warm) 14%, transparent) 55%, transparent 65%); }
+#blok-4-5-section .burst-ripple--3 { background: radial-gradient(ellipse 200px 100px at center, transparent 0%, color-mix(in oklab, var(--accent-light) 22%, transparent) 45%, color-mix(in oklab, var(--accent-light) 10%, transparent) 55%, transparent 65%); }
+#blok-4-5-section .burst-ripple--4 { background: radial-gradient(ellipse 200px 100px at center, transparent 0%, color-mix(in oklab, var(--accent-light) 15%, transparent) 45%, color-mix(in oklab, var(--accent-light) 6%, transparent) 55%, transparent 65%); }
+#blok-4-5-section .popup--animated .burst-ripple--1 { animation: blok-4-5-burst-ripple 2.5s cubic-bezier(0.16,1,0.3,1) 0.2s forwards; }
+#blok-4-5-section .popup--animated .burst-ripple--2 { animation: blok-4-5-burst-ripple 2.8s cubic-bezier(0.16,1,0.3,1) 0.5s forwards; }
+#blok-4-5-section .popup--animated .burst-ripple--3 { animation: blok-4-5-burst-ripple 3.1s cubic-bezier(0.16,1,0.3,1) 0.8s forwards; }
+#blok-4-5-section .popup--animated .burst-ripple--4 { animation: blok-4-5-burst-ripple 3.4s cubic-bezier(0.16,1,0.3,1) 1.1s forwards; }
+@keyframes blok-4-5-burst-ripple { 0% { opacity: 0; transform: translateX(-50%) translateY(-50%) scale(0.5); } 15% { opacity: 1; } 100% { opacity: 0; transform: translateX(-50%) translateY(-50%) scale(4); } }
+#blok-4-5-section .popup-wrapper .close { position: absolute; top: 0; right: 0; width: 48px; height: 48px; border: none; background: #ffc602; color: #1a1610; font-size: 18px; font-weight: 700; cursor: pointer; display: grid; place-items: center; z-index: 100; border-radius: 0 26px 0 14px; transition: background .2s ease; }
+#blok-4-5-section .popup-wrapper .close:hover { background: #e6b200; }
+@media (max-width: 639px) { #blok-4-5-section .popup-wrapper .close { width: 40px; height: 40px; border-radius: 50%; top: -20px; right: 12px; box-shadow: 0 4px 16px rgba(0,0,0,.18); font-size: 16px; } }
+#blok-4-5-section .popup .content { position: relative; z-index: 1; padding: clamp(16px,3.5vw,30px); padding-top: clamp(20px,4vw,36px); display: grid; gap: clamp(10px,2.2vw,18px); }
+#blok-4-5-section .popup .hero { text-align: center; display: flex; flex-direction: column; align-items: center; gap: clamp(8px,1.8vw,14px); }
+#blok-4-5-section .popup .heading { line-height: 1.2; width: 100%; text-align: center; }
+#blok-4-5-section .popup .heading-light { display: block; font-weight: 350; font-size: clamp(13px,3.8vw,40px); color: #2a2420; color: var(--ink,#2a2420); -webkit-text-fill-color: initial; }
+#blok-4-5-section .popup .heading-inline-bold { font-weight: 750; }
+#blok-4-5-section .popup .heading-bold { display: block; font-weight: 750; font-size: clamp(16px,4.56vw,48px); color: #2a2420; color: var(--ink,#2a2420); -webkit-text-fill-color: initial; }
+#blok-4-5-section .br-mobile-heading { display: none; }
+#blok-4-5-section .br-desktop-heading { display: block; }
+@media (max-width: 599px) { #blok-4-5-section .br-mobile-heading { display: block; } #blok-4-5-section .br-desktop-heading { display: none; } }
+#blok-4-5-section .popup .subtitle { font-size: clamp(11px,2.6vw,15px); color: var(--ink-light); line-height: 1.5; font-weight: 400; text-align: center; white-space: nowrap; }
+#blok-4-5-section .popup .divider { display: flex; align-items: center; gap: 14px; }
+#blok-4-5-section .popup .divider::before, #blok-4-5-section .popup .divider::after { content: ''; flex: 1; height: 1px; background: var(--divider); }
+#blok-4-5-section .popup .divider-diamond { color: var(--terracotta); font-size: 10px; line-height: 1; }
+#blok-4-5-section .popup .tiles { display: grid; gap: 14px; grid-template-columns: 1fr; }
+@media (min-width: 640px) { #blok-4-5-section .popup .tiles { grid-template-columns: 1fr 1fr; } }
+#blok-4-5-section .tile-wrap { position: relative; isolation: isolate; }
+#blok-4-5-section .tile-glow { position: absolute; inset: -1px; border-radius: 21px; background: conic-gradient(from var(--blok-4-5-tile-border-angle), transparent 0%, transparent 60%, rgba(254,199,8,0.6) 75%, rgba(255,122,24,0.6) 88%, transparent 100%); filter: blur(6px); opacity: 0.7; animation: blok-4-5-tile-border-rotate 4s linear infinite; animation-play-state: paused; z-index: 0; pointer-events: none; transition: opacity .5s ease; }
+#blok-4-5-section .tile-conic { position: absolute; inset: -2px; border-radius: 22px; padding: 2px; background: conic-gradient(from var(--blok-4-5-tile-border-angle), transparent 0%, transparent 60%, rgba(254,199,8,0.7) 75%, rgba(255,122,24,0.7) 88%, transparent 100%); -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); -webkit-mask-composite: xor; mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0); mask-composite: exclude; animation: blok-4-5-tile-border-rotate 4s linear infinite; animation-play-state: paused; z-index: 1; pointer-events: none; transition: opacity .5s ease; }
+@keyframes blok-4-5-tile-border-rotate { 0% { --blok-4-5-tile-border-angle: 0deg; } 100% { --blok-4-5-tile-border-angle: 360deg; } }
+#blok-4-5-section .overlay.visible .tile-glow, #blok-4-5-section .overlay.visible .tile-conic { animation-play-state: running; }
+#blok-4-5-section .tile-wrap.chosen .tile-glow, #blok-4-5-section .tile-wrap.chosen .tile-conic, #blok-4-5-section .tile-wrap.dimmed .tile-glow, #blok-4-5-section .tile-wrap.dimmed .tile-conic { opacity: 0; animation: none; }
+#blok-4-5-section .tile-wrap.dimmed { opacity: 0.38; transform: scale(0.98); pointer-events: none; }
+#blok-4-5-section .tile { position: relative; z-index: 2; background: var(--card-bg,#fff); border: 1px solid rgba(0,0,0,.04); border-radius: 20px; padding: clamp(12px, 2.5vw, 24px); display: flex; flex-direction: column; align-items: center; text-align: center; gap: clamp(4px, 1vw, 8px); transition: opacity .4s ease, transform .4s ease; overflow: hidden; }
+@media (min-width: 640px) {
+    #blok-4-5-section .tile { gap: 8px; padding: clamp(16px, 3vw, 24px); }
+}
+#blok-4-5-section .tile::before { content: ''; position: absolute; top: 0; left: 20%; right: 20%; height: 2px; background: linear-gradient(90deg, transparent, var(--terracotta), transparent); opacity: .35; border-radius: 0 0 2px 2px; }
+#blok-4-5-section .tile-label { font-size: clamp(10px, 1.8vw, 12px); font-weight: 600; letter-spacing: 1.5px; text-transform: uppercase; color: var(--ink); cursor: default; }
+#blok-4-5-section .tile-desc { font-size: clamp(10px, 2.5vw, 14px); color: var(--ink-light); line-height: 1.3; font-weight: 400; white-space: nowrap; text-align: center; }
+#blok-4-5-section .tile-bottom { margin-top: auto; display: flex; flex-direction: column; align-items: center; gap: clamp(4px, 1vw, 8px); width: 100%; }
+@media (min-width: 640px) {
+    #blok-4-5-section .tile-bottom { gap: 8px; }
+}
+#blok-4-5-section .tile-value { font-weight: 700; font-size: clamp(26px, 6.5vw, 48px); line-height: 1; color: var(--ink); letter-spacing: -0.02em; padding: clamp(2px, 0.5vw, 4px) 0; transition: transform .35s cubic-bezier(0.34, 1.56, 0.64, 1); }
+#blok-4-5-section .tile:has(.popup-btn:hover) .tile-value,
+#blok-4-5-section .tile:has(.tile-label:hover) .tile-value { transform: scale(1.2); }
+#blok-4-5-section .tile-wrap.chosen .tile-value,
+#blok-4-5-section .tile-wrap.dimmed .tile-value { transform: none; }
+#blok-4-5-section .popup-btn { border: 0; border-radius: 14px; padding: clamp(10px, 2vw, 13px) 24px; cursor: pointer; font-weight: 600; font-size: clamp(13px, 2vw, 15px); background: var(--ink); color: var(--paper,#faf7f2); transition: all .2s ease; letter-spacing: .3px; width: 100%; font-family: var(--font-brand, 'Lexend'), 'Lexend', sans-serif; text-align: center; box-sizing: border-box; display: inline-block; }
+#blok-4-5-section .popup-btn:hover { background: #ffc602; color: #1a1610; }
+#blok-4-5-section .popup-btn:disabled { opacity: .35; cursor: not-allowed; background: var(--ink-faint); color: var(--paper-deep); }
+#blok-4-5-section .popup-btn:disabled:hover { background: var(--ink-faint); color: var(--paper-deep); }
+#blok-4-5-section .tile-wrap.chosen .tile .popup-btn { display: none; }
+#blok-4-5-section .tile-wrap.dimmed .popup-btn { background: var(--ink-faint); color: var(--paper-deep); cursor: default; }
+#blok-4-5-section .codebox { display: none; border-radius: 12px; padding: 10px 14px; border: 1px dashed var(--card-border); background: var(--paper-deep); font-weight: 500; font-size: clamp(11px, 1.8vw, 14px); color: var(--ink-light); text-align: center; width: 100%; line-height: 1.4; animation: blok-4-5-revealCode .45s cubic-bezier(.4,0,.2,1); }
+#blok-4-5-section .tile-wrap.chosen .codebox { display: block; }
+#blok-4-5-section .codebox span { color: var(--terracotta); font-weight: 700; }
+@keyframes blok-4-5-revealCode { from { opacity: 0; transform: translateY(6px) scale(.96); } to { opacity: 1; transform: translateY(0) scale(1); } }
+#blok-4-5-section .bottom-close { display: flex; justify-content: center; padding-top: clamp(4px,1vw,8px); }
+#blok-4-5-section .bottom-close-btn { all: unset; cursor: pointer; font-size: clamp(11px,2.5vw,13px); color: var(--ink-faint); display: flex; align-items: center; gap: 6px; padding: 8px 16px; border-radius: 999px; transition: color .2s, background .2s; }
+#blok-4-5-section .bottom-close-btn:hover { color: var(--ink); background: var(--paper-deep); }
+#blok-4-5-section .x-icon { font-size: 0.9em; opacity: 0.7; }
+#blok-4-5-section .morph-ghost { position: fixed; pointer-events: none; z-index: 9998; opacity: 0; border-radius: 0; }
+
+/* Wave — nad Kinetic (#bridge-wrapper 10), pod intro / tekstami na ilustracji (z-index 25). */
+#blok-4-5-section .blok-4-5-wave-wrap {
+    position: fixed;
+    inset: 0;
+    z-index: 14;
+    pointer-events: none;
+    overflow: hidden;
+    background: transparent;
+}
+#blok-4-5-section .blok-4-5-wave-overlay {
+    width: 100%; height: 100%;
+    pointer-events: none; position: absolute; top: 0; left: 0;
+    z-index: 1;
+    /* will-change: contents usunięte — ograniczenie budżetu will-change w dokumencie */
+}
+#blok-4-5-section .blok-4-5-wave-overlay .wave-path:nth-of-type(1) { fill: #f5ede1; }
+#blok-4-5-section .blok-4-5-wave-overlay .wave-path:nth-of-type(2) { fill: #ebe3d1; }
+#blok-4-5-section .blok-4-5-wave-overlay .wave-path:nth-of-type(3) { fill: #edd9d0; }
+#blok-4-5-section .blok-4-5-wave-overlay .wave-path:nth-of-type(4) { fill: #f7f6f4; }
+/* Bez aktywnej kurtyny — zero malowania fali (JS ustawia display; to zabija resztki pathów przy Mozemy). */
+#blok-4-5-section:not(.wave-reveal-active) .blok-4-5-wave-wrap {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+
+/* DEV debug */
+#blok-4-5-section #blok-4-5-res-debug { display: none; position: fixed; bottom: 12px; right: 12px; background: rgba(0,0,0,.7); color: #fff; font-size: 12px; padding: 4px 10px; border-radius: 4px; z-index: 9999; font-family: monospace; }
+#blok-4-5-section.debug-mode #blok-4-5-res-debug { display: block; }

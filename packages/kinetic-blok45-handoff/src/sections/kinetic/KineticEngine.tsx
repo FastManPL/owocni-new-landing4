@@ -1,854 +1,31 @@
-<!DOCTYPE html>
-<!-- kinetic.stack.html — INTEGRATION HARNESS -->
-<!-- ⚠️ NIE WKLEJAJ DO REPO — narzędzie weryfikacyjne -->
-<html lang="pl">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>kinetic — STACK HARNESS</title>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@studio-freight/lenis@1.0.42/dist/lenis.min.js"></script>
-  <style>
-    *, *::before, *::after { box-sizing: border-box; }
-    body { margin: 0; background: #f7f6f4; }
-    .fake-above { height: 80vh; background: repeating-linear-gradient(45deg, #1a1a2e, #1a1a2e 10px, #16213e 10px, #16213e 20px); display: flex; align-items: center; justify-content: center; color: #fff; font-family: sans-serif; font-size: 1.5rem; }
-    .fake-pinned { height: 200vh; background: #0f3460; }
-    .fake-pinned-content { position: sticky; top: 0; height: 100vh; display: flex; align-items: center; justify-content: center; color: #e94560; font-family: sans-serif; font-size: 2rem; }
-    .fake-accordion { background: #1a1a2e; padding: 2rem; }
-    .fake-accordion-content { overflow: hidden; height: 100px; transition: height 0.4s ease; background: #16213e; color: #fff; font-family: sans-serif; padding: 1rem; }
-    .fake-accordion-content.expanded { height: 400px; }
-    .fake-below { height: 100vh; background: #0d0d0d; display: flex; align-items: center; justify-content: center; color: #666; font-family: sans-serif; }
-    .dev-controls { position: fixed; top: 1rem; right: 1rem; z-index: 9999; display: flex; flex-direction: column; gap: 0.5rem; }
-    .dev-controls button { padding: 0.5rem 1rem; background: #e94560; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
+// @ts-nocheck — legacy engine (4500+ LOC); gradual typing deferred.
+'use client';
 
-    /* ═══ kinetic-section.css — LITERALNA KOPIA ═══ */
-        /* ============================================
-           FAZA 1.1: Zmienne CSS (scoped do sekcji)
-           ============================================ */
-        #kinetic-section {
-            /* ORYGINALNE - bez zmian */
-            --bg-color: #f7f6f4;
-            --text-color: #141414; 
-            --highlight-color: #141414;
-            
-            /* BLOB colors now set directly as background-color */
-            
-            /* FACTORY P2A: B-ISO-01 — stacking context isolation */
-            isolation: isolate;
-        }
+import { useRef, useEffect } from 'react';
+import { useGSAP } from '@gsap/react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { scrollRuntime } from '@/lib/scrollRuntime';
+import './kinetic-section.css';
 
-        /* SCOPED RESET — sekcja i jej dzieci (nie globalne *, html, body) */
-        #kinetic-section *,
-        #kinetic-section *::before,
-        #kinetic-section *::after {
-            box-sizing: border-box;
-            margin: 0;
-            padding: 0;
-        }
+// ⚠️ GSAP-SSR-01: ZAKAZ gsap.registerPlugin() na module top-level.
+// registerPlugin() WYŁĄCZNIE wewnątrz useGSAP(() => { ... }).
 
-        /* v140: Panel offset custom properties — SINGLE SOURCE OF TRUTH */
-        #kinetic-section {
-            --bp-b3x: -27px;
-            --bp-b3y: -294px;
-            --bp-cx: -45px;
-            --bp-cy: 203px;
-            --gp-mx: -33px;
-            --gp-my: 383px;
-        }
-
-        #kinetic-section {
-            height: 100vh;
-            height: 100lvh; /* Pin spacer musi być >= lvh, inaczej progress nie dojdzie do 1.0 */
-            width: 100%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-            overflow: visible; /* TEST: zmienione z hidden dla kontekstu 3D */
-            z-index: 1;
-        }
-
-        /* STREFA 1: Pinowana - dziedziczy z .stage */
-        #kinetic-section {
-            background-color: var(--bg-color);
-        }
-
-        /* ============================================
-           FAZA 1.2 + 1.3: Style blobów
-           ============================================ */
-        
-        /* Kontener blobów - jedzie razem z contentem */
-        #kinetic-section .blob-carrier {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 2;
-            pointer-events: none;
-            overflow: visible;
-        }
-        
-        /* Animowane tło - kontrolowane przez GSAP timeline */
-        #kinetic-section .blob-bg-preview {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: hsl(40, 20%, 97%); /* inverted P4v2: light (blob val) */
-            opacity: 0;
-            pointer-events: none;
-            z-index: -1;
-        }
-        
-        /* GLOW - ambient light pod słowem "nigdy" */
-        #kinetic-section .nigdy-glow {
-            position: absolute;
-            left: 50%;  /* domyślnie centrum, JS skoryguje */
-            top: 50%;
-            width: 3238px;  /* v140: baked from panel */
-            height: 984px;  /* v140: baked from panel */
-            margin-left: -33px; /* v140: baked X offset */
-            margin-top: 383px;  /* v140: baked Y offset */
-            z-index: 3;
-            pointer-events: none;
-            opacity: 0;
-            transform: translate(-50%, -50%);
-            /* v140: PRE-BAKED luminosity — zero blend mode, zero GPU compositing cost */
-            mix-blend-mode: normal;
-            background: radial-gradient(
-                50% 37% at 50% 50%,
-                #ffffff 0%,
-                #ffffff 20%,
-                #fdfdf9 25%,
-                #fbfbf7 28%,
-                #fcfbf5 32%,
-                #faf8f3 35%,
-                #f9f6f0 38%,
-                #f8f5ee 42%,
-                #f6f3ec 45%,
-                #f4f1ea 48%,
-                #f2efe8 51%,
-                rgba(246, 242, 237, 0.8) 55%,
-                rgba(242, 235, 229, 0.5) 62%,
-                rgba(237, 229, 220, 0.2) 72%,
-                transparent 88%
-            );
-        }
-        
-        /* Mobile: mniejszy glow - 109% z bazowego */
-        @media (max-width: 599px) {
-            #kinetic-section .nigdy-glow {
-                width: 2050px;
-                height: 345px;
-            }
-        }
-        
-        /* ============================================
-           TUNNEL CANVAS - obręcze wokół "!"
-           Nad blobami (0), pod cząsteczkami (3)
-           ============================================ */
-        #kinetic-section #kinetic-tunnel-canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 4; /* Nad glow (3) */
-            pointer-events: none;
-        }
-
-        /* ============================================
-           PARTICLE QMARK CANVAS - "?" z cząsteczek
-           Za tekstem (z-index: 10), nad blobami (2)
-           ============================================ */
-        #kinetic-section #kinetic-particle-qmark-canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 5; /* Nad tunnel (4), pod vignette (8) */
-            pointer-events: none;
-            /* filter: BAKED into JS palettes (bakeFilter) — eliminuje GPU filter pipeline */
-            mix-blend-mode: normal; /* GSAP switches to color-burn at BLOB_OPACITY_START+1.5 */
-        }
-        
-
-        /* Pojedynczy blob */
-        #kinetic-section .blob {
-            position: absolute;
-            border-radius: 50%;
-            pointer-events: none;
-            /* P0: Static mask replaces dynamic gradient. background-color is flat fill (cheap repaint).
-               Gradient regen eliminated: was ~3M px/frame software rasterization */
-            -webkit-mask-image: radial-gradient(circle at center, black 0%, transparent 70%);
-            mask-image: radial-gradient(circle at center, black 0%, transparent 70%);
-        }
-
-        #kinetic-section .blob-1 {
-            width: 70vw;
-            height: 70vw;
-            top: 25vh;
-            left: 25vw;
-            transform: translate(-50%, -50%);
-            background-color: hsl(35, 10%, 93%); /* muted warm — single corona calibration */
-            opacity: 0;
-            transform-origin: center center;
-            border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
-        }
-
-        #kinetic-section .blob-2 {
-            width: 80vw;
-            height: 80vw;
-            top: 75vh;
-            left: 75vw;
-            transform: translate(-50%, -50%);
-            background-color: hsl(42, 9%, 93%); /* muted golden — single corona calibration */
-            opacity: 0;
-            transform-origin: center center;
-            border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
-        }
-
-        #kinetic-section .blob-3 {
-            width: 60vw;
-            height: 60vw;
-            top: 50vh;
-            left: 50vw;
-            transform: translate(-50%, -50%);
-            background-color: hsl(25, 10%, 93%); /* muted peach — single corona calibration */
-            opacity: 0;
-            transform-origin: center center;
-            border-radius: 50% 50% 20% 80% / 25% 80% 20% 75%;
-        }
-
-        /* ============================================
-           FAZA 1.5: Media queries dla blobów (mobile)
-           ============================================ */
-        @media (max-width: 599px) {
-            #kinetic-section .blob-1 {
-                width: 100vw;
-                height: 100vw;
-                top: 20vh;
-                left: 20vw;
-            }
-            #kinetic-section .blob-2 {
-                width: 120vw;
-                height: 120vw;
-                top: 80vh;
-                left: 80vw;
-            }
-            #kinetic-section .blob-3 {
-                width: 80vw;
-                height: 80vw;
-                top: 50vh;
-                left: 50vw;
-            }
-        }
-
-        /* ============ BLOB CANVAS — replaces DOM compositor blending ============ */
-        #kinetic-section #kinetic-blob-canvas {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: 2;
-            pointer-events: none;
-        }
-
-        /* ============ CYLINDER COMPONENT ============ */
-        #kinetic-section #kinetic-cylinder-wrapper {
-            position: absolute;
-            top: calc(0px + var(--bp-cy));
-            left: calc(50% + var(--bp-cx));
-            width: 100%;
-            height: 100%;
-            z-index: 6;
-            pointer-events: none;
-            opacity: 0;
-        }
-
-        #kinetic-section #kinetic-cylinder-wrapper canvas {
-            display: block;
-            width: 100%;
-            height: 100%;
-            position: relative;
-            z-index: 0;
-            transform: scale(1.46) rotate(-5deg); /* v140: baked from panel */
-            transform-origin: center center;
-        }
-
-        /* Fog renderowany bezpośrednio w canvas - nie potrzeba CSS */
-
-        /* FIX: Obcięcie "%" przy viewport 769-1200px (§5.1.3 Konstytucji) */
-        @media (min-width: 769px) and (max-width: 1200px) {
-            #kinetic-section #kinetic-cylinder-wrapper {
-                width: 140%;
-            }
-        }
-
-        @media (max-width: 768px) {
-            #kinetic-section #kinetic-cylinder-wrapper {
-                left: 50%;
-                width: 160%;
-                height: 120%;
-                /* Transform kontrolowany przez GSAP */
-            }
-        }
-        /* ============ KONIEC CYLINDER ============ */
-
-        #kinetic-section .content-wrapper {
-            position: relative;
-            width: 90%;
-            max-width: 1200px;
-            height: 100vh;
-            height: 100lvh; /* Matchuje .stage — pin spacer consistency */
-            display: flex;
-            flex-direction: column;
-            justify-content: center;
-            align-items: center;
-            z-index: 10; /* Nad cylindrem (z-index: 5) i blobami (0) */
-        }
-
-        /* --- GLOBALNE STYLE TEKSTU --- */
-        #kinetic-section .line {
-            font-size: clamp(1.3rem, 2.88vw, 2.52rem);
-            line-height: 1.2; 
-            font-weight: 300;
-            display: flex;
-            flex-wrap: wrap; 
-            justify-content: center;
-            white-space: normal;
-            text-align: center;
-        }
-
-        #kinetic-section .line-large {
-            font-size: clamp(2.02rem, 4.46vw, 3.96rem);
-            line-height: 1.1;
-            letter-spacing: -0.02em; 
-        }
-
-        #kinetic-section .line-xlarge {
-            font-size: clamp(3.19rem, 7.29vw, 6.37rem); /* +15% z clamp(2.77, 6.34vw, 5.54) */
-            line-height: 1.05;
-            letter-spacing: -0.03em;
-        }
-
-        #kinetic-section .line-small {
-            font-size: clamp(0.97rem, 2.16vw, 1.87rem);
-            line-height: 1.25;
-        }
-
-        #kinetic-section .bold-line {
-            font-weight: 700;
-            color: var(--highlight-color);
-        }
-        
-        #kinetic-section .bold-text {
-            font-weight: 700;
-        }
-
-        #kinetic-section .highlight {
-            font-weight: 700;
-            color: var(--highlight-color);
-            display: inline-block;
-        }
-
-        #kinetic-section .small-header {
-            font-size: clamp(1rem, 2vw, 1.5rem);
-            opacity: 0.7; 
-            margin-bottom: 1.5rem;
-            letter-spacing: 1px;
-            font-weight: 400;
-        }
-
-        #kinetic-section .text-block {
-            position: absolute;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            text-align: center;
-            opacity: 0;
-            visibility: hidden;
-            will-change: transform, opacity;
-            pointer-events: none;
-            width: 100%;
-            left: 0; /* ZABEZPIECZENIE: Zawsze od lewej krawędzi kontenera */
-            transform-style: preserve-3d; /* BRAK 8: required for cylinder wrap 3D depth */
-        }
-
-        /* --- EFEKT HIGHLIGHT NA SŁOWIE "NIGDY" --- */
-        /* Nowa struktura z osobnymi warstwami dla blaszki i tekstu */
-        #kinetic-section .word-anchor {
-            position: relative;
-            display: inline-block;
-        }
-
-        /* BLASZKA — z-index:1, za tekstem, własny kontekst 3D */
-        #kinetic-section .bg-layer {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            z-index: 1;
-            perspective: 1000px;
-            pointer-events: none;
-        }
-
-        #kinetic-section .nigdy-plate {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            width: 130%; /* v140: was 100% — wider to cover 'n' and 'y' edges */
-            height: 120%;
-            background: linear-gradient(90deg, #f36444, #ef9579); /* v140: vivid red-coral */
-            border-radius: 4px;
-            transform-origin: center center;
-            will-change: transform, opacity;
-        }
-
-        /* TEKST — z-index:2, przed blaszką, własny kontekst 3D */
-        #kinetic-section .text-layer {
-            position: relative;
-            z-index: 2;
-            perspective: 1000px;
-        }
-
-        #kinetic-section .nigdy-text {
-            display: inline-block;
-            font-weight: 300;
-            color: #ffffff; /* v140: white text on colored plate */
-            transform-origin: center center;
-            will-change: transform;
-            backface-visibility: hidden;
-        }
-
-        /* --- BLOK 1 (INTRO) --- */
-        #kinetic-section #kinetic-block-1 {
-            top: 36%; 
-            transform: translateY(-50%);
-            font-family: 'Lexend', sans-serif;
-            /* v140: text-transform: uppercase removed — natural case from HTML */
-            perspective: 1000px; /* v140: 3D context for cylinder wrap */
-        }
-        #kinetic-section #kinetic-block-1 .line,
-        #kinetic-section #kinetic-block-1 .bold-line {
-            font-weight: 750;
-            line-height: 1.05;
-            white-space: nowrap; /* BRAK 2: override global wrap — each line = one row */
-            flex-wrap: nowrap; /* override global flex-wrap: wrap */
-            overflow: visible;
-            position: relative;
-            transform-style: preserve-3d; /* v140: cylinder wrap */
-        }
-        #kinetic-section #kinetic-block-1 .line:not(.bold-line) {
-            font-weight: 400;
-        }
-        #kinetic-section #kinetic-block-1 .line:not(.bold-line),
-        #kinetic-section #kinetic-block-1 .line-large {
-            font-size: clamp(1.79rem, 3.98vw, 3.47rem); /* +15% */
-        }
-
-        @media (min-width: 600px) {
-            #kinetic-section #kinetic-block-1 .line:not(.bold-line),
-            #kinetic-section #kinetic-block-1 .line-large {
-                font-size: clamp(2.68rem, 5.96vw, 5.20rem); /* +15% */
-            }
-            #kinetic-section #kinetic-block-2 .line-xlarge {
-                font-size: clamp(5.06rem, 11.57vw, 10.12rem);
-            }
-            #kinetic-section #kinetic-block-3 .line {
-                font-size: clamp(1.79rem, 3.98vw, 3.47rem);
-            }
-            #kinetic-section #kinetic-block-3 .small-header {
-                font-size: clamp(1.38rem, 2.76vw, 2.07rem);
-            }
-        }
-
-        /* --- BLOK 2 (FLIP) --- */
-        /* Short desktop fix — Block 1 fonts capped at max but viewport too short → overlap */
-        @media (min-width: 769px) and (max-height: 900px) {
-            #kinetic-section #kinetic-block-1 .line:not(.bold-line),
-            #kinetic-section #kinetic-block-1 .line-large {
-                font-size: clamp(2.68rem, 5.96vw, 4.14rem); /* +15% */
-            }
-            #kinetic-section #kinetic-block-2 .line-xlarge {
-                font-size: clamp(5.06rem, 11.57vw, 8rem);
-            }
-        }
-
-        #kinetic-section #kinetic-block-2 {
-            top: 66%;  /* przesunięte +5% w dół (było 61%) */
-            transform: translateY(-50%);
-            font-family: 'Lexend', sans-serif;
-        }
-        #kinetic-section #kinetic-block-2 .line-xlarge,
-        #kinetic-section #kinetic-problem-line {
-            white-space: nowrap;
-            flex-wrap: nowrap; /* .line ma flex-wrap:wrap — nadpisujemy dla B2 */
-        }
-        #kinetic-section #kinetic-problem-line .anim-char {
-            white-space: nowrap;
-        }
-        
-        /* Styl dla animowanych liter - Cinema Container Blur + Color Wave */
-        #kinetic-section .anim-char {
-            display: inline-block;
-            /* will-change: removed from CSS → dynamiczny via JS (eliminuje 101 permanentnych GPU layers) */
-        }
-        /* v140: cylinder wrap — 3D backface hidden for Block 1 chars */
-        #kinetic-section #kinetic-block-1 .anim-char {
-            backface-visibility: hidden;
-            transform-style: preserve-3d;
-        }
-
-        /* --- BLOK 3 (GEMIUS) --- */
-        #kinetic-section #kinetic-block-3 {
-            top: calc(50% + var(--bp-b3y));
-            left: calc(21% + var(--bp-b3x));
-            width: 68%;
-            align-items: flex-start;
-            text-align: left;
-            z-index: 15; /* Nad cylindrem */
-        }
-        #kinetic-section #kinetic-block-3 .line {
-            justify-content: flex-start;
-            text-align: left;
-        }
-        
-        /* Desktop/Mobile switching for block-3 content */
-        #kinetic-section .block-3-desktop, #kinetic-section .block-3-mobile { 
-            display: flex;
-            flex-direction: column;
-            align-items: flex-start;
-        }
-        #kinetic-section .block-3-mobile { display: none; }
-
-        @media (max-width: 768px) {
-            #kinetic-section #kinetic-block-3 { left: 5%; width: 90%; }
-        }
-
-        /* ============ MOBILE < 600px ============ */
-        @media (max-width: 599px) {
-            /* Typografia - skaluje się liniowo z szerokością */
-            #kinetic-section .line {
-                font-size: 6.6vw; /* +20% z 5.5vw */
-            }
-            #kinetic-section .line-large {
-                font-size: 7.5vw;
-            }
-            #kinetic-section .line-xlarge {
-                font-size: 8.8vw; /* -20% z 11vw */
-            }
-            #kinetic-section .line-small {
-                font-size: 4vw;
-            }
-            
-            /* Bloki tekstowe - stałe marginesy od krawędzi */
-            #kinetic-section .text-block {
-                padding: 0 5%;
-            }
-            
-            /* Pozycje pionowe bloków — svh = stabilne z paskiem przeglądarki */
-            /* +5svh offset w dół (bloki były za wysoko) */
-            #kinetic-section #kinetic-block-1 {
-                top: calc(115px + 17.8vh);
-                top: calc(115px + 17.8svh);
-            }
-            #kinetic-section #kinetic-block-1 .line:not(.bold-line) {
-                font-size: 6.6vw;
-            }
-            #kinetic-section #kinetic-block-2 {
-                top: calc(185px + 26.2vh);
-                top: calc(185px + 26.2svh);
-            }
-            #kinetic-section #kinetic-block-3 {
-                top: calc(145px + 21.1vh);
-                top: calc(145px + 21.1svh);
-                left: 5%;
-                width: 90%;
-                margin-top: -91px; /* baked from panel mob-b3y */
-            }
-            
-            /* Cylinder 98% mobile positioning (baked from panel) */
-            #kinetic-section #kinetic-cylinder-wrapper {
-                margin-top: -35px;
-            }
-            #kinetic-section #kinetic-cylinder-wrapper canvas {
-                transform: scale(1) rotate(-21deg);
-                transform-origin: center center;
-            }
-            
-            /* Przełączenie na mobile version */
-            #kinetic-section .block-3-desktop { display: none; }
-            #kinetic-section .block-3-mobile { display: flex; }
-        }
-
-
-        /* ============ DUŻE EKRANY >= 2000px ============ */
-        @media (min-width: 2000px) {
-            #kinetic-section #kinetic-cylinder-wrapper {
-                max-width: 2000px; /* Nie rośnie szerzej */
-            }
-        }
-
-
-        /* PULSE: moved to particle canvas renderer — zero CSS needed */
-
-        /* ============ VIGNETTE — zamrożony CSS, czysta kompozycja GPU ============ */
-        /* Zero JS, zero ticker, zero repaint. Gradient rysowany RAZ przez GPU. */
-        /* Skalibrowane wartości: 1412×1111, scroll 100% */
-        /* CORONA: Słoneczna Aura - pure CSS, only transform:rotate (GPU compositor) */
-        #kinetic-section .kinetic-corona-ring {
-
-            position: absolute;
-            top: 50%; left: 50%;
-            width: 350%; height: 350%;
-            transform: translate(-50%, -50%);
-            background: conic-gradient(from 0deg,
-                transparent 0deg, rgba(255,170,0,0.12) 15deg,
-                transparent 30deg, rgba(255,120,0,0.18) 45deg,
-                transparent 60deg, rgba(255,200,0,0.09) 80deg,
-                transparent 100deg, rgba(255,150,0,0.15) 130deg,
-                transparent 160deg, rgba(255,180,0,0.12) 190deg,
-                transparent 220deg, rgba(255,100,0,0.18) 260deg,
-                transparent 300deg, rgba(255,160,0,0.12) 340deg,
-                transparent 360deg);
-            -webkit-mask-image: radial-gradient(circle closest-side, transparent 2%, black 12%, transparent 55%);
-            mask-image: radial-gradient(circle closest-side, transparent 2%, black 12%, transparent 55%);
-            animation: kinetic-corona-spin 15s linear infinite;
-            will-change: transform;
-            pointer-events: none;
-        }
-        #kinetic-section .kinetic-corona-ring.reverse {
-            width: 280%; height: 280%;
-            animation: kinetic-corona-spin 10s linear infinite reverse;
-            background: conic-gradient(from 45deg,
-                transparent 0deg, rgba(255,140,0,0.18) 20deg,
-                transparent 50deg, rgba(255,190,0,0.12) 120deg,
-                transparent 180deg, rgba(255,110,0,0.15) 230deg,
-                transparent 280deg, rgba(255,170,0,0.18) 320deg,
-                transparent 360deg);
-        }
-        @keyframes kinetic-corona-spin {
-            from { transform: translate(-50%, -50%) rotate(0deg); }
-            to { transform: translate(-50%, -50%) rotate(360deg); }
-        }
-        /* CORONA Q: white/bg variant for ? */
-
-        #kinetic-section .kinetic-vignette {
-            position: absolute;
-            top: 0;
-            right: 0;
-            bottom: 0;
-            left: 0;
-            z-index: 8; /* Nad cylinder (6), pod content-wrapper (10) i block-3 (15) */
-            pointer-events: none;
-            opacity: 0; /* GSAP animuje 0→1 razem z Block 1 */
-            --vig-rx: 72%;
-            background: radial-gradient(
-                var(--vig-rx) 52.5% at 50% 48%,
-                transparent 35%,
-                #f7f6f4 85%
-            );
-        }
-
-        /* ═══ CIEŃ LITER — Ghost clone CSS (mirrors #kinetic-block-1 rules) ═══ */
-        #kinetic-section #kinetic-block-1-ghost {
-            top: 36%; 
-            transform: translateY(-50%);
-            font-family: 'Lexend', sans-serif;
-            perspective: 1000px;
-        }
-        #kinetic-section #kinetic-block-1-ghost .line,
-        #kinetic-section #kinetic-block-1-ghost .bold-line {
-            font-weight: 750;
-            line-height: 1.05;
-            white-space: nowrap;
-            flex-wrap: nowrap;
-            overflow: visible;
-            position: relative;
-            transform-style: preserve-3d;
-        }
-        #kinetic-section #kinetic-block-1-ghost .line:not(.bold-line) {
-            font-weight: 400;
-        }
-        #kinetic-section #kinetic-block-1-ghost .line:not(.bold-line),
-        #kinetic-section #kinetic-block-1-ghost .line-large {
-            font-size: clamp(1.79rem, 3.98vw, 3.47rem);
-        }
-        @media (min-width: 600px) {
-            #kinetic-section #kinetic-block-1-ghost .line:not(.bold-line),
-            #kinetic-section #kinetic-block-1-ghost .line-large {
-                font-size: clamp(2.68rem, 5.96vw, 5.20rem);
-            }
-        }
-        @media (min-width: 769px) and (max-height: 900px) {
-            #kinetic-section #kinetic-block-1-ghost .line:not(.bold-line),
-            #kinetic-section #kinetic-block-1-ghost .line-large {
-                font-size: clamp(2.68rem, 5.96vw, 4.14rem);
-            }
-        }
-        #kinetic-section #kinetic-block-1-ghost .anim-char {
-            backface-visibility: hidden;
-            transform-style: preserve-3d;
-        }
-        @media (max-width: 599px) {
-            #kinetic-section #kinetic-block-1-ghost {
-                top: calc(115px + 17.8vh);
-                top: calc(115px + 17.8svh);
-            }
-            #kinetic-section #kinetic-block-1-ghost .line:not(.bold-line) {
-                font-size: 6.6vw;
-            }
-        }
-
-    /* ═══ KONIEC CSS SEKCJI ═══ */
-  </style>
-</head>
-<body>
-  <div class="dev-controls">
-    <button onclick="toggleAccordion()">Accordion: expand/collapse</button>
-    <button onclick="changeFakeAboveHeight()">FakeAbove: zmień wysokość</button>
-  </div>
-
-  <div class="fake-above-spacer" style="height:150vh; background:#0a0a0c; display:flex; align-items:center; justify-content:center; color:#333; font-family:monospace; font-size:14px;">
-    ↑ 150vh above spacer
-  </div>
-  <div class="fake-above" id="fake-above" style="height: 80vh">FAKE ABOVE</div>
-  <div class="fake-pinned" id="fake-pinned"><div class="fake-pinned-content">FAKE PINNED ABOVE (pin 100vh)</div></div>
-
-  <!-- TESTOWANA SEKCJA -->
-    <div class="stage stage-pinned" id="kinetic-section">
-        
-        <!-- GLOW LAYER - ambient light pod słowem "nigdy" -->
-        <div class="nigdy-glow" id="kinetic-nigdy-glow"></div>
-        
-        <!-- ============================================
-             FAZA 2.1: Blob carrier z 3 blobami
-             ============================================ -->
-        <div class="blob-carrier" id="kinetic-blob-carrier">
-            <div class="blob-bg-preview" id="kinetic-blob-bg-preview"></div>
-            <div class="blob blob-1" id="kinetic-blob1"></div>
-            <div class="blob blob-2" id="kinetic-blob2"></div>
-            <div class="blob blob-3" id="kinetic-blob3"></div>
-        </div>
-        
-        <!-- v140: Blob canvas — replaces DOM multiply blending with baked source-over -->
-        <canvas id="kinetic-blob-canvas"></canvas>
-        
-        <!-- PARTICLE QMARK - "?" z cząsteczek, za tekstem -->
-        <canvas id="kinetic-tunnel-canvas"></canvas>
-        <canvas id="kinetic-particle-qmark-canvas"></canvas>
-        
-        <div class="content-wrapper" data-gating-target>
-            
-            <!-- BLOK 1 -->
-            <div class="text-block" id="kinetic-block-1">
-                <div class="line">W internecie</div>
-                <div class="line">jest więcej klientów,</div>
-                <div style="height: 0.8rem;"></div>
-                <div class="line bold-line line-large">niż Twoja firma jest</div>
-                <div class="line bold-line line-large">w stanie obsłużyć!</div>
-            </div>
-
-            <!-- BLOK 2 -->
-            <div class="text-block" id="kinetic-block-2">
-                <div class="line bold-line line-xlarge" id="kinetic-problem-line">W czym problem?</div>
-            </div>
-
-            <!-- BLOK 3 -->
-            <div class="text-block" id="kinetic-block-3">
-                <div class="small-header">Wg badań <span class="highlight">GEMIUS</span>:</div>
-                
-                <!-- DESKTOP VERSION -->
-                <div class="block-3-desktop">
-                    <div class="line">98% osób, które odwiedzi</div>
-                    <div class="line">stronę polskiej firmy&nbsp;<span class="word-anchor"><span class="bg-layer"><span class="nigdy-plate" id="kinetic-nigdy-plate"></span></span><span class="text-layer"><span class="nigdy-text" id="kinetic-word-nigdy">nigdy</span></span></span></div>
-                    <div class="line bold-line">nie stanie się jej klientami.</div>
-                </div>
-                
-                <!-- MOBILE VERSION -->
-                <div class="block-3-mobile">
-                    <div class="line">98% osób,</div>
-                    <div class="line">które odwiedzi</div>
-                    <div class="line">stronę polskiej firmy</div>
-                    <div class="line"><span class="word-anchor"><span class="bg-layer"><span class="nigdy-plate" id="kinetic-nigdy-plate-mobile"></span></span><span class="text-layer"><span class="nigdy-text" id="kinetic-word-nigdy-mobile">nigdy</span></span></span>&nbsp;<span class="bold-text">nie stanie</span></div>
-                    <div class="line bold-line">się jej klientami.</div>
-                </div>
-            </div>
-
-        </div> <!-- Koniec content-wrapper -->
-
-        <!-- PULSE: moved to particle canvas renderer (zero DOM, zero GPU layers) -->
-
-        <!-- CYLINDER COMPONENT - fog renderowany w canvas -->
-        <div id="kinetic-cylinder-wrapper">
-            <canvas id="kinetic-cylinder-canvas"></canvas>
-        </div>
-
-        <!-- VIGNETTE ELLIPSE — narastająca od krawędzi w ostatnich klatkach -->
-        <div class="kinetic-vignette" id="kinetic-vignette"></div>
-        
-        <!-- CORONA: Słoneczna Aura za wykrzyknikiem (pure CSS, zero canvas cost) -->
-        <div id="kinetic-corona" style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:100%;height:100%;pointer-events:none;z-index:6;opacity:0;">
-            <div class="kinetic-corona-ring"></div>
-            <div class="kinetic-corona-ring reverse"></div>
-        </div>
-
-    </div> <!-- Koniec STREFA 1 -->
-
-  <div class="fake-accordion">
-    <div style="color: #fff; font-family: sans-serif; padding-bottom: 1rem; cursor: pointer" onclick="toggleAccordion()">FAQ / Accordion</div>
-    <div class="fake-accordion-content" id="fake-accordion-content">Treść akordeonu — zmiana wysokości symuluje realne FAQ.</div>
-  </div>
-  <div class="fake-below" style="height:100vh; display:flex; align-items:center; justify-content:center; color:#333; font-family:monospace;">↓ 100vh below</div>
-
-  <script>
-    let refreshQueued = false;
-    function scheduleRefresh() { if (refreshQueued) return; refreshQueued = true; setTimeout(() => { ScrollTrigger.refresh(true); refreshQueued = false; }, 150); }
-
-    // ═══ LENIS INIT (wymagany przez snap machine scrollTo/scrollOn/scrollOff) ═══
-    const lenis = new Lenis({
-        autoRaf: false,
-        duration: 1.20,
-        wheelMultiplier: 0.80,
-        touchMultiplier: 1.0,
-        smoothWheel: true,
-        syncTouch: true,
-        syncTouchLerp: 0.10,
-        touchInertiaMultiplier: 14,
-        stopInertiaOnNavigate: false,
-        easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t))
-    });
-    try { lenis.scrollTo(window.scrollY || 0, { immediate: true, force: true }); lenis.raf(performance.now()); } catch(e) {}
-    lenis.on('scroll', ScrollTrigger.update);
-    gsap.ticker.add((time) => { lenis.raf(time * 1000); }, false, true);
-    window.lenis = lenis;
-    const scrollRuntime = { getScroll: () => window.lenis?.scroll ?? window.scrollY, getRawScroll: () => window.lenis?.actualScroll ?? window.scrollY, requestRefresh: (reason) => { scheduleRefresh(); } };
-    gsap.registerPlugin(ScrollTrigger);
-    gsap.ticker.lagSmoothing(0);
-    ScrollTrigger.config({ ignoreMobileResize: true });
-    const _debugParam = new URLSearchParams(location.search).get('debug');
-    const DEBUG_MODE = _debugParam === '1' || _debugParam === 'true' || localStorage.debug === '1';
-    if (DEBUG_MODE) ScrollTrigger.defaults({ markers: true });
-
-    function init(container) {
-        const $ = (sel) => container.querySelector(sel);
-        const $$ = (sel) => container.querySelectorAll(sel);
-        const $id = (id) => container.querySelector('#' + id);
+    function init(container: HTMLElement): { kill: () => void; pause: () => void; resume: () => void } {
+        const $ = (sel: string) => container.querySelector(sel);
+        const $$ = (sel: string) => container.querySelectorAll(sel);
+        const $id = (id: string) => container.querySelector('#' + id);
 
         const cleanups = [];
         const gsapInstances = [];
         const timerIds = [];
         const tickerFns = [];
         const observers = [];
-        const getScroll = () => window.lenis?.scroll ?? window.scrollY;
-        // P3-WILL-REPLACE: scrollTo/scrollOn/scrollOff → scrollRuntime.ts
-        const scrollTo  = (px, opts) => window.lenis?.scrollTo(px, opts);
-        const scrollOn  = (ev, fn)   => window.lenis?.on(ev, fn);
-        const scrollOff = (ev, fn)   => window.lenis?.off(ev, fn);
+        const getScroll = (): number => scrollRuntime.getScroll();
+        // ENT-SCROLL-API-01: Lenis nie jest na window.lenis — jedyny most to scrollRuntime
+        const scrollTo  = (px, opts) => scrollRuntime.scrollTo(px, opts);
+        const scrollOn  = (ev, fn)   => scrollRuntime.on(ev, fn);
+        const scrollOff = (ev, fn)   => scrollRuntime.off(ev, fn);
 
         // ── Shared state (closure) — replaces window.* event bus (ENT-JS-09) ──
         const _s = {
@@ -892,6 +69,11 @@
         // Gate ticker — MUSI być dodany jako PIERWSZY (GSAP wywołuje w kolejności dodania)
         const _tickSectionGate = function() {
             if (_s._killed) return;
+            if (typeof document !== 'undefined' && document.documentElement.classList.contains('kinetic-past')) {
+                _sectionTickOk = false;
+                _deferredTickOk = false;
+                return;
+            }
             // H7 FIX: Safety net — jeśli timeline aktywny, sekcja MUSI być widoczna
             // Chroni przed race condition gdy ScrollTrigger refresh wywoła onLeave przed onEnter
             if (!_sectionVisible && _s.pinnedTl && _s.pinnedTl.progress() > 0 && _s.pinnedTl.progress() < 1) {
@@ -1158,9 +340,11 @@
         const FORM_START   = 0;
         const FORM_END     = 2.0;
         const ROTATE_START = 3.5;
-        const ROTATE_END   = 9.5;
-        const COLLAPSE_START = 9.5;
-        const COLLAPSE_END = 12.10; // v140: was 10.80 — 2× longer collapse (1.3→2.6U)
+        // Zsynchronizowane z SNAP2_KINETIC_U (główny init): dłuższa faza „?” przed snap2 =
+        // więcej scrollu zanim cylinder wrap zasłoni B1 (Blok45 wjeżdża wyżej w kadrze).
+        const ROTATE_END   = 14.5;
+        const COLLAPSE_START = 14.5;
+        const COLLAPSE_END = 17.10; // +2.6U collapse (zsynchronizowane z SNAP2_KINETIC_U)
         
         // ═══════════════════════════════════════════════════════════
         // MAPPING: Bridge × BRIDGE_MULTIPLIER, liniowe formProgress
@@ -1840,13 +1024,13 @@
                 state.rotateProgress = 0;
                 state.collapseProgress = 0;
             }
-            // FAZA 2: Obrót + zmiana koloru (U:3.5 → U:9.5)
+            // FAZA 2: Obrót + zmiana koloru (U:3.5 → U:ROTATE_END)
             else if (currentUnit <= ROTATE_END) {
                 state.formProgress = 1;
                 state.rotateProgress = Math.max(0, (currentUnit - ROTATE_START) / (ROTATE_END - ROTATE_START));
                 state.collapseProgress = 0;
             }
-            // FAZA 3: Collapse (U:9.5 → U:12.10)
+            // FAZA 3: Collapse (COLLAPSE_START → COLLAPSE_END)
             // v140: ease-in on cp → slow start forward (mirrors the nice slow reassembly backward)
             else if (currentUnit <= COLLAPSE_END) {
                 state.formProgress = 1;
@@ -2357,7 +1541,7 @@
                     var kineticUnit = currentUnit - bridgeI;
                     // v139: Subtract DELTA so rotation/collapse fire at shifted timeline positions
                     // kU=3.5+DELTA → passes 3.5 → ROTATE_START → rp=0 (push moment)
-                    // kU=9.5+DELTA → passes 9.5 → ROTATE_END → rp=1 (SNAP2)
+                    // kU=SNAP2_KINETIC+DELTA → ROTATE_END → rp=1 (SNAP2)
                     var delta = _s.DELTA || 0;
                     updatePhases(Math.max(FORM_END, kineticUnit - delta));
                     // ROTATION OVERRIDE: bypass delta dead zone (4.13U pause at SNAP1)
@@ -3142,8 +2326,12 @@
             // ============================================
             // BRIDGE: Obliczenia dynamiczne
             // ============================================
-            const KINETIC_U = 23.0; // Speed Ramp v3: +4U (was 19.0)
-            const SCROLL_KINETIC = 3526; // Speed Ramp v3: 23 × 153.3 (was 2912)
+            // Całkowita „długość” odcinka kinetic w jednostkach U (musi się zgadzać ze SCROLL_KINETIC).
+            // vs bazowe 23U: dłuższy odcinek przed SNAP2 = więcej Blok45 w kadrze zanim wave-wrap na Kinetic.
+            const KINETIC_U = 28.0;
+            const SCROLL_KINETIC = Math.round((3526 * KINETIC_U) / 23); // zachowaj px/U ≈ jak 3526/23
+            /** Po moście I: SNAP2 — im większe, tym później wrap przy narastającym nachodzeniu Blok45. */
+            const SNAP2_KINETIC_U = 14.5; // 9.5 → 12.5 → 14.5 */
             
             // ═══════════════════════════════════════════════════════════
             // BRIDGE MULTIPLIER — kontrola tempa pierwszej fazy
@@ -3203,7 +2391,8 @@
             // ============================================
             // SNAP GATE: bridge = 1:1 scrub, kinetic = directional
             // ============================================
-            const OVERSHOOT_U = (_s._overshootOverride !== undefined) ? _s._overshootOverride : 1.5;
+            // Po SNAP3 (Gemius / koniec narracji): dodatkowy dystans scrolla zanim pin puści — UX / dwell
+            const OVERSHOOT_U = (_s._overshootOverride !== undefined) ? _s._overshootOverride : 2.5;
             const pxPerU = SCROLL_KINETIC / KINETIC_U; // 153.3
             const SCROLL_OVERSHOOT = OVERSHOOT_U * pxPerU;
             
@@ -3234,8 +2423,8 @@
             
             // SNAP1 = I + 4.5 (wizualnie identyczny z obecnym)
             const SNAP1_U = B1_FULL_DRAW_U;
-            const SNAP2_U = I + 9.5 + DELTA;
-            const SNAP3_U = I + 23.0 + DELTA;
+            const SNAP2_U = I + SNAP2_KINETIC_U + DELTA;
+            const SNAP3_U = I + KINETIC_U + DELTA;
             
             // SNAP GATE VALUES
             const KINETIC_SNAPS = [SNAP1_U, SNAP2_U, SNAP3_U].map(u => u / TOTAL_U);
@@ -3648,8 +2837,8 @@
             pinnedTl.addLabel("start", I);
             pinnedTl.addLabel("block1", SNAP1_U);
             pinnedTl.addLabel("block2", 9.0 + I + DELTA);
-            pinnedTl.addLabel("block3", 22.0 + I + DELTA);
-            pinnedTl.addLabel("end", 23.0 + I + DELTA);
+            pinnedTl.addLabel("block3", 27.0 + I + DELTA);
+            pinnedTl.addLabel("end", 28.0 + I + DELTA);
             
             // BLOCK 1 — tekst startuje na I, zero early offset
             // Text starts 60% earlier than b1Start — slower formation, more time to read
@@ -3674,10 +2863,22 @@
             var ROTATE_START_U = I + 3.5 + DELTA;
             var _lineStagger = 0.5;
             
-            // SYNCED wrap: overlaps with forward push, all lines end at SNAP2
-            var WRAP_START_U = SNAP1_U + 2.1; // doc=19.75, adaptive to viewport
-            var WRAP_DUR_BASE = SNAP2_U - (WRAP_START_U + 3 * _lineStagger);
+            // SYNCED wrap: overlaps with forward push, all lines end at SNAP2.
+            // SNAP2_KINETIC_U (14.5 vs bazowe 9.5) = więcej scrollu, więcej Blok45 w kadrze zanim wrap.
+            // Twardy limit: WRAP_START ≤ SNAP2−1.85 (ostatnia linia + min. czas cylindra).
+            var _wrapStaggerSpan = 3 * _lineStagger;
+            var _wrapFloorDur = 0.35;
+            var WRAP_START_U = Math.min(
+              SNAP1_U + 14.5,
+              SNAP2_U - _wrapStaggerSpan - _wrapFloorDur,
+            );
+            var WRAP_DUR_BASE = Math.max(
+              _wrapFloorDur,
+              SNAP2_U - (WRAP_START_U + _wrapStaggerSpan),
+            );
             var _wrapEndU = SNAP2_U;
+            // Koniec wrapu = moment drop/ghost (≈ SNAP2 − 1.5U); używane też do startu zaniku cienia.
+            var _b1DropTriggerU = WRAP_START_U + WRAP_DUR_BASE;
             
             // ── Temporarily show b1 for geometry measurement ──
             var _b1WasHidden = (b1.style.visibility === 'hidden' || getComputedStyle(b1).visibility === 'hidden');
@@ -4008,7 +3209,7 @@
             // ═══ B1 GRAVITY DROP — trigger-to-play (ONLY B1, not B2) ═══
             // Forward: SNAP2 arrival → letters fall real-time
             // Backward: SNAP3→SNAP2 → letters return (reverse) real-time
-            var COLLAPSE_THIRD = (12.10 - 9.5) / 3;
+            var COLLAPSE_THIRD = (17.10 - 14.5) / 3;
             
             var _b1DropTl = gsap.timeline({ paused: true });
             var _b1Dropped = false;
@@ -4056,31 +3257,44 @@
                 });
             })();
             
-            // CIEŃ LITER: Ghost fades on SCRUB (not real-time)
-            // Visible during SNAP2 pause → fades as user scrolls toward SNAP3
-            // Gone by B2 "Wg badań" halfway
-            pinnedTl.to(_ghostB1, {
-                opacity: 0,
-                duration: 4.0,
-                ease: "power2.in"
-            }, SNAP2_U);
-            
-            // CIEŃ LITER: Ghost lines converge toward line 1 during fade
-            // Line 0 "W internecie"          ↓ DOWN toward center
-            // Line 1 "jest więcej klientów,"  — anchor
-            // Line 2 "niż Twoja firma jest"  ↑ UP toward center
-            // Line 3 "w stanie obsłużyć!"    ↑ UP faster toward center
+            // CIEŃ LITER: zanik wyłącznie przez opacity (+ lekki ruch y na liniach).
+            // BEZ scaleY na kontenerze — inline transform z sync(b1) psuje / przerywa tween skali na scrub.
+            // Start od _b1DropTriggerU (ghost pojawia się tu) — dłuższy odcinek scrolla niż start od SNAP2;
+            // końcówka za SNAP2 żeby zanik był widoczny pod scrub (nie „migał” na końcu snapu).
+            var _ghostFadeStartU = _b1DropTriggerU;
+            var _ghostFadeDur = Math.max(11, SNAP2_U + 10 - _ghostFadeStartU);
+            var _ghostEase = 'sine.inOut';
+            pinnedTl.fromTo(
+                _ghostB1,
+                { opacity: 1 },
+                {
+                    opacity: 0,
+                    duration: _ghostFadeDur,
+                    ease: _ghostEase,
+                    immediateRender: false,
+                },
+                _ghostFadeStartU,
+            );
+            pinnedTl.to(
+                _ghostChars,
+                {
+                    opacity: 0,
+                    duration: _ghostFadeDur,
+                    ease: _ghostEase,
+                    overwrite: 'auto',
+                },
+                _ghostFadeStartU,
+            );
             if (_ghostLines.length >= 4) {
-                pinnedTl.to(_ghostLines[0], { y: '+=50', duration: 4.0, ease: 'power2.in' }, SNAP2_U);
-                pinnedTl.to(_ghostLines[2], { y: '-=50', duration: 4.0, ease: 'power2.in' }, SNAP2_U);
-                pinnedTl.to(_ghostLines[3], { y: '-=100', duration: 4.0, ease: 'power2.in' }, SNAP2_U);
+                pinnedTl.to(_ghostLines[0], { y: '+=50', duration: _ghostFadeDur, ease: _ghostEase }, _ghostFadeStartU);
+                pinnedTl.to(_ghostLines[2], { y: '-=50', duration: _ghostFadeDur, ease: _ghostEase }, _ghostFadeStartU);
+                pinnedTl.to(_ghostLines[3], { y: '-=100', duration: _ghostFadeDur, ease: _ghostEase }, _ghostFadeStartU);
             }
             
             // Drop at END of SNAP1→SNAP2 scroll (letters gone BEFORE SNAP2 pause)
             // Trigger 0.5U before SNAP2 → drop starts during scroll, done before pause
             // Drop triggers when line 0's wrap COMPLETES → falling starts while later lines still wrapping
             // Creates one continuous motion: wrap deceleration → drop acceleration (circ.in)
-            var _b1DropTriggerU = WRAP_START_U + WRAP_DUR_BASE;
             var _origChars = b1.querySelectorAll('.anim-char');
             pinnedTl.call(function() {
                 if (!_b1Dropped) {
@@ -4143,21 +3357,40 @@
 
                 // BLOCK 3
                 // b3Header usunięty z sekwencji - animacja fali dodana NA KOŃCU na pozycji 14
-            // Przejmujemy transform z CSS, transformOrigin na lewą stronę (justowanie do lewej)
-            gsap.set(b3, { yPercent: -50, transformOrigin: "left center" });
+            // Na niskich viewportach yPercent:-50 ciągnie blok w górę o ~½ wysokości → ucina od góry.
+            // Przy wysokości < 920px: kotwicz od góry bloku (0), nie od środka.
+            function applyKineticB3VerticalAlign() {
+                if (!b3) return;
+                var shortVp = typeof window !== 'undefined' && window.innerHeight < 920;
+                gsap.set(b3, {
+                    yPercent: shortVp ? 0 : -50,
+                    transformOrigin: 'left center',
+                });
+            }
+            applyKineticB3VerticalAlign();
+            var _b3AlignRaf = 0;
+            function onKineticB3Resize() {
+                cancelAnimationFrame(_b3AlignRaf);
+                _b3AlignRaf = requestAnimationFrame(applyKineticB3VerticalAlign);
+            }
+            window.addEventListener('resize', onKineticB3Resize, { passive: true });
+            cleanups.push(function() {
+                window.removeEventListener('resize', onKineticB3Resize);
+                cancelAnimationFrame(_b3AlignRaf);
+            });
             gsap.set([b3Lines, b3Bold], { transformOrigin: "left center" });
             
             // BLOCK 3 - POZYCJA ABSOLUTNA 10.04 (przesunięte -2.7)
-            pinnedTl.set(b3, { autoAlpha: 1 }, 10.04 + I + DELTA);
+            pinnedTl.set(b3, { autoAlpha: 1 }, 15.04 + I + DELTA);
             pinnedTl.fromTo(b3Lines, 
                 { y: 60, opacity: 0, scale: 1 }, 
                 { y: 0, opacity: 1, scale: 1.08, duration: 8.0, stagger: 0.6, ease: "none" },
-                10.04 + I + DELTA);
+                15.04 + I + DELTA);
             
             pinnedTl.fromTo(b3Bold, 
                 { opacity: 0, scale: 0.95, y: 60 }, 
                 { opacity: 1, scale: 1.12, y: 0, duration: 7.0, ease: "none" },
-                12.44 + I + DELTA);
+                17.44 + I + DELTA);
 
             // CYLINDER INTRO - Speed Ramp v3: 13+I (was 11+I), dur 9 (was 7)
             // Responsywne wartości z pomiarów użytkownika
@@ -4239,13 +3472,13 @@
                 scale: cylEndScale,
                 duration: 9.60,   // v140: was 11.96 — delayed start, same end point
                 ease: "none" 
-            }, 12.40 + I + DELTA);  // v140: after collapse end (was 10.04) — no overlap with particles
+            }, 17.40 + I + DELTA);  // po collapse cząsteczek (COLLAPSE_END 17.1 w U kinetic)
             pinnedTl.to(_s.cylinder ? _s.cylinder.state : {}, { 
                 opacity: 1, 
                 rotation: _s.cylinder ? _s.cylinder.getRotationForNumber(98) : 0,
                 duration: 9.60,   // v140: was 11.96
                 ease: "none" 
-            }, 12.40 + I + DELTA);  // v140: after collapse end
+            }, 17.40 + I + DELTA);
             
             // CYLINDER SCALE - już ustawiony wyżej w głównym gsap.set/pinnedTl.to
             
@@ -4279,14 +3512,14 @@
                 stagger: 0.06,
                 ease: "power2.out",
                 immediateRender: false
-            }, 14.3 + I + DELTA);
+            }, 19.3 + I + DELTA);
             
             pinnedTl.to(b3HeaderChars, {
                 color: "#141414",
                 duration: 5.5,
                 stagger: 0.06,
                 ease: "power1.inOut"
-            }, 14.6 + I + DELTA);
+            }, 19.6 + I + DELTA);
             
             // GEMIUS HEADER - pozostaje stabilny i widoczny na U:23
             
@@ -4300,7 +3533,7 @@
             gsap.set(b1, { scale: 0.95, transformOrigin: "center center" });
             pinnedTl.to(b1, {
                 scale: 1.08,
-                duration: 13 + DELTA, // covers B1 visibility until exit at 9.50+I+DELTA
+                duration: SNAP2_U - b1AnimStart,
                 ease: "power2.in"
             }, b1AnimStart);
             
@@ -4316,7 +3549,7 @@
                 scale: 1.12,
                 duration: 8.0,
                 ease: "power3.out"
-            }, 10.3 + I + DELTA);
+            }, 15.3 + I + DELTA);
             
             // ============================================
             // BLOCK 1 - SEKWENCYJNE ZWIJANIE LINII W DÓŁ
@@ -4341,7 +3574,7 @@
             // ============================================
             // PARTICLE QMARK - animacje canvasu w timeline
             // Pozycja a) SNAP1_U (B1_FULL_DRAW) → Scale 1.30, Y 14px, Opacity 1.0 ("!" uformowany)
-            // Pozycja b) SNAP2_U (I+9.5) → Scale 1.65, Y 55px ("?" widoczny)
+            // Pozycja b) SNAP2_U (I+SNAP2_KINETIC_U) → Scale 1.65, Y 55px ("?" widoczny)
             // U:10.80+I → Collapse zakończony, cząsteczki zniknęły
             // Fazy form/rot/collapse sterowane wewnętrznie przez komponent
             // ============================================
@@ -4389,12 +3622,12 @@
                 ease: "power2.inOut"
             }, SNAP1_U);
             
-            // U:9.50+I → U:12.10+I: COLLAPSE + FADE OUT canvasu (2× longer)
+            // Od SNAP2: fade canvasu równolegle z fazą collapse cząsteczek (2.6U → COLLAPSE_END 15.1)
             pinnedTl.to(pqCanvas, {
                 opacity: 0,
-                duration: 2.60, // v140: was 1.30 — synced with COLLAPSE_END 12.10
+                duration: 2.60,
                 ease: "power2.in"
-            }, 9.50 + I + DELTA);
+            }, SNAP2_U);
             
             // Brightness 60% — stały od początku (bez tweenu)
 
@@ -4856,11 +4089,11 @@
             gsap.set(nigdyGlow, { scale: 0, rotation: -185, transformOrigin: "center center" }); // v140: rotation baked from panel
             
             // Timing - przesunięty o -2.7 (cała animacja skrócona)
-            const bgStart = 13.80 + I + DELTA; // Speed Ramp v3: ORYGINALNA pozycja — 0.6U po junction, vel=36% burst
-            const textStart = 15.80 + I + DELTA; // Speed Ramp v3: ORYGINALNA pozycja — 2.6U po junction, vel=22% burst
+            const bgStart = 18.80 + I + DELTA; // w zestawie z SNAP2/particle collapse
+            const textStart = 20.80 + I + DELTA;
             const textDuration = 7.2; // Speed Ramp v3: was 2.5 (2.9× stretch → NIGDY gęstnieje w slow-mo)
             const bgIntroDuration = 9.2; // Speed Ramp v3: was 4.5 (2× stretch → plate wypełnia do snap3)
-            const glowStart = 10.80 + I + DELTA; // Start glow intro
+            const glowStart = 15.80 + I + DELTA; // Start glow intro (z B3)
             
             // v140: luminosity removed — math proves ΔE=0 (white gradient on warm bg = identical in normal/luminosity)
             // Saves GPU isolated compositing group during peak load at SNAP2
@@ -4891,14 +4124,14 @@
             // === BLASZKA INTRO: ciągła organiczna animacja od pojawienia B3 ===
             // v140: was starting at bgStart (13.80) with 3.76U dead zone
             // Now: starts at 10.04 (B3 text), ends at same point (bgStart+bgIntroDuration)
-            var _plateFullDuration = (bgStart + bgIntroDuration) - (10.04 + I + DELTA);
+            var _plateFullDuration = (bgStart + bgIntroDuration) - (15.04 + I + DELTA);
             pinnedTl.to(nigdyPlate, {
                 opacity: 1,
                 scale: 0.85,
                 rotation: -9,
                 duration: _plateFullDuration,
                 ease: "power2.out"
-            }, 10.04 + I + DELTA);
+            }, 15.04 + I + DELTA);
             
             // === TEKST INTRO: fontWeight 300→700 in 8 steps (was 4 = visible jumps) ===
             // 50-unit increments: 300→350→400→450→500→550→600→650→700
@@ -4987,7 +4220,7 @@
                 duration: 2.0,
                 ease: "power2.out",
                 onUpdate: _vigApply
-            }, 22.0 + I + DELTA);
+            }, 27.0 + I + DELTA);
         }
 
         // ============ TEXT MARKERS — SVG stroke animations ============
@@ -5079,6 +4312,7 @@
     }
 
     function resume() {
+        if (typeof document !== 'undefined' && document.documentElement.classList.contains('kinetic-past')) return;
         if (!_paused) return;
         _paused = false;
         // Podłącz ticker functions
@@ -5155,6 +4389,10 @@
     function _factoryIoCallback(entries) {
         var e = entries[0];
         if (!e) return;
+        if (typeof document !== 'undefined' && document.documentElement.classList.contains('kinetic-past')) {
+            pause();
+            return;
+        }
         if (e.isIntersecting) {
             resume();
         } else {
@@ -5192,7 +4430,7 @@
     // ═══ FACTORY P2A: ST-REFRESH-01 — section-in-view + layout-settle ═══
     var _stIo = new IntersectionObserver(function(entries) {
         if (!entries[0]?.isIntersecting) return;
-        ScrollTrigger.refresh(true);
+        scrollRuntime.requestRefresh('st-refresh');
         _stIo.disconnect();
     }, { threshold: 0, rootMargin: '0px' });
     _stIo.observe(container);
@@ -5200,7 +4438,7 @@
     cleanups.push(function() { _stIo.disconnect(); });
 
     var _settleTimer = setTimeout(function() {
-        ScrollTrigger.refresh(true);
+        scrollRuntime.requestRefresh('st-refresh');
     }, 1000);
     timerIds.push(_settleTimer);
 
@@ -5208,19 +4446,132 @@
 
     } // END init()
 
-    document.addEventListener('DOMContentLoaded', () => {
-      ScrollTrigger.create({ trigger: '#fake-pinned', start: 'top top', end: '+=100%', pin: true, scrub: 1, markers: !!DEBUG_MODE });
-      const el = document.getElementById('kinetic-section');
-      window.kineticHarnessInst = init(el);
-    });
 
-    let accordionExpanded = false;
-    function toggleAccordion() { accordionExpanded = !accordionExpanded; document.getElementById('fake-accordion-content').classList.toggle('expanded', accordionExpanded); }
-    let _refreshDebounce = null;
-    document.getElementById('fake-accordion-content')?.addEventListener('transitionend', function(e) { if (e.propertyName !== 'height') return; clearTimeout(_refreshDebounce); _refreshDebounce = setTimeout(() => { scrollRuntime.requestRefresh('accordion-settle'); }, 100); });
-    const fakeAboveHeights = ['80vh', '120vh', '40vh'];
-    let fakeAboveIdx = 0;
-    function changeFakeAboveHeight() { fakeAboveIdx = (fakeAboveIdx + 1) % fakeAboveHeights.length; document.getElementById('fake-above').style.height = fakeAboveHeights[fakeAboveIdx]; scheduleRefresh(); }
-  </script>
-</body>
-</html>
+export default function KineticEngine() {
+  const rootRef = useRef<HTMLElement | null>(null);
+  const kineticApiRef = useRef<{ pause: () => void; resume: () => void } | null>(null);
+
+  useGSAP(() => {
+    gsap.registerPlugin(ScrollTrigger);
+    const el = rootRef.current;
+    if (!el) {
+      if (process.env.NODE_ENV !== 'production') {
+        throw new Error('[P3] rootRef.current is null — ref not attached to <section>.');
+      }
+      return;
+    }
+    const inst = init(el);
+    kineticApiRef.current = inst;
+    return () => {
+      kineticApiRef.current = null;
+      inst?.kill?.();
+    };
+  }, { scope: rootRef });
+
+  useEffect(() => {
+    const syncKineticPast = () => {
+      const past = document.documentElement.classList.contains('kinetic-past');
+      if (past) kineticApiRef.current?.pause();
+      else kineticApiRef.current?.resume();
+    };
+    window.addEventListener('kinetic-visibility', syncKineticPast);
+    requestAnimationFrame(syncKineticPast);
+    return () => window.removeEventListener('kinetic-visibility', syncKineticPast);
+  }, []);
+
+  useEffect(() => {
+    scrollRuntime.requestRefresh('dynamic-mounted');
+    let id1 = 0;
+    let id2 = 0;
+    id1 = requestAnimationFrame(() => {
+      id2 = requestAnimationFrame(() => {
+        scrollRuntime.requestRefresh('dynamic-mounted-settle');
+      });
+    });
+    return () => {
+      if (id1) cancelAnimationFrame(id1);
+      if (id2) cancelAnimationFrame(id2);
+    };
+  }, []);
+
+  return (
+    <section id="kinetic-section" ref={rootRef} className="stage stage-pinned">
+              
+              {/* GLOW LAYER - ambient light pod słowem "nigdy" */}
+              <div className="nigdy-glow" id="kinetic-nigdy-glow"></div>
+              
+              {/* ============================================
+                   FAZA 2.1: Blob carrier z 3 blobami
+                   ============================================ */}
+              <div className="blob-carrier" id="kinetic-blob-carrier">
+                  <div className="blob-bg-preview" id="kinetic-blob-bg-preview"></div>
+                  <div className="blob blob-1" id="kinetic-blob1"></div>
+                  <div className="blob blob-2" id="kinetic-blob2"></div>
+                  <div className="blob blob-3" id="kinetic-blob3"></div>
+              </div>
+              
+              {/* v140: Blob canvas — replaces DOM multiply blending with baked source-over */}
+              <canvas id="kinetic-blob-canvas"></canvas>
+              
+              {/* PARTICLE QMARK - "?" z cząsteczek, za tekstem */}
+              <canvas id="kinetic-tunnel-canvas"></canvas>
+              <canvas id="kinetic-particle-qmark-canvas"></canvas>
+              
+              <div className="content-wrapper" data-gating-target>
+                  
+                  {/* BLOK 1 */}
+                  <div className="text-block" id="kinetic-block-1">
+                      <div className="line">W internecie</div>
+                      <div className="line">jest więcej klientów,</div>
+                      <div style={{ height: "0.8rem" }}></div>
+                      <div className="line bold-line line-large">niż Twoja firma jest</div>
+                      <div className="line bold-line line-large">w stanie obsłużyć!</div>
+                  </div>
+      
+                  {/* BLOK 2 */}
+                  <div className="text-block" id="kinetic-block-2">
+                      <div className="line bold-line line-xlarge" id="kinetic-problem-line">W czym problem?</div>
+                  </div>
+      
+                  {/* BLOK 3 */}
+                  <div className="text-block" id="kinetic-block-3">
+                      <div className="small-header">Wg badań <span className="highlight">GEMIUS</span>:</div>
+                      
+                      {/* DESKTOP VERSION */}
+                      <div className="block-3-desktop">
+                          <div className="line">98% osób, które odwiedzi</div>
+                          <div className="line">stronę polskiej firmy&nbsp;<span className="word-anchor"><span className="bg-layer"><span className="nigdy-plate" id="kinetic-nigdy-plate"></span></span><span className="text-layer"><span className="nigdy-text" id="kinetic-word-nigdy">nigdy</span></span></span></div>
+                          <div className="line bold-line">nie stanie się jej klientami.</div>
+                      </div>
+                      
+                      {/* MOBILE VERSION */}
+                      <div className="block-3-mobile">
+                          <div className="line">98% osób,</div>
+                          <div className="line">które odwiedzi</div>
+                          <div className="line">stronę polskiej firmy</div>
+                          <div className="line"><span className="word-anchor"><span className="bg-layer"><span className="nigdy-plate" id="kinetic-nigdy-plate-mobile"></span></span><span className="text-layer"><span className="nigdy-text" id="kinetic-word-nigdy-mobile">nigdy</span></span></span>&nbsp;<span className="bold-text">nie stanie</span></div>
+                          <div className="line bold-line">się jej klientami.</div>
+                      </div>
+                  </div>
+      
+              </div> {/* Koniec content-wrapper */}
+      
+              {/* PULSE: moved to particle canvas renderer (zero DOM, zero GPU layers) */}
+      
+              {/* CYLINDER COMPONENT - fog renderowany w canvas */}
+              <div id="kinetic-cylinder-wrapper">
+                  <canvas id="kinetic-cylinder-canvas"></canvas>
+              </div>
+      
+              {/* VIGNETTE ELLIPSE — narastająca od krawędzi w ostatnich klatkach */}
+              <div className="kinetic-vignette" id="kinetic-vignette"></div>
+              
+              {/* CORONA: Słoneczna Aura za wykrzyknikiem (pure CSS, zero canvas cost) */}
+              <div id="kinetic-corona" style={{ position: "absolute", top: "50%", left: "50%", transform: "translate(-50%,-50%)", width: "100%", height: "100%", pointerEvents: "none", zIndex: 6, opacity: 0 }}>
+                  <div className="kinetic-corona-ring"></div>
+                  <div className="kinetic-corona-ring reverse"></div>
+              </div>
+      
+    </section>
+  );
+}

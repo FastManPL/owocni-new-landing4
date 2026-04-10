@@ -1,0 +1,9 @@
+Statyczny podgląd z Reacta (index.html + preview-app.js + obrazy, do ZIP / czatu AI):
+  preview-html/kinetic-blok45-lp-react/
+  Regeneracja: npm run preview:kinetic-blok45-html
+
+Opcjonalnie mini Next (ten sam kod TSX co LP):
+  packages/kinetic-blok45-handoff/
+
+Podgląd w pełnym repo:
+  src/app/handoff/kinetic-blok45/page.tsx

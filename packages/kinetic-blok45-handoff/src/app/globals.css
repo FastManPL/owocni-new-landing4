@@ -1,0 +1,36 @@
+/* Minimalna baza zgodna z głównym LP (scroll / tło) — bez Tailwinda */
+html {
+  font-size: 16px;
+}
+
+html {
+  scrollbar-gutter: stable;
+  overflow-x: clip;
+}
+
+html,
+body {
+  overscroll-behavior: none;
+}
+
+body {
+  background-color: #f7f6f4;
+  overflow-x: clip;
+}
+
+main {
+  max-width: 100%;
+  overflow-x: clip;
+}
+
+::selection {
+  background-color: #feb4e6;
+  color: #fbf7b6;
+  text-shadow: 2px 2px 0px #f29cc9;
+}
+
+::-moz-selection {
+  background-color: #feb4e6;
+  color: #fbf7b6;
+  text-shadow: 2px 2px 0px #f29cc9;
+}

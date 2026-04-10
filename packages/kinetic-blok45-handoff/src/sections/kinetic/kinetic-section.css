@@ -1,0 +1,727 @@
+        /* ============================================
+           FAZA 1.1: Zmienne CSS (scoped do sekcji)
+           ============================================ */
+        #kinetic-section {
+            /* ORYGINALNE - bez zmian */
+            --bg-color: #f7f6f4;
+            --text-color: #141414; 
+            --highlight-color: #141414;
+            
+            /* BLOB colors now set directly as background-color */
+            
+            /* FACTORY P2A: B-ISO-01 — stacking context isolation */
+            isolation: isolate;
+        }
+
+        /* SCOPED RESET — sekcja i jej dzieci (nie globalne *, html, body) */
+        #kinetic-section *,
+        #kinetic-section *::before,
+        #kinetic-section *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        /* v140: Panel offset custom properties — SINGLE SOURCE OF TRUTH */
+        #kinetic-section {
+            --bp-b3x: -27px;
+            --bp-b3y: -294px;
+            --bp-cx: -45px;
+            --bp-cy: 203px;
+            --gp-mx: -33px;
+            --gp-my: 383px;
+        }
+
+        #kinetic-section {
+            height: 100vh;
+            height: 100lvh; /* Pin spacer musi być >= lvh, inaczej progress nie dojdzie do 1.0 */
+            width: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            position: relative;
+            overflow: visible; /* TEST: zmienione z hidden dla kontekstu 3D */
+            z-index: 1;
+        }
+
+        /* STREFA 1: Pinowana — bez pełnego tła sekcji (nachodzi na Fakty; widać canvas/bloby, nie zasłania tła strony). */
+        #kinetic-section {
+            background-color: transparent;
+        }
+
+        /* ============================================
+           FAZA 1.2 + 1.3: Style blobów
+           ============================================ */
+        
+        /* Kontener blobów - jedzie razem z contentem */
+        #kinetic-section .blob-carrier {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            pointer-events: none;
+            overflow: visible;
+        }
+        
+        /* Animowane tło - kontrolowane przez GSAP timeline */
+        #kinetic-section .blob-bg-preview {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: hsl(40, 20%, 97%); /* inverted P4v2: light (blob val) */
+            opacity: 0;
+            pointer-events: none;
+            z-index: -1;
+        }
+        
+        /* GLOW - ambient light pod słowem "nigdy" */
+        #kinetic-section .nigdy-glow {
+            position: absolute;
+            left: 50%;  /* domyślnie centrum, JS skoryguje */
+            top: 50%;
+            width: 3238px;  /* v140: baked from panel */
+            height: 984px;  /* v140: baked from panel */
+            margin-left: -33px; /* v140: baked X offset */
+            margin-top: 383px;  /* v140: baked Y offset */
+            z-index: 3;
+            pointer-events: none;
+            opacity: 0;
+            transform: translate(-50%, -50%);
+            /* v140: PRE-BAKED luminosity — zero blend mode, zero GPU compositing cost */
+            mix-blend-mode: normal;
+            background: radial-gradient(
+                50% 37% at 50% 50%,
+                #ffffff 0%,
+                #ffffff 20%,
+                #fdfdf9 25%,
+                #fbfbf7 28%,
+                #fcfbf5 32%,
+                #faf8f3 35%,
+                #f9f6f0 38%,
+                #f8f5ee 42%,
+                #f6f3ec 45%,
+                #f4f1ea 48%,
+                #f2efe8 51%,
+                rgba(246, 242, 237, 0.8) 55%,
+                rgba(242, 235, 229, 0.5) 62%,
+                rgba(237, 229, 220, 0.2) 72%,
+                transparent 88%
+            );
+        }
+        
+        /* Mobile: mniejszy glow - 109% z bazowego */
+        @media (max-width: 599px) {
+            #kinetic-section .nigdy-glow {
+                width: 2050px;
+                height: 345px;
+            }
+        }
+        
+        /* ============================================
+           TUNNEL CANVAS - obręcze wokół "!"
+           Nad blobami (0), pod cząsteczkami (3)
+           ============================================ */
+        #kinetic-section #kinetic-tunnel-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 4; /* Nad glow (3) */
+            pointer-events: none;
+        }
+
+        /* ============================================
+           PARTICLE QMARK CANVAS - "?" z cząsteczek
+           Za tekstem (z-index: 10), nad blobami (2)
+           ============================================ */
+        #kinetic-section #kinetic-particle-qmark-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 5; /* Nad tunnel (4), pod vignette (8) */
+            pointer-events: none;
+            /* filter: BAKED into JS palettes (bakeFilter) — eliminuje GPU filter pipeline */
+            mix-blend-mode: normal; /* GSAP switches to color-burn at BLOB_OPACITY_START+1.5 */
+        }
+        
+
+        /* Pojedynczy blob */
+        #kinetic-section .blob {
+            position: absolute;
+            border-radius: 50%;
+            pointer-events: none;
+            /* P0: Static mask replaces dynamic gradient. background-color is flat fill (cheap repaint).
+               Gradient regen eliminated: was ~3M px/frame software rasterization */
+            -webkit-mask-image: radial-gradient(circle at center, black 0%, transparent 70%);
+            mask-image: radial-gradient(circle at center, black 0%, transparent 70%);
+        }
+
+        #kinetic-section .blob-1 {
+            width: 70vw;
+            height: 70vw;
+            top: 25vh;
+            left: 25vw;
+            transform: translate(-50%, -50%);
+            background-color: hsl(35, 10%, 93%); /* muted warm — single corona calibration */
+            opacity: 0;
+            transform-origin: center center;
+            border-radius: 60% 40% 30% 70% / 60% 30% 70% 40%;
+        }
+
+        #kinetic-section .blob-2 {
+            width: 80vw;
+            height: 80vw;
+            top: 75vh;
+            left: 75vw;
+            transform: translate(-50%, -50%);
+            background-color: hsl(42, 9%, 93%); /* muted golden — single corona calibration */
+            opacity: 0;
+            transform-origin: center center;
+            border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+        }
+
+        #kinetic-section .blob-3 {
+            width: 60vw;
+            height: 60vw;
+            top: 50vh;
+            left: 50vw;
+            transform: translate(-50%, -50%);
+            background-color: hsl(25, 10%, 93%); /* muted peach — single corona calibration */
+            opacity: 0;
+            transform-origin: center center;
+            border-radius: 50% 50% 20% 80% / 25% 80% 20% 75%;
+        }
+
+        /* ============================================
+           FAZA 1.5: Media queries dla blobów (mobile)
+           ============================================ */
+        @media (max-width: 599px) {
+            #kinetic-section .blob-1 {
+                width: 100vw;
+                height: 100vw;
+                top: 20vh;
+                left: 20vw;
+            }
+            #kinetic-section .blob-2 {
+                width: 120vw;
+                height: 120vw;
+                top: 80vh;
+                left: 80vw;
+            }
+            #kinetic-section .blob-3 {
+                width: 80vw;
+                height: 80vw;
+                top: 50vh;
+                left: 50vw;
+            }
+        }
+
+        /* ============ BLOB CANVAS — replaces DOM compositor blending ============ */
+        #kinetic-section #kinetic-blob-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        /* ============ CYLINDER COMPONENT ============ */
+        #kinetic-section #kinetic-cylinder-wrapper {
+            position: absolute;
+            top: calc(0px + var(--bp-cy));
+            left: calc(50% + var(--bp-cx));
+            width: 100%;
+            height: 100%;
+            z-index: 6;
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        #kinetic-section #kinetic-cylinder-wrapper canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            position: relative;
+            z-index: 0;
+            transform: scale(1.46) rotate(-5deg); /* v140: baked from panel */
+            transform-origin: center center;
+        }
+
+        /* Fog renderowany bezpośrednio w canvas - nie potrzeba CSS */
+
+        /* FIX: Obcięcie "%" przy viewport 769-1200px (§5.1.3 Konstytucji) */
+        @media (min-width: 769px) and (max-width: 1200px) {
+            #kinetic-section #kinetic-cylinder-wrapper {
+                width: 140%;
+            }
+        }
+
+        @media (max-width: 768px) {
+            #kinetic-section #kinetic-cylinder-wrapper {
+                left: 50%;
+                width: 160%;
+                height: 120%;
+                /* Transform kontrolowany przez GSAP */
+            }
+        }
+        /* ============ KONIEC CYLINDER ============ */
+
+        #kinetic-section .content-wrapper {
+            position: relative;
+            width: 90%;
+            max-width: 1200px;
+            height: 100vh;
+            height: 100lvh; /* Matchuje .stage — pin spacer consistency */
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 10; /* Nad cylindrem (z-index: 5) i blobami (0) */
+        }
+
+        /* --- GLOBALNE STYLE TEKSTU --- */
+        #kinetic-section .line {
+            font-size: clamp(1.3rem, 2.88vw, 2.52rem);
+            line-height: 1.2; 
+            font-weight: 300;
+            display: flex;
+            flex-wrap: wrap; 
+            justify-content: center;
+            white-space: normal;
+            text-align: center;
+        }
+
+        #kinetic-section .line-large {
+            font-size: clamp(2.02rem, 4.46vw, 3.96rem);
+            line-height: 1.1;
+            letter-spacing: -0.02em; 
+        }
+
+        #kinetic-section .line-xlarge {
+            font-size: clamp(3.19rem, 7.29vw, 6.37rem); /* +15% z clamp(2.77, 6.34vw, 5.54) */
+            line-height: 1.05;
+            letter-spacing: -0.03em;
+        }
+
+        #kinetic-section .line-small {
+            font-size: clamp(0.97rem, 2.16vw, 1.87rem);
+            line-height: 1.25;
+        }
+
+        #kinetic-section .bold-line {
+            font-weight: 700;
+            color: var(--highlight-color);
+        }
+        
+        #kinetic-section .bold-text {
+            font-weight: 700;
+        }
+
+        #kinetic-section .highlight {
+            font-weight: 700;
+            color: var(--highlight-color);
+            display: inline-block;
+        }
+
+        #kinetic-section .small-header {
+            font-size: clamp(1rem, 2vw, 1.5rem);
+            opacity: 0.7; 
+            margin-bottom: 1.5rem;
+            letter-spacing: 1px;
+            font-weight: 400;
+        }
+
+        #kinetic-section .text-block {
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            opacity: 0;
+            visibility: hidden;
+            will-change: transform, opacity;
+            pointer-events: none;
+            width: 100%;
+            left: 0; /* ZABEZPIECZENIE: Zawsze od lewej krawędzi kontenera */
+            transform-style: preserve-3d; /* BRAK 8: required for cylinder wrap 3D depth */
+        }
+
+        /* --- EFEKT HIGHLIGHT NA SŁOWIE "NIGDY" --- */
+        /* Nowa struktura z osobnymi warstwami dla blaszki i tekstu */
+        #kinetic-section .word-anchor {
+            position: relative;
+            display: inline-block;
+        }
+
+        /* BLASZKA — z-index:1, za tekstem, własny kontekst 3D */
+        #kinetic-section .bg-layer {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            z-index: 1;
+            perspective: 1000px;
+            pointer-events: none;
+        }
+
+        #kinetic-section .nigdy-plate {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 130%; /* v140: was 100% — wider to cover 'n' and 'y' edges */
+            height: 120%;
+            background: linear-gradient(90deg, #f36444, #ef9579); /* v140: vivid red-coral */
+            border-radius: 4px;
+            transform-origin: center center;
+            will-change: transform, opacity;
+        }
+
+        /* TEKST — z-index:2, przed blaszką, własny kontekst 3D */
+        #kinetic-section .text-layer {
+            position: relative;
+            z-index: 2;
+            perspective: 1000px;
+        }
+
+        #kinetic-section .nigdy-text {
+            display: inline-block;
+            font-weight: 300;
+            color: #ffffff; /* v140: white text on colored plate */
+            transform-origin: center center;
+            will-change: transform;
+            backface-visibility: hidden;
+        }
+
+        /* --- BLOK 1 (INTRO) --- */
+        #kinetic-section #kinetic-block-1 {
+            top: 36%; 
+            transform: translateY(-50%);
+            font-family: 'Lexend', sans-serif;
+            /* v140: text-transform: uppercase removed — natural case from HTML */
+            perspective: 1000px; /* v140: 3D context for cylinder wrap */
+        }
+        #kinetic-section #kinetic-block-1 .line,
+        #kinetic-section #kinetic-block-1 .bold-line {
+            font-weight: 750;
+            line-height: 1.05;
+            white-space: nowrap; /* BRAK 2: override global wrap — each line = one row */
+            flex-wrap: nowrap; /* override global flex-wrap: wrap */
+            overflow: visible;
+            position: relative;
+            transform-style: preserve-3d; /* v140: cylinder wrap */
+        }
+        #kinetic-section #kinetic-block-1 .line:not(.bold-line) {
+            font-weight: 400;
+        }
+        #kinetic-section #kinetic-block-1 .line:not(.bold-line),
+        #kinetic-section #kinetic-block-1 .line-large {
+            font-size: clamp(1.79rem, 3.98vw, 3.47rem); /* +15% */
+        }
+
+        @media (min-width: 600px) {
+            #kinetic-section #kinetic-block-1 .line:not(.bold-line),
+            #kinetic-section #kinetic-block-1 .line-large {
+                font-size: clamp(2.68rem, 5.96vw, 5.20rem); /* +15% */
+            }
+            #kinetic-section #kinetic-block-2 .line-xlarge {
+                font-size: clamp(5.06rem, 11.57vw, 10.12rem);
+            }
+            #kinetic-section #kinetic-block-3 .line {
+                font-size: clamp(1.79rem, 3.98vw, 3.47rem);
+            }
+            #kinetic-section #kinetic-block-3 .small-header {
+                font-size: clamp(1.38rem, 2.76vw, 2.07rem);
+            }
+        }
+
+        /* --- BLOK 2 (FLIP) --- */
+        /* Short desktop fix — Block 1 fonts capped at max but viewport too short → overlap */
+        @media (min-width: 769px) and (max-height: 900px) {
+            #kinetic-section #kinetic-block-1 .line:not(.bold-line),
+            #kinetic-section #kinetic-block-1 .line-large {
+                font-size: clamp(2.68rem, 5.96vw, 4.14rem); /* +15% */
+            }
+            #kinetic-section #kinetic-block-2 .line-xlarge {
+                font-size: clamp(5.06rem, 11.57vw, 8rem);
+            }
+        }
+
+        #kinetic-section #kinetic-block-2 {
+            top: 66%;  /* przesunięte +5% w dół (było 61%) */
+            transform: translateY(-50%);
+            font-family: 'Lexend', sans-serif;
+        }
+        #kinetic-section #kinetic-block-2 .line-xlarge,
+        #kinetic-section #kinetic-problem-line {
+            white-space: nowrap;
+            flex-wrap: nowrap; /* .line ma flex-wrap:wrap — nadpisujemy dla B2 */
+        }
+        #kinetic-section #kinetic-problem-line .anim-char {
+            white-space: nowrap;
+        }
+        
+        /* Styl dla animowanych liter - Cinema Container Blur + Color Wave */
+        #kinetic-section .anim-char {
+            display: inline-block;
+            /* will-change: removed from CSS → dynamiczny via JS (eliminuje 101 permanentnych GPU layers) */
+        }
+        /* v140: cylinder wrap — 3D backface hidden for Block 1 chars */
+        #kinetic-section #kinetic-block-1 .anim-char {
+            backface-visibility: hidden;
+            transform-style: preserve-3d;
+        }
+
+        /* --- BLOK 3 (GEMIUS) --- */
+        #kinetic-section #kinetic-block-3 {
+            top: calc(50% + var(--bp-b3y));
+            left: calc(21% + var(--bp-b3x));
+            width: 68%;
+            align-items: flex-start;
+            text-align: left;
+            z-index: 15; /* Nad cylindrem */
+            padding-top: clamp(0.35rem, 1.2vw, 1rem);
+            box-sizing: border-box;
+        }
+        /* Niskie okna (np. 1361×736): kotwica od góry sekcji zamiast „środka −294px” — zgodnie z yPercent:0 w JS */
+        @media (min-width: 600px) and (max-height: 920px) {
+            #kinetic-section #kinetic-block-3 {
+                top: clamp(2.5rem, 7vh, 10rem);
+                left: 5%;
+                width: min(90%, 42rem);
+            }
+        }
+        /* Jak B1/B2: globalne .line ma flex-wrap + white-space:normal → GEMIUS łamał się na więcej wierszy.
+           Trzy jawne .line w HTML = trzy wizualne wiersze (bez wewnętrznego zawijania). */
+        #kinetic-section #kinetic-block-3 .line {
+            justify-content: flex-start;
+            text-align: left;
+            white-space: nowrap;
+            flex-wrap: nowrap;
+            overflow: visible;
+        }
+        #kinetic-section #kinetic-block-3 .line .anim-char {
+            white-space: nowrap;
+        }
+        
+        /* Desktop/Mobile switching for block-3 content */
+        #kinetic-section .block-3-desktop, #kinetic-section .block-3-mobile { 
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start;
+        }
+        #kinetic-section .block-3-mobile { display: none; }
+
+        @media (max-width: 768px) {
+            #kinetic-section #kinetic-block-3 {
+                left: 5%;
+                width: 90%;
+                /* Niżej niż desktop (−294px) — żeby GEMIUS nie wchodził poza górę ekranu */
+                top: calc(50% + max(var(--bp-b3y), -198px));
+                padding-top: clamp(1rem, 3.5vw, 1.6rem);
+            }
+        }
+
+        /* ============ MOBILE < 600px ============ */
+        @media (max-width: 599px) {
+            /* Typografia - skaluje się liniowo z szerokością */
+            #kinetic-section .line {
+                font-size: 6.6vw; /* +20% z 5.5vw */
+            }
+            #kinetic-section .line-large {
+                font-size: 7.5vw;
+            }
+            #kinetic-section .line-xlarge {
+                font-size: 8.8vw; /* -20% z 11vw */
+            }
+            #kinetic-section .line-small {
+                font-size: 4vw;
+            }
+            
+            /* Bloki tekstowe - stałe marginesy od krawędzi */
+            #kinetic-section .text-block {
+                padding: 0 5%;
+            }
+            
+            /* Pozycje pionowe bloków — svh = stabilne z paskiem przeglądarki */
+            /* +5svh offset w dół (bloki były za wysoko) */
+            #kinetic-section #kinetic-block-1 {
+                top: calc(115px + 17.8vh);
+                top: calc(115px + 17.8svh);
+            }
+            #kinetic-section #kinetic-block-1 .line:not(.bold-line) {
+                font-size: 6.6vw;
+            }
+            #kinetic-section #kinetic-block-2 {
+                top: calc(185px + 26.2vh);
+                top: calc(185px + 26.2svh);
+            }
+            #kinetic-section #kinetic-block-3 {
+                /* Bez ujemnego margin — wcześniej ucinało od góry viewportu */
+                top: calc(172px + 26svh);
+                left: 5%;
+                width: 90%;
+                margin-top: 0;
+                padding-top: max(1rem, env(safe-area-inset-top, 0px));
+            }
+            
+            /* Cylinder 98% mobile positioning (baked from panel) */
+            #kinetic-section #kinetic-cylinder-wrapper {
+                margin-top: -35px;
+            }
+            #kinetic-section #kinetic-cylinder-wrapper canvas {
+                transform: scale(1) rotate(-21deg);
+                transform-origin: center center;
+            }
+            
+            /* Przełączenie na mobile version */
+            #kinetic-section .block-3-desktop { display: none; }
+            #kinetic-section .block-3-mobile { display: flex; }
+        }
+
+        /* Niskie telefony: GEMIUS jeszcze niżej — pełna widoczność nagłówka */
+        @media (max-width: 599px) and (max-height: 740px) {
+            #kinetic-section #kinetic-block-3 {
+                top: calc(188px + 28svh);
+            }
+        }
+
+
+        /* ============ DUŻE EKRANY >= 2000px ============ */
+        @media (min-width: 2000px) {
+            #kinetic-section #kinetic-cylinder-wrapper {
+                max-width: 2000px; /* Nie rośnie szerzej */
+            }
+        }
+
+
+        /* PULSE: moved to particle canvas renderer — zero CSS needed */
+
+        /* ============ VIGNETTE — zamrożony CSS, czysta kompozycja GPU ============ */
+        /* Zero JS, zero ticker, zero repaint. Gradient rysowany RAZ przez GPU. */
+        /* Skalibrowane wartości: 1412×1111, scroll 100% */
+        /* CORONA: Słoneczna Aura - pure CSS, only transform:rotate (GPU compositor) */
+        #kinetic-section .kinetic-corona-ring {
+
+            position: absolute;
+            top: 50%; left: 50%;
+            width: 350%; height: 350%;
+            transform: translate(-50%, -50%);
+            background: conic-gradient(from 0deg,
+                transparent 0deg, rgba(255,170,0,0.12) 15deg,
+                transparent 30deg, rgba(255,120,0,0.18) 45deg,
+                transparent 60deg, rgba(255,200,0,0.09) 80deg,
+                transparent 100deg, rgba(255,150,0,0.15) 130deg,
+                transparent 160deg, rgba(255,180,0,0.12) 190deg,
+                transparent 220deg, rgba(255,100,0,0.18) 260deg,
+                transparent 300deg, rgba(255,160,0,0.12) 340deg,
+                transparent 360deg);
+            -webkit-mask-image: radial-gradient(circle closest-side, transparent 2%, black 12%, transparent 55%);
+            mask-image: radial-gradient(circle closest-side, transparent 2%, black 12%, transparent 55%);
+            animation: kinetic-corona-spin 15s linear infinite;
+            will-change: transform;
+            pointer-events: none;
+        }
+        #kinetic-section .kinetic-corona-ring.reverse {
+            width: 280%; height: 280%;
+            animation: kinetic-corona-spin 10s linear infinite reverse;
+            background: conic-gradient(from 45deg,
+                transparent 0deg, rgba(255,140,0,0.18) 20deg,
+                transparent 50deg, rgba(255,190,0,0.12) 120deg,
+                transparent 180deg, rgba(255,110,0,0.15) 230deg,
+                transparent 280deg, rgba(255,170,0,0.18) 320deg,
+                transparent 360deg);
+        }
+        @keyframes kinetic-corona-spin {
+            from { transform: translate(-50%, -50%) rotate(0deg); }
+            to { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+        /* CORONA Q: white/bg variant for ? */
+
+        #kinetic-section .kinetic-vignette {
+            position: absolute;
+            top: 0;
+            right: 0;
+            bottom: 0;
+            left: 0;
+            z-index: 8; /* Nad cylinder (6), pod content-wrapper (10) i block-3 (15) */
+            pointer-events: none;
+            opacity: 0; /* GSAP animuje 0→1 razem z Block 1 */
+            --vig-rx: 72%;
+            background: radial-gradient(
+                var(--vig-rx) 52.5% at 50% 48%,
+                transparent 35%,
+                #f7f6f4 85%
+            );
+        }
+
+        /* ═══ CIEŃ LITER — Ghost clone CSS (mirrors #kinetic-block-1 rules) ═══ */
+        #kinetic-section #kinetic-block-1-ghost {
+            top: 36%; 
+            transform: translateY(-50%);
+            font-family: 'Lexend', sans-serif;
+            perspective: 1000px;
+        }
+        #kinetic-section #kinetic-block-1-ghost .line,
+        #kinetic-section #kinetic-block-1-ghost .bold-line {
+            font-weight: 750;
+            line-height: 1.05;
+            white-space: nowrap;
+            flex-wrap: nowrap;
+            overflow: visible;
+            position: relative;
+            transform-style: preserve-3d;
+        }
+        #kinetic-section #kinetic-block-1-ghost .line:not(.bold-line) {
+            font-weight: 400;
+        }
+        #kinetic-section #kinetic-block-1-ghost .line:not(.bold-line),
+        #kinetic-section #kinetic-block-1-ghost .line-large {
+            font-size: clamp(1.79rem, 3.98vw, 3.47rem);
+        }
+        @media (min-width: 600px) {
+            #kinetic-section #kinetic-block-1-ghost .line:not(.bold-line),
+            #kinetic-section #kinetic-block-1-ghost .line-large {
+                font-size: clamp(2.68rem, 5.96vw, 5.20rem);
+            }
+        }
+        @media (min-width: 769px) and (max-height: 900px) {
+            #kinetic-section #kinetic-block-1-ghost .line:not(.bold-line),
+            #kinetic-section #kinetic-block-1-ghost .line-large {
+                font-size: clamp(2.68rem, 5.96vw, 4.14rem);
+            }
+        }
+        #kinetic-section #kinetic-block-1-ghost .anim-char {
+            backface-visibility: hidden;
+            transform-style: preserve-3d;
+        }
+        @media (max-width: 599px) {
+            #kinetic-section #kinetic-block-1-ghost {
+                top: calc(115px + 17.8vh);
+                top: calc(115px + 17.8svh);
+            }
+            #kinetic-section #kinetic-block-1-ghost .line:not(.bold-line) {
+                font-size: 6.6vw;
+            }
+        }
+
+/* Gdy Blok 4–5 jest już głównie w viewport (nagłówek „Możemy…”) — wyłącz Kinetic.
+   UWAGA: GSAP ustawia visibility na dzieciach (#kinetic-block-1); potomek z visibility:visible
+   NADAL się maluje przy visibility:hidden na #kinetic-section (reguły CSS). Stąd opacity:0 na sekcji. */
+html.kinetic-past #kinetic-section {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}
+/* GSAP może ustawiać autoAlpha na dzieciach — wymuszamy ukrycie bloku GEMIUS przy Blok45. */
+html.kinetic-past #kinetic-section #kinetic-block-3 {
+    opacity: 0 !important;
+    visibility: hidden !important;
+    pointer-events: none !important;
+}

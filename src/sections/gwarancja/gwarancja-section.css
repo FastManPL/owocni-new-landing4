@@ -286,14 +286,25 @@
   max-width: 100%;
 }
 @media (max-width: 1200px) {
-  #gwarancja-section .cta-group { grid-template-columns: 1fr; justify-items: center; }
+  /* Jedna kolumna: CTA na środku (Safari + grid + ukryte sloty boczne) */
+  #gwarancja-section .cta-group {
+    grid-template-columns: minmax(0, 1fr);
+    justify-items: center;
+    justify-content: center;
+    margin-left: auto;
+    margin-right: auto;
+  }
   #gwarancja-section .cta-logos { display: none; }
 }
 
 #gwarancja-section .cta-center {
-  display: inline-flex;
+  display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: flex-start;
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 #gwarancja-section .cta-logos-below {
   display: none;
