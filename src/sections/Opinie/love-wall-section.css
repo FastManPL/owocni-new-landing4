@@ -108,12 +108,16 @@ body.debug-mode #love-wall-section .debug-panel{display:block}
   #love-wall-section .row-fade{display:none}
   /* overflow:hidden na .row-viewport obcinał karty w pionie; klip zostaje na .row-clip */
   #love-wall-section .row-clip{overflow:clip;overflow-clip-margin:600px}
-  #love-wall-section .row-viewport{overflow:visible;overflow-clip-margin:unset}
-  /* Wysokość z treści + wyrównanie rzędu: shell rozciąga się do najwyższej karty w rzędzie,
-     card wypełnia shell — wtedy margin-top:auto na autorze działa bez sztywnego --card-height. */
+  #love-wall-section .row-viewport{overflow:visible;overflow-clip-margin:unset;min-height:min-content}
+  /* Kolumna .rows-wrapper: domyślne flex-shrink:1 potrafiło „zdeptać” wysokość rzędów na wąskim layoucie. */
+  #love-wall-section .rows-wrapper > .row-clip,
+  #love-wall-section .rows-wrapper > .mount-slot{flex-shrink:0}
+  /* Wysokość z treści + rząd: shell rozciąga się do najwyższej karty; flex-shrink:0 na card/card-tilt
+     — inaczej flex:1 1 auto + min-height:0 na tilt ściskało kartę poniżej treści przy overflow:hidden. */
+  #love-wall-section .row-mover{align-items:stretch;min-height:min-content}
   #love-wall-section .card-shell{display:flex;flex-direction:column;align-items:stretch;align-self:stretch}
-  #love-wall-section .card-tilt{flex:1 1 auto;display:flex;flex-direction:column;min-height:0}
-  #love-wall-section .card{flex:1 1 auto;height:auto;max-height:none;align-self:stretch;box-sizing:border-box}
+  #love-wall-section .card-tilt{flex:1 0 auto;display:flex;flex-direction:column;min-height:min-content}
+  #love-wall-section .card{flex:1 0 auto;min-height:min-content;height:auto;max-height:none;align-self:stretch;box-sizing:border-box}
 }
 @media(max-width:500px){
   /* Direct clamp per property — no calc(length/length) dependency
