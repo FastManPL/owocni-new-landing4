@@ -831,6 +831,8 @@
       /* Edge-to-edge: karta od krawędzi do krawędzi ekranu */
       #case-study-section {
         width: 100%;
+        background: transparent;
+        z-index: 0;
       }
 
       /* Ramka mobile: 6% karty = 6vw → 24-28px przy 430px — zgodnie z konsultantami */

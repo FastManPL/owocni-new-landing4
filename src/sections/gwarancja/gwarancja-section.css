@@ -540,6 +540,8 @@
   /* Normalny flow — bez podciągania pod kalkulator / nachodzenia na poprzednią sekcję */
   #gwarancja-section {
     margin-top: 0;
+    /* Tło jak body (#f7f6f4) — przezroczyste, żeby przy kompozycie / nachodzeniu nie „przysłaniało” Love Wall */
+    background: transparent;
   }
   #gwarancja-section .lens-content-group {
     margin-top: 0;
