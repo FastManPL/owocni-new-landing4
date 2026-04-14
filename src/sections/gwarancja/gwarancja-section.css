@@ -82,7 +82,6 @@
   background: linear-gradient(to bottom, rgba(255,255,255,0.9) 0%, #f7f6f4 100%);
   border: none;
   text-decoration: none;
-  cursor: pointer;
 }
 #gwarancja-section .lens-pill-badge {
   display: inline-flex;
