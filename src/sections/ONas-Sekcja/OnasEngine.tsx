@@ -2799,7 +2799,7 @@ export default function OnasEngine() {
     </h2>
     <p className="onas-subtitle">
       <b style={{color:'#c53c0a'}}>Twój wkład =</b> 2 spotkania online <b style={{color:'#c53c0a'}}>+</b> decyzje w kluczowych momentach.<br className="br-desktop" />
-      Resztę bierzemy na siebie. <i>(Masz spokój i wolną głowę.)</i>
+      {' '}Resztę bierzemy na siebie. <i>(Masz spokój i wolną głowę.)</i>
     </p>
   </div>
 

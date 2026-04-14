@@ -496,7 +496,7 @@ const OwocniForm = ({ initialProduct = null, embed = false }: OwocniFormProps = 
       case 'logo':
         return `${base}/dziekujemy-logo`;
       case 'marketing':
-        return `${base}/dziekujemy-2`;
+        return `${base}/dziekujemy`;
       case 'nazwy':
         return `${base}/dziekujemy-3`;
       default:
