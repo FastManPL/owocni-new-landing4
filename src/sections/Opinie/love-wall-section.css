@@ -106,9 +106,14 @@ body.debug-mode #love-wall-section .debug-panel{display:block}
   #love-wall-section .card__quote--mobile-lg{font-size:0.85rem}
   /* Gradientowe mgły na krawędziach — wyłączone (wizualnie zasłaniały początek/koniec rzędów) */
   #love-wall-section .row-fade{display:none}
-  /* overflow:hidden na .row-viewport obcinał karty w pionie; klip zostaje na .row-clip */
-  #love-wall-section .row-clip{overflow:clip;overflow-clip-margin:600px}
+  /* Klip poziomy na .row-clip; pion: visible (z hidden-x WebKit liczy overflow-y jako auto — bez sztucznej wysokości). */
+  #love-wall-section .row-clip{overflow-x:hidden;overflow-y:visible}
   #love-wall-section .row-viewport{overflow:visible;overflow-clip-margin:unset;min-height:min-content}
+  #love-wall-section .rows-wrapper{
+    box-sizing:border-box;
+    padding-top:calc(max(0px, -1 * var(--row1-offset, 0px)) + 28px);
+    padding-bottom:calc(max(0px, var(--row3-offset, 0px)) + 28px);
+  }
   /* Kolumna .rows-wrapper: domyślne flex-shrink:1 potrafiło „zdeptać” wysokość rzędów na wąskim layoucie. */
   #love-wall-section .rows-wrapper > .row-clip,
   #love-wall-section .rows-wrapper > .mount-slot{flex-shrink:0}
