@@ -51,6 +51,11 @@ const OwocniForm = ({ initialProduct = null, embed = false }: OwocniFormProps = 
       ? (process.env.NEXT_PUBLIC_FORM_SUBMIT_URL || '/api/cennik')
       : '/api/cennik';
 
+  /** Strony „dziękujemy” z formularza — zawsze absolutny URL (host staging / override przez NEXT_PUBLIC_THANKYOU_ORIGIN). */
+  const thankYouOrigin = (
+    process.env.NEXT_PUBLIC_THANKYOU_ORIGIN || 'https://owocni-staging.vercel.app'
+  ).replace(/\/$/, '');
+
   // === PRODUCT DEFINITIONS ===
   const PRODUCTS: Record<string, any> = {
     strony: {
@@ -477,13 +482,9 @@ const OwocniForm = ({ initialProduct = null, embed = false }: OwocniFormProps = 
     return stepConfig ? stepConfig.progress : 0;
   };
 
-  // === THANK YOU REDIRECT (jak na oryginale – różne strony Dziękujemy wg ścieżki) ===
+  // === THANK YOU REDIRECT — zewnętrzny host (staging Owocnych), bez locale z bieżącej LP ===
   const getThankYouPath = (): string => {
-    if (typeof window === 'undefined') return '/dziekujemy';
-    const segments = window.location.pathname.split('/').filter(Boolean);
-    const locale = segments[0] && ['pl', 'en'].includes(segments[0]) ? segments[0] : 'pl';
-    const base = `/${locale}`;
-
+    const base = thankYouOrigin;
     switch (currentProduct) {
       case 'strony':
         const model = answers.strona_model; // b2b | local | ecommerce | online
@@ -1421,7 +1422,7 @@ const OwocniForm = ({ initialProduct = null, embed = false }: OwocniFormProps = 
                 </ul>
               </div>
               <Image
-                src="/assets/images/Mailing_puwdzr.png"
+                src="/assets/images/mailing-pakiet-5.svg"
                 alt=""
                 width={120}
                 height={150}

@@ -84,6 +84,13 @@ FORMCORE CSS - ZMIENNE (scoped .ocf-root — bez nadpisywania :root na LP)
 .frm-header__subtitle { font-size: 16px; color: var(--frm-color-text-muted); line-height: 1.6; animation: frm-fadeIn 0.3s ease; }
 .frm-header__subtitle--error { color: var(--frm-color-error); animation: frm-shake 0.3s ease-in-out; }
 
+/* Ostatni krok „Opisz firmę…” — na mobile więcej oddechu nad nagłówkiem */
+@media (max-width: 640px) {
+  .ocf-root .frm-content:has(.frm-step[data-step-name="strona_opis"]) .frm-header {
+    margin-top: 1rem;
+  }
+}
+
 .text-shine { display: inline-block; font-weight: 700; background: linear-gradient(110deg, #047857 40%, #b2e3cc 50%, #047857 60%); background-size: 200% auto; -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; animation: shine 3s linear infinite; }
 .title-tight { letter-spacing: -0.05em; }
 

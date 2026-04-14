@@ -127,10 +127,16 @@
   --tile-main-video-fade-height: 15px;
 }
 
+@media (max-width: 639px) {
+  #cyfrowe-wzrosty-section {
+    --tile-height: 32rem;
+  }
+}
+
 @media (max-width: 400px) {
   #cyfrowe-wzrosty-section {
     --tile-width: 17rem;
-    --tile-height: 26.2rem;
+    --tile-height: 27.2rem;
     --tile-radius: 0.85rem;
     --tile-padding: 1.275rem;
     --content-height: 9.35rem;
@@ -573,14 +579,14 @@
 
 #cyfrowe-wzrosty-section .tile-media-secondary--etap04 {
   left: 0;
-  bottom: 14rem;
+  bottom: 13rem;
   width: min(25rem, 100%);
 }
 
 @media (max-width: 400px) {
   #cyfrowe-wzrosty-section .tile-media-secondary--etap01 { bottom: 9rem; width: min(17rem, 94%); }
   #cyfrowe-wzrosty-section .tile-media-secondary--etap02 { left: 0; bottom: 7rem; width: min(12rem, 82%); }
-  #cyfrowe-wzrosty-section .tile-media-secondary--etap04 { bottom: 11rem; }
+  #cyfrowe-wzrosty-section .tile-media-secondary--etap04 { bottom: 10rem; }
 }
 
 /* Etap 03: jak .tile-media-main — dokładnie 2rem poza dolną krawędzią kafelka (ujemny margin + padding na .tiles-track) */

@@ -404,9 +404,15 @@
   z-index: 1;
   isolation: isolate;
   background: transparent;
-  padding: clamp(40px, 8vw, 100px) 0;
+  padding: clamp(40px, 8vw, 100px) 0 clamp(40px, 8vw, 100px) 0;
   font-family: 'Lexend', sans-serif; color: #111;
   display: flex; flex-direction: column; align-items: center;
+}
+
+@media (max-width: 599px) {
+  #faq-section {
+    padding-bottom: clamp(88px, 22vw, 140px);
+  }
 }
 
 #faq-section::before {

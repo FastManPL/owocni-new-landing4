@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="150" viewBox="0 0 120 150" fill="none" aria-hidden="true">
+  <rect x="8" y="28" width="104" height="72" rx="10" fill="#ecfdf5" stroke="#10b981" stroke-width="2"/>
+  <path d="M8 38 L60 72 L112 38" stroke="#10b981" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <rect x="36" y="96" width="48" height="40" rx="8" fill="#fff" stroke="#d4c5b3" stroke-width="1.5"/>
+  <text x="60" y="124" text-anchor="middle" font-family="system-ui, sans-serif" font-size="22" font-weight="700" fill="#047857">5</text>
+  <text x="60" y="140" text-anchor="middle" font-family="system-ui, sans-serif" font-size="9" font-weight="600" fill="#666" letter-spacing="0.02em">maile</text>
+</svg>
