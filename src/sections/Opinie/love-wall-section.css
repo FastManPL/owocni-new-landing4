@@ -95,8 +95,7 @@ body.debug-mode #love-wall-section .debug-panel{display:block}
 @media(max-width:768px){
   /* Rozszerzenie regionu malowania — Safari iOS obcinał transform / 3D poza „pudełkiem” rows-wrapper */
   #love-wall-section{
-    /* 260px było za małe vs rating (scale 1.38, top:-7px) + cytat — layout był niższy niż malowanie */
-    --card-width:340px;--card-height:308px;--card-padding:24px;--card-gap:24px;--row-padding-block:40px;--row-padding-left:16px;contain:none;
+    --card-width:340px;--card-padding:24px;--card-gap:24px;--row-padding-block:40px;--row-padding-left:16px;contain:none;
     padding:calc(5rem + env(safe-area-inset-top,0px)) 0 5rem;margin-bottom:clamp(3rem,10vw,6rem);
     clip-path:inset(-120px 0 -120px 0);
     -webkit-clip-path:inset(-120px 0 -120px 0);
@@ -110,13 +109,16 @@ body.debug-mode #love-wall-section .debug-panel{display:block}
   /* overflow:hidden na .row-viewport obcinał karty w pionie; klip zostaje na .row-clip */
   #love-wall-section .row-clip{overflow:clip;overflow-clip-margin:600px}
   #love-wall-section .row-viewport{overflow:visible;overflow-clip-margin:unset}
-  #love-wall-section .card{min-height:var(--card-height);height:auto;max-height:none}
+  /* Wysokość z treści + wyrównanie rzędu: shell rozciąga się do najwyższej karty w rzędzie,
+     card wypełnia shell — wtedy margin-top:auto na autorze działa bez sztywnego --card-height. */
+  #love-wall-section .card-shell{display:flex;flex-direction:column;align-items:stretch;align-self:stretch}
+  #love-wall-section .card-tilt{flex:1 1 auto;display:flex;flex-direction:column;min-height:0}
+  #love-wall-section .card{flex:1 1 auto;height:auto;max-height:none;align-self:stretch;box-sizing:border-box}
 }
 @media(max-width:500px){
   /* Direct clamp per property — no calc(length/length) dependency
      Formula: clamp(X×0.64, X/500×100vw, X) */
-  /* min wysokości: wcześniej 166px–195px — cytaty + gwiazdy wychodziły poza „pudełko” rows-wrapper */
-  #love-wall-section{--card-width:clamp(217.6px,68vw,340px);--card-height:clamp(248px,70vw,320px);--card-gap:clamp(15.36px,4.8vw,24px);--card-padding:clamp(15.36px,4.8vw,24px);--row-padding-block:clamp(25.6px,8vw,40px);--row-padding-left:clamp(10.24px,3.2vw,16px)}
+  #love-wall-section{--card-width:clamp(217.6px,68vw,340px);--card-gap:clamp(15.36px,4.8vw,24px);--card-padding:clamp(15.36px,4.8vw,24px);--row-padding-block:clamp(25.6px,8vw,40px);--row-padding-left:clamp(10.24px,3.2vw,16px)}
   #love-wall-section .card__quote{font-size:clamp(0.8rem,4vw,1.25rem);margin-top:5px}
   #love-wall-section .card__quote--mobile-sm{font-size:clamp(0.672rem,3.36vw,1.05rem)}
   #love-wall-section .card__quote--mobile-md{font-size:clamp(0.608rem,3.04vw,0.95rem)}
