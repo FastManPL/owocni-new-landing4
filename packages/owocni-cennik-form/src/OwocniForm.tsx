@@ -1422,7 +1422,7 @@ const OwocniForm = ({ initialProduct = null, embed = false }: OwocniFormProps = 
                 </ul>
               </div>
               <Image
-                src="/assets/images/mailing-pakiet-5.svg"
+                src="/assets/Mailing_puwdzr.png"
                 alt=""
                 width={120}
                 height={150}
