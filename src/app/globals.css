@@ -37,6 +37,18 @@ html {
     overflow-x: clip;
   }
 
+  /*
+   * WebKit (Safari iOS): overflow-x: clip na przodku potrafi obcinać malowanie w pionie
+   * (np. sekcje z transform / ujemnymi marginesami — Love Wall). Na mobile clip → hidden.
+   */
+  @media (max-width: 768px) {
+    html,
+    body,
+    main {
+      overflow-x: hidden;
+    }
+  }
+
   /* Zaznaczenie tekstu — branding Owocni */
   ::selection {
     background-color: #feb4e6;

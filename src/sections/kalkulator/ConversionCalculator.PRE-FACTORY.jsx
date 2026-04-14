@@ -1719,6 +1719,8 @@ const Tick = React.memo(({ isMajor }) => {
 const PremiumSlider = React.memo(({ min = 1, max = 50000, defaultValue = 35, unit = 'PLN', onChange, onRatioChange, isMobile = false, inputValue, setInputValue, scaleFactor = 1 }) => {
   const wrapperRef = useRef(null), rangeRef = useRef(null), bubbleRef = useRef(null), thumbRef = useRef(null), unitRef = useRef(null), gripLineRef = useRef(null), gripLeftRef = useRef(null), gripRightRef = useRef(null);
   const defaultRatio = valueToRatio(defaultValue, min, max), prevRatioRef = useRef(defaultRatio), isActiveRef = useRef(false);
+  /** Mobile: natywny input[type=range] na iOS czasem zostaje w stanie „active” bez ruchu — sterujemy wartością z pozycji palca (pointer). */
+  const mobilePointerDragRef = useRef(false);
   const padInner = Math.max(35, Math.round(CONFIG.padInner * scaleFactor)), thumbWidth = Math.max(60, Math.round(CONFIG.thumbWidth * scaleFactor)), trackHeight = Math.max(44, Math.round(CONFIG.trackHeight * scaleFactor));
   const [localInputValue, setLocalInputValue] = useState(formatNumber(Math.round(defaultValue)));
   const [isActive, setIsActive] = useState(false);
@@ -1796,6 +1798,7 @@ const PremiumSlider = React.memo(({ min = 1, max = 50000, defaultValue = 35, uni
   }, []);
 
   const deactivate = useCallback(() => {
+    mobilePointerDragRef.current = false;
     if (!isActiveRef.current) return; isActiveRef.current = false; setIsActive(false);
     wrapperRef.current?.style.setProperty('--momentum', 0);
     bubbleRef.current?.classList.remove('active'); thumbRef.current?.classList.remove('active'); unitRef.current?.classList.remove('active');
@@ -1837,6 +1840,21 @@ const PremiumSlider = React.memo(({ min = 1, max = 50000, defaultValue = 35, uni
   
   const padTotal = CONFIG.padOuter + padInner;
 
+  const applyClientXToRatio = useCallback((clientX) => {
+    const wrap = wrapperRef.current;
+    const range = rangeRef.current;
+    if (!wrap || !range) return;
+    const rect = wrap.getBoundingClientRect();
+    const x = clientX - rect.left;
+    const innerW = rect.width - 2 * padTotal;
+    if (innerW <= 0) return;
+    let ratio = (x - padTotal) / innerW;
+    ratio = Math.max(0, Math.min(1, ratio));
+    const v = Math.round(ratio * 1000) / 10;
+    range.value = String(v);
+    updateFromRange();
+  }, [padTotal, updateFromRange]);
+
   return (
     <div ref={wrapperRef} style={{ width: '100%', position: 'relative', height: `${trackHeight}px`, overflow: 'visible', fontFamily: "'Lexend', sans-serif", '--ratio': defaultRatio, '--momentum': 0, '--rotate-mult': CONFIG.rotateMult, '--return-time': CONFIG.returnTime, '--pad-total': `${padTotal}px`, '--track-height': `${trackHeight}px`, '--thumb-width': `${thumbWidth}px`, '--accent': COLORS.accent, '--ease-elastic': 'cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
       <div className="slider-active-styles" style={{ position: 'relative', height: '100%' }}>
@@ -1846,7 +1864,45 @@ const PremiumSlider = React.memo(({ min = 1, max = 50000, defaultValue = 35, uni
           <span ref={unitRef} className="unit" style={{ position: 'absolute', left: '100%', top: '50%', transform: 'translateY(-50%)', marginLeft: '12px', fontSize: '1.18rem', fontWeight: 700, color: '#888', whiteSpace: 'nowrap', opacity: 1, transition: 'opacity 0.2s ease, transform 0.3s ease', pointerEvents: 'none' }}>{unit}</span>
         </div>
         )}
-        <input ref={rangeRef} type="range" min={0} max={100} step={0.1} defaultValue={defaultRatio * 100} style={{ position: 'absolute', top: 0, left: 0, right: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', zIndex: 10, margin: 0, touchAction: 'pan-x', WebkitTapHighlightColor: 'transparent' }} onInput={updateFromRange} onMouseDown={activate} onTouchStart={activate} onMouseUp={deactivate} onTouchEnd={deactivate} onBlur={deactivate} />
+        <input ref={rangeRef} type="range" min={0} max={100} step={0.1} defaultValue={defaultRatio * 100} style={{ position: 'absolute', top: 0, left: 0, right: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', zIndex: 10, margin: 0, touchAction: 'pan-x', WebkitTapHighlightColor: 'transparent', pointerEvents: isMobile ? 'none' : 'auto' }} onInput={updateFromRange} onMouseDown={activate} onTouchStart={activate} onMouseUp={deactivate} onTouchEnd={deactivate} onBlur={deactivate} />
+        {isMobile && (
+          <div
+            role="presentation"
+            style={{ position: 'absolute', inset: 0, zIndex: 12, touchAction: 'none', cursor: 'pointer', WebkitTapHighlightColor: 'transparent' }}
+            onPointerDown={(e) => {
+              if (e.button !== undefined && e.button !== 0) return;
+              activate();
+              mobilePointerDragRef.current = true;
+              applyClientXToRatio(e.clientX);
+              const el = e.currentTarget;
+              try {
+                el.setPointerCapture(e.pointerId);
+              } catch (_) {}
+            }}
+            onPointerMove={(e) => {
+              if (!mobilePointerDragRef.current) return;
+              applyClientXToRatio(e.clientX);
+            }}
+            onPointerUp={(e) => {
+              mobilePointerDragRef.current = false;
+              deactivate();
+              try {
+                e.currentTarget.releasePointerCapture(e.pointerId);
+              } catch (_) {}
+            }}
+            onPointerCancel={(e) => {
+              mobilePointerDragRef.current = false;
+              deactivate();
+              try {
+                e.currentTarget.releasePointerCapture(e.pointerId);
+              } catch (_) {}
+            }}
+            onLostPointerCapture={() => {
+              mobilePointerDragRef.current = false;
+              deactivate();
+            }}
+          />
+        )}
         <div style={{ position: 'absolute', top: 0, left: `${CONFIG.padOuter}px`, right: `${CONFIG.padOuter}px`, height: '100%' }}>
           <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, borderRadius: '999px', background: 'linear-gradient(to bottom, rgba(198, 168, 105, 0.08) 0%, rgba(198, 168, 105, 0) 40%), linear-gradient(to top, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 50%)', boxShadow: 'inset 0 1px 0.5px rgba(255,255,255,0.8), inset 0 -1px 0.5px rgba(255,255,255,0.6)', overflow: 'hidden', zIndex: 1 }} />
           <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, borderRadius: '999px', overflow: 'hidden', zIndex: 2, background: isActive ? `radial-gradient(110px 80px at calc(${padInner}px + var(--ratio) * (100% - ${2 * padInner}px)) 50%, #fec708 0%, transparent 70%)` : `radial-gradient(176px 72px at calc(${padInner}px + var(--ratio) * (100% - ${2 * padInner}px)) 50%, ${COLORS.accentLight} 0%, transparent 65%)`, transition: isActive ? 'background 0.1s' : 'background 2.5s cubic-bezier(0.19, 1, 0.22, 1)' }} />
