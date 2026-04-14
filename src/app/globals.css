@@ -37,28 +37,6 @@ html {
     overflow-x: clip;
   }
 
-  /*
-   * Safari iOS: samo overflow-x (hidden/clip) na html/main potrafi obcinać malowanie w pionie
-   * (Love Wall: transform, ujemne marginesy). Na mobile: html ma x:visible, body trzyma x,
-   * main bez clip w pionie. Lenis: .lenis-stopped ustawia overflow:clip — nadpisujemy.
-   */
-  @media (max-width: 768px) {
-    html {
-      overflow-x: visible !important;
-      overflow-y: auto;
-    }
-    body {
-      overflow-x: hidden;
-      overflow-y: auto;
-    }
-    main {
-      overflow: visible;
-    }
-    html.lenis.lenis-stopped {
-      overflow: visible !important;
-    }
-  }
-
   /* Zaznaczenie tekstu — branding Owocni */
   ::selection {
     background-color: #feb4e6;
@@ -71,5 +49,26 @@ html {
     background-color: #feb4e6;
     color: #fbf7b6;
     text-shadow: 2px 2px 0px #f29cc9;
+  }
+}
+
+/*
+ * Safari iOS + Lenis — poza @layer base: Turbopack + Tailwind łączy warstwy i potrafi
+ * wygenerować niepoprawny CSS („Invalid empty selector” w bundlu, build na Vercel).
+ */
+@media (max-width: 768px) {
+  html {
+    overflow-x: visible !important;
+    overflow-y: auto;
+  }
+  body {
+    overflow-x: hidden;
+    overflow-y: auto;
+  }
+  main {
+    overflow: visible;
+  }
+  html.lenis.lenis-stopped {
+    overflow: visible !important;
   }
 }
