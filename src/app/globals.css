@@ -38,14 +38,24 @@ html {
   }
 
   /*
-   * WebKit (Safari iOS): overflow-x: clip na przodku potrafi obcinać malowanie w pionie
-   * (np. sekcje z transform / ujemnymi marginesami — Love Wall). Na mobile clip → hidden.
+   * Safari iOS: samo overflow-x (hidden/clip) na html/main potrafi obcinać malowanie w pionie
+   * (Love Wall: transform, ujemne marginesy). Na mobile: html ma x:visible, body trzyma x,
+   * main bez clip w pionie. Lenis: .lenis-stopped ustawia overflow:clip — nadpisujemy.
    */
   @media (max-width: 768px) {
-    html,
-    body,
-    main {
+    html {
+      overflow-x: visible !important;
+      overflow-y: auto;
+    }
+    body {
       overflow-x: hidden;
+      overflow-y: auto;
+    }
+    main {
+      overflow: visible;
+    }
+    html.lenis.lenis-stopped {
+      overflow: visible !important;
     }
   }
 
