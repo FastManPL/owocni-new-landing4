@@ -1719,8 +1719,6 @@ const Tick = React.memo(({ isMajor }) => {
 const PremiumSlider = React.memo(({ min = 1, max = 50000, defaultValue = 35, unit = 'PLN', onChange, onRatioChange, isMobile = false, inputValue, setInputValue, scaleFactor = 1 }) => {
   const wrapperRef = useRef(null), rangeRef = useRef(null), bubbleRef = useRef(null), thumbRef = useRef(null), unitRef = useRef(null), gripLineRef = useRef(null), gripLeftRef = useRef(null), gripRightRef = useRef(null);
   const defaultRatio = valueToRatio(defaultValue, min, max), prevRatioRef = useRef(defaultRatio), isActiveRef = useRef(false);
-  /** Mobile: Lenis / iOS czasem scrolluje stronę w pion mimo `touch-action: pan-x` na range — blokujemy touchmove (non-passive) na czas aktywnego gestu. */
-  const touchScrollLockRef = useRef(null);
   const padInner = Math.max(35, Math.round(CONFIG.padInner * scaleFactor)), thumbWidth = Math.max(60, Math.round(CONFIG.thumbWidth * scaleFactor)), trackHeight = Math.max(44, Math.round(CONFIG.trackHeight * scaleFactor));
   const [localInputValue, setLocalInputValue] = useState(formatNumber(Math.round(defaultValue)));
   const [isActive, setIsActive] = useState(false);
@@ -1791,36 +1789,18 @@ const PremiumSlider = React.memo(({ min = 1, max = 50000, defaultValue = 35, uni
     onRatioChange?.(toRatio);
   }, [actualInputValue, min, max, resizeInput, onChange, onRatioChange, actualSetInputValue]);
 
-  const clearTouchScrollLock = useCallback(() => {
-    const fn = touchScrollLockRef.current;
-    if (fn) {
-      window.removeEventListener('touchmove', fn);
-      touchScrollLockRef.current = null;
-    }
-    if (rangeRef.current) rangeRef.current.style.touchAction = '';
-  }, []);
-
   const activate = useCallback(() => {
     isActiveRef.current = true; setIsActive(true);
-    if (isMobile) {
-      clearTouchScrollLock();
-      if (rangeRef.current) rangeRef.current.style.touchAction = 'none';
-      const blockScroll = (e) => { e.preventDefault(); };
-      touchScrollLockRef.current = blockScroll;
-      window.addEventListener('touchmove', blockScroll, { passive: false });
-    }
     bubbleRef.current?.classList.add('active'); thumbRef.current?.classList.add('active'); unitRef.current?.classList.add('active');
     gripLineRef.current?.classList.add('active'); gripLeftRef.current?.classList.add('active'); gripRightRef.current?.classList.add('active');
-  }, [isMobile, clearTouchScrollLock]);
+  }, []);
 
   const deactivate = useCallback(() => {
-    if (!isActiveRef.current) return;
-    clearTouchScrollLock();
-    isActiveRef.current = false; setIsActive(false);
+    if (!isActiveRef.current) return; isActiveRef.current = false; setIsActive(false);
     wrapperRef.current?.style.setProperty('--momentum', 0);
     bubbleRef.current?.classList.remove('active'); thumbRef.current?.classList.remove('active'); unitRef.current?.classList.remove('active');
     gripLineRef.current?.classList.remove('active'); gripRightRef.current?.classList.remove('active'); gripLeftRef.current?.classList.remove('active');
-  }, [clearTouchScrollLock]);
+  }, []);
 
   useEffect(() => {
     const handleGlobalUp = () => { if (isActiveRef.current) deactivate(); };
@@ -1846,10 +1826,6 @@ const PremiumSlider = React.memo(({ min = 1, max = 50000, defaultValue = 35, uni
     if (wrapperRef.current) wrapperRef.current.style.setProperty('--ratio', ratio);
     if (rangeRef.current) rangeRef.current.value = ratio * 100;
   }, [defaultValue, min, max, resizeInput]);
-
-  useEffect(() => () => {
-    clearTouchScrollLock();
-  }, [clearTouchScrollLock]);
 
   const ticks = useMemo(() => {
     const arr = [];
