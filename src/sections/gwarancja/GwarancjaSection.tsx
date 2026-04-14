@@ -2322,12 +2322,12 @@ export function GwarancjaSection() {
           <div className="lens-pill-wrapper">
             <div className="lens-pill-glow"></div>
             <div className="lens-pill-conic"></div>
-            <a className="lens-pill" href="#">
+            <span className="lens-pill">
               <span className="lens-pill-badge">100%</span>
               <span className="lens-pill-txt">
                 Jedyna taka gwarancja w Polsce
               </span>
-            </a>
+            </span>
           </div>
           <h1 className="lens-hero-title">
             Wyższa konwersja strony
