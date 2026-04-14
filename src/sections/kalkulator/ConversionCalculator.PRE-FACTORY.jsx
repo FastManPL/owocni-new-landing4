@@ -1234,6 +1234,7 @@ const SLIDER_GLOBAL_STYLES = `
 #kalkulator-section .source-btn > * + *{margin-left:clamp(8px, 0.6vw, 12px)}
 #kalkulator-section .thumb > * + *{margin-left:8px}
 #kalkulator-section label.flex.items-center > * + *{margin-left:0.5rem}
+#kalkulator-section .slider-active-styles input[type="range"]{touch-action:pan-x!important}
 `;
 
 // [PIPELINE] Style injection moved to React lifecycle — see injectKalkulatorStyles()
@@ -1845,7 +1846,7 @@ const PremiumSlider = React.memo(({ min = 1, max = 50000, defaultValue = 35, uni
           <span ref={unitRef} className="unit" style={{ position: 'absolute', left: '100%', top: '50%', transform: 'translateY(-50%)', marginLeft: '12px', fontSize: '1.18rem', fontWeight: 700, color: '#888', whiteSpace: 'nowrap', opacity: 1, transition: 'opacity 0.2s ease, transform 0.3s ease', pointerEvents: 'none' }}>{unit}</span>
         </div>
         )}
-        <input ref={rangeRef} type="range" min={0} max={100} step={0.1} defaultValue={defaultRatio * 100} style={{ position: 'absolute', top: 0, left: 0, right: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', zIndex: 10, margin: 0, touchAction: 'none', WebkitTapHighlightColor: 'transparent' }} onInput={updateFromRange} onMouseDown={activate} onTouchStart={activate} onMouseUp={deactivate} onTouchEnd={deactivate} onBlur={deactivate} />
+        <input ref={rangeRef} type="range" min={0} max={100} step={0.1} defaultValue={defaultRatio * 100} style={{ position: 'absolute', top: 0, left: 0, right: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', zIndex: 10, margin: 0, touchAction: 'pan-x', WebkitTapHighlightColor: 'transparent' }} onInput={updateFromRange} onMouseDown={activate} onTouchStart={activate} onMouseUp={deactivate} onTouchEnd={deactivate} onBlur={deactivate} />
         <div style={{ position: 'absolute', top: 0, left: `${CONFIG.padOuter}px`, right: `${CONFIG.padOuter}px`, height: '100%' }}>
           <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, borderRadius: '999px', background: 'linear-gradient(to bottom, rgba(198, 168, 105, 0.08) 0%, rgba(198, 168, 105, 0) 40%), linear-gradient(to top, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 50%)', boxShadow: 'inset 0 1px 0.5px rgba(255,255,255,0.8), inset 0 -1px 0.5px rgba(255,255,255,0.6)', overflow: 'hidden', zIndex: 1 }} />
           <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, borderRadius: '999px', overflow: 'hidden', zIndex: 2, background: isActive ? `radial-gradient(110px 80px at calc(${padInner}px + var(--ratio) * (100% - ${2 * padInner}px)) 50%, #fec708 0%, transparent 70%)` : `radial-gradient(176px 72px at calc(${padInner}px + var(--ratio) * (100% - ${2 * padInner}px)) 50%, ${COLORS.accentLight} 0%, transparent 65%)`, transition: isActive ? 'background 0.1s' : 'background 2.5s cubic-bezier(0.19, 1, 0.22, 1)' }} />

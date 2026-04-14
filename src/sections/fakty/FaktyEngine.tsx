@@ -110,7 +110,13 @@ function init(container: HTMLElement): { kill: () => void } {
 
   function computeAndSetBase() {
     if (!faktyBlock || !faktyDom) return;
-    const targetW = faktyBlock.getBoundingClientRect().width;
+    const rectW = faktyBlock.getBoundingClientRect().width;
+    const vpCap =
+      typeof document !== "undefined" && document.documentElement
+        ? document.documentElement.clientWidth
+        : rectW;
+    /** Margines na subpiksele, paddingi bearingów i różnice silnika — bez tego sporadycznie tekst wyjeżdżał poza ekran na mobile. */
+    const targetW = Math.max(0, Math.min(rectW, vpCap) - 4);
     const rows = faktyDom.querySelectorAll<HTMLElement>(".title-row");
     const r1 = rows[0],
       r2 = rows[1];
@@ -120,6 +126,8 @@ function init(container: HTMLElement): { kill: () => void } {
     r2.style.fontSize = "200px";
     const r1w = r1.getBoundingClientRect().width;
     const r2w = r2.getBoundingClientRect().width;
+    if (r1w <= 0 || r2w <= 0) return;
+
     const base = Math.floor((targetW / r1w) * 200);
     const ratio = (r1w / r2w).toFixed(4);
 
@@ -130,7 +138,10 @@ function init(container: HTMLElement): { kill: () => void } {
 
     const row1Size = base;
     const row2Size = base * parseFloat(ratio);
-    if (!measureCtx) return;
+    if (!measureCtx) {
+      faktyBlock.classList.add("ready");
+      return;
+    }
 
     measureCtx.font = "900 " + row1Size + "px Lexend";
     const bearingR1 = Math.abs(
@@ -158,7 +169,22 @@ function init(container: HTMLElement): { kill: () => void } {
       faktyBlock.style.setProperty("--sideoffset-r1", "0px");
       faktyBlock.style.setProperty("--sideoffset-r2", "0px");
     }
-    faktyBlock.classList.add("ready");
+
+    /** Po ustawieniu paddingów wyrównania rzeczywista szerokość wiersza może > targetW — jeden korekcyjny resize (następna klatka layoutu). */
+    const baseAfterBearing = base;
+    requestAnimationFrame(() => {
+      if (isKilled || !container.isConnected || !faktyBlock || !r1 || !r2) return;
+      const w1 = r1.getBoundingClientRect().width;
+      const w2 = r2.getBoundingClientRect().width;
+      const maxW = Math.max(w1, w2);
+      if (maxW > targetW + 0.5 && maxW > 0) {
+        const adj = Math.max(8, Math.floor(baseAfterBearing * (targetW / maxW)));
+        if (adj < baseAfterBearing) {
+          faktyBlock.style.setProperty("--base", adj + "px");
+        }
+      }
+      faktyBlock.classList.add("ready");
+    });
   }
 
   function measureCharOffsets() {

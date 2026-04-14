@@ -28,8 +28,9 @@
 
 #fakty-section .title-block {
   text-align: center;
+  box-sizing: border-box;
   width: calc((100% - clamp(1.364rem, 2.2vw, 2.5rem)) * 0.9);
-  max-width: clamp(50.33rem, 81.18vw, 92.25rem);
+  max-width: min(clamp(50.33rem, 81.18vw, 92.25rem), 100%);
   margin-inline: auto;
   --base: 100px;
   --ratio: 0.625;
