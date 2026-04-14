@@ -1235,6 +1235,10 @@ const SLIDER_GLOBAL_STYLES = `
 #kalkulator-section .thumb > * + *{margin-left:8px}
 #kalkulator-section label.flex.items-center > * + *{margin-left:0.5rem}
 #kalkulator-section .slider-active-styles input[type="range"]{touch-action:pan-x!important}
+@media (max-width:600px){
+#kalkulator-section .slider-active-styles{touch-action:pan-x;overscroll-behavior:contain}
+#kalkulator-section .slider-touch-rail{touch-action:pan-x!important;overscroll-behavior-y:contain}
+}
 `;
 
 // [PIPELINE] Style injection moved to React lifecycle — see injectKalkulatorStyles()
@@ -1839,14 +1843,14 @@ const PremiumSlider = React.memo(({ min = 1, max = 50000, defaultValue = 35, uni
 
   return (
     <div ref={wrapperRef} style={{ width: '100%', position: 'relative', height: `${trackHeight}px`, overflow: 'visible', fontFamily: "'Lexend', sans-serif", '--ratio': defaultRatio, '--momentum': 0, '--rotate-mult': CONFIG.rotateMult, '--return-time': CONFIG.returnTime, '--pad-total': `${padTotal}px`, '--track-height': `${trackHeight}px`, '--thumb-width': `${thumbWidth}px`, '--accent': COLORS.accent, '--ease-elastic': 'cubic-bezier(0.34, 1.56, 0.64, 1)' }}>
-      <div className="slider-active-styles" style={{ position: 'relative', height: '100%' }}>
+      <div className={`slider-active-styles${isMobile ? ' slider-touch-rail' : ''}`} style={{ position: 'relative', height: '100%' }}>
         {!isMobile && (
         <div ref={bubbleRef} className="bubble" style={{ position: 'absolute', bottom: `calc(100% + ${CONFIG.bubbleGap})`, left: `calc(${padTotal}px + var(--ratio) * (100% - ${2 * padTotal}px))`, transform: 'translateX(-50%) rotate(calc(var(--momentum) * var(--rotate-mult) * -1deg))', display: 'flex', alignItems: 'center', justifyContent: 'center', pointerEvents: 'auto', zIndex: 20, background: '#ffffff', border: '1px solid #e0e0e0', borderRadius: '4px', padding: '8px 12px', minWidth: '60px', boxShadow: '0 4px 15px rgba(0,0,0,0.05)', transition: 'transform 0.4s var(--ease-elastic), background-color 0.3s, border-color 0.3s, border-radius 0.4s, box-shadow 0.3s', transformOrigin: 'center calc(100% + 40px)' }}>
           <input type="text" value={actualInputValue} style={{ border: 'none', background: 'transparent', fontSize: '16px', transform: 'scale(1.4)', fontWeight: 700, textAlign: 'center', color: '#141414', padding: 0, margin: 0, outline: 'none', minWidth: '30px', maxWidth: '200px' }} onChange={(e) => actualSetInputValue(e.target.value)} onBlur={commitBubbleValue} onKeyDown={(e) => e.key === 'Enter' && e.target.blur()} onFocus={activate} />
           <span ref={unitRef} className="unit" style={{ position: 'absolute', left: '100%', top: '50%', transform: 'translateY(-50%)', marginLeft: '12px', fontSize: '1.18rem', fontWeight: 700, color: '#888', whiteSpace: 'nowrap', opacity: 1, transition: 'opacity 0.2s ease, transform 0.3s ease', pointerEvents: 'none' }}>{unit}</span>
         </div>
         )}
-        <input ref={rangeRef} type="range" min={0} max={100} step={0.1} defaultValue={defaultRatio * 100} style={{ position: 'absolute', top: 0, left: 0, right: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', zIndex: 10, margin: 0, touchAction: 'pan-x', WebkitTapHighlightColor: 'transparent' }} onInput={updateFromRange} onMouseDown={activate} onTouchStart={activate} onMouseUp={deactivate} onTouchEnd={deactivate} onBlur={deactivate} />
+        <input ref={rangeRef} type="range" min={0} max={100} step={0.1} defaultValue={defaultRatio * 100} style={{ position: 'absolute', top: 0, left: 0, right: 0, width: '100%', height: '100%', opacity: 0, cursor: 'pointer', zIndex: 10, margin: 0, touchAction: 'pan-x', WebkitTapHighlightColor: 'transparent' }} onInput={updateFromRange} onMouseDown={activate} onTouchStart={activate} onMouseUp={deactivate} onTouchEnd={deactivate} onBlur={deactivate} onPointerDown={(e) => { if (e.pointerType === 'touch') { try { e.currentTarget.setPointerCapture(e.pointerId); } catch (_) {} } }} />
         <div style={{ position: 'absolute', top: 0, left: `${CONFIG.padOuter}px`, right: `${CONFIG.padOuter}px`, height: '100%' }}>
           <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, borderRadius: '999px', background: 'linear-gradient(to bottom, rgba(198, 168, 105, 0.08) 0%, rgba(198, 168, 105, 0) 40%), linear-gradient(to top, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 50%)', boxShadow: 'inset 0 1px 0.5px rgba(255,255,255,0.8), inset 0 -1px 0.5px rgba(255,255,255,0.6)', overflow: 'hidden', zIndex: 1 }} />
           <div style={{ position: 'absolute', top: 0, right: 0, bottom: 0, left: 0, borderRadius: '999px', overflow: 'hidden', zIndex: 2, background: isActive ? `radial-gradient(110px 80px at calc(${padInner}px + var(--ratio) * (100% - ${2 * padInner}px)) 50%, #fec708 0%, transparent 70%)` : `radial-gradient(176px 72px at calc(${padInner}px + var(--ratio) * (100% - ${2 * padInner}px)) 50%, ${COLORS.accentLight} 0%, transparent 65%)`, transition: isActive ? 'background 0.1s' : 'background 2.5s cubic-bezier(0.19, 1, 0.22, 1)' }} />
