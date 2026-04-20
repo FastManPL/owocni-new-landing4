@@ -1,8 +1,6 @@
 import type { Metadata } from 'next';
 import dynamic from 'next/dynamic';
 import { Suspense } from 'react';
-import { BelowFoldChunkWarmup } from '@/components/BelowFoldChunkWarmup';
-import { DeferredMount } from '@/components/DeferredMount';
 import { resolveHeroVariant } from '@/config/heroVariants.generated';
 import { HeroSection } from '@/sections/hero/HeroSection';
 import { WynikiSection } from '@/sections/wyniki/WynikiSection';
@@ -84,8 +82,7 @@ async function HomePageContent({
       <HeroSection variant={variant} />
       <WynikiSection />
       <BookStatsSection />
-      <BelowFoldChunkWarmup />
-      {/* Fakty→FAQ + Gwarancja: bez DeferredMount; silniki `dynamic()`. Tylko Final IO-defer (WebGL / TBT). */}
+      {/* Cała treść home: bez DeferredMount; ciężkie silniki nadal `dynamic()` + placeholder. */}
       <FaktySection />
       {/*
         Bridge + Blok45 w jednym slocie, bez DeferredMount: sentinel Kinetic musi być w DOM przed init Blok45
@@ -101,9 +98,7 @@ async function HomePageContent({
       <OnasSectionWrapper />
       <CyfroweWzrostySectionWrapper />
       <FAQSection />
-      <DeferredMount minHeight="min(120vh, 1100px)">
-        <FinalSection />
-      </DeferredMount>
+      <FinalSection />
     </main>
   );
 }
