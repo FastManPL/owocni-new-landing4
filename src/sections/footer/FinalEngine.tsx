@@ -1103,12 +1103,13 @@ function _recreateIO(){
 }
 
 var _onVVResize = function(){
+  /* O10: przy aktywnej sekcji nie ruszaj karty na każdy resize paska adresu — Lenis + layout = skok na dole strony. */
+  if (_ioState && !_paused) return;
   var cwMob = (w || window.innerWidth) || 0;
   if (cwMob < 1200 && !isKilled && cardEl) {
     positionCard();
     updateMobileFormScroll();
   }
-  if(_ioState && !_paused) return; // O10: skip if section active
   _recreateIO();
 }; // named handler — INP-LEAK-01
 
