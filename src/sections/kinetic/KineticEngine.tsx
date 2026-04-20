@@ -40,7 +40,6 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
 
         gsap.registerPlugin(ScrollTrigger);
         // ScrollTrigger.config({ ignoreMobileResize: true }) → Shared Core (scrollRuntime.ts)
-        const IS_TOUCH = !!ScrollTrigger.isTouch;
 
         // ── IDEMPOTENT INIT: usuń stare piny tej sekcji ──
         try {
@@ -54,8 +53,7 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
 
         // ZAKAZ: gsap.ticker.fps() w kodzie sekcji (globalny, zabija Lenis + inne sekcje)
         // Zamiast tego: lokalny throttle gate — tylko tickery TEJ sekcji działają w 30fps
-        // Mobile iOS/Android: lekko niższy lokalny FPS sekcji redukuje piki CPU bez zmiany sceny.
-        const SECTION_FPS = IS_TOUCH ? 24 : 30;
+        const SECTION_FPS = 30;
         const SECTION_FRAME_MS = 1000 / SECTION_FPS;
         var _lastSectionTick = 0;
         var _sectionTickOk = false;
@@ -97,23 +95,13 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
         var FREEZE_ON  = 0.95;
         var FREEZE_OFF = 0.94;
 
+        const IS_TOUCH = !!ScrollTrigger.isTouch;
+
         let mobileResizeLock = false;
         let mobileResizeTimer = null;
-        /** Bez tego: każdy VV.resize na iOS resetuje 250ms lock → lock praktycznie stale true w Kinetic → _handleIntent wyłączony, chaos z pinem / WebKit. */
-        var _lockArmVw = 0;
-        var _lockArmVh = 0;
-        var _LOCK_ARM_VH_EPS = 150;
 
         function armMobileResizeLock() {
             if (!IS_TOUCH) return;
-            var nw = window.innerWidth;
-            var nh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-            if (_lockArmVw > 0 && nw === _lockArmVw && Math.abs(nh - _lockArmVh) < _LOCK_ARM_VH_EPS) {
-                _lockArmVh = nh;
-                return;
-            }
-            _lockArmVw = nw;
-            _lockArmVh = nh;
             mobileResizeLock = true;
             clearTimeout(mobileResizeTimer);
             mobileResizeTimer = setTimeout(function() { mobileResizeLock = false; }, 250);
@@ -138,8 +126,7 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
         // ============================================
         const _isMobileDPR = window.innerWidth < 768;
         const adaptiveDPR = {
-            /* iPhone: niższy start = mniejsze bufory canvas (mniej OOM / kill WebKit przy drugim bloku). */
-            cap: _isMobileDPR ? 0.78 : 1.0,
+            cap: 1.0, // mobile: sharper rendering
             min: 0.5,
             max: 1.5,
             lastTime: performance.now(),
@@ -171,14 +158,11 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
                     const oldCap = this.cap;
                     
                     // Dostosowane progi dla 30fps ticker
-                    if (!_isMobileDPR && this.avgFPS > 28) {
+                    if (this.avgFPS > 28) {
                         this.cap = Math.min(this.cap + 0.05, this.max);
                     }
                     if (this.avgFPS < 22) {
                         this.cap = Math.max(this.cap - 0.1, this.min);
-                    }
-                    if (_isMobileDPR) {
-                        this.cap = Math.min(this.cap, 0.85);
                     }
                     
                     // Powiadom listenery o zmianie
@@ -1481,19 +1465,9 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
         // INIT / RESIZE
         // ============================================
         
-        function getParticleEffectiveDpr() {
-            var dpr = adaptiveDPR.get();
-            if (!IS_TOUCH) return dpr;
-            // iOS safe mode: trzymaj bitmapę particle pod stałym budżetem pamięci.
-            var maxW = 960;
-            var maxH = 560;
-            var dprCapBySize = Math.min(maxW / Math.max(1, width), maxH / Math.max(1, height));
-            return Math.max(0.45, Math.min(dpr, dprCapBySize));
-        }
-
         // Funkcja do zmiany DPR bez przebudowy cząsteczek
         function resizeParticleForDPR() {
-            var dpr = getParticleEffectiveDpr();
+            var dpr = adaptiveDPR.get();
             var _targetW = Math.round(width * dpr);
             var _targetH = Math.round(height * dpr);
             if (canvas.width !== _targetW || canvas.height !== _targetH) {
@@ -1519,7 +1493,7 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
             cx = width / 2;
             cy = height / 2;
 
-            var dpr = getParticleEffectiveDpr();
+            var dpr = adaptiveDPR.get();
             var _targetW = Math.round(width * dpr);
             var _targetH = Math.round(height * dpr);
             if (canvas.width !== _targetW || canvas.height !== _targetH) {
@@ -1816,8 +1790,8 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
             // === STRATEGIA A: Canvas Max Size ===
             // Ograniczamy canvas do 1440×900 dla wydajności
             // CSS skaluje do pełnego rozmiaru wrappera
-            const MAX_CANVAS_W = IS_TOUCH ? 980 : 1440;
-            const MAX_CANVAS_H = IS_TOUCH ? 620 : 900;
+            const MAX_CANVAS_W = 1440;
+            const MAX_CANVAS_H = 900;
             
             const canvasScale = Math.min(
                 rawWidth > MAX_CANVAS_W ? MAX_CANVAS_W / rawWidth : 1,
@@ -2262,7 +2236,6 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
         const tunnel = new Tunnel($id('kinetic-tunnel-canvas'));
         let tunnelProgress = 0;
         let tunnelVelocity = 0;
-        var _touchTunnelFrame = 0;
 
         // Stałe timingu tunelu (precomputed — eliminuje dzielenia/Math.max per tick)
         var fpStart = FP_TUNNEL_START;
@@ -2276,11 +2249,6 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
             if (_s._killed) return;
             if (!_sectionTickOk) return;
             if (document.hidden) return;
-            if (IS_TOUCH) {
-                // Mobile safety: render tunnel ~2/3 klatek (24fps gate -> ~16fps tunnel).
-                _touchTunnelFrame = (_touchTunnelFrame + 1) % 3;
-                if (_touchTunnelFrame === 0) return;
-            }
             // Czytaj formProgress z particle IIFE
             const fp = _s.particleQmark?.state?.formProgress || 0;
 
@@ -2581,8 +2549,6 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
             var _COOLDOWN_MS = 50;  // lock:true już chroni podczas lotu; cooldown tylko na lądowanie
             var _cooldownTimer = null;
             var _kineticObserver = null;
-            var _intentTouchCooldownUntil = 0;
-            var _INTENT_TOUCH_COOLDOWN_MS = 420;
 
             // ── GEOMETRIA ──────────────────────────────────────────────────
             // Oblicza absolutne px snap pointów z ST.start/end
@@ -2650,7 +2616,7 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
 
             // ── HANDLE INTENT — jedyny właściciel nawigacji ───────────────
             // Jeden gest = jedna decyzja = jeden lenis.scrollTo
-            var _handleIntent = function(dir, isTouchIntent) {
+            var _handleIntent = function(dir) {
                 clearTimeout(_idleSnapTimer);   // anuluj ewentualny pending idle
 
                 if (mobileResizeLock) return;
@@ -2659,7 +2625,6 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
                 if (freezeFinal && dir > 0) return;
                 if (_sm.state === 'snapping') return;
                 if (_sm.state === 'cooldown') return;
-                if (isTouchIntent && performance.now() < _intentTouchCooldownUntil) return;
 
                 var g = _getSnapGeometry();
                 if (!g) return;
@@ -2710,7 +2675,6 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
                 // WYKONAJ — jedyny lenis.scrollTo w całym kontrolerze
                 _sm.state = 'snapping';
                 _sm.pendingIndex = targetIdx;
-                if (isTouchIntent) _intentTouchCooldownUntil = performance.now() + _INTENT_TOUCH_COOLDOWN_MS;
 
                 var _snapDuration = targetIdx === 2 || (_sm.committedIndex === 2 && targetIdx === 1)
                     ? 2.50
@@ -2752,18 +2716,9 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
             _kineticObserver = ScrollTrigger.observe({
                 target:    window,
                 type:      'wheel,touch',
-                tolerance: IS_TOUCH ? 22 : 10,
-                onDown: function(self) {
-                    var _t = self.event && self.event.type;
-                    var _isTouchIntent = !!(_t && _t.indexOf("touch") === 0);
-                    if (_isTouchIntent) return; // iOS burst guard: touch obsługuj tylko na końcu gestu
-                    _handleIntent(1, false);
-                },
-                onUp: function(self) {
-                    var _t = self.event && self.event.type;
-                    var _isTouchIntent = !!(_t && _t.indexOf("touch") === 0);
-                    _handleIntent(_isTouchIntent ? 1 : -1, _isTouchIntent);
-                },
+                tolerance: IS_TOUCH ? 8 : 10,
+                onDown: function(self) { var _t = self.event && self.event.type; _handleIntent(_t && _t.indexOf("touch") === 0 ? -1 : 1); },
+                onUp: function(self) { var _t = self.event && self.event.type; _handleIntent(_t && _t.indexOf("touch") === 0 ? 1 : -1); },
                 preventDefault: false
             });
             cleanups.push(function() {
@@ -3981,7 +3936,6 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
                     { op: 0, gx: 0, gy: 0, gsc: 1, grot: 0, gxp: 0, gyp: 0, mulR: 239, mulG: 238, mulB: 236 },
                     { op: 0, gx: 0, gy: 0, gsc: 1, grot: 0, gxp: 0, gyp: 0, mulR: 239, mulG: 237, mulB: 235 }
                 ];
-                var _touchBlobFrame = 0;
 
                 function _updateBlobCache() {
                     var bgOp = parseFloat(gsap.getProperty(blobBgPreviewEl, 'opacity')) || 0;
@@ -4021,11 +3975,6 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
                 function renderBlobCanvas() {
                     if (_s._killed) return;
                     if (!_sectionTickOk && !_deferredTickOk) return; // P0: renders on deferred frame
-                    if (IS_TOUCH) {
-                        // Mobile safety: blob canvas co 2. klatkę (24fps gate -> ~12fps blobs).
-                        _touchBlobFrame = (_touchBlobFrame + 1) % 2;
-                        if (_touchBlobFrame === 0) return;
-                    }
                     var _anyVisible = false;
                     for (var _vi = 0; _vi < 3; _vi++) {
                         if ((parseFloat(blobEls[_vi].style.opacity) || 0) > 0.005) { _anyVisible = true; break; }
@@ -4383,7 +4332,6 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
 
     function kill() {
         _s._killed = true;
-        _factoryResumeGen++;
         pause();
         // 1. Wykonaj wszystkie cleanups (removeEventListener, clearTimeout)
         cleanups.forEach(fn => { try { fn(); } catch(e) {} });
@@ -4436,31 +4384,17 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
     var _factoryIo = null;
     var _factoryIoDebounce = null;
     var _getVH = function() { return window.visualViewport?.height ?? window.innerHeight; };
-    /** iOS Safari: przy scrollu pasek adresu zmienia VV height — bez filtra lawina recreate IO + pause/resume → crash karty. */
-    var _factoryVvW = 0;
-    var _factoryVvH = 0;
-    var _FACTORY_VV_H_SKIP = 150;
-    var _factoryResumeGen = 0;
 
     function _factoryIoCallback(entries) {
         var e = entries[0];
         if (!e) return;
         if (typeof document !== 'undefined' && document.documentElement.classList.contains('kinetic-past')) {
-            _factoryResumeGen++;
             pause();
             return;
         }
         if (e.isIntersecting) {
-            /* iOS: resume w tej samej klatce co heavy scroll/pin = szczyt GPU; odłóż o 2 rAF. */
-            var gen = ++_factoryResumeGen;
-            requestAnimationFrame(function() {
-                requestAnimationFrame(function() {
-                    if (_s._killed || gen !== _factoryResumeGen) return;
-                    resume();
-                });
-            });
+            resume();
         } else {
-            _factoryResumeGen++;
             pause();
         }
     }
@@ -4471,32 +4405,18 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
             if (_s._killed) return;
             if (_factoryIo) _factoryIo.disconnect();
             var vh = _getVH();
-            // Mobile iOS: zawęź aktywne okno IO, aby szybciej usypiać ciężkie tickery/canvas poza sekcją.
-            // Wizualnie bez zmian w obrębie sekcji, ale mniejsze tło CPU/GPU podczas scrollu dalej.
-            var rm = IS_TOUCH
-                ? Math.min(360, Math.max(120, Math.round(0.22 * vh)))
-                : Math.min(1200, Math.max(200, Math.round(0.5 * vh)));
+            var rm = Math.min(1200, Math.max(200, Math.round(0.5 * vh)));
             _factoryIo = new IntersectionObserver(_factoryIoCallback, {
                 rootMargin: rm + 'px 0px ' + rm + 'px 0px'
             });
             var _target = container.querySelector('[data-gating-target]') || container;
             _factoryIo.observe(_target);
-        }, 220);
+        }, 50);
     }
 
     _recreateFactoryIo();
 
-    function _onFactoryVVResize() {
-        var nw = typeof window !== 'undefined' ? window.innerWidth : 0;
-        var nh = _getVH();
-        if (_factoryVvW > 0 && nw === _factoryVvW && Math.abs(nh - _factoryVvH) < _FACTORY_VV_H_SKIP) {
-            _factoryVvH = nh;
-            return;
-        }
-        _factoryVvW = nw;
-        _factoryVvH = nh;
-        _recreateFactoryIo();
-    }
+    function _onFactoryVVResize() { _recreateFactoryIo(); }
     if (window.visualViewport) {
         window.visualViewport.addEventListener('resize', _onFactoryVVResize, { passive: true });
         cleanups.push(function() {
