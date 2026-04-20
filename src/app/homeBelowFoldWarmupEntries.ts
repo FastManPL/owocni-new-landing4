@@ -4,12 +4,11 @@
  *
  * Gdy dodajesz nową sekcję z `dynamic(...)` na home — dopisz tu ten sam moduł (`idle`),
  * żeby chunk mógł się pobrać w tle zanim `DeferredMount` zamontuje drzewo.
- * Fakty nie są na liście — montują się od razu obok Bridge, bez podwójnego prefetchu.
+ * Fakty i Kalkulator nie są na liście — montują się od razu (bez podwójnego prefetchu).
  */
 import type { WarmupEntry } from '@/lib/moduleLoader';
 
 export const homeBelowFoldWarmupEntries: WarmupEntry[] = [
-  { policy: 'idle', import: () => import('@/sections/kalkulator/KalkulatorSection') },
   { policy: 'idle', import: () => import('@/app/GwarancjaSectionWrapper') },
   { policy: 'idle', import: () => import('@/sections/Opinie/LoveWallSection') },
   { policy: 'idle', import: () => import('@/sections/case-study2/CaseStudy2Section') },

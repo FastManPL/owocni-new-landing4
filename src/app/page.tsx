@@ -85,7 +85,7 @@ async function HomePageContent({
       <WynikiSection />
       <BookStatsSection />
       <BelowFoldChunkWarmup />
-      {/* Fakty: bez DeferredMount — pierwsza treść pod foldem przed Bridge (SEO / kolejność w DOM); silnik nadal split (dynamic). Od Kalkulatora w dół dalej IO-defer (TBT). */}
+      {/* Fakty + Kalkulator: bez DeferredMount — tuż przed / po makro (Bridge); silniki nadal `dynamic()`. Od Gwarancji w dół IO-defer (TBT). */}
       <FaktySection />
       {/*
         Bridge + Blok45 w jednym slocie, bez DeferredMount: sentinel Kinetic musi być w DOM przed init Blok45
@@ -93,9 +93,7 @@ async function HomePageContent({
       */}
       <BridgeSection />
       <SectionsClient />
-      <DeferredMount minHeight="min(110vh, 1000px)">
-        <KalkulatorSection />
-      </DeferredMount>
+      <KalkulatorSection />
       <DeferredMount minHeight="min(140vh, 1200px)">
         <GwarancjaSectionWrapper />
       </DeferredMount>
