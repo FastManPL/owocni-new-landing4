@@ -161,17 +161,20 @@ function updateMobileFormScroll(){
   var er=extScrollEl.getBoundingClientRect();
   var t=0;
   var eh=Math.max(er.height,1);
-  if(er.bottom<=0 || er.top>=vh){
+  /* Poniżej ekranu — forma schowana. Całkowicie NAD ekranem (koniec sekcji) — t=1, inaczej karta zostaje w połowie. */
+  if(er.top>=vh){
     t=0;
+  } else if(er.bottom<=0){
+    t=1;
   } else if(er.top<0){
-    /* Extender wychodzi w górę — bez tego enter rośnie i t clampuje do 1 → karta „pływa” przy scrollu w górę */
+    /* Extender wychodzi w górę — płynne cofanie przy scrollu w górę */
     t=Math.max(0,Math.min(1,er.bottom/eh));
   } else if(er.top<vh){
-    var enter=vh-er.top;
-    /* Im niżej, tym wcześniej wjazd karty (mniej pustego scrollu między napisami a formularzem). */
+    /* Postęp 0..1 po wysokości extendera (eh), nie vh — przy krótkim extenderze pełny wjazd mieści się w realnym zakresie scrolla. */
+    var raw=Math.max(0,Math.min(1,(vh-er.top)/eh));
     var delayRatio=0.22;
-    if(enter>=vh*delayRatio){
-      t=(enter-vh*delayRatio)/(vh*(1-delayRatio));
+    if(raw>=delayRatio){
+      t=(raw-delayRatio)/(1-delayRatio);
       if(t>1)t=1;
     }
   }
