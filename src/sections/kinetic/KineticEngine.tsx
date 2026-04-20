@@ -96,6 +96,10 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
         var FREEZE_OFF = 0.94;
 
         const IS_TOUCH = !!ScrollTrigger.isTouch;
+        const IS_IOS_TOUCH = IS_TOUCH && typeof navigator !== 'undefined' && (
+            /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+            (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)
+        );
 
         let mobileResizeLock = false;
         let mobileResizeTimer = null;
@@ -2249,6 +2253,11 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
             if (_s._killed) return;
             if (!_sectionTickOk) return;
             if (document.hidden) return;
+            if (IS_IOS_TOUCH) {
+                // iOS stability mode: tunnel canvas is the heaviest layer during pin.
+                if (tunnel.ctx && tunnel.ctx.canvas) tunnel.ctx.canvas.style.display = 'none';
+                return;
+            }
             // Czytaj formProgress z particle IIFE
             const fp = _s.particleQmark?.state?.formProgress || 0;
 
@@ -3866,6 +3875,13 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
                         sizeW:   _bel.offsetWidth,
                         sizeH:   _bel.offsetHeight
                     });
+                }
+
+                if (IS_IOS_TOUCH) {
+                    // iOS stability mode: keep DOM blobs, disable extra blob composition canvas.
+                    blobCanvas.style.display = 'none';
+                    _elBlobCarrier.style.visibility = '';
+                    return;
                 }
 
                 // Initial colors (before GSAP touches them)
