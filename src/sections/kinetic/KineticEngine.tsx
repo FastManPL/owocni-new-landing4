@@ -4459,7 +4459,11 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
             if (_s._killed) return;
             if (_factoryIo) _factoryIo.disconnect();
             var vh = _getVH();
-            var rm = Math.min(1200, Math.max(200, Math.round(0.5 * vh)));
+            // Mobile iOS: zawęź aktywne okno IO, aby szybciej usypiać ciężkie tickery/canvas poza sekcją.
+            // Wizualnie bez zmian w obrębie sekcji, ale mniejsze tło CPU/GPU podczas scrollu dalej.
+            var rm = IS_TOUCH
+                ? Math.min(360, Math.max(120, Math.round(0.22 * vh)))
+                : Math.min(1200, Math.max(200, Math.round(0.5 * vh)));
             _factoryIo = new IntersectionObserver(_factoryIoCallback, {
                 rootMargin: rm + 'px 0px ' + rm + 'px 0px'
             });
