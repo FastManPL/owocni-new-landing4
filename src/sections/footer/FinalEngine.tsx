@@ -524,7 +524,7 @@ function warmup(){
       var _cw=w||window.innerWidth;
       var _mobileStack=_cw<1200 && layoutInfo && layoutInfo.isMobile && layoutInfo.lh;
       if(_mobileStack){ updateMobileFormScroll(); }
-      else{ _setupCardBottomSheet(); }
+      else if(_cw>=1200){ _setupCardBottomSheet(); }
     });
   }, 1000); // end _ric faza 2 (timeout 1s)
 }
@@ -760,8 +760,10 @@ function _setupCardBottomSheet(){
 function positionCard(){
   if(!cardEl) return; // NULL-GUARD-01
   gsap.killTweensOf(cardEl);
-  var cw2=w||window.innerWidth, vh2=h||window.innerHeight; // O8: cached, no DOM read
-  if(cw2<1200 && layoutInfo && layoutInfo.isMobile && layoutInfo.lh){
+  var cw2=w||window.innerWidth; // O8: cached, no DOM read
+  if(cw2<1200){
+    /* Zawsze „bottom sheet” na wąskim ekranie — NIGDY translate(-50%,-50%) na środku viewportu:
+     * 640px karty zasłania cały WebGL (napisy + zegar); użytkownik widzi tylko formularz i pustkę. */
     cardEl.style.position='absolute';
     cardEl.style.top='auto';
     cardEl.style.bottom='0';
@@ -770,6 +772,7 @@ function positionCard(){
     var cardW=Math.min(500,cw2-40);
     cardEl.style.width=cardW+'px';
     cardEl.style.left=Math.round((cw2-cardW)/2)+'px';
+    cardEl.style.right='auto';
     cardEl.style.transform='translateY(640px)';
     _cardMaxUp=0;
     if(_lastMinH!==''){ container.style.minHeight=''; _lastMinH=''; }
@@ -791,15 +794,6 @@ function positionCard(){
     if(_handle) _handle.style.display='none';
     container.style.minHeight='100vh';
     _lastMinH='100vh';
-  } else {
-    /* <1200 ale brak layoutu mobilnego (np. tuż po resize) — nie zostawiaj poprzedniego trybu */
-    cardEl.style.position='absolute';
-    cardEl.style.top='50%'; cardEl.style.left='50%'; cardEl.style.right='auto';
-    cardEl.style.bottom='auto'; cardEl.style.transform='translate(-50%,-50%)';
-    cardEl.style.width='calc(100% - 40px)'; cardEl.style.maxWidth='500px'; cardEl.style.height='640px';
-    cardEl.style.borderRadius='24px'; cardEl.style.pointerEvents='auto';
-    _cardMaxUp=0;
-    if(_lastMinH!==''){ container.style.minHeight=''; _lastMinH=''; }
   }
 }
 
