@@ -12,7 +12,8 @@ const LP = path.resolve(PKG, '..', '..');
 
 const files = [
   ['src/lib/scrollRuntime.ts', 'src/lib/scrollRuntime.ts'],
-  /* Handoff nie ma moduleLoader / homeRouteChunkWarmup — główny SmoothScrollProvider się tu nie zbuduje. */
+  ['src/lib/moduleLoader.ts', 'src/lib/moduleLoader.ts'],
+  /* SmoothScrollProvider + handoffChunkWarmup: utrzymywane w paczce (LP importuje cały home warmup). */
   ['src/app/BridgeSection.tsx', 'src/app/BridgeSection.tsx'],
   ['src/app/BridgeContext.tsx', 'src/app/BridgeContext.tsx'],
   ['src/sections/kinetic/KineticEngine.tsx', 'src/sections/kinetic/KineticEngine.tsx'],
