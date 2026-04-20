@@ -9,6 +9,5 @@
 import type { WarmupEntry } from '@/lib/moduleLoader';
 
 export const homeBelowFoldWarmupEntries: WarmupEntry[] = [
-  { policy: 'idle', import: () => import('@/app/GwarancjaSectionWrapper') },
   { policy: 'idle', import: () => import('@/sections/footer/FinalSection') },
 ];
