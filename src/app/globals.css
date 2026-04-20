@@ -57,24 +57,18 @@ html {
  * wygenerować niepoprawny CSS („Invalid empty selector” w bundlu, build na Vercel).
  */
 @media (max-width: 768px) {
-  /* clip x: brak poziomego scrollbara; visible na x rozlewał 100vw / bleed poza root */
   html {
-    overflow-x: clip !important;
+    overflow-x: visible !important;
     overflow-y: auto;
   }
-  /*
-   * overflow-x: hidden + overflow-y: visible na body → wg specyfikacji overflow-y liczy się jako auto
-   * (drugi pionowy scroll obok html). Jedna oś scrolla: tylko html; body bez własnego scrollportu.
-   */
   body {
-    overflow: visible;
-    min-height: 100%;
+    overflow-x: hidden;
+    overflow-y: auto;
   }
   main {
     overflow: visible;
   }
   html.lenis.lenis-stopped {
-    overflow-x: clip !important;
-    overflow-y: visible !important;
+    overflow: visible !important;
   }
 }

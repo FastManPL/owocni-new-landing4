@@ -1,7 +1,10 @@
-import { KalkulatorSectionClientBoundary } from './KalkulatorSectionClientBoundary';
+'use client';
+
+import ConversionCalculator from './ConversionCalculator.PRE-FACTORY';
 
 /**
- * Shell SSR: `#kalkulator-section` w RSC; silnik lazy w `KalkulatorSectionClientBoundary` (client).
+ * Wrapper sekcji Kalkulator (wyjątek integracyjny — wygenerowany z PRE-FACTORY).
+ * Kontrakt: section#kalkulator-section, isolation: isolate (Konstytucja).
  */
 export function KalkulatorSection() {
   return (
@@ -13,7 +16,7 @@ export function KalkulatorSection() {
         zIndex: 2,
       }}
     >
-      <KalkulatorSectionClientBoundary />
+      <ConversionCalculator />
     </section>
   );
 }

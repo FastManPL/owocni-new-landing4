@@ -19,8 +19,6 @@ export default [
       'build/**',
       'dist/**',
       'next-env.d.ts',
-      'playwright.config.ts',
-      'e2e/**',
     ],
   },
 

@@ -36,12 +36,3 @@ next-env.d.ts
 
 # Bundle analyzer
 .analyze
-
-# Playwright / Argos
-playwright-report/
-test-results/
-blob-report/
-playwright/.cache/
-
-# macOS / exFAT AppleDouble (obok plików na T5)
-._*

@@ -2,11 +2,10 @@
 /* Usunięte: html{}, body{}, .preview-spacer (harness-only), DEV overlay CSS */
 
 /* SECTION CSS — sticky reveal pattern */
-/* Ten sam poziom co #faq-section (z-index:1) — kolejność w DOM wygrywa przy remisie,
-   więc Final maluje się NAD FAQ w strefie -100vh overlap zamiast być całkowicie pod spodem. */
+/* Sekcje powyżej muszą mieć tło + z-index:1 żeby naturalnie zakrywały tę sekcję */
 #final-section {
   position: relative;
-  z-index: 1;
+  z-index: 0;
   margin-top: -100vh;
   background: #f7f6f4;
 }
@@ -60,24 +59,14 @@
   pointer-events: auto;
 }
 
-/* Mobile: od pierwszej klatki układ jak po JS (dół + schowanie) — bez błysku na środku.
-   100vh na iOS > mały viewport → karta 640px wychodzi ponad górę sticky i zasłania WebGL.
-   dvh/svh na sticky + wysokość karty max = viewport − pas na napisy/zegar. */
+/* Mobile: od pierwszej klatki układ jak po JS (dół + schowanie) — bez błysku na środku */
 @media (max-width: 1199px) {
-  #final-sticky {
-    height: 100dvh;
-    height: 100svh;
-  }
-  #final-section {
-    --final-mobile-card-h: min(640px, calc(100dvh - 120px));
-  }
   #final-section #final-formCard {
     top: auto;
     bottom: 0;
     left: 50%;
     right: auto;
-    height: var(--final-mobile-card-h, min(640px, calc(100dvh - 120px)));
-    transform: translateX(-50%) translateY(var(--final-mobile-card-h, min(640px, calc(100dvh - 120px))));
+    transform: translateX(-50%) translateY(640px);
     border-radius: 24px 24px 0 0;
   }
 }
@@ -85,19 +74,5 @@
 @media (min-width: 1200px) {
   #final-section #final-formCard {
     border-radius: 24px;
-  }
-}
-
-/* Zakres scrolla po „pin” sticky — P2A: 100vh; na mobile skracamy (~100vh pustki pod formularzem). */
-#final-section .final-scroll-extender {
-  height: 100vh;
-  pointer-events: none;
-  visibility: hidden;
-}
-@media (max-width: 1199px) {
-  #final-section .final-scroll-extender {
-    /* Fallback, potem dynamiczne viewporty (stary WebKit ignoruje min() z dvh). */
-    height: 52vh;
-    height: min(52dvh, 80svh);
   }
 }

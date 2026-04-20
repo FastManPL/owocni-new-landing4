@@ -522,8 +522,8 @@
             #kinetic-section #kinetic-block-3 {
                 left: 5%;
                 width: 90%;
-                /* Mobile: kotwica od góry viewportu (jak krótkie okna desktop), żeby GEMIUS nie siedział poniżej połowy ekranu */
-                top: max(0.5rem, env(safe-area-inset-top, 0px));
+                /* Niżej niż desktop (−294px) — żeby GEMIUS nie wchodził poza górę ekranu */
+                top: calc(50% + max(var(--bp-b3y), -198px));
                 padding-top: clamp(1rem, 3.5vw, 1.6rem);
             }
         }
@@ -563,8 +563,8 @@
                 top: calc(185px + 26.2svh);
             }
             #kinetic-section #kinetic-block-3 {
-                /* Od góry ekranu (safe area) — spójnie z max-width: 768px; wcześniejszy duży offset + svh centrował GEMIUS w dolnej połowie */
-                top: max(0.5rem, env(safe-area-inset-top, 0px));
+                /* Bez ujemnego margin — wcześniej ucinało od góry viewportu */
+                top: calc(172px + 26svh);
                 left: 5%;
                 width: 90%;
                 margin-top: 0;
@@ -585,10 +585,10 @@
             #kinetic-section .block-3-mobile { display: flex; }
         }
 
-        /* Niskie telefony: ta sama kotwica od góry co w pozostałych mobile */
+        /* Niskie telefony: GEMIUS jeszcze niżej — pełna widoczność nagłówka */
         @media (max-width: 599px) and (max-height: 740px) {
             #kinetic-section #kinetic-block-3 {
-                top: max(0.5rem, env(safe-area-inset-top, 0px));
+                top: calc(188px + 28svh);
             }
         }
 
