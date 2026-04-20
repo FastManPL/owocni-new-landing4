@@ -23,9 +23,5 @@ export function KineticSectionClient() {
     setReady(true);
   }, []);
 
-  return (
-    <div className="kinetic-hydrate-root" style={{ minHeight: 0 }}>
-      {ready && shellRef.current ? <KineticEngine containerRef={shellRef} /> : null}
-    </div>
-  );
+  return ready && shellRef.current ? <KineticEngine containerRef={shellRef} /> : null;
 }
