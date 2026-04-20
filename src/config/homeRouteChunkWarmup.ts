@@ -2,10 +2,15 @@
  * Te same `import()` co `next/dynamic` na `page.tsx` — `runWarmupPolicy` (idle) z jednego
  * client boundary (`SmoothScrollProvider`), notatka arch. punkt 5.C (transfer ≠ mount).
  * Tylko dla ścieżki `/` (layout owija całą aplikację).
+ *
+ * KineticEngine + Blok45Section: te same moduły co `KineticSection` / `SectionsClient` —
+ * idle prefetch transferu JS zanim użytkownik zdąży zescrollować (mount i tak później przez React).
  */
 import type { WarmupEntry } from '@/lib/moduleLoader';
 
 export const homeRouteChunkWarmupEntries: WarmupEntry[] = [
+  { policy: 'idle', import: () => import('@/sections/kinetic/KineticEngine') },
+  { policy: 'idle', import: () => import('@/sections/block-45/Blok45Section') },
   { policy: 'idle', import: () => import('@/sections/books/BookStatsSection') },
   { policy: 'idle', import: () => import('@/sections/fakty/FaktyEngine') },
   { policy: 'idle', import: () => import('@/sections/kalkulator/KalkulatorSectionClient') },
