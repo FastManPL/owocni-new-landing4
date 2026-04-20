@@ -7,7 +7,7 @@ import type { WarmupEntry } from '@/lib/moduleLoader';
 
 export const homeRouteChunkWarmupEntries: WarmupEntry[] = [
   { policy: 'idle', import: () => import('@/sections/books/BookStatsSection') },
-  { policy: 'idle', import: () => import('@/sections/fakty/FaktySection') },
+  { policy: 'idle', import: () => import('@/sections/fakty/FaktyEngine') },
   { policy: 'idle', import: () => import('@/sections/kalkulator/KalkulatorSectionClient') },
   { policy: 'idle', import: () => import('@/app/GwarancjaSectionWrapper') },
   { policy: 'idle', import: () => import('@/sections/Opinie/LoveWallSection') },
