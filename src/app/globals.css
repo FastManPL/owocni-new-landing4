@@ -60,10 +60,13 @@ html {
   html {
     overflow-x: visible !important;
     overflow-y: auto;
+    /* stable + auto na html i body dawało dwa pionowe paski; jeden root scroll na html. */
+    scrollbar-gutter: auto;
   }
   body {
     overflow-x: hidden;
-    overflow-y: auto;
+    overflow-y: visible;
+    min-height: 100%;
   }
   main {
     overflow: visible;

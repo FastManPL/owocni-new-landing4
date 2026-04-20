@@ -168,8 +168,8 @@ function updateMobileFormScroll(){
     t=Math.max(0,Math.min(1,er.bottom/eh));
   } else if(er.top<vh){
     var enter=vh-er.top;
-    /* Niżej niż 0.84: mniej „martwego” scrollu z samym zegarem zanim karta zacznie wjeżdżać (mobile UX). */
-    var delayRatio=0.48;
+    /* Im niżej, tym wcześniej wjazd karty (mniej pustego scrollu między napisami a formularzem). */
+    var delayRatio=0.22;
     if(enter>=vh*delayRatio){
       t=(enter-vh*delayRatio)/(vh*(1-delayRatio));
       if(t>1)t=1;
