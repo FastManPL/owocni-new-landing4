@@ -23,9 +23,9 @@ function loadIdle(entry: WarmupEntry): Promise<unknown> {
   const key = entry.import.toString();
   if (cache.has(key)) return cache.get(key)!;
   const p =
-    typeof requestIdleCallback !== 'undefined'
+    typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function'
       ? new Promise<unknown>((resolve) => {
-          requestIdleCallback(() => resolve(entry.import()), { timeout: 2000 });
+          window.requestIdleCallback(() => resolve(entry.import()), { timeout: 2000 });
         })
       : Promise.resolve().then(() => entry.import());
   cache.set(key, p);
