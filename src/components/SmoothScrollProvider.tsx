@@ -1,10 +1,7 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
 import { useEffect, useLayoutEffect } from 'react';
 import type { ReactNode } from 'react';
-import { homeRouteChunkWarmupEntries } from '@/config/homeRouteChunkWarmup';
-import { runWarmupPolicy } from '@/lib/moduleLoader';
 import { scrollRuntime } from '@/lib/scrollRuntime';
 
 interface SmoothScrollProviderProps {
@@ -12,20 +9,6 @@ interface SmoothScrollProviderProps {
 }
 
 export function SmoothScrollProvider({ children }: SmoothScrollProviderProps) {
-  const pathname = usePathname();
-
-  /** Home: idle prefetch chunków zgodnych z `page.tsx` (cache `moduleLoader` — bez podwójnej pracy po mount). */
-  useEffect(() => {
-    if (pathname !== '/') return;
-    const id = requestIdleCallback(
-      () => {
-        runWarmupPolicy(homeRouteChunkWarmupEntries);
-      },
-      { timeout: 2800 }
-    );
-    return () => cancelIdleCallback(id);
-  }, [pathname]);
-
   useEffect(() => {
     let cancelled = false;
     let innerRaf = 0;
