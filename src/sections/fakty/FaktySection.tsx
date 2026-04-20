@@ -1,12 +1,9 @@
-'use client';
+import { FaktySectionClientBoundary } from './FaktySectionClientBoundary';
 
-import dynamic from 'next/dynamic';
-
-const FaktyEngine = dynamic(() => import('./FaktyEngine'), {
-  ssr: false,
-  loading: () => <section aria-hidden="true" style={{ minHeight: '100vh' }} />,
-});
-
+/**
+ * RSC entry: `<section id="fakty-section">` jest w `FaktyEngine` (client).
+ * Tu tylko granica transferu chunka — bez zagnieżdżonego `<section>`.
+ */
 export function FaktySection() {
-  return <FaktyEngine />;
+  return <FaktySectionClientBoundary />;
 }
