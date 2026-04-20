@@ -139,6 +139,13 @@ function runBoot(gen: number, G: typeof gsap, ST: typeof ScrollTriggerType): voi
     (window as Window & { __scroll?: ScrollRuntime }).__scroll = scrollRuntime;
   }
 
+  /** Playwright / Argos: natywne `window.scrollTo` nie przesuwa Lenisa → `DeferredMount` zostaje pusty. */
+  if (process.env.NEXT_PUBLIC_ARGOS_VISUAL === '1' && typeof window !== 'undefined') {
+    (window as Window & { __argosScrollTo?: (top: number) => void }).__argosScrollTo = (top: number) => {
+      lenis?.scrollTo(top, { immediate: true });
+    };
+  }
+
   if (pendingRefresh) {
     const reason = pendingRefresh;
     pendingRefresh = null;
@@ -170,6 +177,9 @@ function destroy(): void {
     pendingRefresh = null;
     if (process.env.NODE_ENV === 'development') {
       delete (window as Window & { __scroll?: ScrollRuntime }).__scroll;
+    }
+    if (process.env.NEXT_PUBLIC_ARGOS_VISUAL === '1' && typeof window !== 'undefined') {
+      delete (window as Window & { __argosScrollTo?: (top: number) => void }).__argosScrollTo;
     }
     return;
   }
@@ -205,6 +215,9 @@ function destroy(): void {
   const ST = ScrollTriggerRuntime;
   if (lenis && ST) {
     lenis.off('scroll', ST.update);
+  }
+  if (process.env.NEXT_PUBLIC_ARGOS_VISUAL === '1' && typeof window !== 'undefined') {
+    delete (window as Window & { __argosScrollTo?: (top: number) => void }).__argosScrollTo;
   }
   lenis?.destroy();
   lenis = null;
