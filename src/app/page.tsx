@@ -85,7 +85,7 @@ async function HomePageContent({
       <WynikiSection />
       <BookStatsSection />
       <BelowFoldChunkWarmup />
-      {/* Fakty + Kalkulator: bez DeferredMount — tuż przed / po makro (Bridge); silniki nadal `dynamic()`. Od Gwarancji w dół IO-defer (TBT). */}
+      {/* Fakty + Kalkulator + blok średni (LoveWall→FAQ): bez DeferredMount; silniki nadal `dynamic()`. Gwarancja + Final nadal IO-defer (TBT / WebGL). */}
       <FaktySection />
       {/*
         Bridge + Blok45 w jednym slocie, bez DeferredMount: sentinel Kinetic musi być w DOM przed init Blok45
@@ -97,24 +97,12 @@ async function HomePageContent({
       <DeferredMount minHeight="min(140vh, 1200px)">
         <GwarancjaSectionWrapper />
       </DeferredMount>
-      <DeferredMount minHeight="min(100vh, 900px)">
-        <LoveWallSection />
-      </DeferredMount>
-      <DeferredMount minHeight="min(100vh, 900px)">
-        <CaseStudy2Section />
-      </DeferredMount>
-      <DeferredMount minHeight="min(90vh, 800px)">
-        <CaseStudiesSection />
-      </DeferredMount>
-      <DeferredMount minHeight="min(100vh, 900px)">
-        <OnasSectionWrapper />
-      </DeferredMount>
-      <DeferredMount minHeight="min(110vh, 950px)">
-        <CyfroweWzrostySectionWrapper />
-      </DeferredMount>
-      <DeferredMount minHeight="min(80vh, 700px)">
-        <FAQSection />
-      </DeferredMount>
+      <LoveWallSection />
+      <CaseStudy2Section />
+      <CaseStudiesSection />
+      <OnasSectionWrapper />
+      <CyfroweWzrostySectionWrapper />
+      <FAQSection />
       <DeferredMount minHeight="min(120vh, 1100px)">
         <FinalSection />
       </DeferredMount>
