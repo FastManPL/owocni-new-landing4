@@ -99,9 +99,21 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
 
         let mobileResizeLock = false;
         let mobileResizeTimer = null;
+        /** Bez tego: każdy VV.resize na iOS resetuje 250ms lock → lock praktycznie stale true w Kinetic → _handleIntent wyłączony, chaos z pinem / WebKit. */
+        var _lockArmVw = 0;
+        var _lockArmVh = 0;
+        var _LOCK_ARM_VH_EPS = 150;
 
         function armMobileResizeLock() {
             if (!IS_TOUCH) return;
+            var nw = window.innerWidth;
+            var nh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+            if (_lockArmVw > 0 && nw === _lockArmVw && Math.abs(nh - _lockArmVh) < _LOCK_ARM_VH_EPS) {
+                _lockArmVh = nh;
+                return;
+            }
+            _lockArmVw = nw;
+            _lockArmVh = nh;
             mobileResizeLock = true;
             clearTimeout(mobileResizeTimer);
             mobileResizeTimer = setTimeout(function() { mobileResizeLock = false; }, 250);
@@ -126,7 +138,8 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
         // ============================================
         const _isMobileDPR = window.innerWidth < 768;
         const adaptiveDPR = {
-            cap: 1.0, // mobile: sharper rendering
+            /* iPhone: niższy start = mniejsze bufory canvas (mniej OOM / kill WebKit przy drugim bloku). */
+            cap: _isMobileDPR ? 0.78 : 1.0,
             min: 0.5,
             max: 1.5,
             lastTime: performance.now(),
@@ -158,11 +171,14 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
                     const oldCap = this.cap;
                     
                     // Dostosowane progi dla 30fps ticker
-                    if (this.avgFPS > 28) {
+                    if (!_isMobileDPR && this.avgFPS > 28) {
                         this.cap = Math.min(this.cap + 0.05, this.max);
                     }
                     if (this.avgFPS < 22) {
                         this.cap = Math.max(this.cap - 0.1, this.min);
+                    }
+                    if (_isMobileDPR) {
+                        this.cap = Math.min(this.cap, 0.85);
                     }
                     
                     // Powiadom listenery o zmianie
@@ -2716,7 +2732,7 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
             _kineticObserver = ScrollTrigger.observe({
                 target:    window,
                 type:      'wheel,touch',
-                tolerance: IS_TOUCH ? 8 : 10,
+                tolerance: IS_TOUCH ? 22 : 10,
                 onDown: function(self) { var _t = self.event && self.event.type; _handleIntent(_t && _t.indexOf("touch") === 0 ? -1 : 1); },
                 onUp: function(self) { var _t = self.event && self.event.type; _handleIntent(_t && _t.indexOf("touch") === 0 ? 1 : -1); },
                 preventDefault: false
@@ -4332,6 +4348,7 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
 
     function kill() {
         _s._killed = true;
+        _factoryResumeGen++;
         pause();
         // 1. Wykonaj wszystkie cleanups (removeEventListener, clearTimeout)
         cleanups.forEach(fn => { try { fn(); } catch(e) {} });
@@ -4388,17 +4405,27 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
     var _factoryVvW = 0;
     var _factoryVvH = 0;
     var _FACTORY_VV_H_SKIP = 150;
+    var _factoryResumeGen = 0;
 
     function _factoryIoCallback(entries) {
         var e = entries[0];
         if (!e) return;
         if (typeof document !== 'undefined' && document.documentElement.classList.contains('kinetic-past')) {
+            _factoryResumeGen++;
             pause();
             return;
         }
         if (e.isIntersecting) {
-            resume();
+            /* iOS: resume w tej samej klatce co heavy scroll/pin = szczyt GPU; odłóż o 2 rAF. */
+            var gen = ++_factoryResumeGen;
+            requestAnimationFrame(function() {
+                requestAnimationFrame(function() {
+                    if (_s._killed || gen !== _factoryResumeGen) return;
+                    resume();
+                });
+            });
         } else {
+            _factoryResumeGen++;
             pause();
         }
     }
