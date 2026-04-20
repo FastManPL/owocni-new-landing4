@@ -1352,20 +1352,62 @@ function init(container: HTMLElement): { kill: () => void } {
   // ── lazy ScrollTrigger creation ─────────────────────────────
   // ST tworzone dopiero gdy sekcja w viewport (IO) lub po 1,2 s (fallback).
   // Zapobiega złym start/end przy scroll≈0 i przy późniejszym globalnym refreshu (resize).
+  // Po cold deploy: Fakty chunk często montuje się przed Lenisem — ST ze scrollerProxy=0
+  // liczy scrub jak „po animacji”. Czekamy na scrollRuntime.isReady() + ScrollTrigger.update().
   let stCreated = false;
+  let lazyStLock = false;
   let lazyStTimeout: ReturnType<typeof setTimeout> | null = null;
   let lazyStObserver: IntersectionObserver | null = null;
   function maybeCreateScrollTriggers() {
-    if (stCreated || isKilled || !container.isConnected || !faktyBlock) return;
-    stCreated = true;
+    if (lazyStLock || stCreated || isKilled || !container.isConnected || !faktyBlock)
+      return;
+    lazyStLock = true;
     if (lazyStTimeout !== null) {
       clearTimeout(lazyStTimeout);
       lazyStTimeout = null;
     }
     lazyStObserver?.disconnect();
     lazyStObserver = null;
-    buildPhase1();
-    buildFrameScroll();
+
+    function runBuild() {
+      if (stCreated || isKilled || !container.isConnected || !faktyBlock) return;
+      stCreated = true;
+      buildPhase1();
+      buildFrameScroll();
+      requestAnimationFrame(() => {
+        requestAnimationFrame(() => {
+          if (!isKilled) ScrollTrigger.update();
+        });
+      });
+    }
+
+    function waitForLenisThenBuild() {
+      let attempts = 0;
+      const maxAttempts = 150;
+      const tick = () => {
+        if (isKilled || !container.isConnected) return;
+        if (scrollRuntime.isReady()) {
+          requestAnimationFrame(() => {
+            requestAnimationFrame(runBuild);
+          });
+          return;
+        }
+        if (++attempts >= maxAttempts) {
+          runBuild();
+          return;
+        }
+        requestAnimationFrame(tick);
+      };
+      requestAnimationFrame(tick);
+    }
+
+    if (scrollRuntime.isReady()) {
+      requestAnimationFrame(() => {
+        requestAnimationFrame(runBuild);
+      });
+    } else {
+      waitForLenisThenBuild();
+    }
   }
 
   // ── fonts → build (bez ST; ST w maybeCreateScrollTriggers) ───
