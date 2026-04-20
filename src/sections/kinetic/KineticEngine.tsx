@@ -4438,7 +4438,7 @@ import './kinetic-section.css';
     cleanups.push(function() { _stIo.disconnect(); });
 
     var _settleTimer = setTimeout(function() {
-        scrollRuntime.requestRefresh('st-refresh');
+        scrollRuntime.requestRefresh('layout-settle');
     }, 1000);
     timerIds.push(_settleTimer);
 
