@@ -1481,9 +1481,19 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
         // INIT / RESIZE
         // ============================================
         
+        function getParticleEffectiveDpr() {
+            var dpr = adaptiveDPR.get();
+            if (!IS_TOUCH) return dpr;
+            // iOS safe mode: trzymaj bitmapę particle pod stałym budżetem pamięci.
+            var maxW = 960;
+            var maxH = 560;
+            var dprCapBySize = Math.min(maxW / Math.max(1, width), maxH / Math.max(1, height));
+            return Math.max(0.45, Math.min(dpr, dprCapBySize));
+        }
+
         // Funkcja do zmiany DPR bez przebudowy cząsteczek
         function resizeParticleForDPR() {
-            var dpr = adaptiveDPR.get();
+            var dpr = getParticleEffectiveDpr();
             var _targetW = Math.round(width * dpr);
             var _targetH = Math.round(height * dpr);
             if (canvas.width !== _targetW || canvas.height !== _targetH) {
@@ -1509,7 +1519,7 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
             cx = width / 2;
             cy = height / 2;
 
-            var dpr = adaptiveDPR.get();
+            var dpr = getParticleEffectiveDpr();
             var _targetW = Math.round(width * dpr);
             var _targetH = Math.round(height * dpr);
             if (canvas.width !== _targetW || canvas.height !== _targetH) {
@@ -1806,8 +1816,8 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
             // === STRATEGIA A: Canvas Max Size ===
             // Ograniczamy canvas do 1440×900 dla wydajności
             // CSS skaluje do pełnego rozmiaru wrappera
-            const MAX_CANVAS_W = 1440;
-            const MAX_CANVAS_H = 900;
+            const MAX_CANVAS_W = IS_TOUCH ? 980 : 1440;
+            const MAX_CANVAS_H = IS_TOUCH ? 620 : 900;
             
             const canvasScale = Math.min(
                 rawWidth > MAX_CANVAS_W ? MAX_CANVAS_W / rawWidth : 1,
