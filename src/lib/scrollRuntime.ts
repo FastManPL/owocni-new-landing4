@@ -75,6 +75,7 @@ function runBoot(gen: number, G: typeof gsap, ST: typeof ScrollTriggerType): voi
     smoothWheel: true,
     wheelMultiplier: 1,
     touchMultiplier: 1,
+    /** Mobile: Lenis przejmuje touch synchronicznie — bez tego + overflow na html/body scroll bywa „martwy”. */
     syncTouch: true,
     syncTouchLerp: 0.1,
   });

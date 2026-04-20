@@ -88,14 +88,11 @@ async function HomePageContent({
         <FaktySection />
       </DeferredMount>
       {/*
-        Jeden slot: Bridge (Kinetic + #bridge-pin-end-sentinel) musi być w DOM zanim zainicjuje się Blok45.
-        Dwa osobne DeferredMount mogły montować Blok45 bez sentinela → ST w Blok45Engine pada na `container`
-        i kolejność scrollowa wygląda jak Fakty → Blok45 → Kinetic.
+        Bridge + Blok45 w jednym slocie, bez DeferredMount: sentinel Kinetic musi być w DOM przed init Blok45
+        (dwa osobne DeferredMount łamały kolejność). Wcześniejszy mount stabilizuje wejście w Kinetic (diagnoza).
       */}
-      <DeferredMount minHeight="min(200vh, 1800px)">
-        <BridgeSection />
-        <SectionsClient />
-      </DeferredMount>
+      <BridgeSection />
+      <SectionsClient />
       <DeferredMount minHeight="min(110vh, 1000px)">
         <KalkulatorSection />
       </DeferredMount>
