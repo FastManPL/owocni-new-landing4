@@ -22,42 +22,58 @@ export async function prepHomeForFullPageVisual(page: Page): Promise<void> {
   await page.locator('main').first().waitFor({ state: 'visible' });
   await page.locator('html.lenis').first().waitFor({ state: 'attached', timeout: 25_000 });
 
-  const { scrollHeight, innerHeight } = await page.evaluate(() => ({
-    scrollHeight: Math.max(
-      document.documentElement?.scrollHeight ?? 0,
-      document.body?.scrollHeight ?? 0
-    ),
-    innerHeight: window.innerHeight || 720,
-  }));
-
-  /** Piny ST potrafią rozdmuchać `scrollHeight` — ograniczamy krok podglądu wizualnego. */
-  const maxY = Math.min(48_000, Math.max(0, scrollHeight - innerHeight + 400));
-  const step = Math.max(350, Math.floor(innerHeight * 0.65));
+  const getMetrics = () =>
+    page.evaluate(() => {
+      const scrollHeight = Math.max(
+        document.documentElement?.scrollHeight ?? 0,
+        document.body?.scrollHeight ?? 0
+      );
+      const innerHeight = window.innerHeight || 720;
+      return { scrollHeight, innerHeight };
+    });
 
   const hasLenisBridge = await page.evaluate(
     () => typeof (window as unknown as { __argosScrollTo?: unknown }).__argosScrollTo === 'function'
   );
 
   if (hasLenisBridge) {
+    const scrollTo = (top: number) =>
+      page.evaluate((t) => {
+        (window as unknown as { __argosScrollTo: (n: number) => void }).__argosScrollTo(t);
+      }, top);
+
+    /**
+     * 1) Kilka razy „na koniec dokumentu” — po `DeferredMount` `scrollHeight` rośnie; jeden przejazd
+     *    obcinał stronę (np. przy case studies). 2) Krokami od góry — IO + sentinel przy długich pinach.
+     */
+    let lastH = 0;
+    for (let round = 0; round < 6; round++) {
+      const { scrollHeight, innerHeight } = await getMetrics();
+      if (scrollHeight <= innerHeight) break;
+      const target = Math.min(2_000_000, Math.max(0, scrollHeight - innerHeight + 600));
+      await scrollTo(target);
+      await delay(round < 2 ? 700 : 550);
+      if (scrollHeight === lastH && round > 0) break;
+      lastH = scrollHeight;
+    }
+
+    const { scrollHeight: h2, innerHeight: ih } = await getMetrics();
+    const maxY = Math.min(2_000_000, Math.max(0, h2 - ih + 600));
+    const step = Math.max(400, Math.floor(ih * 0.7));
     let y = 0;
     let n = 0;
-    const maxSteps = 90;
+    /** Po zejściach „na dół” wystarczy uzupełnić IO; twardy limit czasu testu (~120 s). */
+    const maxSteps = Math.min(200, Math.ceil(maxY / step) + 25);
     while (y <= maxY && n < maxSteps) {
-      await page.evaluate((top) => {
-        (window as unknown as { __argosScrollTo: (n: number) => void }).__argosScrollTo(top);
-      }, y);
-      await delay(260);
+      await scrollTo(y);
+      await delay(200);
       y += step;
       n++;
     }
-    await page.evaluate((top) => {
-      (window as unknown as { __argosScrollTo: (n: number) => void }).__argosScrollTo(top);
-    }, maxY);
-    await delay(500);
-    await page.evaluate(() => {
-      (window as unknown as { __argosScrollTo: (n: number) => void }).__argosScrollTo(0);
-    });
-    await delay(400);
+    await scrollTo(maxY);
+    await delay(600);
+    await scrollTo(0);
+    await delay(450);
     return;
   }
 
