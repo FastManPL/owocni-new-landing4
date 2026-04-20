@@ -93,6 +93,45 @@ export const argosPauseMotionCss = `
 }
 `.trim();
 
+async function readMaxScrollHeight(page: Page): Promise<number> {
+  return page.evaluate(() =>
+    Math.max(
+      document.documentElement?.scrollHeight ?? 0,
+      document.body?.scrollHeight ?? 0,
+      document.scrollingElement?.scrollHeight ?? 0
+    )
+  );
+}
+
+/**
+ * Po `prep` wysokość dokumentu może być jeszcze niepełna (kolejne `DeferredMount`, obrazy, ST).
+ * Bez tego `captureHomeViewportStripes` liczy za krótki `maxY` — ostatni pas kończy się w środku „O nas”.
+ */
+async function expandScrollHeightBeforeStripes(
+  page: Page,
+  scrollTo: (top: number) => Promise<void>
+): Promise<void> {
+  const vp = page.viewportSize() ?? { width: 1280, height: 720 };
+  const vh = vp.height;
+  let prevH = 0;
+  let stable = 0;
+  for (let round = 0; round < 14; round++) {
+    const h = await readMaxScrollHeight(page);
+    const target = Math.min(2_000_000, Math.max(0, h - vh + 900));
+    await scrollTo(target);
+    await delay(round < 4 ? 950 : 750);
+    if (h === prevH && round > 0) {
+      stable++;
+      if (stable >= 2) break;
+    } else {
+      stable = 0;
+    }
+    prevH = h;
+  }
+  await scrollTo(0);
+  await delay(400);
+}
+
 /**
  * Chromium ~16k px: jeden `fullPage: true` skleja obraz wyższy, ale **poniżej ~16384 px treść bywa nierenderowana**
  * (biały pas). Zamiast tego: wiele zrzutów viewportu przy różnym scrollu (`home-vp-001` …).
@@ -115,16 +154,13 @@ export async function captureHomeViewportStripes(page: Page): Promise<void> {
     }
   };
 
+  await expandScrollHeightBeforeStripes(page, scrollTo);
+
   const vp = page.viewportSize() ?? { width: 1280, height: 720 };
   const vh = vp.height;
   const step = Math.max(400, Math.floor(vh * 0.88));
 
-  const totalScroll = await page.evaluate(() =>
-    Math.max(
-      document.documentElement?.scrollHeight ?? 0,
-      document.body?.scrollHeight ?? 0
-    )
-  );
+  const totalScroll = await readMaxScrollHeight(page);
   const maxY = Math.max(0, totalScroll - vh);
 
   const positions: number[] = [];
@@ -138,7 +174,7 @@ export async function captureHomeViewportStripes(page: Page): Promise<void> {
   }
 
   let idx = 1;
-  const maxStripes = 80;
+  const maxStripes = 220;
   for (const top of positions) {
     if (idx > maxStripes) break;
     await scrollTo(top);
