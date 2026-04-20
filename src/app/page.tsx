@@ -85,7 +85,7 @@ async function HomePageContent({
       <WynikiSection />
       <BookStatsSection />
       <BelowFoldChunkWarmup />
-      {/* Fakty + Kalkulator + blok średni (LoveWall→FAQ): bez DeferredMount; silniki nadal `dynamic()`. Gwarancja + Final nadal IO-defer (TBT / WebGL). */}
+      {/* Fakty→FAQ + Gwarancja: bez DeferredMount; silniki `dynamic()`. Tylko Final IO-defer (WebGL / TBT). */}
       <FaktySection />
       {/*
         Bridge + Blok45 w jednym slocie, bez DeferredMount: sentinel Kinetic musi być w DOM przed init Blok45
@@ -94,9 +94,7 @@ async function HomePageContent({
       <BridgeSection />
       <SectionsClient />
       <KalkulatorSection />
-      <DeferredMount minHeight="min(140vh, 1200px)">
-        <GwarancjaSectionWrapper />
-      </DeferredMount>
+      <GwarancjaSectionWrapper />
       <LoveWallSection />
       <CaseStudy2Section />
       <CaseStudiesSection />
