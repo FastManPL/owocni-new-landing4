@@ -40,6 +40,7 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
 
         gsap.registerPlugin(ScrollTrigger);
         // ScrollTrigger.config({ ignoreMobileResize: true }) → Shared Core (scrollRuntime.ts)
+        const IS_TOUCH = !!ScrollTrigger.isTouch;
 
         // ── IDEMPOTENT INIT: usuń stare piny tej sekcji ──
         try {
@@ -53,7 +54,8 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
 
         // ZAKAZ: gsap.ticker.fps() w kodzie sekcji (globalny, zabija Lenis + inne sekcje)
         // Zamiast tego: lokalny throttle gate — tylko tickery TEJ sekcji działają w 30fps
-        const SECTION_FPS = 30;
+        // Mobile iOS/Android: lekko niższy lokalny FPS sekcji redukuje piki CPU bez zmiany sceny.
+        const SECTION_FPS = IS_TOUCH ? 24 : 30;
         const SECTION_FRAME_MS = 1000 / SECTION_FPS;
         var _lastSectionTick = 0;
         var _sectionTickOk = false;
@@ -94,8 +96,6 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
         let freezeFinal = false;
         var FREEZE_ON  = 0.95;
         var FREEZE_OFF = 0.94;
-
-        const IS_TOUCH = !!ScrollTrigger.isTouch;
 
         let mobileResizeLock = false;
         let mobileResizeTimer = null;
