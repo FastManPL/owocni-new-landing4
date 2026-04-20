@@ -2575,6 +2575,8 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
             var _COOLDOWN_MS = 50;  // lock:true już chroni podczas lotu; cooldown tylko na lądowanie
             var _cooldownTimer = null;
             var _kineticObserver = null;
+            var _intentTouchCooldownUntil = 0;
+            var _INTENT_TOUCH_COOLDOWN_MS = 420;
 
             // ── GEOMETRIA ──────────────────────────────────────────────────
             // Oblicza absolutne px snap pointów z ST.start/end
@@ -2642,7 +2644,7 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
 
             // ── HANDLE INTENT — jedyny właściciel nawigacji ───────────────
             // Jeden gest = jedna decyzja = jeden lenis.scrollTo
-            var _handleIntent = function(dir) {
+            var _handleIntent = function(dir, isTouchIntent) {
                 clearTimeout(_idleSnapTimer);   // anuluj ewentualny pending idle
 
                 if (mobileResizeLock) return;
@@ -2651,6 +2653,7 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
                 if (freezeFinal && dir > 0) return;
                 if (_sm.state === 'snapping') return;
                 if (_sm.state === 'cooldown') return;
+                if (isTouchIntent && performance.now() < _intentTouchCooldownUntil) return;
 
                 var g = _getSnapGeometry();
                 if (!g) return;
@@ -2701,6 +2704,7 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
                 // WYKONAJ — jedyny lenis.scrollTo w całym kontrolerze
                 _sm.state = 'snapping';
                 _sm.pendingIndex = targetIdx;
+                if (isTouchIntent) _intentTouchCooldownUntil = performance.now() + _INTENT_TOUCH_COOLDOWN_MS;
 
                 var _snapDuration = targetIdx === 2 || (_sm.committedIndex === 2 && targetIdx === 1)
                     ? 2.50
@@ -2743,8 +2747,17 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
                 target:    window,
                 type:      'wheel,touch',
                 tolerance: IS_TOUCH ? 22 : 10,
-                onDown: function(self) { var _t = self.event && self.event.type; _handleIntent(_t && _t.indexOf("touch") === 0 ? -1 : 1); },
-                onUp: function(self) { var _t = self.event && self.event.type; _handleIntent(_t && _t.indexOf("touch") === 0 ? 1 : -1); },
+                onDown: function(self) {
+                    var _t = self.event && self.event.type;
+                    var _isTouchIntent = !!(_t && _t.indexOf("touch") === 0);
+                    if (_isTouchIntent) return; // iOS burst guard: touch obsługuj tylko na końcu gestu
+                    _handleIntent(1, false);
+                },
+                onUp: function(self) {
+                    var _t = self.event && self.event.type;
+                    var _isTouchIntent = !!(_t && _t.indexOf("touch") === 0);
+                    _handleIntent(_isTouchIntent ? 1 : -1, _isTouchIntent);
+                },
                 preventDefault: false
             });
             cleanups.push(function() {
