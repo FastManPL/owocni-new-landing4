@@ -3,7 +3,6 @@ import dynamic from 'next/dynamic';
 import { Suspense } from 'react';
 import { resolveHeroVariant } from '@/config/heroVariants.generated';
 import { HeroSection } from '@/sections/hero/HeroSection';
-import { KalkulatorSection } from '@/sections/kalkulator/KalkulatorSection';
 import { WynikiSection } from '@/sections/wyniki/WynikiSection';
 import { SectionsClient } from './SectionsClient';
 import { BridgeSection } from './BridgeSection';
@@ -13,6 +12,10 @@ const BookStatsSection = dynamic(() =>
 );
 const FaktySection = dynamic(() =>
   import('@/sections/fakty/FaktySection').then((m) => ({ default: m.FaktySection }))
+);
+
+const KalkulatorSection = dynamic(() =>
+  import('@/sections/kalkulator/KalkulatorSection').then((m) => ({ default: m.KalkulatorSection }))
 );
 const GwarancjaSectionWrapper = dynamic(() =>
   import('./GwarancjaSectionWrapper').then((m) => ({ default: m.GwarancjaSectionWrapper }))
