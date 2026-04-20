@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import dynamic from 'next/dynamic';
 import { Suspense } from 'react';
+import { BelowFoldChunkWarmup } from '@/components/BelowFoldChunkWarmup';
 import { DeferredMount } from '@/components/DeferredMount';
 import { resolveHeroVariant } from '@/config/heroVariants.generated';
 import { HeroSection } from '@/sections/hero/HeroSection';
@@ -83,6 +84,7 @@ async function HomePageContent({
       <HeroSection variant={variant} />
       <WynikiSection />
       <BookStatsSection />
+      <BelowFoldChunkWarmup />
       {/* Od Fakty w dół: montaż dopiero blisko viewportu — mniejszy początkowy koszt JS (TBT). BookStats zostaje od razu (LCP / obraz). */}
       <DeferredMount minHeight="min(120vh, 1100px)">
         <FaktySection />
