@@ -1,3 +1,4 @@
+import { argosScreenshot } from '@argos-ci/playwright';
 import type { Page } from '@playwright/test';
 
 const delay = (ms: number) => new Promise<void>((r) => setTimeout(r, ms));
@@ -91,3 +92,61 @@ export const argosPauseMotionCss = `
   transition-duration: 0.001ms !important;
 }
 `.trim();
+
+/**
+ * Chromium ~16k px: jeden `fullPage: true` skleja obraz wyższy, ale **poniżej ~16384 px treść bywa nierenderowana**
+ * (biały pas). Zamiast tego: wiele zrzutów viewportu przy różnym scrollu (`home-vp-001` …).
+ * `home-hero` zostaje osobno (scroll 0).
+ */
+export async function captureHomeViewportStripes(page: Page): Promise<void> {
+  const hasBridge = await page.evaluate(
+    () => typeof (window as unknown as { __argosScrollTo?: unknown }).__argosScrollTo === 'function'
+  );
+
+  const scrollTo = async (top: number) => {
+    if (hasBridge) {
+      await page.evaluate((t) => {
+        (window as unknown as { __argosScrollTo: (n: number) => void }).__argosScrollTo(t);
+      }, top);
+    } else {
+      await page.evaluate((t) => {
+        window.scrollTo(0, t);
+      }, top);
+    }
+  };
+
+  const vp = page.viewportSize() ?? { width: 1280, height: 720 };
+  const vh = vp.height;
+  const step = Math.max(400, Math.floor(vh * 0.88));
+
+  const totalScroll = await page.evaluate(() =>
+    Math.max(
+      document.documentElement?.scrollHeight ?? 0,
+      document.body?.scrollHeight ?? 0
+    )
+  );
+  const maxY = Math.max(0, totalScroll - vh);
+
+  const positions: number[] = [];
+  if (maxY > 0) {
+    for (let y = step; y < maxY; y += step) {
+      positions.push(y);
+    }
+    if (positions.length === 0 || positions[positions.length - 1] !== maxY) {
+      positions.push(maxY);
+    }
+  }
+
+  let idx = 1;
+  const maxStripes = 80;
+  for (const top of positions) {
+    if (idx > maxStripes) break;
+    await scrollTo(top);
+    await delay(450);
+    await argosScreenshot(page, `home-vp-${String(idx).padStart(3, '0')}`, {
+      fullPage: false,
+      argosCSS: argosPauseMotionCss,
+    });
+    idx++;
+  }
+}

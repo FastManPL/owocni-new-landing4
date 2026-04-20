@@ -1,9 +1,13 @@
 import { test } from '@playwright/test';
 import { argosScreenshot } from '@argos-ci/playwright';
-import { argosPauseMotionCss, prepHomeForFullPageVisual } from './helpers/prepHomeForVisual';
+import {
+  argosPauseMotionCss,
+  captureHomeViewportStripes,
+  prepHomeForFullPageVisual,
+} from './helpers/prepHomeForVisual';
 
 test.describe('visual — strona główna', () => {
-  test('hero + pełna strona po aktywacji DeferredMount', async ({ page }) => {
+  test('hero + pasy viewportu (bez fullPage — limit Chromium ~16k px)', async ({ page }) => {
     await page.goto('/', { waitUntil: 'domcontentloaded' });
     await prepHomeForFullPageVisual(page);
 
@@ -12,9 +16,6 @@ test.describe('visual — strona główna', () => {
       argosCSS: argosPauseMotionCss,
     });
 
-    await argosScreenshot(page, 'home-full', {
-      fullPage: true,
-      argosCSS: argosPauseMotionCss,
-    });
+    await captureHomeViewportStripes(page);
   });
 });
