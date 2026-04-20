@@ -2262,6 +2262,7 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
         const tunnel = new Tunnel($id('kinetic-tunnel-canvas'));
         let tunnelProgress = 0;
         let tunnelVelocity = 0;
+        var _touchTunnelFrame = 0;
 
         // Stałe timingu tunelu (precomputed — eliminuje dzielenia/Math.max per tick)
         var fpStart = FP_TUNNEL_START;
@@ -2275,6 +2276,11 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
             if (_s._killed) return;
             if (!_sectionTickOk) return;
             if (document.hidden) return;
+            if (IS_TOUCH) {
+                // Mobile safety: render tunnel ~2/3 klatek (24fps gate -> ~16fps tunnel).
+                _touchTunnelFrame = (_touchTunnelFrame + 1) % 3;
+                if (_touchTunnelFrame === 0) return;
+            }
             // Czytaj formProgress z particle IIFE
             const fp = _s.particleQmark?.state?.formProgress || 0;
 
@@ -3975,6 +3981,7 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
                     { op: 0, gx: 0, gy: 0, gsc: 1, grot: 0, gxp: 0, gyp: 0, mulR: 239, mulG: 238, mulB: 236 },
                     { op: 0, gx: 0, gy: 0, gsc: 1, grot: 0, gxp: 0, gyp: 0, mulR: 239, mulG: 237, mulB: 235 }
                 ];
+                var _touchBlobFrame = 0;
 
                 function _updateBlobCache() {
                     var bgOp = parseFloat(gsap.getProperty(blobBgPreviewEl, 'opacity')) || 0;
@@ -4014,6 +4021,11 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
                 function renderBlobCanvas() {
                     if (_s._killed) return;
                     if (!_sectionTickOk && !_deferredTickOk) return; // P0: renders on deferred frame
+                    if (IS_TOUCH) {
+                        // Mobile safety: blob canvas co 2. klatkę (24fps gate -> ~12fps blobs).
+                        _touchBlobFrame = (_touchBlobFrame + 1) % 2;
+                        if (_touchBlobFrame === 0) return;
+                    }
                     var _anyVisible = false;
                     for (var _vi = 0; _vi < 3; _vi++) {
                         if ((parseFloat(blobEls[_vi].style.opacity) || 0) > 0.005) { _anyVisible = true; break; }
