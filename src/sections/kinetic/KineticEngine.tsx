@@ -4384,6 +4384,10 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
     var _factoryIo = null;
     var _factoryIoDebounce = null;
     var _getVH = function() { return window.visualViewport?.height ?? window.innerHeight; };
+    /** iOS Safari: przy scrollu pasek adresu zmienia VV height — bez filtra lawina recreate IO + pause/resume → crash karty. */
+    var _factoryVvW = 0;
+    var _factoryVvH = 0;
+    var _FACTORY_VV_H_SKIP = 150;
 
     function _factoryIoCallback(entries) {
         var e = entries[0];
@@ -4411,12 +4415,22 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
             });
             var _target = container.querySelector('[data-gating-target]') || container;
             _factoryIo.observe(_target);
-        }, 50);
+        }, 220);
     }
 
     _recreateFactoryIo();
 
-    function _onFactoryVVResize() { _recreateFactoryIo(); }
+    function _onFactoryVVResize() {
+        var nw = typeof window !== 'undefined' ? window.innerWidth : 0;
+        var nh = _getVH();
+        if (_factoryVvW > 0 && nw === _factoryVvW && Math.abs(nh - _factoryVvH) < _FACTORY_VV_H_SKIP) {
+            _factoryVvH = nh;
+            return;
+        }
+        _factoryVvW = nw;
+        _factoryVvH = nh;
+        _recreateFactoryIo();
+    }
     if (window.visualViewport) {
         window.visualViewport.addEventListener('resize', _onFactoryVVResize, { passive: true });
         cleanups.push(function() {
