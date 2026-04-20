@@ -75,6 +75,8 @@ function runBoot(gen: number, G: typeof gsap, ST: typeof ScrollTriggerType): voi
     smoothWheel: true,
     wheelMultiplier: 1,
     touchMultiplier: 1,
+    syncTouch: true,
+    syncTouchLerp: 0.1,
   });
 
   ST.scrollerProxy(document.body, {
