@@ -59,14 +59,24 @@
   pointer-events: auto;
 }
 
-/* Mobile: od pierwszej klatki układ jak po JS (dół + schowanie) — bez błysku na środku */
+/* Mobile: od pierwszej klatki układ jak po JS (dół + schowanie) — bez błysku na środku.
+   100vh na iOS > mały viewport → karta 640px wychodzi ponad górę sticky i zasłania WebGL.
+   dvh/svh na sticky + wysokość karty max = viewport − pas na napisy/zegar. */
 @media (max-width: 1199px) {
+  #final-sticky {
+    height: 100dvh;
+    height: 100svh;
+  }
+  #final-section {
+    --final-mobile-card-h: min(640px, calc(100dvh - 120px));
+  }
   #final-section #final-formCard {
     top: auto;
     bottom: 0;
     left: 50%;
     right: auto;
-    transform: translateX(-50%) translateY(640px);
+    height: var(--final-mobile-card-h, min(640px, calc(100dvh - 120px)));
+    transform: translateX(-50%) translateY(var(--final-mobile-card-h, min(640px, calc(100dvh - 120px))));
     border-radius: 24px 24px 0 0;
   }
 }
