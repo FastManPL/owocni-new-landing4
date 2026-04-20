@@ -1,12 +1,11 @@
 // @ts-nocheck — legacy engine (4500+ LOC); gradual typing deferred.
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, type RefObject } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { scrollRuntime } from '@/lib/scrollRuntime';
-import './kinetic-section.css';
 
 // ⚠️ GSAP-SSR-01: ZAKAZ gsap.registerPlugin() na module top-level.
 // registerPlugin() WYŁĄCZNIE wewnątrz useGSAP(() => { ... }).
@@ -100,9 +99,21 @@ import './kinetic-section.css';
 
         let mobileResizeLock = false;
         let mobileResizeTimer = null;
+        /** Bez tego: każdy VV.resize na iOS resetuje 250ms lock → lock praktycznie stale true w Kinetic → _handleIntent wyłączony, chaos z pinem / WebKit. */
+        var _lockArmVw = 0;
+        var _lockArmVh = 0;
+        var _LOCK_ARM_VH_EPS = 150;
 
         function armMobileResizeLock() {
             if (!IS_TOUCH) return;
+            var nw = window.innerWidth;
+            var nh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+            if (_lockArmVw > 0 && nw === _lockArmVw && Math.abs(nh - _lockArmVh) < _LOCK_ARM_VH_EPS) {
+                _lockArmVh = nh;
+                return;
+            }
+            _lockArmVw = nw;
+            _lockArmVh = nh;
             mobileResizeLock = true;
             clearTimeout(mobileResizeTimer);
             mobileResizeTimer = setTimeout(function() { mobileResizeLock = false; }, 250);
@@ -127,7 +138,8 @@ import './kinetic-section.css';
         // ============================================
         const _isMobileDPR = window.innerWidth < 768;
         const adaptiveDPR = {
-            cap: 1.0, // mobile: sharper rendering
+            /* iPhone: niższy start = mniejsze bufory canvas (mniej OOM / kill WebKit przy drugim bloku). */
+            cap: _isMobileDPR ? 0.78 : 1.0,
             min: 0.5,
             max: 1.5,
             lastTime: performance.now(),
@@ -159,11 +171,14 @@ import './kinetic-section.css';
                     const oldCap = this.cap;
                     
                     // Dostosowane progi dla 30fps ticker
-                    if (this.avgFPS > 28) {
+                    if (!_isMobileDPR && this.avgFPS > 28) {
                         this.cap = Math.min(this.cap + 0.05, this.max);
                     }
                     if (this.avgFPS < 22) {
                         this.cap = Math.max(this.cap - 0.1, this.min);
+                    }
+                    if (_isMobileDPR) {
+                        this.cap = Math.min(this.cap, 0.85);
                     }
                     
                     // Powiadom listenery o zmianie
@@ -1466,9 +1481,19 @@ import './kinetic-section.css';
         // INIT / RESIZE
         // ============================================
         
+        function getParticleEffectiveDpr() {
+            var dpr = adaptiveDPR.get();
+            if (!IS_TOUCH) return dpr;
+            // iOS safe mode: trzymaj bitmapę particle pod stałym budżetem pamięci.
+            var maxW = 960;
+            var maxH = 560;
+            var dprCapBySize = Math.min(maxW / Math.max(1, width), maxH / Math.max(1, height));
+            return Math.max(0.45, Math.min(dpr, dprCapBySize));
+        }
+
         // Funkcja do zmiany DPR bez przebudowy cząsteczek
         function resizeParticleForDPR() {
-            var dpr = adaptiveDPR.get();
+            var dpr = getParticleEffectiveDpr();
             var _targetW = Math.round(width * dpr);
             var _targetH = Math.round(height * dpr);
             if (canvas.width !== _targetW || canvas.height !== _targetH) {
@@ -1494,7 +1519,7 @@ import './kinetic-section.css';
             cx = width / 2;
             cy = height / 2;
 
-            var dpr = adaptiveDPR.get();
+            var dpr = getParticleEffectiveDpr();
             var _targetW = Math.round(width * dpr);
             var _targetH = Math.round(height * dpr);
             if (canvas.width !== _targetW || canvas.height !== _targetH) {
@@ -1791,8 +1816,8 @@ import './kinetic-section.css';
             // === STRATEGIA A: Canvas Max Size ===
             // Ograniczamy canvas do 1440×900 dla wydajności
             // CSS skaluje do pełnego rozmiaru wrappera
-            const MAX_CANVAS_W = 1440;
-            const MAX_CANVAS_H = 900;
+            const MAX_CANVAS_W = IS_TOUCH ? 980 : 1440;
+            const MAX_CANVAS_H = IS_TOUCH ? 620 : 900;
             
             const canvasScale = Math.min(
                 rawWidth > MAX_CANVAS_W ? MAX_CANVAS_W / rawWidth : 1,
@@ -2550,6 +2575,8 @@ import './kinetic-section.css';
             var _COOLDOWN_MS = 50;  // lock:true już chroni podczas lotu; cooldown tylko na lądowanie
             var _cooldownTimer = null;
             var _kineticObserver = null;
+            var _intentTouchCooldownUntil = 0;
+            var _INTENT_TOUCH_COOLDOWN_MS = 420;
 
             // ── GEOMETRIA ──────────────────────────────────────────────────
             // Oblicza absolutne px snap pointów z ST.start/end
@@ -2617,7 +2644,7 @@ import './kinetic-section.css';
 
             // ── HANDLE INTENT — jedyny właściciel nawigacji ───────────────
             // Jeden gest = jedna decyzja = jeden lenis.scrollTo
-            var _handleIntent = function(dir) {
+            var _handleIntent = function(dir, isTouchIntent) {
                 clearTimeout(_idleSnapTimer);   // anuluj ewentualny pending idle
 
                 if (mobileResizeLock) return;
@@ -2626,6 +2653,7 @@ import './kinetic-section.css';
                 if (freezeFinal && dir > 0) return;
                 if (_sm.state === 'snapping') return;
                 if (_sm.state === 'cooldown') return;
+                if (isTouchIntent && performance.now() < _intentTouchCooldownUntil) return;
 
                 var g = _getSnapGeometry();
                 if (!g) return;
@@ -2676,6 +2704,7 @@ import './kinetic-section.css';
                 // WYKONAJ — jedyny lenis.scrollTo w całym kontrolerze
                 _sm.state = 'snapping';
                 _sm.pendingIndex = targetIdx;
+                if (isTouchIntent) _intentTouchCooldownUntil = performance.now() + _INTENT_TOUCH_COOLDOWN_MS;
 
                 var _snapDuration = targetIdx === 2 || (_sm.committedIndex === 2 && targetIdx === 1)
                     ? 2.50
@@ -2717,9 +2746,18 @@ import './kinetic-section.css';
             _kineticObserver = ScrollTrigger.observe({
                 target:    window,
                 type:      'wheel,touch',
-                tolerance: IS_TOUCH ? 8 : 10,
-                onDown: function(self) { var _t = self.event && self.event.type; _handleIntent(_t && _t.indexOf("touch") === 0 ? -1 : 1); },
-                onUp: function(self) { var _t = self.event && self.event.type; _handleIntent(_t && _t.indexOf("touch") === 0 ? 1 : -1); },
+                tolerance: IS_TOUCH ? 22 : 10,
+                onDown: function(self) {
+                    var _t = self.event && self.event.type;
+                    var _isTouchIntent = !!(_t && _t.indexOf("touch") === 0);
+                    if (_isTouchIntent) return; // iOS burst guard: touch obsługuj tylko na końcu gestu
+                    _handleIntent(1, false);
+                },
+                onUp: function(self) {
+                    var _t = self.event && self.event.type;
+                    var _isTouchIntent = !!(_t && _t.indexOf("touch") === 0);
+                    _handleIntent(_isTouchIntent ? 1 : -1, _isTouchIntent);
+                },
                 preventDefault: false
             });
             cleanups.push(function() {
@@ -4333,6 +4371,7 @@ import './kinetic-section.css';
 
     function kill() {
         _s._killed = true;
+        _factoryResumeGen++;
         pause();
         // 1. Wykonaj wszystkie cleanups (removeEventListener, clearTimeout)
         cleanups.forEach(fn => { try { fn(); } catch(e) {} });
@@ -4385,17 +4424,31 @@ import './kinetic-section.css';
     var _factoryIo = null;
     var _factoryIoDebounce = null;
     var _getVH = function() { return window.visualViewport?.height ?? window.innerHeight; };
+    /** iOS Safari: przy scrollu pasek adresu zmienia VV height — bez filtra lawina recreate IO + pause/resume → crash karty. */
+    var _factoryVvW = 0;
+    var _factoryVvH = 0;
+    var _FACTORY_VV_H_SKIP = 150;
+    var _factoryResumeGen = 0;
 
     function _factoryIoCallback(entries) {
         var e = entries[0];
         if (!e) return;
         if (typeof document !== 'undefined' && document.documentElement.classList.contains('kinetic-past')) {
+            _factoryResumeGen++;
             pause();
             return;
         }
         if (e.isIntersecting) {
-            resume();
+            /* iOS: resume w tej samej klatce co heavy scroll/pin = szczyt GPU; odłóż o 2 rAF. */
+            var gen = ++_factoryResumeGen;
+            requestAnimationFrame(function() {
+                requestAnimationFrame(function() {
+                    if (_s._killed || gen !== _factoryResumeGen) return;
+                    resume();
+                });
+            });
         } else {
+            _factoryResumeGen++;
             pause();
         }
     }
@@ -4412,12 +4465,22 @@ import './kinetic-section.css';
             });
             var _target = container.querySelector('[data-gating-target]') || container;
             _factoryIo.observe(_target);
-        }, 50);
+        }, 220);
     }
 
     _recreateFactoryIo();
 
-    function _onFactoryVVResize() { _recreateFactoryIo(); }
+    function _onFactoryVVResize() {
+        var nw = typeof window !== 'undefined' ? window.innerWidth : 0;
+        var nh = _getVH();
+        if (_factoryVvW > 0 && nw === _factoryVvW && Math.abs(nh - _factoryVvH) < _FACTORY_VV_H_SKIP) {
+            _factoryVvH = nh;
+            return;
+        }
+        _factoryVvW = nw;
+        _factoryVvH = nh;
+        _recreateFactoryIo();
+    }
     if (window.visualViewport) {
         window.visualViewport.addEventListener('resize', _onFactoryVVResize, { passive: true });
         cleanups.push(function() {
@@ -4427,10 +4490,10 @@ import './kinetic-section.css';
     }
     cleanups.push(function() { if (_factoryIo) _factoryIo.disconnect(); });
 
-    // ═══ FACTORY P2A: ST-REFRESH-01 — section-in-view + layout-settle ═══
+    // ═══ FACTORY P2A: ST-REFRESH-01 — section-in-view (bez requestRefresh) + layout-settle ═══
+    // Wejściowy refresh z IO szkodził na mobile (skok przy wejściu); observer nadal jednorazowo się odłącza.
     var _stIo = new IntersectionObserver(function(entries) {
         if (!entries[0]?.isIntersecting) return;
-        scrollRuntime.requestRefresh('st-refresh');
         _stIo.disconnect();
     }, { threshold: 0, rootMargin: '0px' });
     _stIo.observe(container);
@@ -4438,7 +4501,7 @@ import './kinetic-section.css';
     cleanups.push(function() { _stIo.disconnect(); });
 
     var _settleTimer = setTimeout(function() {
-        scrollRuntime.requestRefresh('st-refresh');
+        scrollRuntime.requestRefresh('layout-settle');
     }, 1000);
     timerIds.push(_settleTimer);
 
@@ -4447,16 +4510,22 @@ import './kinetic-section.css';
     } // END init()
 
 
-export default function KineticEngine() {
+export type KineticEngineProps = {
+  /** Gdy podany (KineticSection), init na istniejącym shellu; bez propsa — własna `<section>` (preview). */
+  containerRef?: RefObject<HTMLElement | null>;
+};
+
+export default function KineticEngine({ containerRef }: KineticEngineProps = {}) {
   const rootRef = useRef<HTMLElement | null>(null);
+  const scopeRef = containerRef ?? rootRef;
   const kineticApiRef = useRef<{ pause: () => void; resume: () => void } | null>(null);
 
   useGSAP(() => {
     gsap.registerPlugin(ScrollTrigger);
-    const el = rootRef.current;
+    const el = (containerRef?.current ?? rootRef.current) as HTMLElement | null;
     if (!el) {
       if (process.env.NODE_ENV !== 'production') {
-        throw new Error('[P3] rootRef.current is null — ref not attached to <section>.');
+        throw new Error('[P3] Kinetic init: brak elementu — containerRef.current lub rootRef.current jest null.');
       }
       return;
     }
@@ -4466,7 +4535,7 @@ export default function KineticEngine() {
       kineticApiRef.current = null;
       inst?.kill?.();
     };
-  }, { scope: rootRef });
+  }, { scope: scopeRef });
 
   useEffect(() => {
     const syncKineticPast = () => {
@@ -4494,9 +4563,8 @@ export default function KineticEngine() {
     };
   }, []);
 
-  return (
-    <section id="kinetic-section" ref={rootRef} className="stage stage-pinned">
-              
+  const inner = (
+    <>
               {/* GLOW LAYER - ambient light pod słowem "nigdy" */}
               <div className="nigdy-glow" id="kinetic-nigdy-glow"></div>
               
@@ -4571,7 +4639,15 @@ export default function KineticEngine() {
                   <div className="kinetic-corona-ring"></div>
                   <div className="kinetic-corona-ring reverse"></div>
               </div>
-      
+    </>
+  );
+
+  if (containerRef) {
+    return inner;
+  }
+  return (
+    <section id="kinetic-section" ref={rootRef} className="stage stage-pinned">
+      {inner}
     </section>
   );
 }

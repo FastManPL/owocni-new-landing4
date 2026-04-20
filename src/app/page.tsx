@@ -1,22 +1,18 @@
 import type { Metadata } from 'next';
 import dynamic from 'next/dynamic';
 import { Suspense } from 'react';
-import { DeferredMount } from '@/components/DeferredMount';
 import { resolveHeroVariant } from '@/config/heroVariants.generated';
+import { FaktySection } from '@/sections/fakty/FaktySection';
 import { HeroSection } from '@/sections/hero/HeroSection';
+import { KalkulatorSection } from '@/sections/kalkulator/KalkulatorSection';
 import { WynikiSection } from '@/sections/wyniki/WynikiSection';
 import { SectionsClient } from './SectionsClient';
 import { BridgeSection } from './BridgeSection';
+import { KineticSectionShell } from '@/sections/kinetic/KineticSectionShell';
+import { KineticSectionClient } from '@/sections/kinetic/KineticSectionClient';
 
 const BookStatsSection = dynamic(() =>
   import('@/sections/books/BookStatsSection').then((m) => ({ default: m.BookStatsSection }))
-);
-const FaktySection = dynamic(() =>
-  import('@/sections/fakty/FaktySection').then((m) => ({ default: m.FaktySection }))
-);
-
-const KalkulatorSection = dynamic(() =>
-  import('@/sections/kalkulator/KalkulatorSection').then((m) => ({ default: m.KalkulatorSection }))
 );
 const GwarancjaSectionWrapper = dynamic(() =>
   import('./GwarancjaSectionWrapper').then((m) => ({ default: m.GwarancjaSectionWrapper }))
@@ -83,46 +79,29 @@ async function HomePageContent({
       <HeroSection variant={variant} />
       <WynikiSection />
       <BookStatsSection />
-      {/* Od Fakty w dół: montaż dopiero blisko viewportu — mniejszy początkowy koszt JS (TBT). BookStats zostaje od razu (LCP / obraz). */}
-      <DeferredMount minHeight="min(120vh, 1100px)">
-        <FaktySection />
-      </DeferredMount>
+      {/* Cała treść home: bez DeferredMount; ciężkie silniki nadal `dynamic()` + placeholder. */}
+      <FaktySection />
       {/*
-        Jeden slot: Bridge (Kinetic + #bridge-pin-end-sentinel) musi być w DOM zanim zainicjuje się Blok45.
-        Dwa osobne DeferredMount mogły montować Blok45 bez sentinela → ST w Blok45Engine pada na `container`
-        i kolejność scrollowa wygląda jak Fakty → Blok45 → Kinetic.
+        Bridge + Blok45 w jednym slocie, bez DeferredMount: sentinel Kinetic musi być w DOM przed init Blok45
+        (dwa osobne DeferredMount łamały kolejność). Wcześniejszy mount stabilizuje wejście w Kinetic (diagnoza).
       */}
-      <DeferredMount minHeight="min(200vh, 1800px)">
-        <BridgeSection />
-        <SectionsClient />
-      </DeferredMount>
-      <DeferredMount minHeight="min(110vh, 1000px)">
-        <KalkulatorSection />
-      </DeferredMount>
-      <DeferredMount minHeight="min(140vh, 1200px)">
-        <GwarancjaSectionWrapper />
-      </DeferredMount>
-      <DeferredMount minHeight="min(100vh, 900px)">
-        <LoveWallSection />
-      </DeferredMount>
-      <DeferredMount minHeight="min(100vh, 900px)">
-        <CaseStudy2Section />
-      </DeferredMount>
-      <DeferredMount minHeight="min(90vh, 800px)">
-        <CaseStudiesSection />
-      </DeferredMount>
-      <DeferredMount minHeight="min(100vh, 900px)">
-        <OnasSectionWrapper />
-      </DeferredMount>
-      <DeferredMount minHeight="min(110vh, 950px)">
-        <CyfroweWzrostySectionWrapper />
-      </DeferredMount>
-      <DeferredMount minHeight="min(80vh, 700px)">
-        <FAQSection />
-      </DeferredMount>
-      <DeferredMount minHeight="min(120vh, 1100px)">
-        <FinalSection />
-      </DeferredMount>
+      <BridgeSection
+        kineticLayer={
+          <KineticSectionShell>
+            <KineticSectionClient />
+          </KineticSectionShell>
+        }
+      />
+      <SectionsClient />
+      <KalkulatorSection />
+      <GwarancjaSectionWrapper />
+      <LoveWallSection />
+      <CaseStudy2Section />
+      <CaseStudiesSection />
+      <OnasSectionWrapper />
+      <CyfroweWzrostySectionWrapper />
+      <FAQSection />
+      <FinalSection />
     </main>
   );
 }
