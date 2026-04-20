@@ -8,6 +8,8 @@ import { KalkulatorSection } from '@/sections/kalkulator/KalkulatorSection';
 import { WynikiSection } from '@/sections/wyniki/WynikiSection';
 import { SectionsClient } from './SectionsClient';
 import { BridgeSection } from './BridgeSection';
+import { KineticSectionShell } from '@/sections/kinetic/KineticSectionShell';
+import { KineticSectionClient } from '@/sections/kinetic/KineticSectionClient';
 
 const BookStatsSection = dynamic(() =>
   import('@/sections/books/BookStatsSection').then((m) => ({ default: m.BookStatsSection }))
@@ -83,7 +85,13 @@ async function HomePageContent({
         Bridge + Blok45 w jednym slocie, bez DeferredMount: sentinel Kinetic musi być w DOM przed init Blok45
         (dwa osobne DeferredMount łamały kolejność). Wcześniejszy mount stabilizuje wejście w Kinetic (diagnoza).
       */}
-      <BridgeSection />
+      <BridgeSection
+        kineticLayer={
+          <KineticSectionShell>
+            <KineticSectionClient />
+          </KineticSectionShell>
+        }
+      />
       <SectionsClient />
       <KalkulatorSection />
       <GwarancjaSectionWrapper />
