@@ -130,16 +130,30 @@ if (!el) return {pause:function(){},resume:function(){},kill:function(){}};
 var cardEl = $id('final-formCard');
 var extScrollEl = container.querySelector('.final-scroll-extender');
 var _cardMaxUp = 0; // max px karty do przesunięcia w górę (scroll mobile / positionCard desktop)
+var _lastMobCardHpx = -1; // cache --final-mobile-card-h (px) żeby nie setProperty co klatkę scrolla
+
+/** Wysokość karty mobilnej — zostaw ~120px na WebGL; iOS: visualViewport ≠ innerHeight. */
+function computeMobileCardH(){
+  var pin = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  return Math.min(640, Math.max(360, Math.round(pin - 120)));
+}
 
 /** Mobile <1200 + layout mobilny: forma wjeżdża po odsłonie napisów — zakres z .final-scroll-extender (final.stack.html). */
 function updateMobileFormScroll(){
   if(!cardEl || !extScrollEl || !layoutInfo || !layoutInfo.isMobile || !layoutInfo.lh) return;
-  var cw2=w||window.innerWidth, vh=window.innerHeight;
+  var cw2=w||window.innerWidth;
+  var vh=window.visualViewport ? window.visualViewport.height : window.innerHeight;
   if(cw2>=1200) return;
   gsap.killTweensOf(cardEl);
+  var nextMobH = computeMobileCardH();
+  if (nextMobH !== _lastMobCardHpx) {
+    _lastMobCardHpx = nextMobH;
+    container.style.setProperty('--final-mobile-card-h', nextMobH + 'px');
+  }
+  var cardH = Math.round(cardEl.getBoundingClientRect().height) || nextMobH;
   var sec=container.getBoundingClientRect();
   if(sec.bottom<=0 || sec.top>=vh){
-    cardEl.style.transform='translateY(640px)';
+    cardEl.style.transform='translateY('+cardH+'px)';
     cardEl.style.pointerEvents='none';
     _cardMaxUp=0;
     return;
@@ -160,11 +174,10 @@ function updateMobileFormScroll(){
       if(t>1)t=1;
     }
   }
-  var cardH=640;
   var off=(1-t)*cardH;
   cardEl.style.transform='translateY('+off+'px)';
   cardEl.style.pointerEvents=t>0.08?'auto':'none';
-  if(t>=0.998){ _cardMaxUp=Math.max(0,640-(vh-40)); }
+  if(t>=0.998){ _cardMaxUp=Math.max(0,cardH-(vh-40)); }
   else{ _cardMaxUp=0; }
 }
 
@@ -764,22 +777,27 @@ function positionCard(){
   if(cw2<1200){
     /* Zawsze „bottom sheet” na wąskim ekranie — NIGDY translate(-50%,-50%) na środku viewportu:
      * 640px karty zasłania cały WebGL (napisy + zegar); użytkownik widzi tylko formularz i pustkę. */
+    var mobH = computeMobileCardH();
+    _lastMobCardHpx = mobH;
+    container.style.setProperty('--final-mobile-card-h', mobH + 'px');
     cardEl.style.position='absolute';
     cardEl.style.top='auto';
     cardEl.style.bottom='0';
-    cardEl.style.height='640px';
+    cardEl.style.height='';
     cardEl.style.borderRadius='24px 24px 0 0';
     var cardW=Math.min(500,cw2-40);
     cardEl.style.width=cardW+'px';
     cardEl.style.left=Math.round((cw2-cardW)/2)+'px';
     cardEl.style.right='auto';
-    cardEl.style.transform='translateY(640px)';
+    cardEl.style.transform='translateY('+mobH+'px)';
     _cardMaxUp=0;
     if(_lastMinH!==''){ container.style.minHeight=''; _lastMinH=''; }
     var _hMob=document.getElementById('final-card-handle');
     if(_hMob) _hMob.style.display='none';
     updateMobileFormScroll();
   } else if(cw2>=1200){
+    _lastMobCardHpx = -1;
+    container.style.removeProperty('--final-mobile-card-h');
     /* absolute w #final-sticky — NIE fixed: fixed po resize z mobile sprawia, że karta jedzie po całym viewport nad innymi sekcjami */
     cardEl.style.position='absolute'; cardEl.style.height='640px'; cardEl.style.width='';
     var bl=getBannerLayout(cw2), textLeftPx=bl.textLeft;
@@ -922,6 +940,10 @@ function handleResize(){
     w=newW; h=newH;
     var _rw=Math.min(w,2340);
     renderer.setSize(_rw,h,false); camera.aspect=w/h; camera.updateProjectionMatrix();
+    if (w < 1200) {
+      _lastMobCardHpx = -1;
+      container.style.setProperty('--final-mobile-card-h', computeMobileCardH() + 'px');
+    }
     updateMobileFormScroll();
     return;
   }
@@ -1080,6 +1102,11 @@ function _recreateIO(){
 }
 
 var _onVVResize = function(){
+  var cwMob = (w || window.innerWidth) || 0;
+  if (cwMob < 1200 && !isKilled && cardEl) {
+    positionCard();
+    updateMobileFormScroll();
+  }
   if(_ioState && !_paused) return; // O10: skip if section active
   _recreateIO();
 }; // named handler — INP-LEAK-01
@@ -1186,7 +1213,7 @@ export function FinalEngine() {
       </div>
       <div
         className="final-scroll-extender"
-        style={{ height: '100vh', pointerEvents: 'none', visibility: 'hidden' }}
+        style={{ height: '100dvh', pointerEvents: 'none', visibility: 'hidden' }}
         aria-hidden="true"
       />
     </section>
