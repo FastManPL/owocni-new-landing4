@@ -1,12 +1,11 @@
 // @ts-nocheck — legacy engine (4500+ LOC); gradual typing deferred.
 'use client';
 
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, type RefObject } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { scrollRuntime } from '@/lib/scrollRuntime';
-import './kinetic-section.css';
 
 // ⚠️ GSAP-SSR-01: ZAKAZ gsap.registerPlugin() na module top-level.
 // registerPlugin() WYŁĄCZNIE wewnątrz useGSAP(() => { ... }).
@@ -4447,16 +4446,22 @@ import './kinetic-section.css';
     } // END init()
 
 
-export default function KineticEngine() {
+export type KineticEngineProps = {
+  /** Gdy podany (KineticSection), init na istniejącym shellu; bez propsa — własna `<section>` (preview). */
+  containerRef?: RefObject<HTMLElement | null>;
+};
+
+export default function KineticEngine({ containerRef }: KineticEngineProps = {}) {
   const rootRef = useRef<HTMLElement | null>(null);
+  const scopeRef = containerRef ?? rootRef;
   const kineticApiRef = useRef<{ pause: () => void; resume: () => void } | null>(null);
 
   useGSAP(() => {
     gsap.registerPlugin(ScrollTrigger);
-    const el = rootRef.current;
+    const el = (containerRef?.current ?? rootRef.current) as HTMLElement | null;
     if (!el) {
       if (process.env.NODE_ENV !== 'production') {
-        throw new Error('[P3] rootRef.current is null — ref not attached to <section>.');
+        throw new Error('[P3] Kinetic init: brak elementu — containerRef.current lub rootRef.current jest null.');
       }
       return;
     }
@@ -4466,7 +4471,7 @@ export default function KineticEngine() {
       kineticApiRef.current = null;
       inst?.kill?.();
     };
-  }, { scope: rootRef });
+  }, { scope: scopeRef });
 
   useEffect(() => {
     const syncKineticPast = () => {
@@ -4494,9 +4499,8 @@ export default function KineticEngine() {
     };
   }, []);
 
-  return (
-    <section id="kinetic-section" ref={rootRef} className="stage stage-pinned">
-              
+  const inner = (
+    <>
               {/* GLOW LAYER - ambient light pod słowem "nigdy" */}
               <div className="nigdy-glow" id="kinetic-nigdy-glow"></div>
               
@@ -4571,7 +4575,15 @@ export default function KineticEngine() {
                   <div className="kinetic-corona-ring"></div>
                   <div className="kinetic-corona-ring reverse"></div>
               </div>
-      
+    </>
+  );
+
+  if (containerRef) {
+    return inner;
+  }
+  return (
+    <section id="kinetic-section" ref={rootRef} className="stage stage-pinned">
+      {inner}
     </section>
   );
 }
