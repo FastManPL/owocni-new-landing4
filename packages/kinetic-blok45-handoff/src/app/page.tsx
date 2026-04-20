@@ -1,5 +1,7 @@
 import { BridgeSection } from './BridgeSection';
 import { Blok45Section } from '@/sections/block-45/Blok45Section';
+import { KineticSectionShell } from '@/sections/kinetic/KineticSectionShell';
+import { KineticSectionClient } from '@/sections/kinetic/KineticSectionClient';
 
 /**
  * Ta sama integracja co w głównym `page.tsx`: placeholder Fakty + slot Bridge + Blok45.
@@ -14,7 +16,13 @@ export default function Page() {
         style={{ minHeight: 'min(120vh, 1100px)' }}
       />
       <div style={{ minHeight: 'min(200vh, 1800px)' }}>
-        <BridgeSection />
+        <BridgeSection
+          kineticLayer={
+            <KineticSectionShell>
+              <KineticSectionClient />
+            </KineticSectionShell>
+          }
+        />
         <Blok45Section />
       </div>
     </main>
