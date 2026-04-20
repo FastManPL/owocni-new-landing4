@@ -2,10 +2,11 @@
 /* Usunięte: html{}, body{}, .preview-spacer (harness-only), DEV overlay CSS */
 
 /* SECTION CSS — sticky reveal pattern */
-/* Sekcje powyżej muszą mieć tło + z-index:1 żeby naturalnie zakrywały tę sekcję */
+/* Ten sam poziom co #faq-section (z-index:1) — kolejność w DOM wygrywa przy remisie,
+   więc Final maluje się NAD FAQ w strefie -100vh overlap zamiast być całkowicie pod spodem. */
 #final-section {
   position: relative;
-  z-index: 0;
+  z-index: 1;
   margin-top: -100vh;
   background: #f7f6f4;
 }

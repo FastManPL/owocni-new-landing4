@@ -700,3 +700,31 @@ CENNIK CARDS - EFEKTY HOVER
   overflow: auto !important;
 }
 
+/* LP embed + wąski ekran: globalny blok @media (max-width:640px) ustawia .frm-transition-layer
+   na position:fixed + z-index:9999 — warstwa wychodzi ponad #final-section i zasłania WebGL
+   (canvas pod spodem). W embed zostaje absolute w obrębie karty jak na desktopie. */
+.ocf-root.ocf-embed .frm-transition-layer {
+  position: absolute !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 120px !important;
+  width: auto !important;
+  height: auto !important;
+  inset: unset !important;
+  z-index: 50 !important;
+  background-color: var(--frm-color-bg-white) !important;
+  pointer-events: none !important;
+  display: block !important;
+  clip-path: circle(0% at 50% 100%) !important;
+  opacity: 1 !important;
+  transition: clip-path 0.5s var(--frm-trans-timing), opacity 0.25s ease !important;
+}
+.ocf-root.ocf-embed .frm-transition-layer--expanding {
+  clip-path: circle(150% at 50% 100%) !important;
+  pointer-events: all !important;
+}
+.ocf-root.ocf-embed .frm-transition-layer--fading {
+  opacity: 0 !important;
+}
+
