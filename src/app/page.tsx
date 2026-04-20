@@ -85,10 +85,8 @@ async function HomePageContent({
       <WynikiSection />
       <BookStatsSection />
       <BelowFoldChunkWarmup />
-      {/* Od Fakty w dół: montaż dopiero blisko viewportu — mniejszy początkowy koszt JS (TBT). BookStats zostaje od razu (LCP / obraz). */}
-      <DeferredMount minHeight="min(120vh, 1100px)">
-        <FaktySection />
-      </DeferredMount>
+      {/* Fakty: bez DeferredMount — pierwsza treść pod foldem przed Bridge (SEO / kolejność w DOM); silnik nadal split (dynamic). Od Kalkulatora w dół dalej IO-defer (TBT). */}
+      <FaktySection />
       {/*
         Bridge + Blok45 w jednym slocie, bez DeferredMount: sentinel Kinetic musi być w DOM przed init Blok45
         (dwa osobne DeferredMount łamały kolejność). Wcześniejszy mount stabilizuje wejście w Kinetic (diagnoza).
