@@ -1352,8 +1352,8 @@ function init(container: HTMLElement): { kill: () => void } {
   // ── lazy ScrollTrigger creation ─────────────────────────────
   // ST tworzone dopiero gdy sekcja w viewport (IO) lub po 1,2 s (fallback).
   // Zapobiega złym start/end przy scroll≈0 i przy późniejszym globalnym refreshu (resize).
-  // Po cold deploy: Fakty chunk często montuje się przed Lenisem — ST ze scrollerProxy=0
-  // liczy scrub jak „po animacji”. Czekamy na scrollRuntime.isReady() + ScrollTrigger.update().
+  // Po cold deploy / sporadycznie: ST powstaje gdy Lenis jeszcze nie zsynchronizował scrollu ze
+  // scrollerProxy — scrub zostaje na końcu. Czekamy na isReady(), potem refresh + pierwszy tick Lenisa.
   let stCreated = false;
   let lazyStLock = false;
   let lazyStTimeout: ReturnType<typeof setTimeout> | null = null;
@@ -1376,7 +1376,35 @@ function init(container: HTMLElement): { kill: () => void } {
       buildFrameScroll();
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
-          if (!isKilled) ScrollTrigger.update();
+          if (isKilled) return;
+          ScrollTrigger.refresh(false);
+          ScrollTrigger.update();
+          if (scrollRuntime.isReady()) {
+            scrollRuntime.requestRefreshImmediate();
+          }
+          const L = scrollRuntime.getLenis();
+          if (!L) return;
+          let synced = false;
+          const once = () => {
+            if (synced || isKilled) return;
+            synced = true;
+            try {
+              L.off("scroll", once);
+            } catch {
+              /* lenis off */
+            }
+            ScrollTrigger.update();
+          };
+          L.on("scroll", once);
+          const faktyStSyncTimer = window.setTimeout(once, 140);
+          cleanups.push(() => {
+            window.clearTimeout(faktyStSyncTimer);
+            try {
+              L.off("scroll", once);
+            } catch {
+              /* */
+            }
+          });
         });
       });
     }
