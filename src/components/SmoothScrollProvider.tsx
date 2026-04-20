@@ -17,13 +17,29 @@ export function SmoothScrollProvider({ children }: SmoothScrollProviderProps) {
   /** Home: idle prefetch chunków zgodnych z `page.tsx` (cache `moduleLoader` — bez podwójnej pracy po mount). */
   useEffect(() => {
     if (pathname !== '/') return;
-    const id = requestIdleCallback(
-      () => {
-        runWarmupPolicy(homeRouteChunkWarmupEntries);
-      },
-      { timeout: 2800 }
-    );
-    return () => cancelIdleCallback(id);
+    let cancelled = false;
+    const run = () => {
+      if (!cancelled) runWarmupPolicy(homeRouteChunkWarmupEntries);
+    };
+    let idleHandle: number | undefined;
+    /** DOM timers are numeric IDs; Node's `setTimeout` typings use `Timeout` — use `number` in the browser. */
+    let timeoutId: number | undefined;
+    if (typeof window !== 'undefined' && typeof window.requestIdleCallback === 'function') {
+      idleHandle = window.requestIdleCallback(run, { timeout: 2800 });
+    } else {
+      timeoutId = window.setTimeout(run, 2800);
+    }
+    return () => {
+      cancelled = true;
+      if (
+        idleHandle !== undefined &&
+        typeof window !== 'undefined' &&
+        typeof window.cancelIdleCallback === 'function'
+      ) {
+        window.cancelIdleCallback(idleHandle);
+      }
+      if (timeoutId !== undefined) clearTimeout(timeoutId);
+    };
   }, [pathname]);
 
   useEffect(() => {

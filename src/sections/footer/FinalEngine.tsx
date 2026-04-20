@@ -310,8 +310,13 @@ function prebakeDayTextures(){
 // Między fazami przeglądarka może przetworzyć wheel/touch events -> brak freeze
 // ric(fn, timeout) — requestIdleCallback z rAF fallback (Safari)
 function _ric(fn, timeout){
-  if(window.requestIdleCallback){ requestIdleCallback(fn, {timeout:timeout||2000}); }
-  else { requestAnimationFrame(function(){ fn({didTimeout:false}); }); }
+  if (typeof window.requestIdleCallback === 'function') {
+    window.requestIdleCallback(fn, { timeout: timeout || 2000 });
+  } else {
+    requestAnimationFrame(function () {
+      fn({ didTimeout: false });
+    });
+  }
 }
 
 function warmup(){
