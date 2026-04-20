@@ -4427,10 +4427,10 @@ import './kinetic-section.css';
     }
     cleanups.push(function() { if (_factoryIo) _factoryIo.disconnect(); });
 
-    // ═══ FACTORY P2A: ST-REFRESH-01 — section-in-view + layout-settle ═══
+    // ═══ FACTORY P2A: ST-REFRESH-01 — section-in-view (bez requestRefresh) + layout-settle ═══
+    // Wejściowy refresh z IO szkodził na mobile (skok przy wejściu); observer nadal jednorazowo się odłącza.
     var _stIo = new IntersectionObserver(function(entries) {
         if (!entries[0]?.isIntersecting) return;
-        scrollRuntime.requestRefresh('st-refresh');
         _stIo.disconnect();
     }, { threshold: 0, rootMargin: '0px' });
     _stIo.observe(container);
