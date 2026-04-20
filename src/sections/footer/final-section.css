@@ -87,3 +87,17 @@
     border-radius: 24px;
   }
 }
+
+/* Zakres scrolla po „pin” sticky — P2A: 100vh; na mobile skracamy (~100vh pustki pod formularzem). */
+#final-section .final-scroll-extender {
+  height: 100vh;
+  pointer-events: none;
+  visibility: hidden;
+}
+@media (max-width: 1199px) {
+  #final-section .final-scroll-extender {
+    /* Fallback, potem dynamiczne viewporty (stary WebKit ignoruje min() z dvh). */
+    height: 52vh;
+    height: min(52dvh, 80svh);
+  }
+}
