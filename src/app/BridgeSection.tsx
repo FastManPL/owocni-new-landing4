@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, type ReactNode } from 'react';
+import { useRef } from 'react';
 import KineticSection from '@/sections/kinetic/KineticSection';
 import { BridgeProvider } from './BridgeContext';
 
@@ -10,12 +10,7 @@ import { BridgeProvider } from './BridgeContext';
  */
 const BRIDGE_FAKTY_U = 0;
 
-type BridgeSectionProps = {
-  /** Z RSC (np. `KineticSectionShell` + `KineticSectionClient` na `/`). Domyślnie pełny client `KineticSection`. */
-  kineticLayer?: ReactNode;
-};
-
-export function BridgeSection({ kineticLayer }: BridgeSectionProps = {}) {
+export function BridgeSection() {
   const wrapperRef = useRef<HTMLDivElement>(null);
   const pinSpacerRef = useRef<HTMLDivElement>(null);
   const faktyLayerRef = useRef<HTMLDivElement | null>(null);
@@ -66,7 +61,7 @@ export function BridgeSection({ kineticLayer }: BridgeSectionProps = {}) {
               zIndex: 1,
             }}
           >
-            {kineticLayer ?? <KineticSection />}
+            <KineticSection />
           </div>
         </div>
         {/* Sentinel: gdy jego top = viewport top, scroll = koniec pinu — Block45 uruchamia wave w tym momencie. */}

@@ -1352,90 +1352,20 @@ function init(container: HTMLElement): { kill: () => void } {
   // ── lazy ScrollTrigger creation ─────────────────────────────
   // ST tworzone dopiero gdy sekcja w viewport (IO) lub po 1,2 s (fallback).
   // Zapobiega złym start/end przy scroll≈0 i przy późniejszym globalnym refreshu (resize).
-  // Po cold deploy / sporadycznie: ST powstaje gdy Lenis jeszcze nie zsynchronizował scrollu ze
-  // scrollerProxy — scrub zostaje na końcu. Czekamy na isReady(), potem refresh + pierwszy tick Lenisa.
   let stCreated = false;
-  let lazyStLock = false;
   let lazyStTimeout: ReturnType<typeof setTimeout> | null = null;
   let lazyStObserver: IntersectionObserver | null = null;
   function maybeCreateScrollTriggers() {
-    if (lazyStLock || stCreated || isKilled || !container.isConnected || !faktyBlock)
-      return;
-    lazyStLock = true;
+    if (stCreated || isKilled || !container.isConnected || !faktyBlock) return;
+    stCreated = true;
     if (lazyStTimeout !== null) {
       clearTimeout(lazyStTimeout);
       lazyStTimeout = null;
     }
     lazyStObserver?.disconnect();
     lazyStObserver = null;
-
-    function runBuild() {
-      if (stCreated || isKilled || !container.isConnected || !faktyBlock) return;
-      stCreated = true;
-      buildPhase1();
-      buildFrameScroll();
-      requestAnimationFrame(() => {
-        requestAnimationFrame(() => {
-          if (isKilled) return;
-          ScrollTrigger.refresh(false);
-          ScrollTrigger.update();
-          if (scrollRuntime.isReady()) {
-            scrollRuntime.requestRefreshImmediate();
-          }
-          const L = scrollRuntime.getLenis();
-          if (!L) return;
-          let synced = false;
-          const once = () => {
-            if (synced || isKilled) return;
-            synced = true;
-            try {
-              L.off("scroll", once);
-            } catch {
-              /* lenis off */
-            }
-            ScrollTrigger.update();
-          };
-          L.on("scroll", once);
-          const faktyStSyncTimer = window.setTimeout(once, 140);
-          cleanups.push(() => {
-            window.clearTimeout(faktyStSyncTimer);
-            try {
-              L.off("scroll", once);
-            } catch {
-              /* */
-            }
-          });
-        });
-      });
-    }
-
-    function waitForLenisThenBuild() {
-      let attempts = 0;
-      const maxAttempts = 150;
-      const tick = () => {
-        if (isKilled || !container.isConnected) return;
-        if (scrollRuntime.isReady()) {
-          requestAnimationFrame(() => {
-            requestAnimationFrame(runBuild);
-          });
-          return;
-        }
-        if (++attempts >= maxAttempts) {
-          runBuild();
-          return;
-        }
-        requestAnimationFrame(tick);
-      };
-      requestAnimationFrame(tick);
-    }
-
-    if (scrollRuntime.isReady()) {
-      requestAnimationFrame(() => {
-        requestAnimationFrame(runBuild);
-      });
-    } else {
-      waitForLenisThenBuild();
-    }
+    buildPhase1();
+    buildFrameScroll();
   }
 
   // ── fonts → build (bez ST; ST w maybeCreateScrollTriggers) ───

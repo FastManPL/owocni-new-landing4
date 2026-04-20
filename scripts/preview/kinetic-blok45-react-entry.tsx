@@ -7,7 +7,6 @@ import { useRef, type ReactNode } from 'react';
 import gsap from 'gsap';
 import scrollRuntime from '@/lib/scrollRuntime';
 import { BridgeProvider } from '@/app/BridgeContext';
-import '@/sections/kinetic/kinetic-section.css';
 import KineticEngine from '@/sections/kinetic/KineticEngine';
 import Blok45Engine from '@/sections/block-45/Blok45Engine';
 

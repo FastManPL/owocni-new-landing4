@@ -12,14 +12,11 @@ const LP = path.resolve(PKG, '..', '..');
 
 const files = [
   ['src/lib/scrollRuntime.ts', 'src/lib/scrollRuntime.ts'],
-  ['src/lib/moduleLoader.ts', 'src/lib/moduleLoader.ts'],
-  /* SmoothScrollProvider + handoffChunkWarmup: utrzymywane w paczce (LP importuje cały home warmup). */
+  ['src/components/SmoothScrollProvider.tsx', 'src/components/SmoothScrollProvider.tsx'],
   ['src/app/BridgeSection.tsx', 'src/app/BridgeSection.tsx'],
   ['src/app/BridgeContext.tsx', 'src/app/BridgeContext.tsx'],
   ['src/sections/kinetic/KineticEngine.tsx', 'src/sections/kinetic/KineticEngine.tsx'],
   ['src/sections/kinetic/KineticSection.tsx', 'src/sections/kinetic/KineticSection.tsx'],
-  ['src/sections/kinetic/KineticSectionShell.tsx', 'src/sections/kinetic/KineticSectionShell.tsx'],
-  ['src/sections/kinetic/KineticSectionClient.tsx', 'src/sections/kinetic/KineticSectionClient.tsx'],
   ['src/sections/kinetic/kinetic-section.css', 'src/sections/kinetic/kinetic-section.css'],
   ['src/sections/block-45/Blok45Engine.tsx', 'src/sections/block-45/Blok45Engine.tsx'],
   ['src/sections/block-45/Blok45Section.tsx', 'src/sections/block-45/Blok45Section.tsx'],
