@@ -183,6 +183,10 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         if (currentTimeKipiel >= kipiel.maxTime) {
           currentTimeKipiel = kipiel.maxTime; stopTicker(); state = STATE_IDLE_OPEN; currentTimeOrg = org.maxTime;
           updateDebugStateW(); syncSectionBgReady();
+          if (container.classList.contains('wave-reveal-active') && !waveOpenCompleteDispatched) {
+            waveOpenCompleteDispatched = true;
+            window.dispatchEvent(new CustomEvent('blok45-wave-open-complete'));
+          }
         }
         kipiel.render(currentTimeKipiel);
       }
@@ -259,8 +263,10 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         if (!inFaktyZone) return;
         waveRevealAllowed = true;
         waveCommittedOnce = false;
+        waveOpenCompleteDispatched = false;
       }
       var waveCommittedOnce = false;
+      var waveOpenCompleteDispatched = false;
       function applyWaveVisIfAllowed(show: boolean) {
         if (show && !waveRevealAllowed) {
           resetWaveStateFromScroll();
@@ -276,7 +282,6 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
           (waveWrap as HTMLElement).style.display = '';
           container.classList.add('wave-reveal-active');
           waveCommittedOnce = true;
-          window.dispatchEvent(new CustomEvent('blok45-wave-committed'));
         } else {
           resetWaveStateFromScroll();
           (waveWrap as HTMLElement).style.display = 'none';
@@ -318,6 +323,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
 
       // Jedyny driver animacji fali względem scrolla (otwarcie kipiel przy progress>0 tylko po starcie poniżej).
       function resetWaveStateFromScroll() {
+        waveOpenCompleteDispatched = false;
         if (state !== STATE_IDLE_CLOSED) {
           kipiel.render(0); currentTimeKipiel = 0; currentTimeOrg = 0; state = STATE_IDLE_CLOSED; updateDebugStateW(); syncSectionBgReady();
         }
@@ -1512,9 +1518,9 @@ export default function Blok45Engine() {
   }, []);
 
   /**
-   * Ukrycie Kinetic (html.kinetic-past) — dopiero po pierwszym pokazaniu kurtyny fali (blok45-wave-committed).
-   * Wcześniej: ratio/void wymuszało past od wejścia Blok45 → cały ekran „przykrywał” Kinetic zanim weszła fala.
-   * Po fali: ratio + strefy void/Mozemy/block-5 żeby litery nie wracały pod nagłówkami.
+   * Ukrycie Kinetic (html.kinetic-past) — dopiero po domknięciu animacji kurtyny (blok45-wave-open-complete),
+   * żeby GEMIUS (blok 3) nie znikał / nie „odklejał się” wizualnie przed pełnym przykryciem przez falę.
+   * Po tym momencie: ratio + strefy void/Mozemy/block-5 żeby litery nie wracały pod nagłówkami.
    */
   useEffect(() => {
     const KINETIC_PAST_CLASS = 'kinetic-past';
@@ -1533,7 +1539,7 @@ export default function Blok45Engine() {
       return r.top < vh && r.bottom > 0;
     }
 
-    let waveCommitted = false;
+    let waveOpenComplete = false;
 
     const setPast = (past: boolean) => {
       if (past) {
@@ -1555,11 +1561,11 @@ export default function Blok45Engine() {
       const vh = window.innerHeight || 1;
       const rs = section.getBoundingClientRect();
       const r = lastIoRatio;
-      // Nie resetuj waveCommitted przy rs.top > vh: po cofnięciu na Kinetic i powrocie do Blok45
+      // Nie resetuj waveOpenComplete przy rs.top > vh: po cofnięciu na Kinetic i powrocie do Blok45
       // (np. po popupie) inaczej kinetic-past nie wraca aż do nowej fali → litery Kinetic pod „Możemy…”.
-      // waveCommitted = latch na sesję strony po pierwszym blok45-wave-committed.
+      // waveOpenComplete = latch po pierwszym domknięciu otwarcia kipiel (blok45-wave-open-complete).
       let next: boolean;
-      if (!waveCommitted) {
+      if (!waveOpenComplete) {
         next = false;
       } else {
         const forcePastBlok45Content =
@@ -1586,11 +1592,11 @@ export default function Blok45Engine() {
       }
     };
 
-    const onWaveCommitted = () => {
-      waveCommitted = true;
+    const onWaveOpenComplete = () => {
+      waveOpenComplete = true;
       apply();
     };
-    window.addEventListener('blok45-wave-committed', onWaveCommitted);
+    window.addEventListener('blok45-wave-open-complete', onWaveOpenComplete);
 
     const schedule = () => {
       const y = window.scrollY;
@@ -1622,7 +1628,7 @@ export default function Blok45Engine() {
     requestAnimationFrame(apply);
 
     return () => {
-      window.removeEventListener('blok45-wave-committed', onWaveCommitted);
+      window.removeEventListener('blok45-wave-open-complete', onWaveOpenComplete);
       io.disconnect();
       window.removeEventListener('scroll', schedule);
       window.removeEventListener('resize', schedule);
