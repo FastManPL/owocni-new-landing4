@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 
 function markerEnabledFromSearch(): boolean {
   if (typeof window === "undefined") return false;
@@ -9,48 +9,46 @@ function markerEnabledFromSearch(): boolean {
 }
 
 /**
- * Marker.io tylko przy wejściu z `?marker=1` (lub `marker=true`) w URL.
- * Chunk `@marker.io/browser` ładuje się dopiero wtedy — brak skrótów klawiszowych.
- * Po `loadWidget` wywołujemy `show()`, żeby przycisk / panel były widoczne (wcześniej bez tego widget mógł zostać ukryty).
+ * Oficjalny snippet Marker.io (markerConfig + bootstrap → edge.marker.io shim).
+ * Ładuje się tylko przy `?marker=1` / `?marker=true` — bez npm SDK.
  *
- * Wymaga `NEXT_PUBLIC_MARKER_PROJECT_ID` (ID projektu z panelu Marker).
+ * @see https://help.marker.io — instalacja przez snippet
+ *
+ * Wymaga `NEXT_PUBLIC_MARKER_PROJECT_ID` (to samo pole `project` co w panelu).
  */
-export function MarkerOnDemand() {
-  const inFlight = useRef(false);
-  const done = useRef(false);
+const MARKER_BOOTSTRAP = `!function(e,r,a){if(!e.__Marker){e.__Marker={};var t=[],n={__cs:t};["show","hide","isVisible","capture","cancelCapture","unload","reload","isExtensionInstalled","setReporter","clearReporter","setCustomData","on","off"].forEach(function(e){n[e]=function(){var r=Array.prototype.slice.call(arguments);r.unshift(e),t.push(r)}}),e.Marker=n;var s=r.createElement("script");s.async=1,s.src="https://edge.marker.io/latest/shim.js";s.setAttribute("data-marker-shim-loader","1");var i=r.getElementsByTagName("script")[0];i.parentNode.insertBefore(s,i)}}(window,document);`;
 
+function injectMarkerSnippet(projectId: string): void {
+  const w = window as Window & {
+    __Marker?: unknown;
+    markerConfig?: { project: string; source: string };
+  };
+  if (w.__Marker) return;
+
+  w.markerConfig = {
+    project: projectId,
+    source: "snippet",
+  };
+
+  const boot = document.createElement("script");
+  boot.setAttribute("data-marker-bootstrap", "1");
+  boot.textContent = MARKER_BOOTSTRAP;
+  document.body.appendChild(boot);
+}
+
+export function MarkerOnDemand() {
   useEffect(() => {
     const projectId = process.env.NEXT_PUBLIC_MARKER_PROJECT_ID?.trim();
     if (!projectId) return;
 
-    const run = async () => {
-      if (!markerEnabledFromSearch() || done.current || inFlight.current) return;
-      inFlight.current = true;
-      try {
-        const markerSDK = (await import("@marker.io/browser")).default;
-        const widget = await markerSDK.loadWidget({
-          project: projectId,
-          source: "owocni-url-marker",
-          keyboardShortcuts: false,
-          networkRecording: { enabled: false },
-        });
-        widget.show();
-        done.current = true;
-      } catch (e) {
-        console.warn("[MarkerOnDemand] loadWidget failed", e);
-      } finally {
-        inFlight.current = false;
-      }
+    const tryInject = () => {
+      if (!markerEnabledFromSearch()) return;
+      injectMarkerSnippet(projectId);
     };
 
-    void run();
-
-    const onHrefChange = () => {
-      if (done.current) return;
-      void run();
-    };
-    window.addEventListener("popstate", onHrefChange);
-    return () => window.removeEventListener("popstate", onHrefChange);
+    tryInject();
+    window.addEventListener("popstate", tryInject);
+    return () => window.removeEventListener("popstate", tryInject);
   }, []);
 
   return null;
