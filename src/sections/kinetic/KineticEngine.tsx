@@ -137,9 +137,11 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
         // Start: 0.75, mierzy FPS, adaptuje 0.5-1.5
         // ============================================
         const _isMobileDPR = window.innerWidth < 768;
+        /* Telefon (touch + wąski ekran): ostrzejszy limit DPR = mniejsze bufory 2D canvas → mniej OOM / kill taba w WKWebView. */
+        const _touchTightCanvas = _isMobileDPR && IS_TOUCH;
         const adaptiveDPR = {
-            /* iPhone: niższy start = mniejsze bufory canvas (mniej OOM / kill WebKit przy drugim bloku). */
-            cap: _isMobileDPR ? 0.78 : 1.0,
+            /* Tablet landscape bez IS_TOUCH zostaje przy 0.78. */
+            cap: _touchTightCanvas ? 0.66 : (_isMobileDPR ? 0.78 : 1.0),
             min: 0.5,
             max: 1.5,
             lastTime: performance.now(),
@@ -178,7 +180,7 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
                         this.cap = Math.max(this.cap - 0.1, this.min);
                     }
                     if (_isMobileDPR) {
-                        this.cap = Math.min(this.cap, 0.85);
+                        this.cap = Math.min(this.cap, _touchTightCanvas ? 0.72 : 0.85);
                     }
                     
                     // Powiadom listenery o zmianie
