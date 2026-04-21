@@ -1188,6 +1188,23 @@
             #hero-section .badge-20lat-wrapper {
                 display: none;
             }
+
+            /* Wstążka VERIFIED: overflow:hidden na .badge-google obcinała pseudo po rozszerzeniu („150+ OPINII” + zoom wrappera). */
+            #hero-section .badge-google-wrapper.anim-finished .badge-google {
+                overflow: visible;
+            }
+            #hero-section .badge-google-wrapper.anim-finished {
+                overflow: visible;
+            }
+            #hero-section .badge-google.anim-finished::after {
+                font-size: 7px;
+                letter-spacing: 0.45px;
+                width: 168px;
+                height: 13px;
+                line-height: 13px;
+                right: -58px;
+                top: 12px;
+            }
         }
         
         @media (max-width: 300px) {

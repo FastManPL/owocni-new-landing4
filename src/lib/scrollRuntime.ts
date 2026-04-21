@@ -42,6 +42,8 @@ let pendingRefresh: string | null = null;
 let tickerCallback: ((time: number) => void) | null = null;
 let visibilityHandler: (() => void) | null = null;
 let resizeHandler: (() => void) | null = null;
+let pageShowHandler: ((e: PageTransitionEvent) => void) | null = null;
+let pageHideHandler: (() => void) | null = null;
 
 /** Po dynamic import('gsap') — tylko gdy lenis aktywny. */
 let gsapRuntime: typeof gsap | null = null;
@@ -135,6 +137,18 @@ function runBoot(gen: number, G: typeof gsap, ST: typeof ScrollTriggerType): voi
   };
   document.addEventListener('visibilitychange', visibilityHandler);
 
+  // Powrót z historii / bfcache (mobile Safari): bez refresh pinów i proxy scroll bywa rozjechany → OOM/reload.
+  pageHideHandler = () => {
+    lenis?.stop();
+  };
+  window.addEventListener('pagehide', pageHideHandler, { passive: true });
+
+  pageShowHandler = () => {
+    lenis?.start();
+    requestRefreshImmediate();
+  };
+  window.addEventListener('pageshow', pageShowHandler, { passive: true });
+
   if (process.env.NODE_ENV === 'development') {
     (window as Window & { __scroll?: ScrollRuntime }).__scroll = scrollRuntime;
   }
@@ -200,6 +214,15 @@ function destroy(): void {
   if (visibilityHandler) {
     document.removeEventListener('visibilitychange', visibilityHandler);
     visibilityHandler = null;
+  }
+
+  if (pageHideHandler) {
+    window.removeEventListener('pagehide', pageHideHandler);
+    pageHideHandler = null;
+  }
+  if (pageShowHandler) {
+    window.removeEventListener('pageshow', pageShowHandler);
+    pageShowHandler = null;
   }
 
   const ST = ScrollTriggerRuntime;
