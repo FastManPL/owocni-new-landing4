@@ -7,7 +7,6 @@ import 'lenis/dist/lenis.css';
 // 2. Own globals last (może nadpisać vendor)
 import './globals.css';
 
-import { MarkerOnDemand } from '@/components/MarkerOnDemand';
 import { StableTree } from '@/components/StableTree';
 import { ResourceHints } from '@/providers/ResourceHints';
 
@@ -103,7 +102,6 @@ export default function RootLayout({
       </head>
       <body className="font-brand antialiased bg-canvas">
         <ResourceHints />
-        <MarkerOnDemand />
         <StableTree>{children}</StableTree>
       </body>
     </html>
