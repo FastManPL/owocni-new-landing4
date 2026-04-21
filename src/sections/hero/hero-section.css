@@ -1596,14 +1596,14 @@
                 letter-spacing: 0.02em;
             }
             #hero-section .badge-google::after {
-                font-size: 6px;
-                letter-spacing: 0.65px;
-                height: 12px;
-                line-height: 12px;
-                width: 168px;
-                top: 14px;
-                right: -60px;
-                padding-right: 4px;
+                font-size: 5px;
+                letter-spacing: 0.45px;
+                height: 11px;
+                line-height: 11px;
+                width: 158px;
+                top: 15px;
+                right: -56px;
+                padding-right: 3px;
             }
         }
         
