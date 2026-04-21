@@ -250,7 +250,8 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       // Niższy % = góra triggera musi być wyżej w kadrze = więcej scrollu zanim włączy się kurtyna
       // (wcześniej: 82% / 58% → fala przy ledwie widocznym „Potencjalni…” u dołu).
       function waveDriveStart(): string {
-        return window.innerWidth < 600 ? 'top 48%' : 'top 30%';
+        // Mobile: wyższy % = trigger wcześniej (więcej „drogi” fali przy szybkim przejściu Kinetic → Blok45).
+        return window.innerWidth < 600 ? 'top 72%' : 'top 30%';
       }
       function waveScrollEnd(): string {
         return waveEndEl ? 'bottom top' : 'bottom ' + (window.innerWidth < 600 ? 80 : 75) + '%';

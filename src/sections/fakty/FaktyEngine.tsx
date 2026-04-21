@@ -272,6 +272,9 @@ function init(container: HTMLElement): { kill: () => void } {
     });
   }
 
+  /** Po cold refresh / Lenis: ST czasem ma progress>0 gdy tytuł jeszcze pod viewportem → „FAKTY SĄ TAKIE” od razu rozwinięte. */
+  let repairPhase1ScrollMisfire: (() => void) | null = null;
+
   // ── PHASE 1 ANIMATIONS ─────────────────────────────────────
   function buildPhase1() {
     if (!faktyDom) return;
@@ -306,6 +309,7 @@ function init(container: HTMLElement): { kill: () => void } {
       start: "center bottom",
       end: "top top+=20%",
       scrub: true,
+      invalidateOnRefresh: true,
       animation: gsap.to(row1Chars, {
         ease: "power1",
         stagger: 0.07,
@@ -323,6 +327,7 @@ function init(container: HTMLElement): { kill: () => void } {
       start: "center bottom",
       end: `top top+=${opacityEnd}%`,
       scrub: true,
+      invalidateOnRefresh: true,
       animation: gsap.to(row1Chars, {
         opacity: 1,
         ease: "power2.in",
@@ -338,6 +343,7 @@ function init(container: HTMLElement): { kill: () => void } {
       start: "center bottom",
       end: "top top",
       scrub: true,
+      invalidateOnRefresh: true,
       animation: tl,
       onEnter: () => setWC([row2Word], "transform"),
       onLeave: () => setWC([row2Word], "auto"),
@@ -345,6 +351,29 @@ function init(container: HTMLElement): { kill: () => void } {
       onLeaveBack: () => setWC([row2Word], "auto"),
     });
     gsapInstances.push(st3);
+
+    repairPhase1ScrollMisfire = function () {
+      if (isKilled || !row1.isConnected) return;
+      const y = scrollRuntime.isReady() ? scrollRuntime.getScroll() : window.scrollY;
+      if (y > 200) return;
+      const rect = row1.getBoundingClientRect();
+      const vh = window.innerHeight || 1;
+      const centerY = rect.top + rect.height * 0.5;
+      const p1 = st1.progress;
+      if (centerY > vh + 8 && p1 > 0.03) {
+        gsap.set(row1Chars, {
+          opacity: 0,
+          rotationX: -90,
+          z: -200,
+          transformOrigin: "50% 0%",
+        });
+        gsap.set(row2Word, { scaleY: 0, transformOrigin: "50% 0%" });
+        [st1, st2, st3].forEach((inst) => {
+          inst.refresh();
+        });
+        ScrollTrigger.update();
+      }
+    };
   }
 
   // ══════════════════════════════════════════════════════════
@@ -1283,6 +1312,7 @@ function init(container: HTMLElement): { kill: () => void } {
   // ── kill ───────────────────────────────────────────────────
   function kill() {
     isKilled = true;
+    repairPhase1ScrollMisfire = null;
     if (frameScrollRafId !== null) {
       cancelAnimationFrame(frameScrollRafId);
       frameScrollRafId = null;
@@ -1379,6 +1409,11 @@ function init(container: HTMLElement): { kill: () => void } {
           if (isKilled) return;
           ScrollTrigger.refresh(false);
           ScrollTrigger.update();
+          repairPhase1ScrollMisfire?.();
+          requestAnimationFrame(() => {
+            if (isKilled) return;
+            repairPhase1ScrollMisfire?.();
+          });
           if (scrollRuntime.isReady()) {
             scrollRuntime.requestRefreshImmediate();
           }
@@ -1394,6 +1429,7 @@ function init(container: HTMLElement): { kill: () => void } {
               /* lenis off */
             }
             ScrollTrigger.update();
+            repairPhase1ScrollMisfire?.();
           };
           L.on("scroll", once);
           const faktyStSyncTimer = window.setTimeout(once, 140);
@@ -1524,6 +1560,13 @@ export default function FaktyEngine() {
 
   return (
     <section id="fakty-section" ref={rootRef}>
+      <noscript>
+        <p className="fakty-noscript-title">
+          FAKTY
+          <br />
+          SĄ TAKIE
+        </p>
+      </noscript>
       <div className="title-block" id="fakty-block">
         <div className="title-dom" id="fakty-dom"></div>
         <canvas id="organic-overlay"></canvas>

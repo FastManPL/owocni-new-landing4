@@ -140,6 +140,8 @@
         
         @media (max-width: 600px) {
             #hero-section {
+                /* Telefon: mniejszy H1 niż tablet (≤1200px), żeby nagłówek nie dominował jak na iPhone. */
+                --h1-size: clamp(1.05rem, 4.8vw, 1.34rem);
                 --content-padding-top: 0;
                 --center-padding-top: 10px; /* 25px minus ~15px ascender space fontu */
                 --logo-margin-bottom: 50px;
@@ -1006,7 +1008,7 @@
         @media (max-width: 600px) {
             #hero-section .hero-title {
                 margin-top: 0;
-                padding: 0 5vw 0 5vw;
+                padding: 0 max(1.1rem, 5.5vw);
             }
             #hero-section .hero-description {
                 padding: 0 1.5rem;

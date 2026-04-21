@@ -13,6 +13,16 @@
 
 /* ═══ fakty-section ═══ */
 
+#fakty-section .fakty-noscript-title {
+  text-align: center;
+  text-transform: uppercase;
+  font-weight: 800;
+  font-size: clamp(1.5rem, 8vw, 2.75rem);
+  margin: 2rem auto;
+  max-width: 20ch;
+  line-height: 1.1;
+}
+
 #fakty-section {
   min-height: 100vh;
   display: flex; flex-direction: column; align-items: center;
