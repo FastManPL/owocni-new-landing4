@@ -1198,15 +1198,6 @@
             #hero-section .badge-google-wrapper.anim-finished {
                 overflow: visible;
             }
-            #hero-section .badge-google.anim-finished::after {
-                font-size: 7px;
-                letter-spacing: 0.45px;
-                width: 168px;
-                height: 13px;
-                line-height: 13px;
-                right: -58px;
-                top: 12px;
-            }
         }
         
         @media (max-width: 300px) {
@@ -1589,13 +1580,18 @@
             to { clip-path: inset(0 0 0 0); -webkit-clip-path: inset(0 0 0 0); } 
         }
 
-        /* Mobile: mniejsza typografia w badge — MUSI być po globalnych .google-text / ::after (kaskada). */
+        /* Mobile: mniejsza typografia w badge — MUSI być po globalnych .google-text / ::after (kaskada).
+           Uwzględnij .anim-finished: wcześniejszy blok mobile miał wyższą specyficzność na ::after (7px)
+           i nadpisywał rozmiar po końcu animacji. */
         @media (max-width: 600px) {
-            #hero-section .badge-google .google-text {
+            #hero-section .badge-google .google-text,
+            #hero-section .badge-google-wrapper.anim-finished .badge-google .google-text,
+            #hero-section .badge-google-wrapper.active.anim-finished .badge-google .google-text {
                 font-size: 11px;
                 letter-spacing: 0.02em;
             }
-            #hero-section .badge-google::after {
+            #hero-section .badge-google::after,
+            #hero-section .badge-google.anim-finished::after {
                 font-size: 5px;
                 letter-spacing: 0.45px;
                 height: 11px;
