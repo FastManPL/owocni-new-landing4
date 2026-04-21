@@ -322,9 +322,6 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       gsapInstances.push(stWaveVis);
       (waveWrap as HTMLElement).style.display = 'none';
       syncWaveRevealAllowed();
-      var waveAllowScroll = function() { syncWaveRevealAllowed(); };
-      scrollRuntime.on('scroll', waveAllowScroll);
-      cleanups.push(function() { scrollRuntime.off('scroll', waveAllowScroll); });
 
       // Jedyny driver animacji fali względem scrolla (otwarcie kipiel przy progress>0 tylko po starcie poniżej).
       function resetWaveStateFromScroll() {
@@ -350,8 +347,8 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       });
       gsapInstances.push(stWaveScroll);
 
-      // Po powrocie na Kinetic (zdjęcie html.kinetic-past) — drugie zejście do Blok45 znów z wave-wrap
-      // (scroll w górę w Blok45 nie resetuje waveCommittedOnce; reset był tylko w #fakty-section).
+      // Po powrocie na Kinetic: html bez kinetic-past LUB cofnięcie do GEMIUS (#kinetic-block-3) w górnej części kadrze
+      // → resetWaveForReturnToKinetic + blok45-wave-arm-reset (latch React waveOpenComplete).
       function resetWaveForReturnToKinetic() {
         waveRevealAllowed = true;
         waveCommittedOnce = false;
@@ -359,6 +356,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         (waveWrap as HTMLElement).style.display = 'none';
         container.classList.remove('wave-reveal-active');
         scrollRuntime.requestRefresh('wave-reset-kinetic-return');
+        window.dispatchEvent(new CustomEvent('blok45-wave-arm-reset'));
       }
       function onKineticVisibilityForWave(ev: Event) {
         var ce = ev as CustomEvent;
@@ -367,6 +365,26 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       }
       window.addEventListener('kinetic-visibility', onKineticVisibilityForWave);
       cleanups.push(function() { window.removeEventListener('kinetic-visibility', onKineticVisibilityForWave); });
+
+      // Cofnięcie do początku planszy GEMIUS (#kinetic-block-3) — bez czekania aż zdejmie się cały html.kinetic-past
+      // (np. stop na „W czym problem?” jeszcze nie resetował fali).
+      function syncWaveResetIfGemiusRewind() {
+        if (!waveCommittedOnce) return;
+        if (container.classList.contains('wave-reveal-active')) return;
+        var b3 = typeof document !== 'undefined' ? document.getElementById('kinetic-block-3') : null;
+        if (!b3) return;
+        var r = b3.getBoundingClientRect();
+        var vh = window.innerHeight || 1;
+        var gemiusHeadInUpperView = r.top < vh * 0.56 && r.bottom > vh * 0.16;
+        if (!gemiusHeadInUpperView) return;
+        resetWaveForReturnToKinetic();
+      }
+      var waveAllowScroll = function() {
+        syncWaveRevealAllowed();
+        syncWaveResetIfGemiusRewind();
+      };
+      scrollRuntime.on('scroll', waveAllowScroll);
+      cleanups.push(function() { scrollRuntime.off('scroll', waveAllowScroll); });
 
       function debounce(ms: number, fn: () => void) { var t = 0; return function() { clearTimeout(t); t = setTimeout(fn, ms); }; }
       var refreshST = debounce(120, function() { scrollRuntime.requestRefresh('st-refresh'); });
@@ -1622,6 +1640,12 @@ export default function Blok45Engine() {
     };
     window.addEventListener('blok45-wave-open-complete', onWaveOpenComplete);
 
+    const onWaveArmReset = () => {
+      waveOpenComplete = false;
+      apply();
+    };
+    window.addEventListener('blok45-wave-arm-reset', onWaveArmReset);
+
     const schedule = () => {
       const y = window.scrollY;
       scrollUp = y < lastScrollY;
@@ -1653,6 +1677,7 @@ export default function Blok45Engine() {
 
     return () => {
       window.removeEventListener('blok45-wave-open-complete', onWaveOpenComplete);
+      window.removeEventListener('blok45-wave-arm-reset', onWaveArmReset);
       io.disconnect();
       window.removeEventListener('scroll', schedule);
       window.removeEventListener('resize', schedule);
