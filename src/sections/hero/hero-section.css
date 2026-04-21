@@ -140,8 +140,8 @@
         
         @media (max-width: 600px) {
             #hero-section {
-                /* Telefon: mniejszy H1 niż tablet (≤1200px), żeby nagłówek nie dominował jak na iPhone. */
-                --h1-size: clamp(1.05rem, 4.8vw, 1.34rem);
+                /* Telefon: mniejszy H1 niż tablet (≤1200px). */
+                --h1-size: clamp(0.97rem, 4.1vw, 1.22rem);
                 --content-padding-top: 0;
                 --center-padding-top: 10px; /* 25px minus ~15px ascender space fontu */
                 --logo-margin-bottom: 50px;
@@ -1112,7 +1112,7 @@
             #hero-section .badge-google-wrapper,
             #hero-section .badge-google-wrapper.active,
             #hero-section .badge-google-wrapper.anim-finished {
-                --badge-zoom: 0.65;
+                --badge-zoom: 0.56;
                 position: absolute;
                 top: calc(var(--center-padding-top) + var(--logo-height) + var(--logo-margin-bottom) - 8px - 0.4rem - var(--content-lift) - 4px);
                 left: 0;
