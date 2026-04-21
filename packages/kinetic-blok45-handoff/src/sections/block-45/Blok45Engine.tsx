@@ -1559,9 +1559,9 @@ export default function Blok45Engine() {
   }, []);
 
   /**
-   * Ukrycie Kinetic (html.kinetic-past) — dopiero po domknięciu animacji kurtyny (blok45-wave-open-complete),
-   * żeby GEMIUS (blok 3) nie znikał / nie „odklejał się” wizualnie przed pełnym przykryciem przez falę.
-   * Po tym momencie: ratio + strefy void/Mozemy/block-5 żeby litery nie wracały pod nagłówkami.
+   * html.kinetic-past: (1) po domknięciu fali (blok45-wave-open-complete) + ratio / treść Blok45,
+   * (2) wymuszenie przy kinetic-pin-released-forward — koniec GSAP pinu Kinetic w dół; inaczej GEMIUS
+   * zostaje w flow pod „Potencjalni…”. Po cofnięciu: setPast(false) / blok45-wave-arm-reset zerują latch pinu.
    */
   useEffect(() => {
     const KINETIC_PAST_CLASS = 'kinetic-past';
@@ -1581,12 +1581,14 @@ export default function Blok45Engine() {
     }
 
     let waveOpenComplete = false;
+    let pinReleasedForward = false;
 
     const setPast = (past: boolean) => {
       if (past) {
         document.documentElement.classList.add(KINETIC_PAST_CLASS);
         window.dispatchEvent(new CustomEvent('kinetic-visibility', { detail: { past: true } }));
       } else {
+        pinReleasedForward = false;
         waveOpenComplete = false;
         document.documentElement.classList.remove(KINETIC_PAST_CLASS);
         window.dispatchEvent(new CustomEvent('kinetic-visibility', { detail: { past: false } }));
@@ -1607,7 +1609,9 @@ export default function Blok45Engine() {
       // (np. po popupie) inaczej kinetic-past nie wraca aż do nowej fali → litery Kinetic pod „Możemy…”.
       // waveOpenComplete = latch po pierwszym domknięciu otwarcia kipiel (blok45-wave-open-complete).
       let next: boolean;
-      if (!waveOpenComplete) {
+      if (pinReleasedForward) {
+        next = true;
+      } else if (!waveOpenComplete) {
         next = false;
       } else {
         const forcePastBlok45Content =
@@ -1641,10 +1645,23 @@ export default function Blok45Engine() {
     window.addEventListener('blok45-wave-open-complete', onWaveOpenComplete);
 
     const onWaveArmReset = () => {
+      pinReleasedForward = false;
       waveOpenComplete = false;
       apply();
     };
     window.addEventListener('blok45-wave-arm-reset', onWaveArmReset);
+
+    const onKineticPinReleasedForward = () => {
+      pinReleasedForward = true;
+      apply();
+    };
+    window.addEventListener('kinetic-pin-released-forward', onKineticPinReleasedForward);
+
+    const onKineticPinActiveAgain = () => {
+      pinReleasedForward = false;
+      apply();
+    };
+    window.addEventListener('kinetic-pin-active-again', onKineticPinActiveAgain);
 
     const schedule = () => {
       const y = window.scrollY;
@@ -1678,6 +1695,8 @@ export default function Blok45Engine() {
     return () => {
       window.removeEventListener('blok45-wave-open-complete', onWaveOpenComplete);
       window.removeEventListener('blok45-wave-arm-reset', onWaveArmReset);
+      window.removeEventListener('kinetic-pin-released-forward', onKineticPinReleasedForward);
+      window.removeEventListener('kinetic-pin-active-again', onKineticPinActiveAgain);
       io.disconnect();
       window.removeEventListener('scroll', schedule);
       window.removeEventListener('resize', schedule);

@@ -2501,9 +2501,25 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
                     preventOverlaps: true,
 
                     // P1: Auto-pause — stop canvas work when section off-screen
-                    onEnter: function() { _s.activate(); },
-                    onEnterBack: function() { _s.activate(); },
-                    onLeave: function() { _s.hibernate(); },
+                    onEnter: function() {
+                        _s.activate();
+                        try {
+                            window.dispatchEvent(new CustomEvent('kinetic-pin-active-again'));
+                        } catch (_e) {}
+                    },
+                    onEnterBack: function() {
+                        _s.activate();
+                        try {
+                            window.dispatchEvent(new CustomEvent('kinetic-pin-active-again'));
+                        } catch (_e) {}
+                    },
+                    onLeave: function() {
+                        _s.hibernate();
+                        // Koniec pinu w dół — sekcja wraca do flow; bez html.kinetic-past GEMIUS zostaje pod Blok45.
+                        try {
+                            window.dispatchEvent(new CustomEvent('kinetic-pin-released-forward'));
+                        } catch (_e) {}
+                    },
                     onLeaveBack: function() { _s.hibernate(); },
 
                     // snap: {} USUNIĘTE — zastąpione przez state machine + lenis.scrollTo()
