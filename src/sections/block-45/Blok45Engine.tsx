@@ -284,7 +284,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         }
       }
 
-      // Stack: #bridge-wrapper z-index 10, #blok-4-5-section 12, .blok-4-5-wave-wrap 14, napisy 25+.
+      // Stack: #bridge-wrapper z-index 10, #blok-4-5-section 24 (36 gdy wave), .blok-4-5-wave-wrap 14, intro 50+.
       var stWaveVis = ScrollTrigger.create({
         trigger: waveDriveEl,
         start: waveDriveStart,
