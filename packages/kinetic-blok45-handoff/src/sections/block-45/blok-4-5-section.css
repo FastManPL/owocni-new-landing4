@@ -14,12 +14,12 @@
     z-index: 12;
     isolation: isolate; /* FACTORY: B-ISO-01 — stacking context */
     /* Integracja LP: sekcja wyżej w flow — intro widać wcześniej u dołu ekranu podczas końcówki Kinetic + wave */
-    margin-top: clamp(-110vh, -78vh, -56vh);
+    margin-top: clamp(-150vh, -112vh, -82vh);
     overflow: visible; /* „i wychodzą” — napis musi móc wychodzić w bok (translateX) */
 }
 @media (max-width: 599px) {
     #blok-4-5-section {
-        margin-top: clamp(-86vh, -60vh, -40vh);
+        margin-top: clamp(-118vh, -88vh, -58vh);
     }
 }
 #blok-4-5-section.blok45-bg-ready {
