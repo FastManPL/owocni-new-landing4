@@ -23,6 +23,7 @@
   },
   "dependencies": {
     "@gsap/react": "2.1.1",
+    "@marker.io/browser": "^0.20.2",
     "@owocni/cennik-form": "workspace:*",
     "gsap": "3.12.7",
     "imagesloaded": "^5.0.0",
