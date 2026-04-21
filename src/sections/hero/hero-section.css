@@ -1112,7 +1112,7 @@
             #hero-section .badge-google-wrapper,
             #hero-section .badge-google-wrapper.active,
             #hero-section .badge-google-wrapper.anim-finished {
-                --badge-zoom: 0.56;
+                --badge-zoom: 0.65;
                 position: absolute;
                 top: calc(var(--center-padding-top) + var(--logo-height) + var(--logo-margin-bottom) - 8px - 0.4rem - var(--content-lift) - 4px);
                 left: 0;
@@ -1134,6 +1134,22 @@
                     transform: none;
                     zoom: var(--badge-zoom);
                 }
+            }
+
+            /* Mniejsza typografia w środku badge — zoom (--badge-zoom) bez zmian. */
+            #hero-section .badge-google .google-text {
+                font-size: 11px;
+                letter-spacing: 0.02em;
+            }
+            #hero-section .badge-google::after {
+                font-size: 6px;
+                letter-spacing: 0.65px;
+                height: 12px;
+                line-height: 12px;
+                width: 168px;
+                top: 14px;
+                right: -60px;
+                padding-right: 4px;
             }
             
             #hero-section .badge-google-wrapper .badge-caption {
