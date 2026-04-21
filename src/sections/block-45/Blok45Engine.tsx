@@ -253,8 +253,8 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         return waveEndEl ? 'bottom top' : 'bottom ' + (window.innerWidth < 600 ? 80 : 75) + '%';
       }
 
-      // Fala jednorazowa po każdym „wejściu” z Fakty: po pokazaniu znika; ponownie tylko po powrocie do #fakty-section
-      // (cofanie w Blok45 / Kinetic bez Fakty nie resetuje — eliminuje przypadkowe falki).
+      // Jedna kurtyna na „przejście”: waveCommittedOnce; reset po #fakty-section LUB po powrocie na Kinetic
+      // (kinetic-visibility past:false → resetWaveForReturnToKinetic). Cofanie tylko w Blok45 nie resetuje fali.
       var waveRevealAllowed = true;
       function syncWaveRevealAllowed() {
         var fakty = typeof document !== 'undefined' ? document.getElementById('fakty-section') : null;
@@ -346,6 +346,24 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         onLeaveBack: function() { resetWaveStateFromScroll(); }
       });
       gsapInstances.push(stWaveScroll);
+
+      // Po powrocie na Kinetic (zdjęcie html.kinetic-past) — drugie zejście do Blok45 znów z wave-wrap
+      // (scroll w górę w Blok45 nie resetuje waveCommittedOnce; reset był tylko w #fakty-section).
+      function resetWaveForReturnToKinetic() {
+        waveRevealAllowed = true;
+        waveCommittedOnce = false;
+        resetWaveStateFromScroll();
+        (waveWrap as HTMLElement).style.display = 'none';
+        container.classList.remove('wave-reveal-active');
+        scrollRuntime.requestRefresh('wave-reset-kinetic-return');
+      }
+      function onKineticVisibilityForWave(ev: Event) {
+        var ce = ev as CustomEvent;
+        if (!ce.detail || ce.detail.past !== false) return;
+        resetWaveForReturnToKinetic();
+      }
+      window.addEventListener('kinetic-visibility', onKineticVisibilityForWave);
+      cleanups.push(function() { window.removeEventListener('kinetic-visibility', onKineticVisibilityForWave); });
 
       function debounce(ms: number, fn: () => void) { var t = 0; return function() { clearTimeout(t); t = setTimeout(fn, ms); }; }
       var refreshST = debounce(120, function() { scrollRuntime.requestRefresh('st-refresh'); });
@@ -1548,6 +1566,7 @@ export default function Blok45Engine() {
         document.documentElement.classList.add(KINETIC_PAST_CLASS);
         window.dispatchEvent(new CustomEvent('kinetic-visibility', { detail: { past: true } }));
       } else {
+        waveOpenComplete = false;
         document.documentElement.classList.remove(KINETIC_PAST_CLASS);
         window.dispatchEvent(new CustomEvent('kinetic-visibility', { detail: { past: false } }));
       }
