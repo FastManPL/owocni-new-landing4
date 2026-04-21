@@ -1135,22 +1135,6 @@
                     zoom: var(--badge-zoom);
                 }
             }
-
-            /* Mniejsza typografia w środku badge — zoom (--badge-zoom) bez zmian. */
-            #hero-section .badge-google .google-text {
-                font-size: 11px;
-                letter-spacing: 0.02em;
-            }
-            #hero-section .badge-google::after {
-                font-size: 6px;
-                letter-spacing: 0.65px;
-                height: 12px;
-                line-height: 12px;
-                width: 168px;
-                top: 14px;
-                right: -60px;
-                padding-right: 4px;
-            }
             
             #hero-section .badge-google-wrapper .badge-caption {
                 display: none;
@@ -1603,6 +1587,24 @@
         
         @keyframes hero-badgeGoogleTextReveal { 
             to { clip-path: inset(0 0 0 0); -webkit-clip-path: inset(0 0 0 0); } 
+        }
+
+        /* Mobile: mniejsza typografia w badge — MUSI być po globalnych .google-text / ::after (kaskada). */
+        @media (max-width: 600px) {
+            #hero-section .badge-google .google-text {
+                font-size: 11px;
+                letter-spacing: 0.02em;
+            }
+            #hero-section .badge-google::after {
+                font-size: 6px;
+                letter-spacing: 0.65px;
+                height: 12px;
+                line-height: 12px;
+                width: 168px;
+                top: 14px;
+                right: -60px;
+                padding-right: 4px;
+            }
         }
         
         /* Podpis - widoczny od 0ms (bez animacji) */
