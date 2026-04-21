@@ -186,6 +186,9 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
           if (container.classList.contains('wave-reveal-active') && !waveOpenCompleteDispatched) {
             waveOpenCompleteDispatched = true;
             window.dispatchEvent(new CustomEvent('blok45-wave-open-complete'));
+            // Kurtyna zrobiła robotę — cały wrap znika (fazy ORG na tych pathach zostawiały „paski” nad intro).
+            container.classList.remove('wave-reveal-active');
+            (waveWrap as HTMLElement).style.display = 'none';
           }
         }
         kipiel.render(currentTimeKipiel);
