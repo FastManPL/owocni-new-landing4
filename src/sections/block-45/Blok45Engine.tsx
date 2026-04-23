@@ -6,6 +6,7 @@ import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { scrollRuntime } from '@/lib/scrollRuntime';
+import { yieldToMain } from '@/lib/yieldToMain';
 import './blok-4-5-section.css';
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
@@ -15,7 +16,13 @@ import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUti
 // ⚠️ GSAP-SSR-01: ZAKAZ gsap.registerPlugin() na module top-level.
 // registerPlugin() WYŁĄCZNIE wewnątrz useGSAP(() => { ... }) jak poniżej.
 
-function init(container: HTMLElement): { pause: () => void; resume: () => void; kill: () => void } {
+// J12 (LP v2.9): async init — yield points rozbijają heavy sync work (wave path
+// generation + sprites + DOM walking chars + canvases/bubbles/mana/popup init +
+// typographic eyes) na krótsze segmenty oddając main thread między fazami.
+// J3 NIENARUSZALNE: yieldy tylko MIĘDZY niezależnymi subsystemami, nigdy w środku
+// pojedynczego timeline / ScrollTrigger scrub — kolejność narracji i easing bez zmian.
+async function init(container: HTMLElement): Promise<{ pause: () => void; resume: () => void; kill: () => void }> {
+    const _noop = { pause: () => {}, resume: () => {}, kill: () => {} };
     const $ = function(sel: string) { return container.querySelector(sel); };
     const $$ = function(sel: string) { return container.querySelectorAll(sel); };
     const $id = function(id: string) { return container.querySelector('#' + id); };
@@ -453,6 +460,13 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       onEnter: function() { var tid = setTimeout(initUnderlineSVG, 100); timerIds.push({ type: 'timeout', id: tid }); }
     });
     gsapInstances.push(stUnderline);
+
+    // J12 yield 1/2 — po ciężkim initWave (path table kipiel + org ~250 punktów,
+    // createWaveScrollTriggers gate, resize handlers, syncSectionBgReady) oraz
+    // stUnderline ST. Zanim wejdziemy w blok function-defs (glow/button/stars/
+    // bubbles/canvas/mana/burst/popup — ~1000 LOC defs) oddaj main thread.
+    await yieldToMain();
+    if (!container.isConnected) return _noop;
 
     // =========================================================
     // GLOW + BUTTON
@@ -1487,6 +1501,14 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     initCanvases();initBubbles();initMana();initStarCanvas();initPopup();
     requestAnimationFrame(function(){chars.forEach(function(c,i){charStates[i].baseOffsetLeft=c.offsetLeft;});updateCachedFontSize();cacheBaseMetrics();});
 
+    // J12 yield 2/2 — po SPRITES.init + initPool + walking chars DOM create
+    // (7 span + charStates + MASS_TABLE) + initCanvases/initBubbles/initMana/
+    // initStarCanvas/initPopup (5 kolejnych init funkcji z DOM lookup + ctx).
+    // Zanim zawiesimy resize/scroll handlers + stWalking ST + gsap.ticker.add +
+    // IntersectionObserver + initEyes IIFE + factory gating — oddaj main thread.
+    await yieldToMain();
+    if (!container.isConnected) return _noop;
+
     var resizeMainRaf: number | null = null;
     function onResizeMain(){
       if(resizeMainRaf!==null)return;
@@ -1596,8 +1618,19 @@ export default function Blok45Engine() {
       }
       return;
     }
-    const inst = init(el);
-    return () => inst?.kill?.();
+    // J12: init() async (2× yieldToMain). Race-safe cleanup — jeśli unmount
+    // zdarzy się między yieldami, zwrócony instance jest od razu killed.
+    // Wewnątrz init _noop short-circuit przy !container.isConnected.
+    let killed = false;
+    let inst: { pause: () => void; resume: () => void; kill: () => void } | null = null;
+    void init(el).then((i) => {
+      if (killed) { i.kill(); return; }
+      inst = i;
+    });
+    return () => {
+      killed = true;
+      inst?.kill?.();
+    };
   }, { scope: rootRef });
 
   useEffect(() => {
