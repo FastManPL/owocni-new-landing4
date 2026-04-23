@@ -18,8 +18,8 @@ const BookStatsSection = dynamic(() =>
 const GwarancjaSectionWrapper = dynamic(() =>
   import('./GwarancjaSectionWrapper').then((m) => ({ default: m.GwarancjaSectionWrapper }))
 );
-const LoveWallSection = dynamic(() =>
-  import('@/sections/Opinie/LoveWallSection').then((m) => ({ default: m.LoveWallSection }))
+const LoveWallSectionWrapper = dynamic(() =>
+  import('./LoveWallSectionWrapper').then((m) => ({ default: m.LoveWallSectionWrapper }))
 );
 const CaseStudy2Section = dynamic(() =>
   import('@/sections/case-study2/CaseStudy2Section').then((m) => ({ default: m.CaseStudy2Section }))
@@ -95,7 +95,7 @@ async function HomePageContent({
       <SectionsClient />
       <KalkulatorSection />
       <GwarancjaSectionWrapper />
-      <LoveWallSection />
+      <LoveWallSectionWrapper />
       <CaseStudy2Section />
       <CaseStudiesSection />
       <OnasSectionWrapper />
