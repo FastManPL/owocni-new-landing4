@@ -435,23 +435,38 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
         if (rs.top < vh * 2) return;
         resetWaveForReturnToKinetic();
       }
+      // AUDIT-C6-03 (M2): wcześniej `syncWaveRevealAllowed` (z getBoundingClientRect na
+      // #fakty-section) wykonywał się co klatkę scrolla. Zastąpione dedykowanym ScrollTriggerem
+      // trigger=#fakty-section, start='top 90%' / end='bottom 10%' (odpowiada warunkowi
+      // `fr.top < vh*0.9 && fr.bottom > vh*0.1`). ST cache'uje pozycje, logika odpala się
+      // tylko na toggle (enter/leave z zone), nie co frame. `syncWaveResetIfDeepKineticRewind`
+      // zostaje na scroll listenerze — tanie early-returns gdy `!waveCommittedOnce` lub
+      // wave aktywny; getBoundingClientRect odpala się tylko po pierwszej otwartej kurtynie.
+      var faktyEl = typeof document !== 'undefined' ? document.getElementById('fakty-section') : null;
+      if (faktyEl) {
+        var stFaktyArm = ScrollTrigger.create({
+          trigger: faktyEl,
+          start: 'top 90%',
+          end: 'bottom 10%',
+          invalidateOnRefresh: true,
+          onEnter: function() { syncWaveRevealAllowed(); },
+          onEnterBack: function() { syncWaveRevealAllowed(); }
+        });
+        gsapInstances.push(stFaktyArm);
+      }
       var waveAllowScroll = function() {
-        syncWaveRevealAllowed();
         syncWaveResetIfDeepKineticRewind();
       };
       scrollRuntime.on('scroll', waveAllowScroll);
       cleanups.push(function() { scrollRuntime.off('scroll', waveAllowScroll); });
 
-      function debounce(ms: number, fn: () => void) { var t = 0; return function() { clearTimeout(t); t = setTimeout(fn, ms); }; }
-      var refreshST = debounce(120, function() { scrollRuntime.requestRefresh('st-refresh'); });
-      window.addEventListener('resize', refreshST, { passive: true });
-      window.addEventListener('orientationchange', refreshST);
-      if (window.visualViewport) { window.visualViewport.addEventListener('resize', refreshST, { passive: true }); }
-      cleanups.push(function() {
-        window.removeEventListener('resize', refreshST);
-        window.removeEventListener('orientationchange', refreshST);
-        if (window.visualViewport) window.visualViewport.removeEventListener('resize', refreshST);
-      });
+      // AUDIT-C6-02 (M1): lokalny `debounce(120) + 3 listenery (resize/orientationchange/
+      // visualViewport.resize)` był redundantny — broker scrollRuntime.resizeHandler (250ms)
+      // + requestRefresh (120ms debounce + 2 rAF) pokrywa `resize`; SmoothScrollProvider pokrywa
+      // `orientationchange` (C5, double rAF settle). `visualViewport.resize` świadomie NIE
+      // jest w brokerze — mobile toolbar resize pomijany przez `ignoreMobileResize: true`
+      // + `smallHeightChange` guard. Poprzedni kod łamał ten guard (odpalał refresh przy
+      // każdym pokazaniu/ukrywaniu mobile toolbara).
       requestAnimationFrame(syncSectionBgReady);
     })();
 

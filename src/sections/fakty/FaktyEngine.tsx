@@ -1462,8 +1462,13 @@ function init(container: HTMLElement): { kill: () => void } {
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           if (isKilled) return;
-          ScrollTrigger.refresh(false);
-          ScrollTrigger.update();
+          // AUDIT-C6-01: wcześniej `ScrollTrigger.refresh(false)` (unsafe — odrywa piny
+          // bez momentum-safe) + następnie `requestRefreshImmediate` (safe refresh)
+          // = podwójny refresh, ryzyko rozspójnienia Kinetic pin / BookStats pin.
+          // C6 dopuszcza tylko `ScrollTrigger.refresh(true)` przez broker.
+          // `requestRefreshImmediate` (2 rAF + ScrollTrigger.refresh(true)) pokrywa async
+          // boundary (fonts.ready + lazy IO). Drugi ST.update() w scroll-once listenerze
+          // poniżej zostaje — to legit runtime scroll sync, nie remeasure.
           repairPhase1ScrollMisfire?.();
           requestAnimationFrame(() => {
             if (isKilled) return;

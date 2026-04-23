@@ -62,7 +62,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       });
 
       scrollTl = gsap.timeline({
-        scrollTrigger: { trigger:'#cs1-section', start:'60% bottom', end:window.innerWidth<=640?'center 50%':'center 30%', scrub:0.6 }
+        scrollTrigger: { trigger:'#cs1-section', start:'60% bottom', end:window.innerWidth<=640?'center 50%':'center 30%', scrub:0.6, invalidateOnRefresh: true }
       });
 
       /* Right panel */
@@ -269,7 +269,8 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
           trigger: '#cs2-section',
           start: '60% bottom',
           end: window.innerWidth<=640 ? 'center 50%' : 'center 30%',
-          scrub: 0.6
+          scrub: 0.6,
+          invalidateOnRefresh: true
         }
       });
 
@@ -647,7 +648,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       applyCSS(sv);
       var proxy={},target={},props=[];
       Object.keys(sv).forEach(function(p){var k=p.replace(/--/g,'').replace(/-/g,'_');proxy[k]=sv[p];target[k]=ev[p];props.push({key:k,prop:p});});
-      scrollTl=gsap.timeline({scrollTrigger:{trigger:'#cs3-section',start:'60% bottom',end:window.innerWidth<=640?'center 50%':'center 30%',scrub:0.6}});
+      scrollTl=gsap.timeline({scrollTrigger:{trigger:'#cs3-section',start:'60% bottom',end:window.innerWidth<=640?'center 50%':'center 30%',scrub:0.6,invalidateOnRefresh:true}});
       if(tloEl)scrollTl.fromTo(tloEl,{filter:'brightness(0.15)'},{filter:'brightness(1)',ease:'power2.inOut',duration:1},0);
       var at=Object.assign({},target);at.ease='power2.inOut';at.duration=1;
       at.onUpdate=function(){props.forEach(function(p){rpEl.style.setProperty(p.prop,(p.prop==='--eye-radial-opacity'||p.prop==='--tlum-opacity'||p.prop==='--hipno-opacity'||p.prop==='--hand1-opacity'||p.prop==='--hand2-opacity'||p.prop==='--przyklady-opacity'||p.prop==='--przyklady-rad-opacity')?String(Math.round(proxy[p.key])):proxy[p.key].toFixed(1)+'%');});};
