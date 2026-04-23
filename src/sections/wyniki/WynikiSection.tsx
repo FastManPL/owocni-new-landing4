@@ -79,6 +79,49 @@ function init(
       document.addEventListener('visibilitychange', onVisChange);
       cleanups.push(() => document.removeEventListener('visibilitychange', onVisChange));
 
+      /* ═══ MOCKUP VIDEO — WARM gating (G2/G3) ═════════════════════════
+         Video ma `preload="none"` w HTML → zero fetchu na HTML parse.
+         Dedykowany IO (rootMargin ~400px) triggeruje .load() + .play() gdy
+         sekcja zbliża się do viewportu. pauseHooks/resumeHooks (document.hidden
+         + _factoryIo pause) sterują playback po starcie. */
+      const mockupVideo = container.querySelector<HTMLVideoElement>('.mockup-video');
+      const _mockupAllowAutoplay = mockupVideo?.dataset.autoplay === '1';
+      if (mockupVideo) {
+        let _mockupEverStarted = false;
+        const startMockupVideo = () => {
+          if (!_mockupAllowAutoplay) return;
+          if (document.hidden) return;
+          if (!_mockupEverStarted) {
+            _mockupEverStarted = true;
+            try { mockupVideo.preload = 'auto'; } catch {}
+            try { mockupVideo.loop = true; } catch {}
+            try { mockupVideo.load(); } catch {}
+          }
+          const p = mockupVideo.play();
+          if (p && typeof p.catch === 'function') p.catch(() => {});
+        };
+
+        /* One-shot IO: pierwszy start gdy sekcja near-viewport */
+        const _mockupStartIo = new IntersectionObserver((entries) => {
+          if (entries[0]?.isIntersecting) {
+            startMockupVideo();
+            _mockupStartIo.disconnect();
+          }
+        }, { rootMargin: '400px' });
+        _mockupStartIo.observe(container);
+        observers.push(_mockupStartIo);
+
+        pauseHooks.push(() => {
+          try { mockupVideo.pause(); } catch {}
+        });
+        resumeHooks.push(() => {
+          if (_mockupEverStarted) startMockupVideo();
+        });
+        cleanups.push(() => {
+          try { mockupVideo.pause(); } catch {}
+        });
+      }
+
       // Wave click
       $$('.wyniki-btn-wrapper-wave').forEach((wrapper) => {
         const _touchActivate = () => {};
@@ -621,15 +664,16 @@ export function WynikiSection() {
                     sizes="(max-width: 720px) 100vw, min(88vw, 110rem)"
                     onError={(e) => e.currentTarget.classList.add('load-failed')}
                   />
+                  {/* G2/G3: WARM — preload=none, autoplay i load gated przez IO (rootMargin ~1200px) w init().
+                       Browser nie zaczyna fetchu video metadata na HTML parse; start dopiero near-viewport. */}
                   <video
                     className="mockup-video"
                     src="/wyniki/Video.mp4"
-                    preload="metadata"
-                    autoPlay={allowInlineAutoplay}
-                    loop={allowInlineAutoplay}
+                    preload="none"
                     muted
                     playsInline
                     disablePictureInPicture
+                    data-autoplay={allowInlineAutoplay ? '1' : '0'}
                   />
                   <div className="mockup-video-overlay" id="wyniki-video-overlay" />
                 </div>

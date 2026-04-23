@@ -9,8 +9,23 @@ import type { HeroVariant } from '@/config/heroVariantTypes';
 import { CENNIK_STRONY_URL } from '@/config/ctaUrls';
 import './hero-section.css';
 
-/** Jedna obietnica na całą sekcję — lottie-web poza krytycznym parse głównego chunka Hero. */
-const heroLottieLibPromise = import('lottie-web').then((m) => m.default);
+/**
+ * Lottie-web — LAZY import poza critical path LCP (G3).
+ * Poprzednio: `const heroLottieLibPromise = import('lottie-web')` na top-level
+ * → webpack chunk pobierany równolegle z głównym hero-chunkiem, konkurując
+ * o bandwidth z HTML/CSS/fontem Lexend (LCP = H1 text).
+ * Obecnie: import startuje dopiero przy PIERWSZYM wywołaniu `getHeroLottie()` —
+ * w praktyce z laurelIO (~1.75s) / logo timer (~6s), a więc już PO LCP.
+ */
+let _heroLottiePromise: Promise<any> | null = null;
+function getHeroLottie(): Promise<any> {
+  if (!_heroLottiePromise) {
+    _heroLottiePromise = import(/* webpackChunkName: "lottie-web" */ 'lottie-web').then(
+      (m) => m.default,
+    );
+  }
+  return _heroLottiePromise;
+}
 
 /** Kolejność logotypów marquee — assety w `public/LOGOTYPY/` */
 const HERO_MARQUEE_LOGO_SRCS = [
@@ -675,7 +690,7 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
                 laurelLottieCancelled = true;
             });
 
-            heroLottieLibPromise.then(function (lottie) {
+            getHeroLottie().then(function (lottie) {
                 if (laurelLottieCancelled || !lottie) return;
 
             // Inline animation data (identyczne jak oryginał — ZERO zmian w uassecie)
@@ -3770,7 +3785,7 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
             logoLottieCancelled = true;
         });
 
-        heroLottieLibPromise
+        getHeroLottie()
             .then(function (lottie) {
                 if (logoLottieCancelled) return;
                 if (!lottie) {

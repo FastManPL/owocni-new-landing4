@@ -44,6 +44,55 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
   let sectionST: ScrollTrigger | null = null;
 
   /* ========================================================
+     CS-VIDEO — WARM gating (G2/G3)
+     HTML: preload="none", brak autoPlay. Tu: dedykowany IO (rootMargin
+     600px) triggeruje pierwszy .load() + .play() dopiero gdy sekcja
+     zbliża się do viewportu. Dzięki temu ~730 KB mp4 + 128 KB poster
+     nie konkurują z planem LCP hero.
+     ======================================================== */
+  (function csVideoGating() {
+    const csVideo = container.querySelector<HTMLVideoElement>('.cs-video');
+    if (!csVideo) return;
+
+    let everStarted = false;
+    const canPlay = () =>
+      !document.hidden &&
+      !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const startCsVideo = () => {
+      if (!canPlay()) return;
+      if (!everStarted) {
+        everStarted = true;
+        try { csVideo.preload = 'auto'; } catch {}
+        try { csVideo.loop = true; } catch {}
+        try { csVideo.load(); } catch {}
+      }
+      const p = csVideo.play();
+      if (p && typeof p.catch === 'function') p.catch(() => {});
+    };
+
+    const startIo = new IntersectionObserver((entries) => {
+      if (entries[0]?.isIntersecting) {
+        startCsVideo();
+        startIo.disconnect();
+      }
+    }, { rootMargin: '600px 0px 600px 0px' });
+    startIo.observe(csVideo);
+    observers.push(startIo);
+
+    const onVis = () => {
+      if (!everStarted) return;
+      if (document.hidden) { try { csVideo.pause(); } catch {} }
+      else { startCsVideo(); }
+    };
+    document.addEventListener('visibilitychange', onVis);
+    cleanups.push(() => {
+      document.removeEventListener('visibilitychange', onVis);
+      try { csVideo.pause(); } catch {}
+    });
+  })();
+
+  /* ========================================================
      COUNTER REELS
      ======================================================== */
   const statsContainer = $('.cs-stats-placeholder');
@@ -749,15 +798,16 @@ export function BookStatsSection() {
         <div className="cs-floor cs-floor--images">
           <div className="cs-floor__left">
             <div className="cs-video-clip">
+              {/* G2/G3: WARM — preload=none + brak atrybutu autoPlay/loop w HTML.
+                   Browser nie pobiera metadata na HTML parse (asset far-below-fold).
+                   Start przez dedykowany IO (rootMargin 600px) w init(). */}
               <video
                 className="cs-img--stats cs-video"
                 src="/books/Kalendarz_1-mute-video.mp4"
                 poster="/books/Statystyki-stron.webp"
                 playsInline
                 muted
-                loop
-                autoPlay
-                preload="metadata"
+                preload="none"
                 aria-hidden
               />
             </div>
