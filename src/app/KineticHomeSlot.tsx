@@ -16,7 +16,14 @@ function KineticSectionOffPlaceholder() {
       id="kinetic-section"
       data-kinetic-section-disabled
       style={{
-        minHeight: '150vh',
+        /*
+          Silnik wyłączony: brak GSAP pin-spacera. Wysokość musi przybliżyć end: z KineticEngine
+          (2.1*svh + SCROLL_KINETIC + delta + overshoot), inaczej #blok-4-5-section (CSS, bez zmian)
+          nachodzi zbyt wysoko na Fakty zamiast na tę „poduszkę”.
+        */
+        minHeight:
+          'calc(100lvh + 2.1 * 100svh + (3526 * 28 / 23) * 1px + 12.5vh)',
+        position: 'relative',
         display: 'flex',
         alignItems: 'center',
         justifyContent: 'center',
