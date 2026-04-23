@@ -4580,9 +4580,39 @@ export default function KineticEngine({ containerRef }: KineticEngineProps = {})
         try { window.dispatchEvent(new CustomEvent('kinetic-engine-ready')); } catch (_e) {}
       });
     });
+
+    // DEFERRED-ST-CREATION-01: drugi, mocniejszy sygnał dla konsumentów (Blok45 wave, Fakty),
+    // którzy nie tylko potrzebują wiedzieć że Kinetic pin jest w DOM, ale ŻE pozycje po pinSpacerze
+    // zostały przeliczone przez ScrollTrigger. `kinetic-engine-ready` fires natychmiast po mount;
+    // `kinetic-ready-and-refreshed` fires DOPIERO gdy:
+    //   1. pin-spacer rzeczywiście owija #kinetic-section (kineticPinInLayout)
+    //   2. ScrollTrigger.refresh() (globalny) zakończył cykl
+    // Konsumenci tworzący swoje STs mogą czekać na ten event i mieć pewność że getBoundingClientRect
+    // triggerów ich dotyczących zwraca pozycje zgodne z finalnym layoutem dokumentu (z pinSpacerem).
+    function kineticPinInLayout(): boolean {
+      const ks = typeof document !== 'undefined' ? document.getElementById('kinetic-section') : null;
+      if (!ks) return false;
+      const parent = ks.parentElement;
+      return !!parent && parent.classList.contains('pin-spacer');
+    }
+    let readyAndRefreshedDispatched = false;
+    function emitReadyAndRefreshed() {
+      if (readyAndRefreshedDispatched) return;
+      if (!kineticPinInLayout()) return;
+      readyAndRefreshedDispatched = true;
+      ScrollTrigger.removeEventListener('refresh', emitReadyAndRefreshed);
+      try { (window as unknown as { __kineticReadyAndRefreshed?: boolean }).__kineticReadyAndRefreshed = true; } catch (_e) {}
+      try { window.dispatchEvent(new CustomEvent('kinetic-ready-and-refreshed')); } catch (_e) {}
+    }
+    // Jeżeli między mountem a useEffect zdążył już lecieć globalny refresh (nieprawdopodobne, ale safe):
+    // sprawdź stan natychmiast i ewentualnie emituj. W przeciwnym razie poczekaj na "refresh" event.
+    ScrollTrigger.addEventListener('refresh', emitReadyAndRefreshed);
+    emitReadyAndRefreshed();
+
     return () => {
       if (id1) cancelAnimationFrame(id1);
       if (id2) cancelAnimationFrame(id2);
+      ScrollTrigger.removeEventListener('refresh', emitReadyAndRefreshed);
     };
   }, []);
 

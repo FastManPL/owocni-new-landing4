@@ -257,51 +257,17 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         return waveEndEl ? 'bottom top' : 'bottom ' + (window.innerWidth < 600 ? 80 : 75) + '%';
       }
 
-      // FAKTY-EARLY-FIRE-02: Guard przeciwko race Kinetic pinSpacer ↔ wave ST positions.
-      // Jeśli `#kinetic-section` jest w DOM (SHOW_KINETIC_SECTION=true), ale Kinetic pin jeszcze
-      // nie istnieje w layoucie (brak pinSpacera), wave ST liczy start/end BEZ ~1500 px pinu →
-      // onEnter firuje gdy user jest przy BookStats/Fakty. W tej sytuacji NIE commitujemy wave
-      // (abort w applyWaveVisIfAllowed); po faktycznym refresh z poprawnymi pozycjami kolejny
-      // legit onEnter przy Blok45 pokaże falę.
-      //
-      // KLUCZOWE: flag `kineticEngineReady=true` ustawiamy DOPIERO po rzeczywistym zakończeniu
-      // `ScrollTrigger.refresh` (event "refresh"), NIE od razu przy odbiorze `kinetic-engine-ready`.
-      // `scrollRuntime.requestRefreshImmediate()` wywołane w useEffect-listenerze ma built-in
-      // 2 rAF delay (~16–32 ms). Gdyby flag był ustawiony od razu, wave ST miałby nadal stare
-      // pozycje, guard byłby wyłączony, a onEnter w tym oknie pokazałby falę w złym miejscu.
-      // Detekcja aktualnego stanu bez race: jeśli Kinetic pinSpacer (GSAP wrapper klasy
-      // `.pin-spacer`) owija `#kinetic-section` → pin już w layoucie → ready.
-      function kineticPinInLayout(): boolean {
-        var ks = typeof document !== 'undefined' ? document.getElementById('kinetic-section') : null;
-        if (!ks) return false;
-        var parent = ks.parentElement;
-        return !!parent && parent.classList.contains('pin-spacer');
-      }
-      var kineticExpected = typeof document !== 'undefined' && !!document.getElementById('kinetic-section');
-      var kineticEngineReady = kineticExpected ? kineticPinInLayout() : true;
-      function markKineticReadyAfterRefresh() {
-        // DOM sanity check: jeśli pin-spacer nie istnieje, nie ustawiamy flagi (kolejny refresh
-        // go załapie). To chroni przed spurious refresh eventami PRZED faktycznym pinem.
-        if (kineticPinInLayout()) {
-          kineticEngineReady = true;
-          ScrollTrigger.removeEventListener('refresh', markKineticReadyAfterRefresh);
-        }
-      }
-      function onKineticEngineReadyForWave() {
-        // Gate flag na rzeczywisty refresh (po 2 rAF `requestRefreshImmediate` + recompute pozycji).
-        // addEventListener("refresh") firuje cb PO każdym globalnym `ScrollTrigger.refresh()`.
-        ScrollTrigger.addEventListener('refresh', markKineticReadyAfterRefresh);
-      }
-      if (kineticExpected && !kineticEngineReady) {
-        window.addEventListener('kinetic-engine-ready', onKineticEngineReadyForWave);
-        cleanups.push(function() {
-          window.removeEventListener('kinetic-engine-ready', onKineticEngineReadyForWave);
-          ScrollTrigger.removeEventListener('refresh', markKineticReadyAfterRefresh);
-        });
-      }
-
-      // Jedna kurtyna na „przejście”: waveCommittedOnce; reset po #fakty-section LUB po powrocie na Kinetic
-      // (kinetic-visibility past:false → resetWaveForReturnToKinetic). Cofanie tylko w Blok45 nie resetuje fali.
+      // DEFERRED-ST-CREATION-01: wave ST jest tworzony DOPIERO po tym jak Kinetic ma pin-spacer
+      // w layoucie ORAZ globalny `ScrollTrigger.refresh()` się zakończył. Powód:
+      // `#blok-4-5-block-4` liczy swoją pozycję (getBoundingClientRect → document position)
+      // na podstawie aktualnego layoutu dokumentu. Jeżeli Kinetic jest jeszcze placeholderem
+      // 100vh zamiast faktycznego pinu (~300vh), wave ST ma start/end przesunięty o ~1500 px
+      // w górę, przez co `onEnter` odpala się w strefie BookStats/Fakty. Poprzednio próbowałem
+      // guardować callbacki (waveStateStale) + marker po refresh, ale scrub animacja Fakty
+      // nadal miała zły progress jump (0→1) podczas invalidateOnRefresh.
+      // Rozwiązanie: NIE tworzymy wave ST w ogóle dopóki pozycje nie są stabilne.
+      // Event `kinetic-ready-and-refreshed` emituje KineticEngine PO faktycznym refresh
+      // z pin-spacerem w DOM (zob. KineticEngine.tsx useEffect).
       var waveRevealAllowed = true;
       function syncWaveRevealAllowed() {
         var fakty = typeof document !== 'undefined' ? document.getElementById('fakty-section') : null;
@@ -317,18 +283,6 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       var waveCommittedOnce = false;
       var waveOpenCompleteDispatched = false;
       function applyWaveVisIfAllowed(show: boolean) {
-        // FAKTY-EARLY-FIRE-02: wave ST pozycje liczone przed mountem Kinetic pinSpacer są stale
-        // (trigger `#blok-4-5-block-4` ~1500 px za wysoko). Każde globalne ScrollTrigger.refresh()
-        // (Fakty runBuild, fonts-ready-settle, visualViewport resize itp.) przed kinetic-engine-ready
-        // może wystrzelić wave.onEnter w Fakty zone. Abort: nie commitujemy kurtyny dopóki
-        // Kinetic pinSpacer nie jest w DOM → po kinetic-engine-ready refresh przeliczy pozycje
-        // z uwzględnieniem pinSpacera i kolejny legit onEnter (faktyczne wejście w Blok45) zadziała.
-        if (show && kineticExpected && !kineticEngineReady) {
-          resetWaveStateFromScroll();
-          (waveWrap as HTMLElement).style.display = 'none';
-          container.classList.remove('wave-reveal-active');
-          return;
-        }
         if (show && !waveRevealAllowed) {
           resetWaveStateFromScroll();
           (waveWrap as HTMLElement).style.display = 'none';
@@ -350,47 +304,6 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         }
       }
 
-      // FAKTY-EARLY-FIRE-02: single-point guard dla wszystkich callbacków wave ST. Dopóki
-      // Kinetic pin nie jest w layoucie, WSZYSTKIE eventy wave ST bazują na stale pozycjach
-      // (pre-pinSpacer) i nie wolno im modyfikować stanu — w szczególności `waveRevealAllowed`
-      // (spurious onLeave ustawiał go na false, blokując wave po rzeczywistym refresh + scrollu
-      // w dół do Blok45).
-      function waveStateStale(): boolean {
-        return kineticExpected && !kineticEngineReady;
-      }
-      // Stack: #bridge-wrapper z-index 10, #blok-4-5-section 24 (36 gdy wave), .blok-4-5-wave-wrap 14, intro 50+.
-      var stWaveVis = ScrollTrigger.create({
-        trigger: waveDriveEl,
-        start: waveDriveStart,
-        endTrigger: waveEndEl || waveDriveEl,
-        end: waveScrollEnd,
-        invalidateOnRefresh: true,
-        onEnter: function() {
-          if (waveStateStale()) return;
-          syncWaveRevealAllowed();
-          applyWaveVisIfAllowed(true);
-        },
-        onLeave: function() {
-          if (waveStateStale()) return;
-          waveRevealAllowed = false;
-          applyWaveVisIfAllowed(false);
-        },
-        // Scroll w górę w Blok45 — bez resetu z Fakty kurtyna się nie włączy (waveCommittedOnce).
-        onEnterBack: function() {
-          if (waveStateStale()) return;
-          syncWaveRevealAllowed();
-          applyWaveVisIfAllowed(false);
-        },
-        onLeaveBack: function() {
-          if (waveStateStale()) return;
-          waveRevealAllowed = false;
-          applyWaveVisIfAllowed(false);
-        }
-      });
-      gsapInstances.push(stWaveVis);
-      (waveWrap as HTMLElement).style.display = 'none';
-      syncWaveRevealAllowed();
-
       // Jedyny driver animacji fali względem scrolla (otwarcie kipiel przy progress>0 tylko po starcie poniżej).
       function resetWaveStateFromScroll() {
         waveOpenCompleteDispatched = false;
@@ -399,21 +312,84 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         }
         lastWaveD[0] = lastWaveD[1] = lastWaveD[2] = lastWaveD[3] = '';
       }
-      var stWaveScroll = ScrollTrigger.create({
-        trigger: waveDriveEl,
-        start: waveDriveStart,
-        endTrigger: waveEndEl || waveDriveEl,
-        end: waveScrollEnd,
-        invalidateOnRefresh: true,
-        onUpdate: function(self) {
-          if (!waveRevealAllowed) return;
-          if (!container.classList.contains('wave-reveal-active')) return;
-          handleScroll(self.progress, self.direction);
-        },
-        onLeave: function() { resetWaveStateFromScroll(); },
-        onLeaveBack: function() { resetWaveStateFromScroll(); }
-      });
-      gsapInstances.push(stWaveScroll);
+
+      (waveWrap as HTMLElement).style.display = 'none';
+      syncWaveRevealAllowed();
+
+      var waveSTsCreated = false;
+      function createWaveScrollTriggers() {
+        if (waveSTsCreated) return;
+        waveSTsCreated = true;
+        // Stack: #bridge-wrapper z-index 10, #blok-4-5-section 24 (36 gdy wave), .blok-4-5-wave-wrap 14, intro 50+.
+        var stWaveVis = ScrollTrigger.create({
+          trigger: waveDriveEl,
+          start: waveDriveStart,
+          endTrigger: waveEndEl || waveDriveEl,
+          end: waveScrollEnd,
+          invalidateOnRefresh: true,
+          onEnter: function() {
+            syncWaveRevealAllowed();
+            applyWaveVisIfAllowed(true);
+          },
+          onLeave: function() {
+            waveRevealAllowed = false;
+            applyWaveVisIfAllowed(false);
+          },
+          // Scroll w górę w Blok45 — bez resetu z Fakty kurtyna się nie włączy (waveCommittedOnce).
+          onEnterBack: function() {
+            syncWaveRevealAllowed();
+            applyWaveVisIfAllowed(false);
+          },
+          onLeaveBack: function() {
+            waveRevealAllowed = false;
+            applyWaveVisIfAllowed(false);
+          }
+        });
+        gsapInstances.push(stWaveVis);
+
+        var stWaveScroll = ScrollTrigger.create({
+          trigger: waveDriveEl,
+          start: waveDriveStart,
+          endTrigger: waveEndEl || waveDriveEl,
+          end: waveScrollEnd,
+          invalidateOnRefresh: true,
+          onUpdate: function(self) {
+            if (!waveRevealAllowed) return;
+            if (!container.classList.contains('wave-reveal-active')) return;
+            handleScroll(self.progress, self.direction);
+          },
+          onLeave: function() { resetWaveStateFromScroll(); },
+          onLeaveBack: function() { resetWaveStateFromScroll(); }
+        });
+        gsapInstances.push(stWaveScroll);
+      }
+
+      var kineticExpected = typeof document !== 'undefined' && !!document.getElementById('kinetic-section');
+      var kineticAlreadyReady = !kineticExpected || (typeof window !== 'undefined' &&
+        (window as unknown as { __kineticReadyAndRefreshed?: boolean }).__kineticReadyAndRefreshed === true);
+      if (kineticAlreadyReady) {
+        // `#kinetic-section` nie istnieje (SHOW_KINETIC_SECTION=false) albo Kinetic już zdążył
+        // wyemitować `kinetic-ready-and-refreshed` (flaga globalna). Bezpiecznie tworzymy wave ST.
+        createWaveScrollTriggers();
+      } else {
+        var waveSafetyFallback = window.setTimeout(function() {
+          // Safety net: gdyby `kinetic-ready-and-refreshed` nigdy nie odpalił (np. chunk Kinetic
+          // failed to load), po 5 s tworzymy wave ST tak jak wcześniej. Utrata idealnej synchronizacji
+          // jest akceptowalna przy broken Kinetic chunk — lepsze niż permanentnie ukryta fala.
+          window.removeEventListener('kinetic-ready-and-refreshed', onKineticReadyAndRefreshed);
+          createWaveScrollTriggers();
+        }, 5000);
+        function onKineticReadyAndRefreshed() {
+          window.clearTimeout(waveSafetyFallback);
+          window.removeEventListener('kinetic-ready-and-refreshed', onKineticReadyAndRefreshed);
+          createWaveScrollTriggers();
+        }
+        window.addEventListener('kinetic-ready-and-refreshed', onKineticReadyAndRefreshed);
+        cleanups.push(function() {
+          window.clearTimeout(waveSafetyFallback);
+          window.removeEventListener('kinetic-ready-and-refreshed', onKineticReadyAndRefreshed);
+        });
+      }
 
       // Po powrocie na Kinetic: html bez kinetic-past LUB cofnięcie do GEMIUS (#kinetic-block-3) w górnej części kadrze
       // → resetWaveForReturnToKinetic + blok45-wave-arm-reset (latch React waveOpenComplete).

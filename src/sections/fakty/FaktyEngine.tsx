@@ -1393,9 +1393,59 @@ function init(container: HTMLElement): { kill: () => void } {
   let lazyStLock = false;
   let lazyStTimeout: ReturnType<typeof setTimeout> | null = null;
   let lazyStObserver: IntersectionObserver | null = null;
+  // DEFERRED-ST-CREATION-01: Kinetic gate — gdy SHOW_KINETIC_SECTION=true, Fakty ST nie mogą
+  // powstać zanim Kinetic pin-spacer trafi do layoutu ORAZ globalny `ScrollTrigger.refresh()`
+  // przeliczy pozycje. Inaczej `row1.getBoundingClientRect()` zwraca pozycję ~1500 px za wysoko,
+  // a podczas kolejnego globalnego refreshu `invalidateOnRefresh` przesuwa start/end tak, że
+  // user (który jeszcze nie zjechał do Fakty) nagle jest `past end` → scrub animacja
+  // „FAKTY / SĄ TAKIE" skacze z progress=0 do progress=1 bez widzialnej interpolacji.
+  let kineticReadyLatched = false;
+  let kineticReadyListener: (() => void) | null = null;
+  function kineticReadyForFaktyST(): boolean {
+    if (kineticReadyLatched) return true;
+    const kineticExpected = typeof document !== 'undefined' && !!document.getElementById('kinetic-section');
+    if (!kineticExpected) {
+      kineticReadyLatched = true;
+      return true;
+    }
+    const flag = (window as unknown as { __kineticReadyAndRefreshed?: boolean }).__kineticReadyAndRefreshed;
+    if (flag === true) {
+      kineticReadyLatched = true;
+      return true;
+    }
+    return false;
+  }
   function maybeCreateScrollTriggers() {
     if (lazyStLock || stCreated || isKilled || !container.isConnected || !faktyBlock)
       return;
+    if (!kineticReadyForFaktyST()) {
+      // Rejestracja jednorazowego listenera — kolejne wywołania z IO/timeout są no-op dzięki
+      // lazyStLock=false + `stCreated=false`. Pozwala fallback timeoutowi nadal liczyć.
+      if (!kineticReadyListener) {
+        // Safety net: 5 s fallback na wypadek gdyby chunk Kinetic nie wystartował —
+        // lepsze uruchomienie Fakty ST z niepewnymi pozycjami niż permanentnie nieanimowana sekcja.
+        const safetyFallback = window.setTimeout(() => {
+          window.removeEventListener('kinetic-ready-and-refreshed', onReady);
+          kineticReadyListener = null;
+          kineticReadyLatched = true;
+          maybeCreateScrollTriggers();
+        }, 5000);
+        const onReady = () => {
+          window.clearTimeout(safetyFallback);
+          window.removeEventListener('kinetic-ready-and-refreshed', onReady);
+          kineticReadyListener = null;
+          maybeCreateScrollTriggers();
+        };
+        kineticReadyListener = onReady;
+        window.addEventListener('kinetic-ready-and-refreshed', onReady);
+        cleanups.push(() => {
+          window.clearTimeout(safetyFallback);
+          window.removeEventListener('kinetic-ready-and-refreshed', onReady);
+          kineticReadyListener = null;
+        });
+      }
+      return;
+    }
     lazyStLock = true;
     if (lazyStTimeout !== null) {
       clearTimeout(lazyStTimeout);
