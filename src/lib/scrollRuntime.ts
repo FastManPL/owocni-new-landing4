@@ -44,6 +44,10 @@ let visibilityHandler: (() => void) | null = null;
 let resizeHandler: (() => void) | null = null;
 let pageShowHandler: ((e: PageTransitionEvent) => void) | null = null;
 let pageHideHandler: (() => void) | null = null;
+let loadHandler: (() => void) | null = null;
+let heightObserver: ResizeObserver | null = null;
+let lastDocHeight = 0;
+let heightObserverFirstFire = true;
 
 /** Po dynamic import('gsap') — tylko gdy lenis aktywny. */
 let gsapRuntime: typeof gsap | null = null;
@@ -59,6 +63,11 @@ let lastResizeH = 0;
 const REFRESH_DEBOUNCE_MS = 120;
 const RESIZE_DEBOUNCE_MS = 250;
 const MOBILE_TOOLBAR_RESIZE_THRESHOLD_PX = 150;
+/** Ignorujemy mikro-zmiany wysokości (<30 px) — próg chroni przed pętlą: pin-spacer tworzony
+ *  przez ScrollTrigger.refresh() zmienia scrollHeight o kilkanaście px, co bez progu wywołałoby
+ *  kolejny requestRefresh po 120 ms → redundant refresh loop. 30 px pokrywa typowe pin-spacer
+ *  resolution bez gubienia prawdziwych expansionów z ssr:false chunków (placeholder 100vh → 300vh).  */
+const DOC_HEIGHT_CHANGE_THRESHOLD_PX = 30;
 
 function runBoot(gen: number, G: typeof gsap, ST: typeof ScrollTriggerType): void {
   if (gen !== initGeneration) return;
@@ -149,6 +158,43 @@ function runBoot(gen: number, G: typeof gsap, ST: typeof ScrollTriggerType): voi
   };
   window.addEventListener('pageshow', pageShowHandler, { passive: true });
 
+  // DOC-HEIGHT-OBSERVER-01: catch-all dla rozrostu document height po hydracji chunków ssr:false.
+  // Problem (2026-04-23): sections ssr:false z placeholder 100vh (Kinetic, Blok45) rozrastały się
+  // do ~300vh po mount'cie, a CaseStudies/Fakty ST były tworzone z pozycjami sprzed rozrostu
+  // (i broker requestRefresh z 120 ms debounce czasem nie dogonił przed scrollem usera).
+  // ResizeObserver łapie KAŻDĄ zmianę scrollHeight > 30 px i wymusza refresh przez brokera
+  // (debounce 120 ms + 2 rAF → safe refresh(true)). Próg 30 px chroni przed pętlą od pin-spacerów.
+  if (typeof ResizeObserver !== 'undefined') {
+    lastDocHeight = document.documentElement.scrollHeight;
+    heightObserverFirstFire = true;
+    heightObserver = new ResizeObserver(() => {
+      if (heightObserverFirstFire) {
+        heightObserverFirstFire = false;
+        return;
+      }
+      const h = document.documentElement.scrollHeight;
+      const delta = Math.abs(h - lastDocHeight);
+      if (delta < DOC_HEIGHT_CHANGE_THRESHOLD_PX) return;
+      lastDocHeight = h;
+      // `ScrollTrigger.isRefreshing` true oznacza że sami właśnie wywołaliśmy refresh (pin-spacer
+      // tworzony w trakcie) — nie kolejkujemy kolejnego, broker poradzi sobie po zakończeniu
+      // obecnego cyklu przez `st-refresh` flow.
+      if (ScrollTriggerRuntime && (ScrollTriggerRuntime as unknown as { isRefreshing?: boolean }).isRefreshing) return;
+      requestRefresh('doc-height-changed');
+    });
+    heightObserver.observe(document.documentElement);
+  }
+
+  // LOAD-SETTLE-01: `pageshow` fires early (przed load images). `load` fires gdy wszystko —
+  // chunki JS, obrazy, fonty — w pełni pobrane. Dodatkowy safe refresh po load eliminuje race
+  // gdy użytkownik ma scroll-restoration w trakcie fazy image-loading (height rośnie po load).
+  if (document.readyState === 'complete') {
+    requestRefreshImmediate();
+  } else {
+    loadHandler = () => { requestRefreshImmediate(); };
+    window.addEventListener('load', loadHandler, { once: true, passive: true });
+  }
+
   if (process.env.NODE_ENV === 'development') {
     (window as Window & { __scroll?: ScrollRuntime }).__scroll = scrollRuntime;
   }
@@ -224,6 +270,18 @@ function destroy(): void {
     window.removeEventListener('pageshow', pageShowHandler);
     pageShowHandler = null;
   }
+
+  if (loadHandler) {
+    window.removeEventListener('load', loadHandler);
+    loadHandler = null;
+  }
+
+  if (heightObserver) {
+    heightObserver.disconnect();
+    heightObserver = null;
+  }
+  lastDocHeight = 0;
+  heightObserverFirstFire = true;
 
   const ST = ScrollTriggerRuntime;
   if (lenis && ST) {
