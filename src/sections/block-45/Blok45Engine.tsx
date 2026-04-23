@@ -257,6 +257,25 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         return waveEndEl ? 'bottom top' : 'bottom ' + (window.innerWidth < 600 ? 80 : 75) + '%';
       }
 
+      // FAKTY-EARLY-FIRE-02: Guard przeciwko race Kinetic pinSpacer ↔ wave ST positions.
+      // Jeśli `#kinetic-section` jest w DOM (SHOW_KINETIC_SECTION=true), ale KineticEngine jeszcze
+      // nie emitował `kinetic-engine-ready` (pinSpacer nie utworzony), wave ST liczy start/end
+      // na layoucie BEZ Kinetic pinSpacer (~1500 px za wysoko) → onEnter fires gdy user jest przy
+      // Fakty. W tej sytuacji NIE commitujemy wave (abort w applyWaveVisIfAllowed) — czekamy aż
+      // KineticEngine dispatch-uje event, który wymusza refresh ST z poprawnymi pozycjami; dopiero
+      // wtedy kolejny legit onEnter przy Blok45 pokaże falę.
+      // Sprawdzenie przez `__kineticEngineReady` (ustawiany przed dispatch w KineticEngine) +
+      // listener są idempotent — pokrywamy wariant, gdy Blok45 init odpala się PO emisji eventu.
+      var kineticExpected = typeof document !== 'undefined' && !!document.getElementById('kinetic-section');
+      var kineticEngineReady = kineticExpected
+        ? ((window as unknown as { __kineticEngineReady?: boolean }).__kineticEngineReady === true)
+        : true;
+      function onKineticEngineReadyForWave() { kineticEngineReady = true; }
+      if (kineticExpected && !kineticEngineReady) {
+        window.addEventListener('kinetic-engine-ready', onKineticEngineReadyForWave);
+        cleanups.push(function() { window.removeEventListener('kinetic-engine-ready', onKineticEngineReadyForWave); });
+      }
+
       // Jedna kurtyna na „przejście”: waveCommittedOnce; reset po #fakty-section LUB po powrocie na Kinetic
       // (kinetic-visibility past:false → resetWaveForReturnToKinetic). Cofanie tylko w Blok45 nie resetuje fali.
       var waveRevealAllowed = true;
@@ -274,6 +293,18 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       var waveCommittedOnce = false;
       var waveOpenCompleteDispatched = false;
       function applyWaveVisIfAllowed(show: boolean) {
+        // FAKTY-EARLY-FIRE-02: wave ST pozycje liczone przed mountem Kinetic pinSpacer są stale
+        // (trigger `#blok-4-5-block-4` ~1500 px za wysoko). Każde globalne ScrollTrigger.refresh()
+        // (Fakty runBuild, fonts-ready-settle, visualViewport resize itp.) przed kinetic-engine-ready
+        // może wystrzelić wave.onEnter w Fakty zone. Abort: nie commitujemy kurtyny dopóki
+        // Kinetic pinSpacer nie jest w DOM → po kinetic-engine-ready refresh przeliczy pozycje
+        // z uwzględnieniem pinSpacera i kolejny legit onEnter (faktyczne wejście w Blok45) zadziała.
+        if (show && kineticExpected && !kineticEngineReady) {
+          resetWaveStateFromScroll();
+          (waveWrap as HTMLElement).style.display = 'none';
+          container.classList.remove('wave-reveal-active');
+          return;
+        }
         if (show && !waveRevealAllowed) {
           resetWaveStateFromScroll();
           (waveWrap as HTMLElement).style.display = 'none';

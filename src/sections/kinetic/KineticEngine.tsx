@@ -4573,6 +4573,10 @@ export default function KineticEngine({ containerRef }: KineticEngineProps = {})
         // nasłuchuje i wymusza natychmiastowy ScrollTrigger.refresh() żeby wave ST dostał
         // poprawne pozycje `#blok-4-5-block-4` (z uwzględnieniem Kinetic pinSpacer ~1500px).
         // Bez tego wave startował z pozycją pre-pinSpacer → włączał się już w Fakty section.
+        // FAKTY-EARLY-FIRE-02: idempotent flag dla late-listenerów (np. wave guard w Blok45),
+        // które mogły zainicjalizować się PO emisji eventu — event fires tylko raz, a flag
+        // pozwala sprawdzić stan retroaktywnie bez wyścigu listener-attach-vs-dispatch.
+        try { (window as unknown as { __kineticEngineReady?: boolean }).__kineticEngineReady = true; } catch (_e) {}
         try { window.dispatchEvent(new CustomEvent('kinetic-engine-ready')); } catch (_e) {}
       });
     });
