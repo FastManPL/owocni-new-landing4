@@ -354,8 +354,13 @@ function init(container: HTMLElement): { kill: () => void } {
 
     repairPhase1ScrollMisfire = function () {
       if (isKilled || !row1.isConnected) return;
-      const y = scrollRuntime.isReady() ? scrollRuntime.getScroll() : window.scrollY;
-      if (y > 200) return;
+      // FAKTY-EARLY-FIRE-01: poprzednio `if (y > 200) return` ograniczało repair do scroll-top
+      // (odświeżenie strony). W scenariuszu szybkiego scrollu z góry ST powstają późno, user jest
+      // już poza strefą startu → progress=1, repair z guardem nigdy nie odpalał → animacja
+      // "FAKTY / SĄ TAKIE" była już rozegrana zanim user ją zobaczył. Warunek
+      // `centerY > vh + 8 && p1 > 0.03` sam w sobie jest bezpieczny: oznacza "row1 center
+      // jest NADAL poniżej viewport bottom (>8 px zapas), a progress > 3 %" — to możliwe tylko
+      // gdy ST syncowało się ze stale scroll/pozycją, nie przy normalnym scrollu w dół.
       const rect = row1.getBoundingClientRect();
       const vh = window.innerHeight || 1;
       const centerY = rect.top + rect.height * 0.5;
@@ -1493,16 +1498,23 @@ function init(container: HTMLElement): { kill: () => void } {
       setupVideoFill();
       applyFrame(0);
       preloadRemainingFrames();
-      // Lazy ST: wejście sekcji w viewport albo fallback 1,2 s
+      // Lazy ST: preemptive rootMargin — tworzymy ST zanim sekcja fizycznie wejdzie w viewport.
+      // FAKTY-EARLY-FIRE-01: przy szybkim scrollu z góry (lub wolnym fonts.ready / frame 0 preload)
+      // 2×rAF + Lenis sync potrzebne do runBuild() powodowały, że ST powstawały gdy user był już
+      // past `row1 center bottom` → scrub snapował progress=1 → "Fakty są takie" pokazywały się
+      // od razu w finalnym stanie. 500 px preload zone (~½ typowego vh przy szybkim scrollu)
+      // daje ST czas na init przed wejściem row1 w strefę animacji. Fallback skrócony z 1200
+      // do 600 ms — stary timeout był legacy dla scroll-top scenariusza, teraz jest gated rAF-ami
+      // w runBuild() tak czy inaczej.
       lazyStObserver = new IntersectionObserver(
         (entries) => {
           if (entries[0]?.isIntersecting) maybeCreateScrollTriggers();
         },
-        { root: null, rootMargin: "0px", threshold: 0 },
+        { root: null, rootMargin: "500px 0px 500px 0px", threshold: 0 },
       );
       lazyStObserver.observe(container);
       observers.push(lazyStObserver);
-      lazyStTimeout = setTimeout(maybeCreateScrollTriggers, 1200);
+      lazyStTimeout = setTimeout(maybeCreateScrollTriggers, 600);
       // FIX 3: Force re-apply frame + organic ratio po powrocie do karty (reflow/fonty bez ResizeObserver)
       function onVisibilityChange() {
         if (document.visibilityState === "visible" && framesReady) {
