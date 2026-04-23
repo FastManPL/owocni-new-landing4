@@ -9,6 +9,12 @@
 import type { WarmupEntry } from '@/lib/moduleLoader';
 
 export const homeRouteChunkWarmupEntries: WarmupEntry[] = [
+  // Faza 2.B split: WynikiSection jest 2. sekcją na stronie (zaraz po Hero),
+  // user scrolluje do niej w <100ms → `idle` byłoby za późne. `immediate`
+  // prefetchuje chunk engine-u (~430 LoC GSAP + cursor particles + play btn
+  // SVG + popup + video WARM gating) ASAP po mount wrappera, dzięki czemu
+  // kliknięcie CTA "Zobacz demo" / ST zoom animation działa od razu.
+  { policy: 'immediate', import: () => import('@/sections/wyniki/WynikiEngine') },
   { policy: 'idle', import: () => import('@/sections/kinetic/KineticEngine') },
   { policy: 'idle', import: () => import('@/sections/block-45/Blok45Section') },
   { policy: 'idle', import: () => import('@/sections/books/BookStatsSection') },
