@@ -367,21 +367,22 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       window.addEventListener('kinetic-visibility', onKineticVisibilityForWave);
       cleanups.push(function() { window.removeEventListener('kinetic-visibility', onKineticVisibilityForWave); });
 
-      // Mocne cofnięcie do POŁOWY Kinetic (#kinetic-block-2 — środkowy blok animacji pin)
-      // resetuje latch fali. Wcześniej trigger był na #kinetic-block-3 (GEMIUS, ostatni blok),
-      // ale to było za płytkie cofnięcie — po drobnym scroll-up do GEMIUS + powrocie w dół,
-      // wave wrap pokazywał się ponownie i „odwrotnie” (odgrywał reverse na handoffie).
-      // Teraz reset wymaga cofnięcia aż do środka Kinetic, więc drobne cofanie w Blok45
-      // lub do GEMIUS zostawia wave ukryty (po pierwszym `waveOpenComplete`).
+      // Mocne cofnięcie do POŁOWY Kinetic resetuje latch fali. Używamy `rs.top` (Blok45 section
+      // getBoundingClientRect) bo bloki Kinetic są GSAP-animowane wewnątrz pinned sekcji —
+      // ich `getBoundingClientRect` zależy od animation progress, nie od scroll position,
+      // więc mogłyby trafić w próg przy zwykłym reverse-scroll przez handoff (fałszywy reset
+      // → wave wracało). Scroll-based próg jest monotoniczny względem pozycji usera:
+      //   pin span Kinetic ≈ svh*2.1 (BRIDGE_MULTIPLIER) + SCROLL_KINETIC (~svh) + DELTA/OVERSHOOT
+      //   ≈ 3–4 vh → połowa ≈ 1.5–2 vh.
+      // `rs.top > vh * 2` = Blok45 start jest co najmniej 2 viewport-y poniżej top viewport
+      // → user scrollował się wyraźnie głębiej niż GEMIUS / handoff. Drobne cofnięcie w Blok45
+      // lub do GEMIUS nie resetuje latcha → wave zostaje ukryty po `waveOpenComplete`.
       function syncWaveResetIfDeepKineticRewind() {
         if (!waveCommittedOnce) return;
         if (container.classList.contains('wave-reveal-active')) return;
-        var b2 = typeof document !== 'undefined' ? document.getElementById('kinetic-block-2') : null;
-        if (!b2) return;
-        var r = b2.getBoundingClientRect();
+        var rs = container.getBoundingClientRect();
         var vh = window.innerHeight || 1;
-        var block2InUpperView = r.top < vh * 0.56 && r.bottom > vh * 0.16;
-        if (!block2InUpperView) return;
+        if (rs.top < vh * 2) return;
         resetWaveForReturnToKinetic();
       }
       var waveAllowScroll = function() {
