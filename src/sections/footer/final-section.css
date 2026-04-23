@@ -1,22 +1,28 @@
 /* IDENTYCZNA KOPIA z P2A — zero modyfikacji */
 /* Usunięte: html{}, body{}, .preview-spacer (harness-only), DEV overlay CSS */
 
-/* SECTION CSS — sticky reveal pattern (DESKTOP + MOBILE/TABLET)
+/* SECTION CSS — sticky reveal (DESKTOP) / naturalny flow (MOBILE/TABLET)
    ───────────────────────────────────────────────────────────────────────────
-   `z-index: 0` na wszystkich breakpointach — FAQ (`#faq-section { z-index:1 }`
-   + `::before { background: #f7f6f4; z-index: 0 }`) zakrywa Final w strefie
-   overlap. Scroll odkrywa Final spod FAQ, gdy FAQ wyjeżdża w górę.
-   Mobile/tablet: ryzyko drobnego glitcha na iOS Safari przy zmianie address
-   baru (100vh vs visualViewport) jest OK — FAQ::before rozciąga się na pełną
-   wysokość sekcji i zakrywa Final do momentu faktycznego scroll-out FAQ.
-   Silnik: FinalEngine.tsx używa `isMobile: tw<1200` dla WebGL/form stack —
-   nie dotyczy stackingu z FAQ (ten jest w pełni CSS-owy).
+   DESKTOP (≥1200 px): `margin-top: -100vh` + `z-index: 0` — FAQ
+   (`#faq-section { z-index: 1 }` + `::before { background: #f7f6f4; z-index: 0 }`)
+   zakrywa Final w strefie overlap; scroll odkrywa Final spod FAQ, gdy FAQ wyjeżdża
+   w górę. Działa bo FAQ na desktopie ma wysokość > 100vh → ::before pokrywa cały
+   overlap.
+   MOBILE/TABLET (<1200 px): FAQ jest krótsza niż 100vh (mniej pytań w viewport +
+   mniejsza szerokość kontentu) — sticky reveal fizycznie nie ma się czym zakrywać.
+   `margin-top: 0` → Final startuje PO FAQ w naturalnym flow, zero overlap, zero
+   glitcha. Sticky pinowanie `#final-sticky` działa bez zmian.
    ─────────────────────────────────────────────────────────────────────────── */
 #final-section {
   position: relative;
   z-index: 0;
   margin-top: -100vh;
   background: #f7f6f4;
+}
+@media (max-width: 1199px) {
+  #final-section {
+    margin-top: 0;
+  }
 }
 /* Reset tylko pod WebGL — NIE #final-formCard (.ocf-root), bo zero padding = zniszczone style formularza */
 #final-section #final-scene,
