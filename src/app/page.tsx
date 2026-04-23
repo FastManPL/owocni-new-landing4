@@ -6,7 +6,9 @@ import { FaktySection } from '@/sections/fakty/FaktySection';
 import { HeroSection } from '@/sections/hero/HeroSection';
 import { KalkulatorSection } from '@/sections/kalkulator/KalkulatorSection';
 import { WynikiSection } from '@/sections/wyniki/WynikiSection';
+import { SHOW_KINETIC_SECTION } from '@/config/featureFlags';
 import { BridgeSection } from './BridgeSection';
+import { KineticDisabledPlaceholder } from './KineticDisabledPlaceholder';
 import { KineticHomeSlot } from './KineticHomeSlot';
 import { SectionsClient } from './SectionsClient';
 
@@ -81,10 +83,15 @@ async function HomePageContent({
       {/* Cała treść home: bez DeferredMount; ciężkie silniki nadal `dynamic()` + placeholder. */}
       <FaktySection />
       {/*
-        Kinetic: logika + `dynamic(ssr:false)` w `KineticHomeSlot` (client) — build Turbopack OK.
-        Przywrócenie: `src/config/featureFlags.ts` → SHOW_KINETIC_SECTION true.
+        Kinetic włączony: Bridge + pinSpacer + warstwa silnika (`KineticHomeSlot`).
+        Wyłączony: tylko zwykła sekcja-zastępcza w flow — bez nachodzenia bridge na Fakty.
+        Flaga: `src/config/featureFlags.ts` → SHOW_KINETIC_SECTION.
       */}
-      <BridgeSection kineticLayer={<KineticHomeSlot />} />
+      {SHOW_KINETIC_SECTION ? (
+        <BridgeSection kineticLayer={<KineticHomeSlot />} />
+      ) : (
+        <KineticDisabledPlaceholder />
+      )}
       <SectionsClient />
       <KalkulatorSection />
       <GwarancjaSectionWrapper />
