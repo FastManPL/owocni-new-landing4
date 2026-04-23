@@ -8,6 +8,11 @@ import dynamic from 'next/dynamic';
 // wrappera), co było o ~200ms za późno. Teraz Three.js dociąga się zaraz po
 // hydracji aplikacji, zanim user doscrolluje do Blok45 / OnasSection / Final.
 
+// Faza 3.4a: `id="onas-section"` na skeleton — dzięki temu `near-viewport`
+// warmup w `homeRouteChunkWarmup.ts` (z `observeTarget: '#onas-section'`)
+// znajduje element w DOM od razu po mount wrappera (SSR'd) i może gatingować
+// chunk engine-u (+ `three`) na faktyczną bliskość viewport. Bez ID observer
+// fallbackuje na `document.body` → degeneruje do `immediate`.
 const OnasSection = dynamic(
   () =>
     import('@/sections/ONas-Sekcja/OnasSection').then((m) => ({
@@ -17,6 +22,7 @@ const OnasSection = dynamic(
     ssr: false,
     loading: () => (
       <section
+        id="onas-section"
         style={{ minHeight: '100vh' }}
         aria-hidden="true"
       />

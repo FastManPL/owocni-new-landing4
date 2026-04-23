@@ -44,11 +44,41 @@ export const homeRouteChunkWarmupEntries: WarmupEntry[] = [
     rootMargin: '1500px',
     import: () => import('@/sections/case-studies/CaseStudiesTilesEngine'),
   },
+  // Faza 3.4a: OnasSectionWrapper ma dwa chunki (wrapper SSR'd + OnasSection engine
+  // `ssr:false`). Wrapper `idle` → skeleton `#onas-section` w DOM szybko. Engine
+  // (~2700 LoC + three.js — choć three jest już prefetched globalnie) `near-viewport`
+  // gated (rootMargin 1500px). 12. sekcja w kolejności = głęboka, wielu userów nigdy
+  // tam nie dotrze; oszczędność bandwidth znacząca.
   { policy: 'idle', import: () => import('@/app/OnasSectionWrapper') },
+  {
+    policy: 'near-viewport',
+    observeTarget: '#onas-section',
+    rootMargin: '1500px',
+    import: () => import('@/sections/ONas-Sekcja/OnasSection'),
+  },
   // Faza 1.2 split: wrapper jest lekki (SSR'd tiles + nav + stage). Warmup celuje
   // w chunk engine-u (`ssr: false`, ~1100 LoC + GSAP + ScrollToPlugin + spring
   // physics ticker) — ten faktycznie obciąża pasmo.
-  { policy: 'idle', import: () => import('@/sections/cyfrowe-wzrosty/cyfrowewzrostyengine') },
+  // Faza 3.4b: zmiana z `idle` na `near-viewport`. Wrapper SSR'uje pełny markup
+  // z `#cyfrowe-wzrosty-section` (nie skeleton — rzeczywisty content) → observer
+  // znajduje element w initial HTML. rootMargin 2000px = ~3 viewporty wcześniej.
+  {
+    policy: 'near-viewport',
+    observeTarget: '#cyfrowe-wzrosty-section',
+    rootMargin: '2000px',
+    import: () => import('@/sections/cyfrowe-wzrosty/cyfrowewzrostyengine'),
+  },
   { policy: 'idle', import: () => import('@/sections/FAQ/FAQSection') },
+  // Faza 3.4c: FinalSection (15) = ostatnia sekcja, najczęściej nieosiągana.
+  // Wrapper `idle` — skeleton `#final-section` w DOM szybko. FinalEngine
+  // (Three.js transmission shader clock + form + GSAP) `near-viewport` gated
+  // (rootMargin 2000px). Duży gain: użytkownicy którzy nie scrollują do formy
+  // nie płacą pasmem za Three.js clock + shader compilation.
   { policy: 'idle', import: () => import('@/sections/footer/FinalSection') },
+  {
+    policy: 'near-viewport',
+    observeTarget: '#final-section',
+    rootMargin: '2000px',
+    import: () => import('@/sections/footer/FinalEngine'),
+  },
 ];
