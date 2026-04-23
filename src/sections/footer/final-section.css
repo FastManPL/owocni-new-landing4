@@ -2,11 +2,14 @@
 /* Usunięte: html{}, body{}, .preview-spacer (harness-only), DEV overlay CSS */
 
 /* SECTION CSS — sticky reveal pattern */
-/* Ten sam poziom co #faq-section (z-index:1) — kolejność w DOM wygrywa przy remisie,
-   więc Final maluje się NAD FAQ w strefie -100vh overlap zamiast być całkowicie pod spodem. */
+/* FAQ ma z-index:1 + solidne tło (::before #f7f6f4) i zakrywa Final w strefie overlap.
+   Final MUSI mieć z-index:0 — scroll odkrywa Final spod FAQ gdy FAQ wyjeżdża w górę.
+   UWAGA: z-index tej sekcji był historycznie kilkukrotnie zamieniany między 0 a 1 —
+   regresja "Final nad FAQ" pojawia się za każdym razem gdy ktoś ustawi z-index:1.
+   KEEP IT 0. Sprzężone z #faq-section (faq-section.css:400 komentarz). */
 #final-section {
   position: relative;
-  z-index: 1;
+  z-index: 0;
   margin-top: -100vh;
   background: #f7f6f4;
 }
