@@ -367,22 +367,26 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       window.addEventListener('kinetic-visibility', onKineticVisibilityForWave);
       cleanups.push(function() { window.removeEventListener('kinetic-visibility', onKineticVisibilityForWave); });
 
-      // Cofnięcie do początku planszy GEMIUS (#kinetic-block-3) — bez czekania aż zdejmie się cały html.kinetic-past
-      // (np. stop na „W czym problem?” jeszcze nie resetował fali).
-      function syncWaveResetIfGemiusRewind() {
+      // Mocne cofnięcie do POŁOWY Kinetic (#kinetic-block-2 — środkowy blok animacji pin)
+      // resetuje latch fali. Wcześniej trigger był na #kinetic-block-3 (GEMIUS, ostatni blok),
+      // ale to było za płytkie cofnięcie — po drobnym scroll-up do GEMIUS + powrocie w dół,
+      // wave wrap pokazywał się ponownie i „odwrotnie” (odgrywał reverse na handoffie).
+      // Teraz reset wymaga cofnięcia aż do środka Kinetic, więc drobne cofanie w Blok45
+      // lub do GEMIUS zostawia wave ukryty (po pierwszym `waveOpenComplete`).
+      function syncWaveResetIfDeepKineticRewind() {
         if (!waveCommittedOnce) return;
         if (container.classList.contains('wave-reveal-active')) return;
-        var b3 = typeof document !== 'undefined' ? document.getElementById('kinetic-block-3') : null;
-        if (!b3) return;
-        var r = b3.getBoundingClientRect();
+        var b2 = typeof document !== 'undefined' ? document.getElementById('kinetic-block-2') : null;
+        if (!b2) return;
+        var r = b2.getBoundingClientRect();
         var vh = window.innerHeight || 1;
-        var gemiusHeadInUpperView = r.top < vh * 0.56 && r.bottom > vh * 0.16;
-        if (!gemiusHeadInUpperView) return;
+        var block2InUpperView = r.top < vh * 0.56 && r.bottom > vh * 0.16;
+        if (!block2InUpperView) return;
         resetWaveForReturnToKinetic();
       }
       var waveAllowScroll = function() {
         syncWaveRevealAllowed();
-        syncWaveResetIfGemiusRewind();
+        syncWaveResetIfDeepKineticRewind();
       };
       scrollRuntime.on('scroll', waveAllowScroll);
       cleanups.push(function() { scrollRuntime.off('scroll', waveAllowScroll); });
