@@ -1,8 +1,12 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useEffect } from 'react';
-import { runWarmupPolicy } from '@/lib/moduleLoader';
+
+// Faza 3.2: lokalny `runWarmupPolicy` dla Three.js został usunięty — przeniesiony
+// do `homeRouteChunkWarmup.ts` jako globalny idle entry. Wcześniejszy wariant
+// odpalał się dopiero po mount tego wrappera (czyli po własnym idle prefetch
+// wrappera), co było o ~200ms za późno. Teraz Three.js dociąga się zaraz po
+// hydracji aplikacji, zanim user doscrolluje do Blok45 / OnasSection / Final.
 
 const OnasSection = dynamic(
   () =>
@@ -21,14 +25,5 @@ const OnasSection = dynamic(
 );
 
 export function OnasSectionWrapper() {
-  useEffect(() => {
-    runWarmupPolicy([
-      {
-        import: () => import('three'),
-        policy: 'idle',
-      },
-    ]);
-  }, []);
-
   return <OnasSection />;
 }

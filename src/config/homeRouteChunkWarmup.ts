@@ -15,6 +15,12 @@ export const homeRouteChunkWarmupEntries: WarmupEntry[] = [
   // SVG + popup + video WARM gating) ASAP po mount wrappera, dzięki czemu
   // kliknięcie CTA "Zobacz demo" / ST zoom animation działa od razu.
   { policy: 'immediate', import: () => import('@/sections/wyniki/WynikiEngine') },
+  // Faza 3.2: Three.js (~600KB) — common chunk używany przez `Blok45Engine`,
+  // `FinalEngine` oraz `OnasSection`. Globalny idle prefetch (zamiast lokalnego
+  // `runWarmupPolicy` w `OnasSectionWrapper`, który odpalał się dopiero po mount
+  // wrappera — czyli po jego własnym idle prefetch). Teraz Three.js dociąga się
+  // w tle zaraz po hydracji, zanim user doscrolluje do pierwszej sekcji Three-heavy.
+  { policy: 'idle', import: () => import('three') },
   { policy: 'idle', import: () => import('@/sections/kinetic/KineticEngine') },
   { policy: 'idle', import: () => import('@/sections/block-45/Blok45Section') },
   { policy: 'idle', import: () => import('@/sections/books/BookStatsSection') },
@@ -25,7 +31,19 @@ export const homeRouteChunkWarmupEntries: WarmupEntry[] = [
   { policy: 'idle', import: () => import('@/sections/gwarancja/GwarancjaEngine') },
   { policy: 'idle', import: () => import('@/sections/Opinie/LoveWallSection') },
   { policy: 'idle', import: () => import('@/sections/case-study2/CaseStudy2Section') },
+  // Faza 3.3: CaseStudies ma dwa chunki (wrapper `ssr:false` + Tiles engine).
+  // Wrapper jest lekki (14 LoC) — `idle` prefetch ASAP po wszystkich bliższych.
+  // Engine (heavy: tiles + GSAP + cursor interactions) — `near-viewport` gated
+  // na `#case-studies-section` (skeleton wrappera MA to id — patrz `CaseStudiesSection.tsx`).
+  // rootMargin 1500px = ~2 viewporty wcześniej = prefetch zanim user scrolluje do sekcji,
+  // zero black-frame przy mount + oszczędność pasma dla userów, którzy nie doscrollują.
   { policy: 'idle', import: () => import('@/sections/case-studies/CaseStudiesSection') },
+  {
+    policy: 'near-viewport',
+    observeTarget: '#case-studies-section',
+    rootMargin: '1500px',
+    import: () => import('@/sections/case-studies/CaseStudiesTilesEngine'),
+  },
   { policy: 'idle', import: () => import('@/app/OnasSectionWrapper') },
   // Faza 1.2 split: wrapper jest lekki (SSR'd tiles + nav + stage). Warmup celuje
   // w chunk engine-u (`ssr: false`, ~1100 LoC + GSAP + ScrollToPlugin + spring

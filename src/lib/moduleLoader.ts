@@ -9,6 +9,14 @@ export interface WarmupEntry {
   import: () => Promise<unknown>;
   policy: WarmupPolicy;
   rootMargin?: string;
+  /**
+   * Selektor CSS konkretnego elementu do obserwacji (tylko `near-viewport`).
+   * Jeśli nie podany lub nie znaleziony w DOM — fallback na `document.body`
+   * (backward compat, ale wtedy observer odpala się natychmiast, bo body
+   * zawsze intersects z `viewport + rootMargin`). Dla prawidłowego gatingu
+   * zawsze podawaj selektor docelowej sekcji (np. `#faq-section`).
+   */
+  observeTarget?: string;
 }
 
 const cache = new Map<string, Promise<unknown>>();
@@ -37,6 +45,15 @@ function loadNearViewport(entry: WarmupEntry): Promise<unknown> {
   if (cache.has(key)) return cache.get(key)!;
   const p = new Promise<unknown>((resolve) => {
     const rootMargin = entry.rootMargin ?? '2000px';
+    // Observer MUSI targetować konkretną sekcję — `document.body` zawsze intersects
+    // z `viewport + rootMargin` (bo body jest wyższe niż viewport), więc bez
+    // selektora observer odpala się natychmiast (degeneracja do `immediate`).
+    // `observeTarget` = CSS selektor sekcji, np. `#faq-section`. Jeśli nie podany
+    // lub element jeszcze nie w DOM (lazy wrapper z ssr:false) — fallback na body
+    // (backward compat: stare entries dalej działają, ale bez gatingu).
+    const target = entry.observeTarget
+      ? document.querySelector(entry.observeTarget) ?? document.body
+      : document.body;
     const observer = new IntersectionObserver(
       (entries) => {
         if (!entries[0]?.isIntersecting) return;
@@ -46,7 +63,7 @@ function loadNearViewport(entry: WarmupEntry): Promise<unknown> {
       },
       { rootMargin, threshold: 0 }
     );
-    observer.observe(document.body);
+    observer.observe(target);
     nearViewportObservers.set(key, observer);
   });
   cache.set(key, p);
