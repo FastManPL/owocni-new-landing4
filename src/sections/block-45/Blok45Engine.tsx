@@ -6,7 +6,6 @@ import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { scrollRuntime } from '@/lib/scrollRuntime';
-import { yieldToMain } from '@/lib/yieldToMain';
 import './blok-4-5-section.css';
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
@@ -16,15 +15,7 @@ import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUti
 // ⚠️ GSAP-SSR-01: ZAKAZ gsap.registerPlugin() na module top-level.
 // registerPlugin() WYŁĄCZNIE wewnątrz useGSAP(() => { ... }) jak poniżej.
 
-// J12 (LP v2.9): async init — 3 punkty `await yieldToMain()` rozbijają ~120-180ms
-// synchronicznej pracy na 4 krótsze segmenty (~30-45ms każdy). ScrollTriggery
-// wewnętrzne subsystemów są tworzone W TRAKCIE ich faz (przed yield-em), więc
-// reagują natychmiast na scroll; yieldy tylko oddają main thread MIĘDZY fazami.
-// J3 preserved: easing/timing/snap/narrative order niezmienione.
-// Margines bezpieczeństwa: Blok45 ma warmup `idle` i ssr:false (~2000px near-viewport),
-// więc 3× ~4ms fallback-yield = ~12ms — user fizycznie nie pokona sekcji w tym czasie.
-async function init(container: HTMLElement): Promise<{ pause: () => void; resume: () => void; kill: () => void }> {
-    const _noop = { pause: () => {}, resume: () => {}, kill: () => {} };
+function init(container: HTMLElement): { pause: () => void; resume: () => void; kill: () => void } {
     const $ = function(sel: string) { return container.querySelector(sel); };
     const $$ = function(sel: string) { return container.querySelectorAll(sel); };
     const $id = function(id: string) { return container.querySelector('#' + id); };
@@ -107,11 +98,6 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
 
     gsap.registerPlugin(ScrollTrigger);
     ScrollTrigger.defaults({ markers: false });
-
-    // J12 yield 1/3 — po DOM query/state/registerPlugin, przed ~296 LoC initWave IIFE
-    // (path parsing + Kipiel elastic formula + SVG morph timeline + 2× ScrollTrigger).
-    await yieldToMain();
-    if (!container.isConnected) return _noop;
 
     // =========================================================
     // WAVE REVEAL
@@ -419,11 +405,6 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
       onEnter: function() { var tid = setTimeout(initUnderlineSVG, 100); timerIds.push({ type: 'timeout', id: tid }); }
     });
     gsapInstances.push(stUnderline);
-
-    // J12 yield 2/3 — po wave subsystem + stUnderline ST, przed stars engine defs
-    // (THREE.js helpers, PMREMGenerator refs, MeshPhysicalMaterial defs, VelvetParticle class).
-    await yieldToMain();
-    if (!container.isConnected) return _noop;
 
     // =========================================================
     // GLOW + BUTTON
@@ -758,12 +739,6 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
       }
       return { wake: wakeThreeLoop, sleep: sleepThreeLoop, dispose: dispose };
     }
-
-    // J12 yield 3/3 — po ~280 LoC createStarsEngine function definition,
-    // przed ~791 LoC reszty (button handlers, bubble system, walking timeline,
-    // mainLoop, resize listeners, final ScrollTriggers + IntersectionObservers).
-    await yieldToMain();
-    if (!container.isConnected) return _noop;
 
     // =========================================================
     // THREE.JS STARS (statyczny import — EnvMap w sync z bundlerem)
@@ -1573,20 +1548,8 @@ export default function Blok45Engine() {
       }
       return;
     }
-    // J12: init() jest async (3× yieldToMain między fazami). Race-safe cleanup —
-    // jeśli unmount zdarzy się w trakcie init (np. między yieldami), zwrócony
-    // instance zostanie od razu killed. Cleanup wewnątrz init (_noop short-circuit
-    // przy !container.isConnected) zapewnia że nie ma półproduktów.
-    let killed = false;
-    let inst: { pause: () => void; resume: () => void; kill: () => void } | null = null;
-    void init(el).then((i) => {
-      if (killed) { i.kill(); return; }
-      inst = i;
-    });
-    return () => {
-      killed = true;
-      inst?.kill?.();
-    };
+    const inst = init(el);
+    return () => inst?.kill?.();
   }, { scope: rootRef });
 
   useEffect(() => {
