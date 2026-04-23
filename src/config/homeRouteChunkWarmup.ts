@@ -14,7 +14,9 @@ export const homeRouteChunkWarmupEntries: WarmupEntry[] = [
   { policy: 'idle', import: () => import('@/sections/books/BookStatsSection') },
   { policy: 'idle', import: () => import('@/sections/fakty/FaktyEngine') },
   { policy: 'idle', import: () => import('@/sections/kalkulator/KalkulatorSection') },
-  { policy: 'idle', import: () => import('@/app/GwarancjaSectionWrapper') },
+  // Faza 1.1 split: wrapper jest lekki (SSR'd content-group). Warmup celuje
+  // w chunk engine-u (`ssr: false`, ~2340 LoC + GSAP) — ten faktycznie obciąża pasmo.
+  { policy: 'idle', import: () => import('@/sections/gwarancja/GwarancjaEngine') },
   { policy: 'idle', import: () => import('@/sections/Opinie/LoveWallSection') },
   { policy: 'idle', import: () => import('@/sections/case-study2/CaseStudy2Section') },
   { policy: 'idle', import: () => import('@/sections/case-studies/CaseStudiesSection') },
