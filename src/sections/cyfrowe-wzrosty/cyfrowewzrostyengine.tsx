@@ -7,6 +7,7 @@ import gsap from 'gsap';
 import { ScrollToPlugin } from 'gsap/ScrollToPlugin';
 import { scrollRuntime } from '@/lib/scrollRuntime';
 import { startWarmVideosOnce } from '@/lib/warmVideo';
+import { yieldToMain } from '@/lib/yieldToMain';
 
 /**
  * Engine sidecar (B1.1 split, Faza 1.2): wykonuje wyłącznie init + hookup do
@@ -39,7 +40,13 @@ type CyfroweWzrostyEngineProps = {
 //   - ARRAY-ASSIGN-01 guard na parseInt(dataset)
 //   - scrollRuntime: import modułowy (nie window global)
 // ═══════════════════════════════════════════════════════════════
-function init(container: HTMLElement): { pause: () => void; resume: () => void; kill: () => void } {
+// J12 (LP v2.9): async init — 2 punkty `await yieldToMain()` rozbijają heavy
+// sync work (DOM create loop ~94 elements + event listeners + gating observer)
+// na 3 krótsze segmenty (~25-35ms każdy). Brak ScrollTrigger.create w init path,
+// więc yieldy w pełni bezpieczne dla scroll narrative (tylko lazy timeline'y w
+// `tilesInitReveal` odpalane na mouseenter/scroll). J3 preserved.
+async function init(container: HTMLElement): Promise<{ pause: () => void; resume: () => void; kill: () => void }> {
+  const _noop = { pause: () => {}, resume: () => {}, kill: () => {} };
 
   var $$ = function(sel: string) { return container.querySelectorAll<HTMLElement>(sel); };
   var $id = function(id: string) { return container.querySelector<HTMLElement>('#' + id); };
@@ -265,6 +272,12 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     lettersRow.appendChild(wrap);
     letterEls[ci] = wrap;
   }
+
+  // J12 yield 1/2 — po ~94 DOM create (7 liter × ~14 layers) + appendChild +
+  // style.color parse — jeden z najcięższych pojedynczych bloków init. Przed
+  // rozpoczęciem tiles geometry + event handlers setup daj browser-owi oddech.
+  await yieldToMain();
+  if (!container.isConnected) return _noop;
 
   // ═══════════════════════════════════════════════════════════════
   // DOM REFS — TILES
@@ -697,6 +710,12 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
   observers.push(_factoryGatingObserver);
   // ═══ KONIEC FACTORY CPU GATING ═══
 
+  // J12 yield 2/2 — po tiles reveal timeline defs + drag handlers + keyboard +
+  // dots listeners + factory CPU gating observer. Przed wielkim blokiem
+  // window/document event listeners (resize, mouse, touch, visibilitychange).
+  await yieldToMain();
+  if (!container.isConnected) return _noop;
+
   // ═══════════════════════════════════════════════════════════════
   // EVENTS
   // ═══════════════════════════════════════════════════════════════
@@ -1084,8 +1103,19 @@ export function CyfroweWzrostyEngine({ rootRef }: CyfroweWzrostyEngineProps) {
       }
       return;
     }
-    const inst = init(el);
-    return () => inst?.kill?.();
+    // J12: init() async (2× yieldToMain). Race-safe cleanup — jeśli unmount
+    // zdarzy się między yieldami, zwrócony instance jest od razu killed.
+    // Wewnątrz init _noop short-circuit przy !container.isConnected.
+    let killed = false;
+    let inst: { pause: () => void; resume: () => void; kill: () => void } | null = null;
+    void init(el).then((i) => {
+      if (killed) { i.kill(); return; }
+      inst = i;
+    });
+    return () => {
+      killed = true;
+      inst?.kill?.();
+    };
     // scope: useGSAP Context revertuje instancje GSAP z init() automatycznie
     // inst.kill() revertuje je powtórnie + czyści observers/timers/listeners
     // Double cleanup OK — _killed guard gwarantuje idempotencję
