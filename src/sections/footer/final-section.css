@@ -1,26 +1,22 @@
 /* IDENTYCZNA KOPIA z P2A — zero modyfikacji */
 /* Usunięte: html{}, body{}, .preview-spacer (harness-only), DEV overlay CSS */
 
-/* SECTION CSS — sticky reveal pattern (DESKTOP) / overlap pattern (MOBILE/TABLET)
+/* SECTION CSS — sticky reveal pattern (DESKTOP + MOBILE/TABLET)
    ───────────────────────────────────────────────────────────────────────────
-   DESKTOP (≥1200 px): `z-index: 0` — FAQ (z-index:1 + ::before #f7f6f4) zakrywa
-   Final w strefie overlap. Scroll odkrywa Final spod FAQ gdy FAQ wyjeżdża w górę.
-   MOBILE/TABLET (<1200 px): `z-index: 1` — sticky reveal nie działa dobrze przy
-   dynamicznym address barze iOS Safari (100vh ≠ visualViewport). Dlatego na tych
-   breakpointach Final maluje się NAD FAQ w strefie overlap (dowiązanie z DOM order).
-   Silnik: FinalEngine.tsx używa `isMobile: tw<1200` jako progu — spójność z CSS.
+   `z-index: 0` na wszystkich breakpointach — FAQ (`#faq-section { z-index:1 }`
+   + `::before { background: #f7f6f4; z-index: 0 }`) zakrywa Final w strefie
+   overlap. Scroll odkrywa Final spod FAQ, gdy FAQ wyjeżdża w górę.
+   Mobile/tablet: ryzyko drobnego glitcha na iOS Safari przy zmianie address
+   baru (100vh vs visualViewport) jest OK — FAQ::before rozciąga się na pełną
+   wysokość sekcji i zakrywa Final do momentu faktycznego scroll-out FAQ.
+   Silnik: FinalEngine.tsx używa `isMobile: tw<1200` dla WebGL/form stack —
+   nie dotyczy stackingu z FAQ (ten jest w pełni CSS-owy).
    ─────────────────────────────────────────────────────────────────────────── */
 #final-section {
   position: relative;
   z-index: 0;
   margin-top: -100vh;
   background: #f7f6f4;
-}
-/* Mobile/tablet override — sprzężone z isMobile w FinalEngine.tsx (<1200 px) */
-@media (max-width: 1199px) {
-  #final-section {
-    z-index: 1;
-  }
 }
 /* Reset tylko pod WebGL — NIE #final-formCard (.ocf-root), bo zero padding = zniszczone style formularza */
 #final-section #final-scene,
