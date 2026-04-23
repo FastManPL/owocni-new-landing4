@@ -15,13 +15,22 @@ function KineticSectionOffPlaceholder() {
     <div
       id="kinetic-section"
       data-kinetic-section-disabled
-      aria-hidden={true}
       style={{
-        minHeight: '100vh',
-        pointerEvents: 'none',
-        contain: 'strict',
+        minHeight: '150vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        boxSizing: 'border-box',
+        padding: '1rem',
+        fontFamily: 'var(--font-brand, system-ui, sans-serif)',
+        fontSize: 'clamp(0.875rem, 2.5vw, 1.125rem)',
+        letterSpacing: '0.02em',
+        color: 'rgba(0,0,0,0.35)',
+        background: 'linear-gradient(180deg, rgba(247,246,244,0.98) 0%, rgba(235,232,226,0.55) 100%)',
       }}
-    />
+    >
+      --placeholder sekcja kinetic--
+    </div>
   );
 }
 
