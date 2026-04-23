@@ -234,7 +234,6 @@ function init(
             start: '60% bottom',
             end:   'center 30%',
             scrub: 0.6,
-            invalidateOnRefresh: true,
           }
         });
         gsapInstances.push(tl);

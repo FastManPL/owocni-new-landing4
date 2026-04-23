@@ -1,12 +1,11 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useRef } from 'react';
 import NextImage from 'next/image';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { startWarmVideoOnce } from '@/lib/warmVideo';
-import { scrollRuntime } from '@/lib/scrollRuntime';
 import './book-stats-section.css';
 
 /** GSAP ustawia podczas globalnego refresh(); wtedy pin mierzy timeline przez animation.render(0) — onUpdate scrub dałby klatkę 0. */
@@ -529,9 +528,8 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
       sectionST = bookST;
       _scrollEnabled = true;
 
-      // AUDIT-C6-04 (M3 follow-up): lokalny refresh jest wołany z useEffect dynamic-mount poniżej
-      // (post-settle). Nie duplikujemy tu — runBuild kończy się dokładnie gdy obrazy się załadowały,
-      // a broker scrollRuntime debounce'uje (120ms) multiple kolejkowane requestRefresh.
+      // Nie wywołujemy requestRefresh — globalny refresh przelicza ST we wszystkich sekcjach
+      // (m.in. fakty) i psuje animacje przy scrolle od góry. Pin/scrub book-stats działają bez tego.
     }
 
     /* ── ResizeObserver ── */
@@ -740,26 +738,6 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
 
 export function BookStatsSection() {
   const rootRef = useRef<HTMLElement | null>(null);
-
-  // AUDIT-C6-04 (M3): post-dynamic-mount refresh. BookStats jest ładowany przez
-  // next/dynamic (ssr: false) — jego mount przesuwa geometrię sąsiednich pinów (CaseStudies,
-  // Fakty). Broker scrollRuntime (debounce 120ms + 2 rAF + refresh(true)) jest
-  // bezpieczny: FaktyEngine H1 fix usunął unsafe `refresh(false)`, który wcześniej
-  // kolidował z tym patternem. Pattern zgodny z C6.3 (async boundary = React mount).
-  useEffect(() => {
-    scrollRuntime.requestRefresh('book-stats-mounted');
-    let id1 = 0;
-    let id2 = 0;
-    id1 = requestAnimationFrame(() => {
-      id2 = requestAnimationFrame(() => {
-        scrollRuntime.requestRefresh('book-stats-mounted-settle');
-      });
-    });
-    return () => {
-      if (id1) cancelAnimationFrame(id1);
-      if (id2) cancelAnimationFrame(id2);
-    };
-  }, []);
 
   useGSAP(() => {
     gsap.registerPlugin(ScrollTrigger); // ← TUTAJ, nie na top-level (GSAP-SSR-01)

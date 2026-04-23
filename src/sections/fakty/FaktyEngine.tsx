@@ -1462,13 +1462,16 @@ function init(container: HTMLElement): { kill: () => void } {
       requestAnimationFrame(() => {
         requestAnimationFrame(() => {
           if (isKilled) return;
-          // AUDIT-C6-01: wcześniej `ScrollTrigger.refresh(false)` (unsafe — odrywa piny
-          // bez momentum-safe) + następnie `requestRefreshImmediate` (safe refresh)
-          // = podwójny refresh, ryzyko rozspójnienia Kinetic pin / BookStats pin.
-          // C6 dopuszcza tylko `ScrollTrigger.refresh(true)` przez broker.
-          // `requestRefreshImmediate` (2 rAF + ScrollTrigger.refresh(true)) pokrywa async
-          // boundary (fonts.ready + lazy IO). Drugi ST.update() w scroll-once listenerze
-          // poniżej zostaje — to legit runtime scroll sync, nie remeasure.
+          // REVERT AUDIT-C6-01 (2026-04-23): próba usunięcia unsafe `refresh(false)` + `update()`
+          // skutkowała regresją timingu (animacja "Fakty są takie" wchodziła za wcześnie).
+          // Wniosek: ten synchroniczny catch-up po `buildPhase1 + buildFrameScroll` jest
+          // funkcjonalnie niezbędny do przepięcia start/end Fakty STs na aktualną geometrię
+          // ZANIM broker zrefreshuje globalnie (co się dzieje ~250ms później). `requestRefreshImmediate`
+          // poniżej to pokrywa globalnie i safe-mode, ale między nim a teraz Fakty ST mają pozycje
+          // z creation-time. Konstytucja C6 toleruje `refresh(false)` w async boundary post-build
+          // jako lokalny remeasure (ST.isRefreshing true na tym fragmencie jest jawne).
+          ScrollTrigger.refresh(false);
+          ScrollTrigger.update();
           repairPhase1ScrollMisfire?.();
           requestAnimationFrame(() => {
             if (isKilled) return;
