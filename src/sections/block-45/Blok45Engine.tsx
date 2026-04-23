@@ -258,22 +258,46 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       }
 
       // FAKTY-EARLY-FIRE-02: Guard przeciwko race Kinetic pinSpacer ↔ wave ST positions.
-      // Jeśli `#kinetic-section` jest w DOM (SHOW_KINETIC_SECTION=true), ale KineticEngine jeszcze
-      // nie emitował `kinetic-engine-ready` (pinSpacer nie utworzony), wave ST liczy start/end
-      // na layoucie BEZ Kinetic pinSpacer (~1500 px za wysoko) → onEnter fires gdy user jest przy
-      // Fakty. W tej sytuacji NIE commitujemy wave (abort w applyWaveVisIfAllowed) — czekamy aż
-      // KineticEngine dispatch-uje event, który wymusza refresh ST z poprawnymi pozycjami; dopiero
-      // wtedy kolejny legit onEnter przy Blok45 pokaże falę.
-      // Sprawdzenie przez `__kineticEngineReady` (ustawiany przed dispatch w KineticEngine) +
-      // listener są idempotent — pokrywamy wariant, gdy Blok45 init odpala się PO emisji eventu.
+      // Jeśli `#kinetic-section` jest w DOM (SHOW_KINETIC_SECTION=true), ale Kinetic pin jeszcze
+      // nie istnieje w layoucie (brak pinSpacera), wave ST liczy start/end BEZ ~1500 px pinu →
+      // onEnter firuje gdy user jest przy BookStats/Fakty. W tej sytuacji NIE commitujemy wave
+      // (abort w applyWaveVisIfAllowed); po faktycznym refresh z poprawnymi pozycjami kolejny
+      // legit onEnter przy Blok45 pokaże falę.
+      //
+      // KLUCZOWE: flag `kineticEngineReady=true` ustawiamy DOPIERO po rzeczywistym zakończeniu
+      // `ScrollTrigger.refresh` (event "refresh"), NIE od razu przy odbiorze `kinetic-engine-ready`.
+      // `scrollRuntime.requestRefreshImmediate()` wywołane w useEffect-listenerze ma built-in
+      // 2 rAF delay (~16–32 ms). Gdyby flag był ustawiony od razu, wave ST miałby nadal stare
+      // pozycje, guard byłby wyłączony, a onEnter w tym oknie pokazałby falę w złym miejscu.
+      // Detekcja aktualnego stanu bez race: jeśli Kinetic pinSpacer (GSAP wrapper klasy
+      // `.pin-spacer`) owija `#kinetic-section` → pin już w layoucie → ready.
+      function kineticPinInLayout(): boolean {
+        var ks = typeof document !== 'undefined' ? document.getElementById('kinetic-section') : null;
+        if (!ks) return false;
+        var parent = ks.parentElement;
+        return !!parent && parent.classList.contains('pin-spacer');
+      }
       var kineticExpected = typeof document !== 'undefined' && !!document.getElementById('kinetic-section');
-      var kineticEngineReady = kineticExpected
-        ? ((window as unknown as { __kineticEngineReady?: boolean }).__kineticEngineReady === true)
-        : true;
-      function onKineticEngineReadyForWave() { kineticEngineReady = true; }
+      var kineticEngineReady = kineticExpected ? kineticPinInLayout() : true;
+      function markKineticReadyAfterRefresh() {
+        // DOM sanity check: jeśli pin-spacer nie istnieje, nie ustawiamy flagi (kolejny refresh
+        // go załapie). To chroni przed spurious refresh eventami PRZED faktycznym pinem.
+        if (kineticPinInLayout()) {
+          kineticEngineReady = true;
+          ScrollTrigger.removeEventListener('refresh', markKineticReadyAfterRefresh);
+        }
+      }
+      function onKineticEngineReadyForWave() {
+        // Gate flag na rzeczywisty refresh (po 2 rAF `requestRefreshImmediate` + recompute pozycji).
+        // addEventListener("refresh") firuje cb PO każdym globalnym `ScrollTrigger.refresh()`.
+        ScrollTrigger.addEventListener('refresh', markKineticReadyAfterRefresh);
+      }
       if (kineticExpected && !kineticEngineReady) {
         window.addEventListener('kinetic-engine-ready', onKineticEngineReadyForWave);
-        cleanups.push(function() { window.removeEventListener('kinetic-engine-ready', onKineticEngineReadyForWave); });
+        cleanups.push(function() {
+          window.removeEventListener('kinetic-engine-ready', onKineticEngineReadyForWave);
+          ScrollTrigger.removeEventListener('refresh', markKineticReadyAfterRefresh);
+        });
       }
 
       // Jedna kurtyna na „przejście”: waveCommittedOnce; reset po #fakty-section LUB po powrocie na Kinetic
@@ -326,6 +350,14 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         }
       }
 
+      // FAKTY-EARLY-FIRE-02: single-point guard dla wszystkich callbacków wave ST. Dopóki
+      // Kinetic pin nie jest w layoucie, WSZYSTKIE eventy wave ST bazują na stale pozycjach
+      // (pre-pinSpacer) i nie wolno im modyfikować stanu — w szczególności `waveRevealAllowed`
+      // (spurious onLeave ustawiał go na false, blokując wave po rzeczywistym refresh + scrollu
+      // w dół do Blok45).
+      function waveStateStale(): boolean {
+        return kineticExpected && !kineticEngineReady;
+      }
       // Stack: #bridge-wrapper z-index 10, #blok-4-5-section 24 (36 gdy wave), .blok-4-5-wave-wrap 14, intro 50+.
       var stWaveVis = ScrollTrigger.create({
         trigger: waveDriveEl,
@@ -334,19 +366,23 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         end: waveScrollEnd,
         invalidateOnRefresh: true,
         onEnter: function() {
+          if (waveStateStale()) return;
           syncWaveRevealAllowed();
           applyWaveVisIfAllowed(true);
         },
         onLeave: function() {
+          if (waveStateStale()) return;
           waveRevealAllowed = false;
           applyWaveVisIfAllowed(false);
         },
         // Scroll w górę w Blok45 — bez resetu z Fakty kurtyna się nie włączy (waveCommittedOnce).
         onEnterBack: function() {
+          if (waveStateStale()) return;
           syncWaveRevealAllowed();
           applyWaveVisIfAllowed(false);
         },
         onLeaveBack: function() {
+          if (waveStateStale()) return;
           waveRevealAllowed = false;
           applyWaveVisIfAllowed(false);
         }
