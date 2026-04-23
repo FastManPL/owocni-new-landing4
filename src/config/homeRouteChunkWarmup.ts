@@ -21,7 +21,10 @@ export const homeRouteChunkWarmupEntries: WarmupEntry[] = [
   { policy: 'idle', import: () => import('@/sections/case-study2/CaseStudy2Section') },
   { policy: 'idle', import: () => import('@/sections/case-studies/CaseStudiesSection') },
   { policy: 'idle', import: () => import('@/app/OnasSectionWrapper') },
-  { policy: 'idle', import: () => import('@/app/CyfroweWzrostySectionWrapper') },
+  // Faza 1.2 split: wrapper jest lekki (SSR'd tiles + nav + stage). Warmup celuje
+  // w chunk engine-u (`ssr: false`, ~1100 LoC + GSAP + ScrollToPlugin + spring
+  // physics ticker) — ten faktycznie obciąża pasmo.
+  { policy: 'idle', import: () => import('@/sections/cyfrowe-wzrosty/cyfrowewzrostyengine') },
   { policy: 'idle', import: () => import('@/sections/FAQ/FAQSection') },
   { policy: 'idle', import: () => import('@/sections/footer/FinalSection') },
 ];

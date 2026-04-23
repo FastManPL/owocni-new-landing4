@@ -89,11 +89,15 @@ export const SECTION_MANIFEST = {
 
   perf: {
     dynamicImport: true,
-    // Typ B + 901 linii JS + spring physics ticker = ciężka sekcja.
-    // SectionsClient: next/dynamic(..., { ssr: false })
-    clientOnly: false,
-    // GSAP + ScrollToPlugin nie mają window side-effects przy statycznym imporcie.
-    // dynamicImport wystarczy (lazy load), nie potrzeba ssr:false na poziomie GSAP-SSR-02.
+    // Typ B + ~1100 linii JS + spring physics ticker = ciężka sekcja.
+    // Faza 1.2 (B1.1 split, Prompt 3): wrapper `CyfroweWzrostySectionWrapper`
+    // renderuje statyczny SSR markup (tiles, ribbons, H3, videos preload=none),
+    // engine ładuje się przez `next/dynamic({ ssr: false })` + idle warmup.
+    // Hydracja ~1100 L nie obciąża first-load krytycznej ścieżki.
+    clientOnly: true,
+    // Po splicie: engine JEST `use client` + `ssr: false` → chunk odzielony od
+    // initial bundle, ładuje się po idle albo mount sekcji. SEO (4× H3 + .tile-body +
+    // ribbons + label) przeniesione do wrappera — widoczne w SSR HTML bez JS.
 
     isHero: false,
     gracefulDegradation: false,
