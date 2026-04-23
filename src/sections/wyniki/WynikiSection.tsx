@@ -8,6 +8,7 @@ import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { scrollRuntime } from '@/lib/scrollRuntime';
+import { startWarmVideoOnce } from '@/lib/warmVideo';
 import imgTlo from './TLO-Monitor.jpg';
 import imgMonitor from './Monitor1.webp';
 import './wyniki-section.css';
@@ -79,47 +80,23 @@ function init(
       document.addEventListener('visibilitychange', onVisChange);
       cleanups.push(() => document.removeEventListener('visibilitychange', onVisChange));
 
-      /* ═══ MOCKUP VIDEO — WARM gating (G2/G3) ═════════════════════════
-         Video ma `preload="none"` w HTML → zero fetchu na HTML parse.
-         Dedykowany IO (rootMargin ~400px) triggeruje .load() + .play() gdy
-         sekcja zbliża się do viewportu. pauseHooks/resumeHooks (document.hidden
-         + _factoryIo pause) sterują playback po starcie. */
+      /* ═══ MOCKUP VIDEO — WARM gating (G2/G3/G11) via warmVideo helper ═══
+         Video ma `preload="none"` + `data-autoplay` dla intent flagi.
+         warmVideo helper zapewnia:
+           - Tier 0 → no-op (G11, poster-like static: <Image> monitor/tlo pod spodem)
+           - IO (rootMargin 400px) → pierwszy load+play near-viewport
+           - visibilitychange pause/resume (document.hidden)
+         pauseHooks/resumeHooks (Factory IO) nadal sterują playback po starcie. */
       const mockupVideo = container.querySelector<HTMLVideoElement>('.mockup-video');
       const _mockupAllowAutoplay = mockupVideo?.dataset.autoplay === '1';
-      if (mockupVideo) {
-        let _mockupEverStarted = false;
-        const startMockupVideo = () => {
-          if (!_mockupAllowAutoplay) return;
-          if (document.hidden) return;
-          if (!_mockupEverStarted) {
-            _mockupEverStarted = true;
-            try { mockupVideo.preload = 'auto'; } catch {}
-            try { mockupVideo.loop = true; } catch {}
-            try { mockupVideo.load(); } catch {}
-          }
-          const p = mockupVideo.play();
-          if (p && typeof p.catch === 'function') p.catch(() => {});
-        };
-
-        /* One-shot IO: pierwszy start gdy sekcja near-viewport */
-        const _mockupStartIo = new IntersectionObserver((entries) => {
-          if (entries[0]?.isIntersecting) {
-            startMockupVideo();
-            _mockupStartIo.disconnect();
-          }
-        }, { rootMargin: '400px' });
-        _mockupStartIo.observe(container);
-        observers.push(_mockupStartIo);
-
-        pauseHooks.push(() => {
-          try { mockupVideo.pause(); } catch {}
+      if (mockupVideo && _mockupAllowAutoplay) {
+        const mockupHandle = startWarmVideoOnce(mockupVideo, {
+          rootMargin: '400px',
+          loop: true,
         });
-        resumeHooks.push(() => {
-          if (_mockupEverStarted) startMockupVideo();
-        });
-        cleanups.push(() => {
-          try { mockupVideo.pause(); } catch {}
-        });
+        pauseHooks.push(() => mockupHandle.pause());
+        resumeHooks.push(() => mockupHandle.start());
+        cleanups.push(() => mockupHandle.dispose());
       }
 
       // Wave click

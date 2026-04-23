@@ -3,11 +3,13 @@
 
 import { createElement, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
+import Image from 'next/image';
 import Script from 'next/script';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { scrollRuntime } from '@/lib/scrollRuntime';
+import { startWarmVideoOnce } from '@/lib/warmVideo';
 import './case-study-section.css';
 import { CENNIK_STRONY_URL } from '@/config/ctaUrls';
 
@@ -254,30 +256,34 @@ function init(
     }
   }
 
-  /* Video visibility gating (3B) */
-  if (bgVideo && 'IntersectionObserver' in window) {
-    var videoIO = new IntersectionObserver(function(entries) {
-      entries.forEach(function(e) {
-        if (e.isIntersecting) bgVideo.play().catch(function() {});
-        else bgVideo.pause();
-      });
-    }, { rootMargin: '200px' });
-    videoIO.observe(bgVideo);
-    observers.push(videoIO);   /* N4: tracked for kill() */
-
-    /* Video pause/resume hooks — koordynacja z Factory IO gating */
-    pauseHooks.push(function() { bgVideo.pause(); });
-    resumeHooks.push(function() { bgVideo.play().catch(function() {}); });
-    /* Explicit kill cleanup — pause only (src jest w statycznym HTML) */
-    cleanups.push(function() { bgVideo.pause(); });
+  /* ═══════════════════════════════════════════════════════════
+     WARM VIDEO GATING (G2/G3/G8/G11) — via warmVideo helper.
+     JSX: oba wideo mają `preload="none"`, brak `autoPlay`, brak `<video poster>`.
+       - bgVideo (mockup Parkapp.mp4): widoczny przez cutout laptopa; gdy nie gra,
+         user widzi mockup-tlo (TLO-Portfolio) przez przezroczysty obszar ekranu.
+         Brak dedykowanej overlay — poster-role pełni sąsiedni mockup-tlo.
+       - thumbVideo (PLAY-NEW.mp4, lewy panel): dedykowana overlay `.case-study-vthumb-cover`
+         (TLO-Portfolio) z fade-out na event `playing` (G8 zero black-flash).
+     Oba wideo koordynują się z Factory IO (pauseHooks/resumeHooks) + własnym IO (600 px).
+     ═══════════════════════════════════════════════════════════ */
+  if (bgVideo) {
+    var bgHandle = startWarmVideoOnce(bgVideo, { rootMargin: '600px', loop: true });
+    pauseHooks.push(function() { bgHandle.pause(); });
+    resumeHooks.push(function() { bgHandle.start(); });
+    cleanups.push(function() { bgHandle.dispose(); });
   }
 
-  /* ─── THUMB VIDEO (PLAY-NEW.mp4, lewy panel) — pause/resume/kill ─── */
   var thumbVideo = $('.case-study-vthumb-face video');
+  var thumbCover = $('.case-study-vthumb-cover');
   if (thumbVideo) {
-    pauseHooks.push(function() { thumbVideo.pause(); });
-    resumeHooks.push(function() { thumbVideo.play().catch(function() {}); });
-    cleanups.push(function() { thumbVideo.pause(); });
+    var thumbHandle = startWarmVideoOnce(thumbVideo, {
+      rootMargin: '600px',
+      loop: true,
+      onPlaying: function() { if (thumbCover) thumbCover.classList.add('is-hidden'); },
+    });
+    pauseHooks.push(function() { thumbHandle.pause(); });
+    resumeHooks.push(function() { thumbHandle.start(); });
+    cleanups.push(function() { thumbHandle.dispose(); });
   }
 
   /* ═══ PLAY BUTTON + VIDEO POPUP (merged into init — N2) ════════ */
@@ -719,10 +725,22 @@ export function CaseStudy2Section() {
             <span className="case-study-sub-light" style={{ fontStyle: 'normal' }}>(1 min) – Słowami właściciela</span>
           </p>
 
-          {/* Video — absolute, pętla, nie rozpycha layoutu */}
+          {/* Video — absolute, pętla, nie rozpycha layoutu.
+               G8 Cover Image Pattern: poster jako <Image> overlay; brak natywnego `<video poster>`.
+               G2/G3 WARM: preload=none + brak autoPlay (start przez warmVideo helper, IO 600 px).
+               G11: Tier 0 → overlay zostaje jako poster-only. */}
           <div className="case-study-video-thumb" id="case-study-video-thumb">
             <div className="case-study-vthumb-face">
-              <video src="/wyniki/PLAY-NEW.mp4" poster="/wyniki/TLO-Portfolio.webp" autoPlay loop muted playsInline preload="auto"></video>
+              <Image
+                src="/wyniki/TLO-Portfolio.webp"
+                alt=""
+                fill
+                className="case-study-vthumb-cover"
+                sizes="(max-width: 720px) 100vw, 40vw"
+                priority={false}
+                aria-hidden
+              />
+              <video src="/wyniki/PLAY-NEW.mp4" muted playsInline preload="none"></video>
             </div>
           </div>
 
@@ -750,21 +768,26 @@ export function CaseStudy2Section() {
                 <picture>
                   <source srcSet="/wyniki/TLO-Portfolio.avif" type="image/avif" />
                   <source srcSet="/wyniki/TLO-Portfolio.webp" type="image/webp" />
+                  {/* G2: WARM — sekcja ~8 pozycji poniżej fold, nie może konkurować z hero LCP.
+                       `loading="lazy"`, brak `fetchPriority="high"`. */}
                   <img className="mockup-tlo" id="case-study-tlo"
                        src="/wyniki/TLO-Portfolio.webp"
                        alt="Tło portfolio"
-                       loading="eager" decoding="async" fetchPriority="high"
+                       loading="lazy" decoding="async"
                        onError={(e) => e.currentTarget.classList.add('load-failed')}
                        draggable="false" />
                 </picture>
                 {/* z:2 — Device wrapper: brightness() na video+laptop razem */}
                 <div className="mockup-device-wrapper" id="case-study-device-wrapper">
-                  {/* Video (pod laptopem, na ekranie) */}
+                  {/* Video (pod laptopem, na ekranie).
+                       G8: brak natywnego `<video poster>` — użytkownik do czasu odtworzenia
+                       widzi przez transparentny cutout ekranu laptopa obraz mockup-tlo
+                       (TLO-Portfolio), co pełni rolę ciągłego poster-fallbacku (brak black flash).
+                       G2/G3 WARM: preload=none + brak autoPlay; start przez warmVideo (IO 600 px). */}
                   <video className="mockup-video" id="case-study-screen-video"
                          src="/wyniki/Parkapp.mp4"
-                         poster="/wyniki/TLO-Portfolio.webp"
-                         preload="auto"
-                         autoPlay loop muted playsInline
+                         preload="none"
+                         muted playsInline
                          disablePictureInPicture></video>
                   {/* Laptop frame (nad video) */}
                   <picture>

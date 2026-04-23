@@ -119,12 +119,34 @@
   aspect-ratio: 606 / 456;
   background: linear-gradient(135deg, #e8e4e0 0%, #ddd8d2 60%, #d5cfc8 100%);
 }
-/* Wrapper: obcina 1px od dołu (czarna linia z dekodowania wideo obok książki) */
+/* Wrapper: obcina 1px od dołu (czarna linia z dekodowania wideo obok książki).
+   G8 Cover Image Pattern: position:relative, żeby <Image fill> overlay (.cs-video-cover)
+   mogł leżeć absolute nad <video> i faderem na event `playing`. */
 #book-stats-section .cs-video-clip {
   width: 100%;
   overflow: hidden;
   line-height: 0;
   aspect-ratio: 606 / 456;
+  position: relative;
+}
+
+/* G8: overlay "poster" — widoczny do momentu video playing. */
+#book-stats-section .cs-video-clip .cs-video-cover {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 2;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  will-change: opacity;
+  /* Obcięcie 1px od dołu — tak samo jak na wideo (spójność z clip-path video). */
+  clip-path: inset(0 0 1px 0);
+  -webkit-clip-path: inset(0 0 1px 0);
+}
+#book-stats-section .cs-video-clip .cs-video-cover.is-hidden {
+  opacity: 0;
 }
 
 /* Video w lewej kolumnie — te same wymiary i flow co .cs-img-placeholder (jak w PREVIEW) */

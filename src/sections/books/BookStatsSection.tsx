@@ -1,9 +1,11 @@
 'use client';
 
 import { useRef } from 'react';
+import NextImage from 'next/image';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { startWarmVideoOnce } from '@/lib/warmVideo';
 import './book-stats-section.css';
 
 /** GSAP ustawia podczas globalnego refresh(); wtedy pin mierzy timeline przez animation.render(0) — onUpdate scrub dałby klatkę 0. */
@@ -44,52 +46,22 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
   let sectionST: ScrollTrigger | null = null;
 
   /* ========================================================
-     CS-VIDEO — WARM gating (G2/G3)
-     HTML: preload="none", brak autoPlay. Tu: dedykowany IO (rootMargin
-     600px) triggeruje pierwszy .load() + .play() dopiero gdy sekcja
-     zbliża się do viewportu. Dzięki temu ~730 KB mp4 + 128 KB poster
-     nie konkurują z planem LCP hero.
+     CS-VIDEO — WARM gating (G2/G3/G8/G11)
+     HTML: `preload="none"`, brak autoPlay. Start przez warmVideo helper:
+       - IO (rootMargin 600px) → first load()+play()
+       - Tier 0 (G11) → noop (overlay poster zostaje jako obraz jedyny)
+       - onPlaying → overlay cover (next/image) dostaje `.is-hidden` → opacity 0 (G8)
      ======================================================== */
   (function csVideoGating() {
     const csVideo = container.querySelector<HTMLVideoElement>('.cs-video');
+    const csCover = container.querySelector<HTMLElement>('.cs-video-cover');
     if (!csVideo) return;
-
-    let everStarted = false;
-    const canPlay = () =>
-      !document.hidden &&
-      !window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-
-    const startCsVideo = () => {
-      if (!canPlay()) return;
-      if (!everStarted) {
-        everStarted = true;
-        try { csVideo.preload = 'auto'; } catch {}
-        try { csVideo.loop = true; } catch {}
-        try { csVideo.load(); } catch {}
-      }
-      const p = csVideo.play();
-      if (p && typeof p.catch === 'function') p.catch(() => {});
-    };
-
-    const startIo = new IntersectionObserver((entries) => {
-      if (entries[0]?.isIntersecting) {
-        startCsVideo();
-        startIo.disconnect();
-      }
-    }, { rootMargin: '600px 0px 600px 0px' });
-    startIo.observe(csVideo);
-    observers.push(startIo);
-
-    const onVis = () => {
-      if (!everStarted) return;
-      if (document.hidden) { try { csVideo.pause(); } catch {} }
-      else { startCsVideo(); }
-    };
-    document.addEventListener('visibilitychange', onVis);
-    cleanups.push(() => {
-      document.removeEventListener('visibilitychange', onVis);
-      try { csVideo.pause(); } catch {}
+    const handle = startWarmVideoOnce(csVideo, {
+      rootMargin: '600px',
+      loop: true,
+      onPlaying: () => { csCover?.classList.add('is-hidden'); },
     });
+    cleanups.push(() => handle.dispose());
   })();
 
   /* ========================================================
@@ -798,13 +770,23 @@ export function BookStatsSection() {
         <div className="cs-floor cs-floor--images">
           <div className="cs-floor__left">
             <div className="cs-video-clip">
-              {/* G2/G3: WARM — preload=none + brak atrybutu autoPlay/loop w HTML.
-                   Browser nie pobiera metadata na HTML parse (asset far-below-fold).
-                   Start przez dedykowany IO (rootMargin 600px) w init(). */}
+              {/* G8 Cover Image Pattern: poster jako osobny <Image> overlay nad <video>.
+                   - Poster pokazuje się do momentu event `playing` (nie `canplay`/`loadeddata`).
+                   - Brak natywnego `<video poster=...>` → zero "black flash" na iOS (G8).
+                   - G2/G3 WARM: preload=none + brak autoPlay w HTML; start przez warmVideo (IO 600px).
+                   - G11: Tier 0 (save-data/2g/<4 cores) → video zostaje zgaszone, overlay = poster only. */}
+              <NextImage
+                src="/books/Statystyki-stron.webp"
+                alt=""
+                fill
+                className="cs-video-cover"
+                sizes="(max-width: 720px) 100vw, 50vw"
+                priority={false}
+                aria-hidden
+              />
               <video
                 className="cs-img--stats cs-video"
                 src="/books/Kalendarz_1-mute-video.mp4"
-                poster="/books/Statystyki-stron.webp"
                 playsInline
                 muted
                 preload="none"

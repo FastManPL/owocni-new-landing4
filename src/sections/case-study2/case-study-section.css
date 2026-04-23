@@ -698,13 +698,31 @@
       width: clamp(160px, 18vw, 280px);
       overflow: hidden;
       flex-shrink: 0;
+      position: relative;
+      aspect-ratio: 16 / 9;
     }
     #case-study-section .case-study-vthumb-face video {
       width: 100%;
-      height: auto;
+      height: 100%;
       display: block;
       pointer-events: none;
       background: #f7f6f4;
+      object-fit: cover;
+    }
+    /* G8 Cover Image Pattern: poster overlay jako <Image fill>. */
+    #case-study-section .case-study-vthumb-face .case-study-vthumb-cover {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      z-index: 2;
+      pointer-events: none;
+      transition: opacity 0.3s ease;
+      will-change: opacity;
+    }
+    #case-study-section .case-study-vthumb-face .case-study-vthumb-cover.is-hidden {
+      opacity: 0;
     }
 
     /* ─── VIDEO THUMB — fluid pozycje (dane: 375/500/530/758/1011/1310/3440) ─ */

@@ -2250,13 +2250,16 @@ export function GwarancjaSection() {
     <section id="gwarancja-section" className="lens-section" ref={rootRef}>
       <div className="lens-scene">
         <div id="gwarancja-container">
+          {/* G2/G3 WARM: preload="none" — ~730 KB mp4 nie konkuruje z hero LCP.
+               JS w init() wywołuje `.load()` + `.play()` wyłącznie gdy sekcja
+               zbliża się do viewportu (istniejący mechanizm `loadBottomVideo`). */}
           <video
             id="gwarancja-layer-bottom"
             src="/videos/gwarancja/Strony-Gwarancja-MINIFILE.mp4"
             muted
             playsInline
             loop
-            preload="metadata"
+            preload="none"
             aria-hidden
           />
 

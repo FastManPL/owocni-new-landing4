@@ -8,6 +8,7 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { scrollRuntime } from '@/lib/scrollRuntime';
 import { getAssetPath } from '@/lib/assetPath';
+import { startWarmVideosOnce } from '@/lib/warmVideo';
 import './case-studies-section.css';
 
 // ⚠️ GSAP-SSR-01: ZAKAZ gsap.registerPlugin() na module top-level.
@@ -20,6 +21,13 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     var _stScroller = document.body;
     function _addWL(e,f,o){window.addEventListener(e,f,o);_cleanups.push(function(){window.removeEventListener(e,f,o);});}
     _addWL('resize',function(){_isMobile=window.innerWidth<=640;});
+
+    /* ═══ WARM VIDEO GATING (G2/G3/G11) ═══
+       4× tile videos: preload="none", brak autoPlay. warmVideo helper
+       gated przez IO (rootMargin 600 px) + Tier 0 (zero autoplay) + visibilitychange. */
+    var _warmVideos = Array.from(container.querySelectorAll('video[data-warm-video="1"]'));
+    var _warmVideoHandle = startWarmVideosOnce(_warmVideos, { rootMargin: '600px', loop: true });
+    _cleanups.push(function() { _warmVideoHandle.dispose(); });
 
     /* KONIEC GLOBAL SHELL */
 
@@ -609,14 +617,14 @@ export function CaseStudiesTilesEngine() {
           <div className="cs-tile1-banach-desktop" aria-hidden="true"><PictureAsset stem="/assets/banach-1wszyi-planFIN-1" alt="" width={1400} height={803} sizes="(max-width: 640px) 100vw, 55vw" loading="lazy" /></div>
           <div className="cs-tile1-consulting">
             <PictureAsset stem="/assets/tworzenie-strony-konsulting" alt="" width={350} height={410} sizes="(max-width: 640px) 50vw, 25vw" loading="lazy" />
-            <video className="cs-vid cs-vid--1" src={getAssetPath('/assets/portfolios/strona-pattern1.mp4')} autoPlay loop playsInline muted></video>
-            <video className="cs-vid cs-vid--2" src={getAssetPath('/assets/portfolios/strona-pattern2.mp4')} autoPlay loop playsInline muted></video>
-            <video className="cs-vid cs-vid--3" src={getAssetPath('/assets/portfolios/strona-pattern3.mp4')} autoPlay loop playsInline muted></video>
+            <video className="cs-vid cs-vid--1" src={getAssetPath('/assets/portfolios/strona-pattern1.mp4')} playsInline muted preload="none" data-warm-video="1"></video>
+            <video className="cs-vid cs-vid--2" src={getAssetPath('/assets/portfolios/strona-pattern2.mp4')} playsInline muted preload="none" data-warm-video="1"></video>
+            <video className="cs-vid cs-vid--3" src={getAssetPath('/assets/portfolios/strona-pattern3.mp4')} playsInline muted preload="none" data-warm-video="1"></video>
           </div>
           <div className="cs-tile1-finanse"><PictureAsset stem="/assets/tworzenie-strony-finanse" alt="" width={350} height={295} sizes="(max-width: 640px) 50vw, 25vw" loading="lazy" /></div>
         </div>
       </div>
-      <video className="cs-tile1-phone-video" src={getAssetPath('/assets/portfolios/mobile-design.mp4')} autoPlay loop playsInline muted></video>
+      <video className="cs-tile1-phone-video" src={getAssetPath('/assets/portfolios/mobile-design.mp4')} playsInline muted preload="none" data-warm-video="1"></video>
     </div>
   </section>
   <div className="scroll-spacer"></div>

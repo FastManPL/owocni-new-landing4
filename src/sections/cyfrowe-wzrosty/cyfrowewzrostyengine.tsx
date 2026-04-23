@@ -6,6 +6,7 @@ import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollToPlugin } from 'gsap/ScrollToPlugin';
 import { scrollRuntime } from '@/lib/scrollRuntime';
+import { startWarmVideosOnce } from '@/lib/warmVideo';
 import './cyfrowe-wzrosty-section.css';
 
 /** Assety z karuzeli benefits (landing2) — mapowanie wg briefu klienta. */
@@ -556,6 +557,19 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       cleanups.push(function() { tile.removeEventListener('mouseleave', onTileLeave); });
     }
   });
+
+  // ═══════════════════════════════════════════════════════════════
+  // WARM VIDEO GATING (G2/G3/G11) — 7× tile videos
+  // HTML: preload="none", brak autoPlay. warmVideo helper:
+  //   - IO (rootMargin 600 px) → pierwszy load()+play() near-viewport
+  //   - Tier 0 (G11) → noop (video zostaje puste — tile pokazuje statyczny stan)
+  //   - visibilitychange pause/resume
+  //   - `onVisChange` (section-level) zatrzymuje video przez pause() helpera,
+  //     bo helper wewnętrznie podtrzymuje własny visibilitychange.
+  // ═══════════════════════════════════════════════════════════════
+  var warmVideos = Array.from(container.querySelectorAll<HTMLVideoElement>('video[data-warm-video="1"]'));
+  var warmVideoHandle = startWarmVideosOnce(warmVideos, { rootMargin: '600px', loop: true });
+  cleanups.push(function() { warmVideoHandle.dispose(); });
 
   // ═══════════════════════════════════════════════════════════════
   // INIT GEOMETRY
@@ -1112,21 +1126,19 @@ export default function CyfroweWzrostyEngine() {
                 <div className="tile-media-secondary tile-media-secondary--etap01">
                   <video
                     src={`${CW_TILE_ASSETS}/konwersja-strony2.mp4`}
-                    autoPlay
                     muted
-                    loop
                     playsInline
-                    preload="metadata"
+                    preload="none"
+                    data-warm-video="1"
                   />
                 </div>
                 <div className="tile-media-main">
                   <video
                     src={`${CW_TILE_ASSETS}/Copywriting.mp4`}
-                    autoPlay
                     muted
-                    loop
                     playsInline
-                    preload="metadata"
+                    preload="none"
+                    data-warm-video="1"
                     style={{
                       WebkitMaskImage: `url(${CW_TILE_ASSETS}/maska_carreySV.svg)`,
                       maskImage: `url(${CW_TILE_ASSETS}/maska_carreySV.svg)`,
@@ -1152,21 +1164,19 @@ export default function CyfroweWzrostyEngine() {
                 <div className="tile-media-secondary tile-media-secondary--etap02">
                   <video
                     src={`${CW_TILE_ASSETS}/nr1-strony2.mp4`}
-                    autoPlay
                     muted
-                    loop
                     playsInline
-                    preload="metadata"
+                    preload="none"
+                    data-warm-video="1"
                   />
                 </div>
                 <div className="tile-media-main">
                   <video
                     src={`${CW_TILE_ASSETS}/LogoIdentyfikacja.mp4`}
-                    autoPlay
                     muted
-                    loop
                     playsInline
-                    preload="metadata"
+                    preload="none"
+                    data-warm-video="1"
                     style={{
                       WebkitMaskImage: `url(${CW_TILE_ASSETS}/maska_dicaprioSV.svg)`,
                       maskImage: `url(${CW_TILE_ASSETS}/maska_dicaprioSV.svg)`,
@@ -1192,11 +1202,10 @@ export default function CyfroweWzrostyEngine() {
                 <div className="tile-media-float tile-media-float--etap03">
                   <video
                     src={`${CW_TILE_ASSETS}/optymalne-strony3.mp4`}
-                    autoPlay
                     muted
-                    loop
                     playsInline
-                    preload="metadata"
+                    preload="none"
+                    data-warm-video="1"
                   />
                 </div>
                 <div className="tile-media-bg">
@@ -1227,21 +1236,19 @@ export default function CyfroweWzrostyEngine() {
                 <div className="tile-media-secondary tile-media-secondary--etap04">
                   <video
                     src={`${CW_TILE_ASSETS}/klient-strony2.mp4`}
-                    autoPlay
                     muted
-                    loop
                     playsInline
-                    preload="metadata"
+                    preload="none"
+                    data-warm-video="1"
                   />
                 </div>
                 <div className="tile-media-main">
                   <video
                     src={`${CW_TILE_ASSETS}/Konwersja.mp4`}
-                    autoPlay
                     muted
-                    loop
                     playsInline
-                    preload="metadata"
+                    preload="none"
+                    data-warm-video="1"
                     style={{
                       WebkitMaskImage: `url(${CW_TILE_ASSETS}/maska_ziomkiSV.svg)`,
                       maskImage: `url(${CW_TILE_ASSETS}/maska_ziomkiSV.svg)`,
