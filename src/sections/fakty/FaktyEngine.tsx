@@ -1498,19 +1498,19 @@ function init(container: HTMLElement): { kill: () => void } {
       setupVideoFill();
       applyFrame(0);
       preloadRemainingFrames();
-      // Lazy ST: preemptive rootMargin — tworzymy ST zanim sekcja fizycznie wejdzie w viewport.
-      // FAKTY-EARLY-FIRE-01: przy szybkim scrollu z góry (lub wolnym fonts.ready / frame 0 preload)
-      // 2×rAF + Lenis sync potrzebne do runBuild() powodowały, że ST powstawały gdy user był już
-      // past `row1 center bottom` → scrub snapował progress=1 → "Fakty są takie" pokazywały się
-      // od razu w finalnym stanie. 500 px preload zone (~½ typowego vh przy szybkim scrollu)
-      // daje ST czas na init przed wejściem row1 w strefę animacji. Fallback skrócony z 1200
-      // do 600 ms — stary timeout był legacy dla scroll-top scenariusza, teraz jest gated rAF-ami
-      // w runBuild() tak czy inaczej.
+      // Lazy ST: wejście sekcji w viewport albo fallback 1,2 s.
+      // FAKTY-EARLY-FIRE-01 (revert): preemptive rootMargin 500 px powodowało, że runBuild() —
+      // zawierający globalne `ScrollTrigger.refresh(false)` + `requestRefreshImmediate()` — odpalał
+      // się zanim Kinetic pin-spacer trafił do layoutu. Wave ST w Blok45 dostawał w tym momencie
+      // stale pozycje (pre-pinSpacer) i uruchamiał się przy BookStats/Fakty. Fakty misfire jest
+      // intermittent ("czasem"), wave regres był częsty ("najczęściej") — priorytet wygrywa
+      // stabilność wave. Fakty misfire obsłużony przez zachowane usunięcie `y > 200` guardu
+      // w `repairPhase1ScrollMisfire` + skrócony timeout 600 ms.
       lazyStObserver = new IntersectionObserver(
         (entries) => {
           if (entries[0]?.isIntersecting) maybeCreateScrollTriggers();
         },
-        { root: null, rootMargin: "500px 0px 500px 0px", threshold: 0 },
+        { root: null, rootMargin: "0px", threshold: 0 },
       );
       lazyStObserver.observe(container);
       observers.push(lazyStObserver);
