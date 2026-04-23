@@ -1560,6 +1560,23 @@ export default function Blok45Engine() {
   }, []);
 
   /**
+   * KINETIC-BLOK45-RACE-01: jeśli Blok45 mount wyprzedzi Kinetic (race od `next/dynamic ssr:false`),
+   * wave ScrollTrigger jest utworzony z pozycją `#blok-4-5-block-4` liczoną BEZ Kinetic pinSpacer
+   * (~1500px za wysoko) → wave.start jest obliczone w obrębie Fakty section → wave reveal odpala się
+   * podczas wchodzenia w Fakty zamiast w Blok45. Kinetic mount emits `kinetic-engine-ready` po
+   * utworzeniu pinSpacer; wymuszamy natychmiastowy refresh żeby GSAP przeliczył pozycje WSZYSTKICH
+   * ST (włącznie z wave) z poprawnym layoutem. `requestRefreshImmediate` ma built-in 2 rAF chain
+   * przed właściwym `ScrollTrigger.refresh(true)` — bezpieczny względem ST tick.
+   */
+  useEffect(() => {
+    const onKineticReady = () => {
+      scrollRuntime.requestRefreshImmediate();
+    };
+    window.addEventListener('kinetic-engine-ready', onKineticReady);
+    return () => window.removeEventListener('kinetic-engine-ready', onKineticReady);
+  }, []);
+
+  /**
    * html.kinetic-past: (1) po domknięciu fali (blok45-wave-open-complete) + ratio / treść Blok45,
    * (2) wymuszenie przy kinetic-pin-released-forward — koniec GSAP pinu Kinetic w dół; inaczej GEMIUS
    * zostaje w flow pod „Potencjalni…”. Po cofnięciu: setPast(false) / blok45-wave-arm-reset zerują latch pinu.

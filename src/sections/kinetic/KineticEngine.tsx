@@ -2503,20 +2503,29 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
                     preventOverlaps: true,
 
                     // P1: Auto-pause — stop canvas work when section off-screen
+                    // KINETIC-BLOK45-RACE-01: emit custom events TYLKO przy legit user scroll, nie przy
+                    // ScrollTrigger.refresh() (layout-settle / viewport resize / font load). Bez guardu
+                    // refresh powodował spurious emit `kinetic-pin-active-again` gdy user już był w Blok45 →
+                    // Blok45 resetował `pinReleasedForward=false` → apply() gubiło `kinetic-past` → GEMIUS
+                    // pojawiał się z powrotem przykryty przez "Potencjalni…". ST.isRefreshing = true tylko
+                    // podczas refresh lifecycle (zob. BookStatsSection.scrollTriggerIsRefreshing wzorzec).
                     onEnter: function() {
                         _s.activate();
+                        if ((ScrollTrigger as unknown as { isRefreshing?: boolean }).isRefreshing) return;
                         try {
                             window.dispatchEvent(new CustomEvent('kinetic-pin-active-again'));
                         } catch (_e) {}
                     },
                     onEnterBack: function() {
                         _s.activate();
+                        if ((ScrollTrigger as unknown as { isRefreshing?: boolean }).isRefreshing) return;
                         try {
                             window.dispatchEvent(new CustomEvent('kinetic-pin-active-again'));
                         } catch (_e) {}
                     },
                     onLeave: function() {
                         _s.hibernate();
+                        if ((ScrollTrigger as unknown as { isRefreshing?: boolean }).isRefreshing) return;
                         // Koniec pinu w dół — sekcja wraca do flow; bez html.kinetic-past GEMIUS zostaje pod Blok45.
                         try {
                             window.dispatchEvent(new CustomEvent('kinetic-pin-released-forward'));
@@ -4560,6 +4569,11 @@ export default function KineticEngine({ containerRef }: KineticEngineProps = {})
     id1 = requestAnimationFrame(() => {
       id2 = requestAnimationFrame(() => {
         scrollRuntime.requestRefresh('dynamic-mounted-settle');
+        // KINETIC-BLOK45-RACE-01: broadcast że Kinetic pinSpacer jest już w DOM — Blok45Engine
+        // nasłuchuje i wymusza natychmiastowy ScrollTrigger.refresh() żeby wave ST dostał
+        // poprawne pozycje `#blok-4-5-block-4` (z uwzględnieniem Kinetic pinSpacer ~1500px).
+        // Bez tego wave startował z pozycją pre-pinSpacer → włączał się już w Fakty section.
+        try { window.dispatchEvent(new CustomEvent('kinetic-engine-ready')); } catch (_e) {}
       });
     });
     return () => {
