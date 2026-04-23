@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import dynamic from 'next/dynamic';
 import { Suspense } from 'react';
+import { SHOW_KINETIC_SECTION } from '@/config/featureFlags';
 import { resolveHeroVariant } from '@/config/heroVariants.generated';
 import { FaktySection } from '@/sections/fakty/FaktySection';
 import { HeroSection } from '@/sections/hero/HeroSection';
@@ -8,8 +9,13 @@ import { KalkulatorSection } from '@/sections/kalkulator/KalkulatorSection';
 import { WynikiSection } from '@/sections/wyniki/WynikiSection';
 import { SectionsClient } from './SectionsClient';
 import { BridgeSection } from './BridgeSection';
-import { KineticSectionShell } from '@/sections/kinetic/KineticSectionShell';
-import { KineticSectionClient } from '@/sections/kinetic/KineticSectionClient';
+
+const KineticBridgeLayer = dynamic(() => import('./KineticBridgeLayer'), {
+  ssr: false,
+  loading: () => (
+    <div id="kinetic-section" style={{ minHeight: '100vh' }} aria-busy="true" />
+  ),
+});
 
 const BookStatsSection = dynamic(() =>
   import('@/sections/books/BookStatsSection').then((m) => ({ default: m.BookStatsSection }))
@@ -67,6 +73,22 @@ function HomePageFallback() {
   return <main className="min-h-screen bg-canvas" aria-busy="true" />;
 }
 
+/** Pusty `#kinetic-section` — bez silnika; Blok45 ma `if (!b3) return` przy braku `#kinetic-block-3`. */
+function KineticSectionOffPlaceholder() {
+  return (
+    <div
+      id="kinetic-section"
+      data-kinetic-section-disabled
+      aria-hidden
+      style={{
+        minHeight: '100vh',
+        pointerEvents: 'none',
+        contain: 'strict',
+      }}
+    />
+  );
+}
+
 async function HomePageContent({
   searchParams,
 }: {
@@ -82,14 +104,16 @@ async function HomePageContent({
       {/* Cała treść home: bez DeferredMount; ciężkie silniki nadal `dynamic()` + placeholder. */}
       <FaktySection />
       {/*
-        Bridge + Blok45 w jednym slocie, bez DeferredMount: sentinel Kinetic musi być w DOM przed init Blok45
-        (dwa osobne DeferredMount łamały kolejność). Wcześniejszy mount stabilizuje wejście w Kinetic (diagnoza).
+        Kinetic: gdy SHOW_KINETIC_SECTION=false — nie importujemy KineticBridgeLayer (chunk się nie pobiera).
+        Przywrócenie: `featureFlags.ts` → true.
       */}
       <BridgeSection
         kineticLayer={
-          <KineticSectionShell>
-            <KineticSectionClient />
-          </KineticSectionShell>
+          SHOW_KINETIC_SECTION ? (
+            <KineticBridgeLayer />
+          ) : (
+            <KineticSectionOffPlaceholder />
+          )
         }
       />
       <SectionsClient />

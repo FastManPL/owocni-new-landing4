@@ -1,7 +1,6 @@
 'use client';
 
 import { useRef, type ReactNode } from 'react';
-import KineticSection from '@/sections/kinetic/KineticSection';
 import { BridgeProvider } from './BridgeContext';
 
 /**
@@ -66,7 +65,13 @@ export function BridgeSection({ kineticLayer }: BridgeSectionProps = {}) {
               zIndex: 1,
             }}
           >
-            {kineticLayer ?? <KineticSection />}
+            {kineticLayer ?? (
+              <div
+                data-bridge-kinetic-fallback
+                style={{ minHeight: '100vh' }}
+                aria-hidden={true}
+              />
+            )}
           </div>
         </div>
         {/* Sentinel: gdy jego top = viewport top, scroll = koniec pinu — Block45 uruchamia wave w tym momencie. */}
