@@ -2098,13 +2098,18 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
                 this._hasConicGrad = (typeof CanvasRenderingContext2D !== 'undefined' &&
                     typeof CanvasRenderingContext2D.prototype.createConicGradient === 'function');
 
-                const _resizeTunnel = () => { 
-                    const newWidth = window.innerWidth;
+                const _resizeTunnel = () => {
+                    const box = typeof this.canvas.closest === 'function'
+                        ? this.canvas.closest('#kinetic-section')
+                        : null;
+                    const newWidth = (box && box.clientWidth > 8)
+                        ? Math.round(box.clientWidth)
+                        : window.innerWidth;
                     const widthChanged = (newWidth !== this.lastWidth);
-                    this._resize(); 
+                    this._resize();
                     // Rebuild rings tylko gdy szerokość się zmieniła (nie mobile toolbar)
                     if (widthChanged) {
-                        this._build(); 
+                        this._build();
                     }
                 };
                 window.addEventListener('resize', _resizeTunnel);
@@ -2116,8 +2121,24 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
             _resize() {
                 if (IS_TOUCH && freezeFinal) return;
                 const dpr = Math.min(devicePixelRatio, 1); // DPR 1 dla ostrości cylindra
-                const newW = window.innerWidth;
-                const newH = window.innerHeight;
+                // Bitmapa i W/H tunelu = box sekcji (100lvh / pin), nie window.inner* — inaczej
+                // przy lvh≠100vh lub pasku adresowym przeglądarka potrafi zarejestrować ~1.0 CLS
+                // na canvasie (skok intrinsic / skalowanie względem rodzica).
+                const root = typeof this.canvas.closest === 'function'
+                    ? this.canvas.closest('#kinetic-section')
+                    : null;
+                const ph = this.canvas.parentElement;
+                const box = root || ph;
+                var newW = window.innerWidth;
+                var newH = window.innerHeight;
+                if (box) {
+                    const rw = Math.round(box.clientWidth);
+                    const rh = Math.round(box.clientHeight);
+                    if (rw > 8 && rh > 8) {
+                        newW = rw;
+                        newH = rh;
+                    }
+                }
                 
                 // Sprawdź czy wymiary canvas wymagają zmiany
                 // canvas.width= dealokuje GPU buffer - unikaj gdy niepotrzebne
