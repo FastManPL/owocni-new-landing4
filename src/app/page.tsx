@@ -7,48 +7,18 @@ import { HeroSection } from '@/sections/hero/HeroSection';
 import { KalkulatorSection } from '@/sections/kalkulator/KalkulatorSection';
 import { WynikiSection } from '@/sections/wyniki/WynikiSection';
 import { SHOW_KINETIC_SECTION } from '@/config/featureFlags';
+import { BookStatsSectionWrapper } from './BookStatsSectionWrapper';
 import { BridgeSection } from './BridgeSection';
+import { CaseStudy2SectionWrapper } from './CaseStudy2SectionWrapper';
 import { KineticDisabledPlaceholder } from './KineticDisabledPlaceholder';
 import { KineticHomeSlot } from './KineticHomeSlot';
 import { SectionsClient } from './SectionsClient';
 
-/** Prompt 3 / Faza 1.3: bez SSR hydracji ~850+ LoC — skeleton rezerwuje miejsce (zero CLS). Warmup: `homeRouteChunkWarmup`. */
-const BookStatsSection = dynamic(
-  () =>
-    import('@/sections/books/BookStatsSection').then((m) => ({ default: m.BookStatsSection })),
-  {
-    ssr: false,
-    loading: () => (
-      <section
-        id="book-stats-section"
-        className="section"
-        style={{ minHeight: '100vh' }}
-        aria-hidden="true"
-        aria-busy="true"
-      />
-    ),
-  }
-);
 const GwarancjaSectionWrapper = dynamic(() =>
   import('./GwarancjaSectionWrapper').then((m) => ({ default: m.GwarancjaSectionWrapper }))
 );
 const LoveWallSectionWrapper = dynamic(() =>
   import('./LoveWallSectionWrapper').then((m) => ({ default: m.LoveWallSectionWrapper }))
-);
-const CaseStudy2Section = dynamic(
-  () =>
-    import('@/sections/case-study2/CaseStudy2Section').then((m) => ({ default: m.CaseStudy2Section })),
-  {
-    ssr: false,
-    loading: () => (
-      <section
-        id="case-study-section"
-        style={{ minHeight: '100vh' }}
-        aria-hidden="true"
-        aria-busy="true"
-      />
-    ),
-  }
 );
 const CaseStudiesSection = dynamic(() =>
   import('@/sections/case-studies/CaseStudiesSection').then((m) => ({ default: m.CaseStudiesSection }))
@@ -105,7 +75,7 @@ async function HomePageContent({
     <main>
       <HeroSection variant={variant} />
       <WynikiSection />
-      <BookStatsSection />
+      <BookStatsSectionWrapper />
       {/* Cała treść home: bez DeferredMount; ciężkie silniki nadal `dynamic()` + placeholder. */}
       <FaktySection />
       {/*
@@ -121,7 +91,7 @@ async function HomePageContent({
       <KalkulatorSection />
       <GwarancjaSectionWrapper />
       <LoveWallSectionWrapper />
-      <CaseStudy2Section />
+      <CaseStudy2SectionWrapper />
       <CaseStudiesSection />
       <OnasSectionWrapper />
       <CyfroweWzrostySectionWrapper />
