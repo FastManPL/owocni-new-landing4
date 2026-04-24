@@ -10,6 +10,11 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Draggable } from 'gsap/Draggable';
 import { scrollRuntime } from '@/lib/scrollRuntime';
+import {
+  getWebGLProfile,
+  getWebGLPixelRatio,
+  getWebGLRendererCreationOptions,
+} from '@/lib/webglBroker';
 import './onas-section.css';
 import { CENNIK_STRONY_URL } from '@/config/ctaUrls';
 
@@ -1230,7 +1235,12 @@ async function onasCapitanInit(container) {
   schedulePosition();
 
   const threeContainer = badge;
-  const DPR = Math.min(window.devicePixelRatio, 2);
+  const onasWebGLProfile = getWebGLProfile();
+  if (onasWebGLProfile === 'none') {
+    return { pause(){}, resume(){}, kill(){} };
+  }
+  const wgOpts = getWebGLRendererCreationOptions(onasWebGLProfile);
+  const DPR = getWebGLPixelRatio(onasWebGLProfile);
   const BLOOM_SCALE = 0.25;
   const BLOOM_INTERVAL = 4;
 
@@ -1251,7 +1261,12 @@ async function onasCapitanInit(container) {
   /* WebGL init — graceful degradation if GPU unavailable */
   let baseRenderer, bloomRenderer;
   try {
-    baseRenderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, premultipliedAlpha: false });
+    baseRenderer = new THREE.WebGLRenderer({
+      antialias: wgOpts.antialias,
+      alpha: true,
+      premultipliedAlpha: false,
+      powerPreference: wgOpts.powerPreference || 'default',
+    });
   } catch(e) {
     console.warn('WebGL init failed, badge 3D disabled:', e);
     return { pause(){}, resume(){}, kill(){} };
@@ -1269,7 +1284,10 @@ async function onasCapitanInit(container) {
 
   let bloomSize = Math.max(Math.round(SIZE * BLOOM_SCALE), 64);
   try {
-    bloomRenderer = new THREE.WebGLRenderer({ antialias: false });
+    bloomRenderer = new THREE.WebGLRenderer({
+      antialias: false,
+      powerPreference: wgOpts.powerPreference || 'default',
+    });
   } catch(e) {
     console.warn('Bloom WebGL init failed, badge 3D disabled:', e);
     try { baseRenderer.dispose(); baseRenderer.domElement.remove(); } catch(x){}

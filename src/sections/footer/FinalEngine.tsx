@@ -7,6 +7,11 @@ import gsap from 'gsap';
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import { scrollRuntime } from '@/lib/scrollRuntime';
+import {
+  getWebGLProfile,
+  getWebGLPixelRatio,
+  getWebGLRendererCreationOptions,
+} from '@/lib/webglBroker';
 import { FinalFormCard } from './FinalFormCard';
 import './final-section.css';
 
@@ -338,15 +343,21 @@ function _ric(fn, timeout){
 
 function warmup(){
   if(renderer || isKilled) return;
+  var wgProfile = getWebGLProfile();
+  if (wgProfile === 'none') return;
+  var wgOpts = getWebGLRendererCreationOptions(wgProfile);
   // #final-scene = position:fixed; width:100%; height:100% = viewport
   // Nie czytamy el.clientWidth — el może być display:none podczas warmup (IO pre-load)
   w = window.innerWidth;
   h = window.innerHeight;
-  dpr = Math.min(window.devicePixelRatio||1, 1.0); // max 1.0 — oszczędność GPU bez artefaktów
+  dpr = Math.min(window.devicePixelRatio||1, 1.0, getWebGLPixelRatio(wgProfile)); // sekcja: max 1.0 + clamp profilu (G11.1)
 
   // ── FAZA 1: GL context (musi być sync — appends canvas do DOM) ──────────────
   try {
-    renderer = new THREE.WebGLRenderer({antialias: window.innerWidth >= 768, powerPreference:"high-performance"}); // O1: AA off mobile
+    renderer = new THREE.WebGLRenderer({
+      antialias: wgOpts.antialias,
+      powerPreference: wgOpts.powerPreference || 'default',
+    });
   } catch(e) {
     console.error('[final] WebGL unavailable:', e);
     return;

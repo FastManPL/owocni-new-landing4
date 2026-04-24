@@ -18,3 +18,11 @@ export const FORCE_ANIMATION_COST_PROFILE:
   | 'reduced'
   | 'minimal'
   | null = null;
+
+/** G11.1 / J15: wymuszenie profilu WebGL (QA). `null` = heurystyka z `getWebGLProfile()`. */
+export const FORCE_WEBGL_PROFILE:
+  | 'none'
+  | 'low'
+  | 'normal'
+  | 'high'
+  | null = null;

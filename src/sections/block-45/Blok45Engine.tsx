@@ -15,6 +15,11 @@ import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
 import * as BufferGeometryUtils from 'three/examples/jsm/utils/BufferGeometryUtils.js';
+import {
+  getWebGLProfile,
+  getWebGLPixelRatio,
+  getWebGLRendererCreationOptions,
+} from '@/lib/webglBroker';
 
 // ⚠️ GSAP-SSR-01: ZAKAZ gsap.registerPlugin() na module top-level.
 // registerPlugin() WYŁĄCZNIE wewnątrz useGSAP(() => { ... }) jak poniżej.
@@ -542,9 +547,15 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
       var scene = new THREE.Scene();
       var camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 100);
       camera.position.z = 15;
-      var renderer = new THREE.WebGLRenderer({ antialias: window.devicePixelRatio < 2, alpha: true });
+      var _wgP = getWebGLProfile();
+      var _wgO = getWebGLRendererCreationOptions(_wgP);
+      var renderer = new THREE.WebGLRenderer({
+        antialias: _wgO.antialias,
+        alpha: true,
+        powerPreference: _wgO.powerPreference || 'default',
+      });
       renderer.setSize(window.innerWidth, window.innerHeight);
-      renderer.setPixelRatio(1);
+      renderer.setPixelRatio(getWebGLPixelRatio(_wgP));
       renderer.setClearColor(0x000000, 0);
       renderer.setScissorTest(false);
       if (typeof (renderer as any).transmissionResolutionScale === 'number') {
@@ -824,6 +835,15 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
 
     function ensureStarsEngine() {
       if (!_webglSupported) return Promise.resolve(null);
+      if (getWebGLProfile() === 'none') {
+        if (!_starsEngine) {
+          _starsEngine = { wake: function(){}, sleep: function(){}, dispose: function(){} };
+          starsState.wake = _starsEngine.wake;
+          starsState.sleep = _starsEngine.sleep;
+          starsState.dispose = _starsEngine.dispose;
+        }
+        return Promise.resolve(_starsEngine);
+      }
       if (_starsEngine) return Promise.resolve(_starsEngine);
       if (_starsEnginePromise) return _starsEnginePromise;
       _starsEnginePromise = Promise.resolve().then(function() {
