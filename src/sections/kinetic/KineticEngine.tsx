@@ -2272,8 +2272,8 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
         var _invFpRange = 1 / (1.0 - fpStart);       // v139: 1/1.0
         var _invShrRange = 1 / (fpShrinkE - fpShrinkS); // 1/0.292
 
-        // Po ukończeniu formularza: visibility + early-return (bez display:none). Duży CLS
-        // z Live metrics często bierze się z pinu / skalowania canvasu — patrz też style px w _resize.
+        // Po fp>=1: bez display/visibility na canvasie (Live CLS potrafi przypisać ~1.0 do pełnej warstwy).
+        // Jednorazowe wyczyszczenie bitmapy + early-return — box layoutu (absolute 100%) bez zmian.
         var _tunnelHidden = false;
         const _tickTunnel = function() {
             if (_s._killed) return;
@@ -2282,14 +2282,14 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
             // Czytaj formProgress z particle IIFE
             const fp = _s.particleQmark?.state?.formProgress || 0;
 
-            // P1: Phase-aware — ukryj tunel po ukończeniu formularza; pokaż przy cofnięciu scrolla
             if (fp >= 1 && !_tunnelHidden) {
-                tunnel.ctx.canvas.style.visibility = 'hidden';
+                if (tunnel.ctx && tunnel.W > 0 && tunnel.H > 0) {
+                    tunnel.ctx.clearRect(0, 0, tunnel.W, tunnel.H);
+                }
                 _tunnelHidden = true;
                 return;
             }
             if (fp < 1 && _tunnelHidden) {
-                tunnel.ctx.canvas.style.visibility = 'visible';
                 _tunnelHidden = false;
             }
             if (_tunnelHidden) return;

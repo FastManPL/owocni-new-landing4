@@ -485,7 +485,7 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
           },
           scrub: true,
           pin: true,
-          anticipatePin: 1,
+          anticipatePin: 0,
           invalidateOnRefresh: true,
           onUpdate(self) {
             if (self.progress >= 0.95) bookScrubPastEnd = true;
