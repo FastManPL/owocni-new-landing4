@@ -9,6 +9,7 @@ import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { scrollRuntime } from '@/lib/scrollRuntime';
+import { scheduleAfterKineticLayoutReady } from '@/lib/whenKineticLayoutReadyForSt';
 import { startWarmVideoOnce } from '@/lib/warmVideo';
 import './case-study-section.css';
 import { CENNIK_STRONY_URL } from '@/config/ctaUrls';
@@ -651,23 +652,29 @@ export function CaseStudy2Section() {
       }
       return;
     }
-    const inst = init(el, {
-      onPopupOpen: () => cbRef.current.onPopupOpen(),
-      onPopupClose: () => cbRef.current.onPopupClose(),
-    });
-    // POST-BUILD-CATCHUP-01 (2026-04-23): patrz komentarz w CaseStudiesTilesEngine.
+    let inst: ReturnType<typeof init> | null = null;
     let killed = false;
     let raf1 = 0;
     let raf2 = 0;
-    raf1 = requestAnimationFrame(() => {
-      raf2 = requestAnimationFrame(() => {
-        if (killed) return;
-        ScrollTrigger.refresh(false);
-        ScrollTrigger.update();
+
+    const disposeGate = scheduleAfterKineticLayoutReady(() => {
+      if (killed) return;
+      inst = init(el, {
+        onPopupOpen: () => cbRef.current.onPopupOpen(),
+        onPopupClose: () => cbRef.current.onPopupClose(),
+      });
+      raf1 = requestAnimationFrame(() => {
+        raf2 = requestAnimationFrame(() => {
+          if (killed) return;
+          ScrollTrigger.refresh(false);
+          ScrollTrigger.update();
+        });
       });
     });
+
     return () => {
       killed = true;
+      disposeGate();
       if (raf1) cancelAnimationFrame(raf1);
       if (raf2) cancelAnimationFrame(raf2);
       inst?.kill?.();

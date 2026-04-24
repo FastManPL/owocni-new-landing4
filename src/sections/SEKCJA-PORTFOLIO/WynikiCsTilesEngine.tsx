@@ -5,6 +5,7 @@ import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { scrollRuntime } from '@/lib/scrollRuntime';
+import { scheduleAfterKineticLayoutReady } from '@/lib/whenKineticLayoutReadyForSt';
 import './wyniki-cs-tiles-section.css';
 
 // ⚠️ GSAP-SSR-01: ZAKAZ gsap.registerPlugin() na module top-level.
@@ -767,20 +768,26 @@ export function WynikiCsTilesEngine() {
       }
       return;
     }
-    const inst = init(el);
-    // POST-BUILD-CATCHUP-01 (2026-04-23): patrz komentarz w CaseStudiesTilesEngine.
+    let inst: ReturnType<typeof init> | null = null;
     let killed = false;
     let raf1 = 0;
     let raf2 = 0;
-    raf1 = requestAnimationFrame(() => {
-      raf2 = requestAnimationFrame(() => {
-        if (killed) return;
-        ScrollTrigger.refresh(false);
-        ScrollTrigger.update();
+
+    const disposeGate = scheduleAfterKineticLayoutReady(() => {
+      if (killed) return;
+      inst = init(el);
+      raf1 = requestAnimationFrame(() => {
+        raf2 = requestAnimationFrame(() => {
+          if (killed) return;
+          ScrollTrigger.refresh(false);
+          ScrollTrigger.update();
+        });
       });
     });
+
     return () => {
       killed = true;
+      disposeGate();
       if (raf1) cancelAnimationFrame(raf1);
       if (raf2) cancelAnimationFrame(raf2);
       inst?.kill?.();
