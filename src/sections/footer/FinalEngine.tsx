@@ -60,6 +60,8 @@ var isWarmed  = false;
 var isKilled  = false;
 var _paused   = true;   // B-CPU-03: idempotencja — start PAUSED, resume po IO
 var _ioState  = false;  // IO: sekcja w zasięgu rootMargin
+/** G11.1 `none`: brak WebGL — statyczny fallback w #final-scene + bez interwału zegara shaderowego */
+var webglSkippedForProfile = false;
 
 // ── CLOCK CONSTANTS / PARAMS ─────────────────────────────────────────────────
 var CC = {posX:-1.10, posY:0.58, posZ:2.20, scale:0.20, rotX:0.07, rotY:0.31, rotZ:0.15};
@@ -343,8 +345,30 @@ function _ric(fn, timeout){
 
 function warmup(){
   if(renderer || isKilled) return;
+  if(webglSkippedForProfile) return;
   var wgProfile = getWebGLProfile();
-  if (wgProfile === 'none') return;
+  if (wgProfile === 'none') {
+    webglSkippedForProfile = true;
+    w = window.innerWidth;
+    h = window.innerHeight;
+    if (el && !el.querySelector('.final-static-fallback')) {
+      el.classList.add('final-scene--webgl-none');
+      var wrap = document.createElement('div');
+      wrap.className = 'final-static-fallback';
+      wrap.setAttribute('aria-hidden', 'true');
+      var inner = document.createElement('div');
+      inner.className = 'final-static-fallback__lines';
+      ['DOBRY', 'CZAS', 'JEST', 'TERAZ'].forEach(function (word) {
+        var line = document.createElement('div');
+        line.className = 'final-static-fallback__line';
+        line.textContent = word;
+        inner.appendChild(line);
+      });
+      wrap.appendChild(inner);
+      el.appendChild(wrap);
+    }
+    return;
+  }
   var wgOpts = getWebGLRendererCreationOptions(wgProfile);
   // #final-scene = position:fixed; width:100%; height:100% = viewport
   // Nie czytamy el.clientWidth — el może być display:none podczas warmup (IO pre-load)
@@ -1029,7 +1053,7 @@ function resume(){
   // Jeśli warmup jest w trakcie (rAF fazy 2/3) — faza 3 sprawdzi _paused i uruchomi ticker
   if(isWarmed && !ticking && tickFn){ gsap.ticker.add(tickFn); ticking=true; }
   if(window.innerWidth < 768){ gsap.ticker.fps(30); } // O9: 30fps mobile — dt-compensated lerp kompensuje wizualnie
-  if(!clockIntervalId){
+  if(!webglSkippedForProfile && !clockIntervalId){
     _startClockInterval();
     state=CLK.CLOCK;
     nextCall=gsap.delayedCall(CYCLE,showDay);
@@ -1044,6 +1068,14 @@ function kill(){
   if(_resizeRaf){ cancelAnimationFrame(_resizeRaf); _resizeRaf=null; }
   pause();
   killAll();
+  try {
+    if (el) {
+      el.classList.remove('final-scene--webgl-none');
+      var _sf = el.querySelector('.final-static-fallback');
+      if (_sf && _sf.parentNode) _sf.parentNode.removeChild(_sf);
+    }
+  } catch (e) { /* static fallback cleanup */ }
+  webglSkippedForProfile = false;
   cleanups.forEach(function(fn){ try{fn();}catch(e){} });
   timerIds.forEach(function(t){
     if(t.type==='interval') clearInterval(t.id);

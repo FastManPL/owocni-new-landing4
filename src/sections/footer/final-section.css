@@ -115,3 +115,36 @@
     height: min(52dvh, 80svh);
   }
 }
+
+/* G11.1 WebGL profile `none` (Tier 0) — statyczna warstwa zamiast canvasu Three.js */
+#final-section #final-scene.final-scene--webgl-none .final-static-fallback {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  pointer-events: none;
+  padding: 6vh max(28px, min(5vw, 120px));
+}
+#final-section #final-scene.final-scene--webgl-none .final-static-fallback__lines {
+  display: flex;
+  flex-direction: column;
+  gap: 0.12em;
+}
+#final-section #final-scene.final-scene--webgl-none .final-static-fallback__line {
+  font-family: Lexend, system-ui, sans-serif;
+  font-weight: 700;
+  font-size: clamp(1.35rem, 5vw, 3rem);
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  background: linear-gradient(102deg, #252030 0%, #382630 45%, #7d3527 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+@media (max-width: 1199px) {
+  #final-section #final-scene.final-scene--webgl-none .final-static-fallback {
+    align-items: flex-start;
+    padding-top: 10vh;
+  }
+}
