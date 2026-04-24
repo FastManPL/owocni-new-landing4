@@ -64,9 +64,12 @@ html {
  * wygenerować niepoprawny CSS („Invalid empty selector” w bundlu, build na Vercel).
  */
 @media (max-width: 768px) {
-  /* clip x: brak poziomego scrollbara; visible na x rozlewał 100vw / bleed poza root */
+  /*
+   * Mobile: `hidden` skuteczniej niż `clip` na iOS przy elementach 100vw / breakout —
+   * inaczej zostaje poziomy „rubber” i szeroki scroll width dokumentu.
+   */
   html {
-    overflow-x: clip !important;
+    overflow-x: hidden !important;
     overflow-y: auto;
     max-width: 100%;
     overscroll-behavior-x: none;
@@ -83,7 +86,7 @@ html {
     overflow: visible;
   }
   html.lenis.lenis-stopped {
-    overflow-x: clip !important;
+    overflow-x: hidden !important;
     overflow-y: visible !important;
   }
 }

@@ -2523,6 +2523,13 @@
                 width: 100vw;
                 margin-left: calc(-50vw + 50%);
             }
+            /* 100vw > layout viewport na iOS (pasek adresu) → poziomy scroll; 100dvw jest spójniejsze. */
+            @supports (width: 100dvw) {
+                #hero-section .brands-section {
+                    width: 100dvw;
+                    margin-left: calc(-50dvw + 50%);
+                }
+            }
             
             #hero-section .brands-text-column {
                 margin-left: 0;

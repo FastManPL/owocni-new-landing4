@@ -19,11 +19,36 @@ export type WebGLRendererCreationOptions = {
 let cachedProfile: WebGLProfile | null = null;
 let cachedGpuHint: string | null | undefined = undefined;
 
+/** GL_RENDERER — WebGL2 / GLES; bez `WEBGL_debug_renderer_info` (Firefox deprecuje ext). */
+const GL_RENDERER = 0x1f01;
+
 function readGpuRendererHintOnce(): string | null {
   if (typeof document === 'undefined') return null;
   if (cachedGpuHint !== undefined) return cachedGpuHint;
   try {
     const canvas = document.createElement('canvas');
+    const isFirefox =
+      typeof navigator !== 'undefined' && /firefox/i.test(navigator.userAgent);
+
+    const gl2 = canvas.getContext('webgl2', {
+      failIfMajorPerformanceCaveat: false,
+    }) as WebGL2RenderingContext | null;
+    if (gl2) {
+      const r2 = gl2.getParameter(GL_RENDERER);
+      if (typeof r2 === 'string' && r2.length > 0) {
+        const t = r2.trim();
+        if (t && !/^(mozilla|webkit webgl)$/i.test(t)) {
+          cachedGpuHint = t;
+          return cachedGpuHint;
+        }
+      }
+    }
+
+    if (isFirefox) {
+      cachedGpuHint = null;
+      return null;
+    }
+
     const gl = canvas.getContext('webgl', {
       failIfMajorPerformanceCaveat: false,
     }) as WebGLRenderingContext | null;

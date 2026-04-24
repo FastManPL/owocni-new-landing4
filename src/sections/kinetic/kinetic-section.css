@@ -40,7 +40,9 @@
             justify-content: center;
             align-items: center;
             position: relative;
-            overflow: visible; /* TEST: zmienione z hidden dla kontekstu 3D */
+            /* Bloby mobile używają 100–120vw — bez clip-x strona dostaje poziomy scroll (iOS). */
+            overflow-x: clip;
+            overflow-y: visible;
             z-index: 1;
         }
 
