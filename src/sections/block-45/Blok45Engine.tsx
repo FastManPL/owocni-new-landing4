@@ -19,6 +19,7 @@ import {
   getWebGLProfile,
   getWebGLPixelRatio,
   getWebGLRendererCreationOptions,
+  WEBGL_OFF_TO_COLD_MS,
 } from '@/lib/webglBroker';
 
 // ⚠️ GSAP-SSR-01: ZAKAZ gsap.registerPlugin() na module top-level.
@@ -1563,8 +1564,16 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
     // TYP B: pause / resume / kill
     var hfListeners: Array<{target:EventTarget;event:string;fn:EventListenerOrEventListenerObject;options?:any}>=[];
     function pause(){if(ticking){gsap.ticker.remove(mainLoop);gsap.ticker.remove(glowTickFn);ticking=false;}if(eyePauseFn)eyePauseFn();if(starsState.sleep)starsState.sleep();hfListeners.forEach(function(entry){entry.target.removeEventListener(entry.event,entry.fn,entry.options);});}
-    function resume(){if(!ticking){if(sectionInView&&!document.hidden)gsap.ticker.add(mainLoop);if(tickIOVisible)gsap.ticker.add(glowTickFn);ticking=true;}if(eyeResumeFn)eyeResumeFn();if(starsState.wake)starsState.wake();hfListeners.forEach(function(entry){entry.target.addEventListener(entry.event,entry.fn,entry.options);});}
+    function resume(){
+      clearStarsColdTimer();
+      if(!ticking){if(sectionInView&&!document.hidden)gsap.ticker.add(mainLoop);if(tickIOVisible)gsap.ticker.add(glowTickFn);ticking=true;}
+      if(eyeResumeFn)eyeResumeFn();
+      if(starsState.wake)starsState.wake();
+      else void ensureStarsEngine().then(function(){if(_s._killed)return;if(starsState.wake)starsState.wake();});
+      hfListeners.forEach(function(entry){entry.target.addEventListener(entry.event,entry.fn,entry.options);});
+    }
     function kill(){
+      clearStarsColdTimer();
       pause();
       try {
         container.classList.remove('wave-reveal-active');
@@ -1609,17 +1618,42 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
 
     // ═══ FACTORY: CPU GATING ═══
     var _s={_killed:false},_factoryPaused=false;
+    var _starsColdTimer: ReturnType<typeof setTimeout>|null=null;
+    function clearStarsColdTimer(){if(_starsColdTimer){clearTimeout(_starsColdTimer);_starsColdTimer=null;}}
+    function disposeStarsToCold(){
+      if(_s._killed)return;
+      clearStarsColdTimer();
+      if(starsState.dispose){try{starsState.dispose();}catch(e){}}
+      starsState.wake=null;starsState.sleep=null;starsState.dispose=null;
+      _starsEngine=null;
+      _starsEnginePromise=null;
+    }
+    function scheduleStarsColdDispose(){
+      clearStarsColdTimer();
+      if(_s._killed||!_factoryPaused||document.hidden)return;
+      _starsColdTimer=setTimeout(function(){
+        _starsColdTimer=null;
+        if(_s._killed||!_factoryPaused)return;
+        disposeStarsToCold();
+      },WEBGL_OFF_TO_COLD_MS);
+    }
     var _getVH=function(){return window.visualViewport?.height??window.innerHeight;};
     var _calcRootMargin=function(){return Math.min(320,Math.max(120,Math.round(0.2*_getVH())));};
     var _factoryIO: IntersectionObserver|null=null,_factoryIODebounce: number|null=null,_factoryIORaf: number|null=null;
-    function _factoryIOCallback(entries: IntersectionObserverEntry[]){if(!entries[0])return;if(entries[0].isIntersecting){if(_factoryPaused){_factoryPaused=false;resume();}}else{if(!_factoryPaused){_factoryPaused=true;pause();}}}
+    function _factoryIOCallback(entries: IntersectionObserverEntry[]){if(!entries[0])return;if(entries[0].isIntersecting){if(_factoryPaused){clearStarsColdTimer();_factoryPaused=false;resume();}}else{if(!_factoryPaused){_factoryPaused=true;pause();scheduleStarsColdDispose();}}}
+    function _onBlok45DocVis(){
+      if(_s._killed)return;
+      if(document.hidden){clearStarsColdTimer();disposeStarsToCold();}
+      else if(!_factoryPaused){void ensureStarsEngine().then(function(){if(_s._killed)return;if(starsState.wake)starsState.wake();});}
+    }
     function _createFactoryIO(){var rm=_calcRootMargin();_factoryIO=new IntersectionObserver(_factoryIOCallback,{rootMargin:rm+'px 0px',threshold:0.01});_factoryIO.observe(container);observers.push(_factoryIO);}
     function _recreateFactoryIO(){if(_factoryIODebounce)clearTimeout(_factoryIODebounce);_factoryIODebounce=setTimeout(function(){if(_s._killed)return;if(_factoryIO)_factoryIO.disconnect();_createFactoryIO();},50);}
     function _onFactoryVVResize(){if(_factoryIORaf!==null)return;_factoryIORaf=requestAnimationFrame(function(){_factoryIORaf=null;_recreateFactoryIO();});}
     _createFactoryIO();
+    document.addEventListener('visibilitychange',_onBlok45DocVis);
     window.addEventListener('resize',_onFactoryVVResize,{passive:true});window.addEventListener('orientationchange',_onFactoryVVResize,{passive:true});
     if(window.visualViewport){window.visualViewport.addEventListener('resize',_onFactoryVVResize,{passive:true});}
-    cleanups.push(function(){_s._killed=true;if(_factoryIODebounce)clearTimeout(_factoryIODebounce);if(_factoryIORaf!==null){cancelAnimationFrame(_factoryIORaf);_factoryIORaf=null;}window.removeEventListener('resize',_onFactoryVVResize);window.removeEventListener('orientationchange',_onFactoryVVResize);if(window.visualViewport)window.visualViewport.removeEventListener('resize',_onFactoryVVResize);if(_factoryIO)_factoryIO.disconnect();});
+    cleanups.push(function(){_s._killed=true;clearStarsColdTimer();document.removeEventListener('visibilitychange',_onBlok45DocVis);if(_factoryIODebounce)clearTimeout(_factoryIODebounce);if(_factoryIORaf!==null){cancelAnimationFrame(_factoryIORaf);_factoryIORaf=null;}window.removeEventListener('resize',_onFactoryVVResize);window.removeEventListener('orientationchange',_onFactoryVVResize);if(window.visualViewport)window.visualViewport.removeEventListener('resize',_onFactoryVVResize);if(_factoryIO)_factoryIO.disconnect();});
 
     // ═══ FACTORY: ST-REFRESH-01 ═══
     var _stIo=new IntersectionObserver(function(entries){if(!entries[0]?.isIntersecting)return;scrollRuntime.requestRefresh('section-in-view');_stIo.disconnect();},{threshold:0,rootMargin:'0px'});

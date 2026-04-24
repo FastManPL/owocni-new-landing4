@@ -11,6 +11,7 @@ import {
   getWebGLProfile,
   getWebGLPixelRatio,
   getWebGLRendererCreationOptions,
+  WEBGL_OFF_TO_COLD_MS,
 } from '@/lib/webglBroker';
 import { FinalFormCard } from './FinalFormCard';
 import './final-section.css';
@@ -62,6 +63,49 @@ var _paused   = true;   // B-CPU-03: idempotencja — start PAUSED, resume po IO
 var _ioState  = false;  // IO: sekcja w zasięgu rootMargin
 /** G11.1 `none`: brak WebGL — statyczny fallback w #final-scene + bez interwału zegara shaderowego */
 var webglSkippedForProfile = false;
+/** J15: OFF → COLD po WEBGL_OFF_TO_COLD_MS poza viewportem lub natychmiast przy ukryciu karty */
+var _offToColdTimer = null;
+function clearOffToColdTimer(){
+  if(_offToColdTimer){ clearTimeout(_offToColdTimer); _offToColdTimer=null; }
+}
+function disposeWebglToCold(){
+  if(isKilled || !renderer || webglSkippedForProfile) return;
+  killAll();
+  try{scene&&(scene.environment=null);}catch(e){}
+  try{envRT&&envRT.dispose&&envRT.dispose();}catch(e){} envRT=null;
+  try{mesh&&mesh.geometry&&mesh.geometry.dispose();}catch(e){}
+  try{mat&&mat.dispose();}catch(e){}
+  try{U&&U.uTexture&&U.uTexture.value&&U.uTexture.value.dispose();}catch(e){}
+  try{glassGeo&&glassGeo.dispose();}catch(e){}
+  try{glassMat&&glassMat.dispose();}catch(e){}
+  try{dispMap&&dispMap.dispose();}catch(e){}
+  if(digitTex&&digitTex.length){
+    for(var i=0;i<digitTex.length;i++){try{digitTex[i]&&digitTex[i].dispose();}catch(e){}}
+    digitTex.length=0;
+  }
+  if(dayTexCache){
+    try{dayTexCache.juzJest&&dayTexCache.juzJest.dispose();}catch(e){}
+    if(dayTexCache.days){for(var j=0;j<dayTexCache.days.length;j++){try{dayTexCache.days[j].dispose();}catch(e){}}}
+    dayTexCache=null;
+  }
+  try {
+    renderer.dispose();
+    if(renderer.domElement&&renderer.domElement.parentNode){
+      renderer.domElement.parentNode.removeChild(renderer.domElement);
+    }
+  } catch(e){}
+  renderer=null; isWarmed=false;
+}
+function scheduleOffToColdDispose(){
+  clearOffToColdTimer();
+  if(isKilled || webglSkippedForProfile || !renderer) return;
+  _offToColdTimer = setTimeout(function(){
+    _offToColdTimer=null;
+    if(isKilled || !_paused || _ioState || !renderer || webglSkippedForProfile) return;
+    disposeWebglToCold();
+    if(DEBUG_MODE) console.log('[final] OFF→COLD (timer)');
+  }, WEBGL_OFF_TO_COLD_MS);
+}
 
 // ── CLOCK CONSTANTS / PARAMS ─────────────────────────────────────────────────
 var CC = {posX:-1.10, posY:0.58, posZ:2.20, scale:0.20, rotX:0.07, rotY:0.31, rotZ:0.15};
@@ -1035,10 +1079,15 @@ cleanups.push(function(){ window.removeEventListener('resize',_onResize); });
 var _onVisChange=function(){
   isPageVisible=!document.hidden;
   if(!isPageVisible){
+    clearOffToColdTimer();
+    pause();
     if(activeTL){activeTL.pause();} if(nextCall){nextCall.pause();}
+    disposeWebglToCold();
+    if(DEBUG_MODE) console.log('[final] visibility:hidden → COLD');
   } else {
     _lastTime=performance.now();
     if(activeTL){activeTL.resume();} if(nextCall){nextCall.resume();}
+    if(_ioState && !isKilled) resume();
   }
 };
 document.addEventListener('visibilitychange',_onVisChange);
@@ -1056,10 +1105,12 @@ function pause(){
   if(ticking){ gsap.ticker.remove(tickFn); ticking=false; }
   _stopClockInterval();
   hfListeners.forEach(function(h){ h.target.removeEventListener(h.event,h.fn,h.options); });
+  if(!isKilled && isPageVisible) scheduleOffToColdDispose();
   if(DEBUG_MODE) console.log('[final] pause() -> OFF');
 }
 
 function resume(){
+  clearOffToColdTimer();
   if(!_paused) return; // B-CPU-03: idempotent
   _paused=false;
   if(!renderer){ warmup(); }
@@ -1078,6 +1129,7 @@ function resume(){
 }
 
 function kill(){
+  clearOffToColdTimer();
   isKilled=true; _s._killed=true;
   if(_resizeRaf){ cancelAnimationFrame(_resizeRaf); _resizeRaf=null; }
   pause();

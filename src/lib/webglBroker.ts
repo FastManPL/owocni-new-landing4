@@ -6,6 +6,9 @@
 import { FORCE_WEBGL_PROFILE } from '@/config/featureFlags';
 import { getDeviceTier } from '@/lib/autoTier';
 
+/** J15: czas w stanie OFF (poza viewportem) zanim pełny dispose → COLD (ms). */
+export const WEBGL_OFF_TO_COLD_MS = 30_000;
+
 export type WebGLProfile = 'none' | 'low' | 'normal' | 'high';
 
 /** Opcje przekazywane do `new THREE.WebGLRenderer({ ... })` (subset WebGLRendererParameters). */

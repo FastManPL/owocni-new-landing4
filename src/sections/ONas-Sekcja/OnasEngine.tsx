@@ -14,6 +14,7 @@ import {
   getWebGLProfile,
   getWebGLPixelRatio,
   getWebGLRendererCreationOptions,
+  WEBGL_OFF_TO_COLD_MS,
 } from '@/lib/webglBroker';
 import './onas-section.css';
 import { CENNIK_STRONY_URL } from '@/config/ctaUrls';
@@ -2558,6 +2559,49 @@ function factoryInit(container) {
 
   var capitanEl = container.querySelector('#onas-capitan');
   var capitanInst = null;
+  var capitanBootGen = 0;
+
+  function _bootCapitan() {
+    if (!capitanEl || _killed) return;
+    capitanBootGen++;
+    var gen = capitanBootGen;
+    onasCapitanInit(capitanEl).then(function(inst) {
+      if (_killed || gen !== capitanBootGen) {
+        if (inst) { try { inst.kill(); } catch(e) {} }
+        return;
+      }
+      capitanInst = inst || { pause:function(){}, resume:function(){}, kill:function(){} };
+      if (_paused) capitanInst.pause();
+    }).catch(function(e) {
+      console.warn('onas-capitan: boot failed', e);
+      if (!_killed && gen === capitanBootGen) {
+        capitanInst = { pause:function(){}, resume:function(){}, kill:function(){} };
+      }
+    });
+  }
+
+  var _capitanColdTimer = null;
+  function _clearCapitanColdTimer() {
+    if (_capitanColdTimer) { clearTimeout(_capitanColdTimer); _capitanColdTimer = null; }
+  }
+  function _disposeCapitanToCold() {
+    _clearCapitanColdTimer();
+    if (_killed) return;
+    if (capitanInst) {
+      try { capitanInst.kill(); } catch(e) { console.error(e); }
+      capitanInst = null;
+    }
+    capitanBootGen++;
+  }
+  function _scheduleCapitanCold() {
+    _clearCapitanColdTimer();
+    if (_killed || !_paused || document.hidden) return;
+    _capitanColdTimer = setTimeout(function() {
+      _capitanColdTimer = null;
+      if (_killed || !_paused) return;
+      _disposeCapitanToCold();
+    }, WEBGL_OFF_TO_COLD_MS);
+  }
 
 /* ── IO Gating: Ścieżka 1 (Typ B) ── */
   var _paused = false;
@@ -2576,25 +2620,42 @@ function factoryInit(container) {
     _paused = true;
     if (carouselInst) carouselInst.pause();
     if (capitanInst) capitanInst.pause();
+    _scheduleCapitanCold();
   }
 
   function _resume() {
     if (!_paused || _killed) return;
+    _clearCapitanColdTimer();
     _paused = false;
     if (carouselInst) carouselInst.resume();
     if (capitanInst) capitanInst.resume();
+    else if (capitanEl) _bootCapitan();
   }
 
   function _kill() {
     _killed = true;
     _paused = true;
+    _clearCapitanColdTimer();
+    document.removeEventListener('visibilitychange', _onDocVisOnas);
     if (_io) { _io.disconnect(); _io = null; }
     clearTimeout(_ioDebounce);
     if (carouselInst) { try { carouselInst.kill(); } catch(e) { console.error(e); } }
     if (capitanInst) { try { capitanInst.kill(); } catch(e) { console.error(e); } }
     carouselInst = null;
     capitanInst = null;
+    capitanBootGen++;
   }
+
+  function _onDocVisOnas() {
+    if (_killed) return;
+    if (document.hidden) {
+      _clearCapitanColdTimer();
+      _disposeCapitanToCold();
+    } else if (!_paused && capitanEl && !capitanInst) {
+      _bootCapitan();
+    }
+  }
+  document.addEventListener('visibilitychange', _onDocVisOnas);
 
   function _ioCallback(entries) {
     if (_killed) return;
@@ -2625,14 +2686,7 @@ function factoryInit(container) {
 
   /* ── Boot capitan async (Opcja A — Three.js importowany dynamicznie w onasCapitanInit) ── */
   if (capitanEl) {
-    onasCapitanInit(capitanEl).then(function(inst) {
-      if (_killed) { if (inst) { try { inst.kill(); } catch(e) {} } return; }
-      capitanInst = inst || { pause:function(){}, resume:function(){}, kill:function(){} };
-      if (_paused) capitanInst.pause();
-    }).catch(function(e) {
-      console.warn('onas-capitan: boot failed', e);
-      capitanInst = { pause:function(){}, resume:function(){}, kill:function(){} };
-    });
+    _bootCapitan();
   }
 
 
