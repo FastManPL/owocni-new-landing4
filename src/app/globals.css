@@ -47,9 +47,14 @@ html {
   /*
    * Obcięcie treści szerzej niż viewport — zawęża scrollWidth dokumentu (iOS + sekcje 100vw / breakout).
    * Wrapper jest w SmoothScrollProvider (nad całą treścią pod body).
+   *
+   * Tylko overflow-x: hidden + domyślne overflow-y: visible → wg spec. overflow-y liczy się jako auto
+   * (drugi pionowy scrollport obok html/Lenis). To daje „blokady” przewijania na touch.
+   * overflow-y: clip obcina bez mechanizmu scrolla na tej warstwie — przewijanie zostaje na html.
    */
   .site-viewport-clip {
     overflow-x: hidden;
+    overflow-y: clip;
     width: 100%;
     max-width: 100%;
     min-width: 0;
