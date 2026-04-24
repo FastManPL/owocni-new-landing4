@@ -30,10 +30,14 @@ import "./fakty-section.css";
 //
 // geometryContract: geometry-sensitive
 // Wymaga: gsap, ScrollTrigger (rejestrowane w useGSAP)
-// Zwraca: { kill }
+// Zwraca: { kill, pause, resume } — D2 (Typ B); organic RAF: disableOrganic / enableOrganic
 // ════════════════════════════════════════════════════════════
 
-function init(container: HTMLElement): { kill: () => void } {
+function init(container: HTMLElement): {
+  kill: () => void;
+  pause: () => void;
+  resume: () => void;
+} {
   const $id = (id: string) => container.querySelector<HTMLElement>("#" + id);
 
   const cleanups: (() => void)[] = [];
@@ -52,7 +56,8 @@ function init(container: HTMLElement): { kill: () => void } {
 
   if (!faktyBlock || !faktyDom) {
     console.warn("[fakty] Brak wymaganych elementów DOM");
-    return { kill: () => {} };
+    const noop = () => {};
+    return { kill: noop, pause: noop, resume: noop };
   }
 
   let charOffsets: { el: HTMLElement; x: number; y: number }[] = [];
@@ -1313,9 +1318,29 @@ function init(container: HTMLElement): { kill: () => void } {
     });
   }
 
+  /** D2: zewnętrzny pause (factory IO / host) — tylko organic rAF; frameST nadal steruje wejściem w strefę. */
+  let _typBPaused = false;
+
+  function pause() {
+    if (isKilled) return;
+    if (_typBPaused) return;
+    _typBPaused = true;
+    disableOrganic();
+  }
+
+  function resume() {
+    if (isKilled) return;
+    if (!_typBPaused) return;
+    _typBPaused = false;
+    if (frameST && frameST.isActive) {
+      enableOrganic();
+    }
+  }
+
   // ── kill ───────────────────────────────────────────────────
   function kill() {
     isKilled = true;
+    _typBPaused = false;
     repairPhase1ScrollMisfire = null;
     if (frameScrollRafId !== null) {
       cancelAnimationFrame(frameScrollRafId);
@@ -1592,7 +1617,7 @@ function init(container: HTMLElement): { kill: () => void } {
       );
     });
 
-  return { kill };
+  return { kill, pause, resume };
 }
 
 // ════════════════════════════════════════════════════════════
