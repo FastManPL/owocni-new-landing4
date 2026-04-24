@@ -354,13 +354,12 @@ function init(container: HTMLElement): { kill: () => void } {
 
     repairPhase1ScrollMisfire = function () {
       if (isKilled || !row1.isConnected) return;
-      // FAKTY-EARLY-FIRE-01: poprzednio `if (y > 200) return` ograniczało repair do scroll-top
-      // (odświeżenie strony). W scenariuszu szybkiego scrollu z góry ST powstają późno, user jest
-      // już poza strefą startu → progress=1, repair z guardem nigdy nie odpalał → animacja
-      // "FAKTY / SĄ TAKIE" była już rozegrana zanim user ją zobaczył. Warunek
-      // `centerY > vh + 8 && p1 > 0.03` sam w sobie jest bezpieczny: oznacza "row1 center
-      // jest NADAL poniżej viewport bottom (>8 px zapas), a progress > 3 %" — to możliwe tylko
-      // gdy ST syncowało się ze stale scroll/pozycją, nie przy normalnym scrollu w dół.
+      const y = scrollRuntime.isReady() ? scrollRuntime.getScroll() : window.scrollY;
+      // FAKTY-REPAIR-GUARD-01: repair tylko przy scroll-top (cold load / refresh na górze).
+      // Bez tego guardu przy normalnym refresh + cache `repairPhase1ScrollMisfire` odpala się
+      // także gdy user jest głęboko na stronie → `st1.refresh()` z progress > 0 resetuje
+      // wizualnie animację w złym momencie (intermittent „Fakty za szybko”).
+      if (y > 200) return;
       const rect = row1.getBoundingClientRect();
       const vh = window.innerHeight || 1;
       const centerY = rect.top + rect.height * 0.5;
@@ -1556,14 +1555,7 @@ function init(container: HTMLElement): { kill: () => void } {
       setupVideoFill();
       applyFrame(0);
       preloadRemainingFrames();
-      // Lazy ST: wejście sekcji w viewport albo fallback 1,2 s.
-      // FAKTY-EARLY-FIRE-01 (revert): preemptive rootMargin 500 px powodowało, że runBuild() —
-      // zawierający globalne `ScrollTrigger.refresh(false)` + `requestRefreshImmediate()` — odpalał
-      // się zanim Kinetic pin-spacer trafił do layoutu. Wave ST w Blok45 dostawał w tym momencie
-      // stale pozycje (pre-pinSpacer) i uruchamiał się przy BookStats/Fakty. Fakty misfire jest
-      // intermittent ("czasem"), wave regres był częsty ("najczęściej") — priorytet wygrywa
-      // stabilność wave. Fakty misfire obsłużony przez zachowane usunięcie `y > 200` guardu
-      // w `repairPhase1ScrollMisfire` + skrócony timeout 600 ms.
+      // Lazy ST: wejście sekcji w viewport albo fallback 1200 ms (legacy scroll-top).
       lazyStObserver = new IntersectionObserver(
         (entries) => {
           if (entries[0]?.isIntersecting) maybeCreateScrollTriggers();
@@ -1572,7 +1564,7 @@ function init(container: HTMLElement): { kill: () => void } {
       );
       lazyStObserver.observe(container);
       observers.push(lazyStObserver);
-      lazyStTimeout = setTimeout(maybeCreateScrollTriggers, 600);
+      lazyStTimeout = setTimeout(maybeCreateScrollTriggers, 1200);
       // FIX 3: Force re-apply frame + organic ratio po powrocie do karty (reflow/fonty bez ResizeObserver)
       function onVisibilityChange() {
         if (document.visibilityState === "visible" && framesReady) {

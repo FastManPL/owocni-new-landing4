@@ -6,7 +6,10 @@ import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { scrollRuntime } from '@/lib/scrollRuntime';
-import { yieldToMain } from '@/lib/yieldToMain';
+// BLOK45-YIELD-ROLLBACK-01: yieldToMain usunięty z Blok45 init — diagnoza (normal refresh + cache)
+// wykazała race: podczas yield inne ssr:false engines mountowały się i mierzyły geometrię,
+// Blok45 tworzył pin-spacer → CaseStudies/Fakty ST miały stale pozycje. Cyfrowewzrostyengine
+// zachowuje yieldy (brak ScrollTrigger.create w init path).
 import './blok-4-5-section.css';
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
@@ -476,12 +479,7 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
     });
     gsapInstances.push(stUnderline);
 
-    // J12 yield 1/2 — po ciężkim initWave (path table kipiel + org ~250 punktów,
-    // createWaveScrollTriggers gate, resize handlers, syncSectionBgReady) oraz
-    // stUnderline ST. Zanim wejdziemy w blok function-defs (glow/button/stars/
-    // bubbles/canvas/mana/burst/popup — ~1000 LOC defs) oddaj main thread.
-    await yieldToMain();
-    if (!container.isConnected) return _noop;
+    // BLOK45-YIELD-ROLLBACK-01: yield 1/2 usunięty — vide import.
 
     // =========================================================
     // GLOW + BUTTON
@@ -1516,13 +1514,7 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
     initCanvases();initBubbles();initMana();initStarCanvas();initPopup();
     requestAnimationFrame(function(){chars.forEach(function(c,i){charStates[i].baseOffsetLeft=c.offsetLeft;});updateCachedFontSize();cacheBaseMetrics();});
 
-    // J12 yield 2/2 — po SPRITES.init + initPool + walking chars DOM create
-    // (7 span + charStates + MASS_TABLE) + initCanvases/initBubbles/initMana/
-    // initStarCanvas/initPopup (5 kolejnych init funkcji z DOM lookup + ctx).
-    // Zanim zawiesimy resize/scroll handlers + stWalking ST + gsap.ticker.add +
-    // IntersectionObserver + initEyes IIFE + factory gating — oddaj main thread.
-    await yieldToMain();
-    if (!container.isConnected) return _noop;
+    // BLOK45-YIELD-ROLLBACK-01: yield 2/2 usunięty — vide import.
 
     var resizeMainRaf: number | null = null;
     function onResizeMain(){
@@ -1633,8 +1625,8 @@ export default function Blok45Engine() {
       }
       return;
     }
-    // J12: init() async (2× yieldToMain). Race-safe cleanup — jeśli unmount
-    // zdarzy się między yieldami, zwrócony instance jest od razu killed.
+    // init() async (bez yieldToMain w ciele — BLOK45-YIELD-ROLLBACK-01). Race-safe cleanup —
+    // jeśli unmount zdarzy się przed resolve, zwrócony instance jest od razu killed.
     // Wewnątrz init _noop short-circuit przy !container.isConnected.
     let killed = false;
     let inst: { pause: () => void; resume: () => void; kill: () => void } | null = null;
