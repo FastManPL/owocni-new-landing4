@@ -2,6 +2,11 @@ import Lenis from 'lenis';
 import type gsap from 'gsap';
 import type { ScrollTrigger as ScrollTriggerType } from 'gsap/ScrollTrigger';
 
+import {
+  getAnimationCostProfile,
+  type AnimationCostProfile,
+} from '@/lib/autoTier';
+
 // === TYPES ===
 interface ScrollToOptions {
   offset?: number;
@@ -69,27 +74,70 @@ const MOBILE_TOOLBAR_RESIZE_THRESHOLD_PX = 150;
  *  resolution bez gubienia prawdziwych expansionów z ssr:false chunków (placeholder 100vh → 300vh).  */
 const DOC_HEIGHT_CHANGE_THRESHOLD_PX = 30;
 
+/** Lenis + GSAP ticker — dopasowanie do profilu kosztu (słabsze urządzenia). */
+let animationCostProfile: AnimationCostProfile = 'full';
+
+function lenisOptionsFor(profile: AnimationCostProfile): ConstructorParameters<typeof Lenis>[0] {
+  switch (profile) {
+    case 'minimal':
+      return {
+        autoRaf: false,
+        lerp: 0.22,
+        duration: 1.0,
+        smoothWheel: false,
+        wheelMultiplier: 1,
+        touchMultiplier: 0.92,
+        syncTouch: true,
+        syncTouchLerp: 0.14,
+      };
+    case 'reduced':
+      return {
+        autoRaf: false,
+        lerp: 0.16,
+        duration: 1.05,
+        smoothWheel: false,
+        wheelMultiplier: 1,
+        touchMultiplier: 1,
+        syncTouch: true,
+        syncTouchLerp: 0.12,
+      };
+    default:
+      return {
+        autoRaf: false,
+        lerp: 0.1,
+        duration: 1.2,
+        smoothWheel: true,
+        wheelMultiplier: 1,
+        touchMultiplier: 1,
+        /** Mobile: Lenis przejmuje touch synchronicznie — bez tego + overflow na html/body scroll bywa „martwy”. */
+        syncTouch: true,
+        syncTouchLerp: 0.1,
+      };
+  }
+}
+
+function applyGsapTickerCost(G: typeof gsap, profile: AnimationCostProfile): void {
+  if (profile === 'minimal') {
+    G.ticker.fps(30);
+  } else if (profile === 'reduced') {
+    G.ticker.fps(45);
+  }
+}
+
 function runBoot(gen: number, G: typeof gsap, ST: typeof ScrollTriggerType): void {
   if (gen !== initGeneration) return;
 
   gsapRuntime = G;
   ScrollTriggerRuntime = ST;
 
+  animationCostProfile = getAnimationCostProfile();
+  applyGsapTickerCost(G, animationCostProfile);
+
   ST.config({
     ignoreMobileResize: true,
   });
 
-  lenis = new Lenis({
-    autoRaf: false,
-    lerp: 0.1,
-    duration: 1.2,
-    smoothWheel: true,
-    wheelMultiplier: 1,
-    touchMultiplier: 1,
-    /** Mobile: Lenis przejmuje touch synchronicznie — bez tego + overflow na html/body scroll bywa „martwy”. */
-    syncTouch: true,
-    syncTouchLerp: 0.1,
-  });
+  lenis = new Lenis(lenisOptionsFor(animationCostProfile));
 
   ST.scrollerProxy(document.body, {
     scrollTop(value?: number): number {
@@ -251,6 +299,11 @@ function destroy(): void {
     gsapRuntime.ticker.remove(tickerCallback);
   }
   tickerCallback = null;
+
+  if (gsapRuntime) {
+    gsapRuntime.ticker.fps(60);
+  }
+  animationCostProfile = 'full';
 
   if (resizeHandler) {
     window.removeEventListener('resize', resizeHandler);
