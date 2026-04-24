@@ -11,6 +11,9 @@ html {
   html {
     scrollbar-gutter: stable;
     overflow-x: clip;
+    width: 100%;
+    max-width: 100%;
+    overscroll-behavior-x: none;
   }
 
   /* 
@@ -30,10 +33,14 @@ html {
   body {
     background-color: #f7f6f4;
     overflow-x: clip; /* clip + html: mniej poziomego „rubber” na mobile niż hidden-only na body */
+    width: 100%;
+    max-width: 100%;
+    overscroll-behavior-x: none;
   }
 
   main {
     max-width: 100%;
+    width: 100%;
     overflow-x: clip;
   }
 
@@ -61,6 +68,8 @@ html {
   html {
     overflow-x: clip !important;
     overflow-y: auto;
+    max-width: 100%;
+    overscroll-behavior-x: none;
   }
   /*
    * overflow-x: hidden + overflow-y: visible na body → wg specyfikacji overflow-y liczy się jako auto

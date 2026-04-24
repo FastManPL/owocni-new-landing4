@@ -139,10 +139,11 @@ var extScrollEl = container.querySelector('.final-scroll-extender');
 var _cardMaxUp = 0; // max px karty do przesunięcia w górę (scroll mobile / positionCard desktop)
 var _lastMobCardHpx = -1; // cache --final-mobile-card-h (px) żeby nie setProperty co klatkę scrolla
 
-/** Wysokość karty mobilnej — zostaw ~120px na WebGL; iOS: visualViewport ≠ innerHeight. */
+/** Wysokość karty mobilnej — rezerwa pod pas nagłówka/zegara; iOS: visualViewport ≠ innerHeight. */
 function computeMobileCardH(){
   var pin = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-  return Math.min(640, Math.max(360, Math.round(pin - 120)));
+  var reserve = webglSkippedForProfile ? 88 : 100;
+  return Math.min(640, Math.max(320, Math.round(pin - reserve)));
 }
 
 /** Mobile <1200 + layout mobilny: forma wjeżdża po odsłonie napisów — zakres z .final-scroll-extender (final.stack.html). */
@@ -351,6 +352,12 @@ function warmup(){
     webglSkippedForProfile = true;
     w = window.innerWidth;
     h = window.innerHeight;
+    /* makeTexture() nie wołane — bez layoutInfo `updateMobileFormScroll` nie rusza karty (mobile). */
+    layoutInfo = {
+      isMobile: w < 1200,
+      lh: 72,
+      textTopPx: Math.max(96, Math.round(h * 0.2)),
+    };
     if (el && !el.querySelector('.final-static-fallback')) {
       el.classList.add('final-scene--webgl-none');
       var wrap = document.createElement('div');
@@ -367,6 +374,13 @@ function warmup(){
       wrap.appendChild(inner);
       el.appendChild(wrap);
     }
+    requestAnimationFrame(function () {
+      if (isKilled) return;
+      try {
+        positionCard();
+        updateMobileFormScroll();
+      } catch (e) { /* static path */ }
+    });
     return;
   }
   var wgOpts = getWebGLRendererCreationOptions(wgProfile);

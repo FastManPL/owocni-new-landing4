@@ -884,6 +884,10 @@
         min-height: 60vw;  /* było 52vw — +15% */
         flex: 0 0 auto;
         border-radius: 0;
+        /* Klip mockupu: absolute video nie „wycieka” wizualnie nad lewy panel (stacking). */
+        overflow: hidden;
+        position: relative;
+        isolation: isolate;
       }
 
       /* Zoom wrapper: na mobile obraz przyklejony do góry panelu (flex-start),
@@ -893,6 +897,7 @@
       #case-study-section .mockup-zoom-wrapper {
         align-items: flex-start;
         padding-top: 3.2vw;      /* ~15px przy 467px */
+        overflow: hidden;
       }
 
       /* Skalibrowane wartości mobile (430×932) */

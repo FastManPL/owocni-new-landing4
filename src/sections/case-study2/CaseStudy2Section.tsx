@@ -268,7 +268,12 @@ function init(
      Oba wideo koordynują się z Factory IO (pauseHooks/resumeHooks) + własnym IO (600 px).
      ═══════════════════════════════════════════════════════════ */
   if (bgVideo) {
-    var bgHandle = startWarmVideoOnce(bgVideo, { rootMargin: '600px', loop: true });
+    var bgHandle = startWarmVideoOnce(bgVideo, {
+      rootMargin: '600px',
+      loop: true,
+      intersectionPauseResume: true,
+      skipTierGate: true,
+    });
     pauseHooks.push(function() { bgHandle.pause(); });
     resumeHooks.push(function() { bgHandle.start(); });
     cleanups.push(function() { bgHandle.dispose(); });
@@ -280,6 +285,8 @@ function init(
     var thumbHandle = startWarmVideoOnce(thumbVideo, {
       rootMargin: '600px',
       loop: true,
+      intersectionPauseResume: true,
+      skipTierGate: true,
       onPlaying: function() { if (thumbCover) thumbCover.classList.add('is-hidden'); },
     });
     pauseHooks.push(function() { thumbHandle.pause(); });

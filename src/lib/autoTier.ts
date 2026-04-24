@@ -46,15 +46,16 @@ export function getDeviceTier(): DeviceTier {
   const effectiveType = conn?.effectiveType ?? '';
   const slowNetwork = effectiveType === '2g' || effectiveType === 'slow-2g';
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const coarseTouch = isCoarseTouchPrimary();
 
   if (saveData || reducedMotion || cores < 4 || memory < 4 || slowNetwork) {
     return 0;
   }
-  /** Typowy budżetowy telefon: mało rdzeni + głównie palec — traktuj jak tier 0 dla G11. */
-  if (coarseTouch && cores <= 4) {
-    return 0;
-  }
+  /**
+   * UWAGA (2026-04 / mobile Safari): `hardwareConcurrency` bywa 4 na nowych iPhoneach —
+   * poprzedni warunek `coarseTouch && cores <= 4` degradował każdy iPhone do Tier 0
+   * (blokada warm video, WebGL `none`, zepsuty mobile form Final bez `layoutInfo`).
+   * Tier 0 zostaje dla rdzeni < 4 (pierwszy if) + Save-Data / reduced-motion / słabe łącze.
+   */
   if (cores >= 8 && memory >= 8) {
     return 2;
   }

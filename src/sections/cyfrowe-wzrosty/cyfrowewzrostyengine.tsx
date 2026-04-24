@@ -596,7 +596,12 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
   //     bo helper wewnętrznie podtrzymuje własny visibilitychange.
   // ═══════════════════════════════════════════════════════════════
   var warmVideos = Array.from(container.querySelectorAll<HTMLVideoElement>('video[data-warm-video="1"]'));
-  var warmVideoHandle = startWarmVideosOnce(warmVideos, { rootMargin: '600px', loop: true });
+  /* Lekkie pętle w kafelkach — Tier 0 nie może gasić całej sekcji (G11 vs produkt). */
+  var warmVideoHandle = startWarmVideosOnce(warmVideos, {
+    rootMargin: '600px',
+    loop: true,
+    skipTierGate: true,
+  });
   cleanups.push(function() { warmVideoHandle.dispose(); });
 
   // ═══════════════════════════════════════════════════════════════
