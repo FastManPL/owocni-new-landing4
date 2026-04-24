@@ -2272,7 +2272,10 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
         var _invFpRange = 1 / (1.0 - fpStart);       // v139: 1/1.0
         var _invShrRange = 1 / (fpShrinkE - fpShrinkS); // 1/0.292
 
-        var _tunnelHidden = false; // P1: phase-aware display:none
+        // CLS: `display:none` na pełnoekranowym canvasie potrafiło być przypisywane jako ~1.0
+        // layout shift (Live metrics). `visibility:hidden` zachowuje box geometry (absolute
+        // w #kinetic-section) — brak usunięcia z layoutu, ten sam early-return w ticku.
+        var _tunnelHidden = false;
         const _tickTunnel = function() {
             if (_s._killed) return;
             if (!_sectionTickOk) return;
@@ -2280,14 +2283,14 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
             // Czytaj formProgress z particle IIFE
             const fp = _s.particleQmark?.state?.formProgress || 0;
 
-            // P1: Phase-aware — hide tunnel when form complete, show on scroll back
+            // P1: Phase-aware — ukryj tunel po ukończeniu formularza; pokaż przy cofnięciu scrolla
             if (fp >= 1 && !_tunnelHidden) {
-                tunnel.ctx.canvas.style.display = 'none';
+                tunnel.ctx.canvas.style.visibility = 'hidden';
                 _tunnelHidden = true;
                 return;
             }
             if (fp < 1 && _tunnelHidden) {
-                tunnel.ctx.canvas.style.display = '';
+                tunnel.ctx.canvas.style.visibility = 'visible';
                 _tunnelHidden = false;
             }
             if (_tunnelHidden) return;
