@@ -1504,8 +1504,6 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
                 ctx.setTransform(1, 0, 0, 1, 0, 0);
                 ctx.scale(dpr, dpr);
             }
-            canvas.style.width = width + 'px';
-            canvas.style.height = height + 'px';
         }
         
         function resize() {
@@ -1532,8 +1530,6 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
                 ctx.setTransform(1, 0, 0, 1, 0, 0);
                 ctx.scale(dpr, dpr);
             }
-            canvas.style.width = width + 'px';
-            canvas.style.height = height + 'px';
 
             // Przebuduj cząsteczki TYLKO gdy szerokość się zmieniła
             // Mobile toolbar show/hide zmienia tylko height → skip expensive rebuild
@@ -2140,9 +2136,6 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
                     this.ctx.setTransform(1, 0, 0, 1, 0, 0);
                     this.ctx.scale(dpr, dpr);
                 }
-                // Bitmap = newW*dpr — jawny rozmiar CSS (px) jak cylinder/blob; unifikacja layoutu
-                this.canvas.style.width = newW + 'px';
-                this.canvas.style.height = newH + 'px';
                 
                 // Zawsze aktualizuj logiczne wymiary (używane w render)
                 this.W = newW;
@@ -2507,7 +2500,6 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
                     id: "KINETIC_PIN",
                     scrub: true,              // 1-frame latency; Lenis IS the smoothing layer
                     pin: true,
-                    pinType: 'transform',     // CLS: fixed-pin częściej wiąże się z dużym layout shift
                     anticipatePin: 0,         // Lenis eliminates pin flash
                     invalidateOnRefresh: true,
                     preventOverlaps: true,
