@@ -68,7 +68,7 @@ export const homeRouteChunkWarmupEntries: WarmupEntry[] = [
     rootMargin: '2000px',
     import: () => import('@/sections/cyfrowe-wzrosty/cyfrowewzrostyengine'),
   },
-  { policy: 'idle', import: () => import('@/sections/FAQ/FAQSection') },
+  { policy: 'idle', import: () => import('@/sections/FAQ/FAQSectionClient') },
   // Faza 3.4c: FinalSection (15) = ostatnia sekcja, najczęściej nieosiągana.
   // Wrapper `idle` — skeleton `#final-section` w DOM szybko. FinalEngine
   // (Three.js transmission shader clock + form + GSAP) `near-viewport` gated

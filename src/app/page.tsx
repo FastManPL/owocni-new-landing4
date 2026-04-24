@@ -31,7 +31,7 @@ const OnasSectionWrapper = dynamic(() =>
 const CyfroweWzrostySectionWrapper = dynamic(() =>
   import('./CyfroweWzrostySectionWrapper').then((m) => ({ default: m.CyfroweWzrostySectionWrapper }))
 );
-const FAQSection = dynamic(() => import('@/sections/FAQ/FAQSection'));
+import FAQSection from '@/sections/FAQ/FAQSection';
 const FinalSection = dynamic(() =>
   import('@/sections/footer/FinalSection').then((m) => ({ default: m.FinalSection }))
 );
