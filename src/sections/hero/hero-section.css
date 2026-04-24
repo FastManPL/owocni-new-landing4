@@ -162,8 +162,9 @@
 
         /* [SANITIZED] Was: html, body — document resets moved to test shell.
            Only section-specific styles kept here. */
+        /* A4: ta sama rodzina co next/font + Tailwind font-brand (nie surowe 'Lexend'). */
         #hero-section {
-            font-family: 'Lexend', sans-serif;
+            font-family: var(--font-brand), Arial, ui-sans-serif, system-ui, sans-serif;
             color: var(--text-main);
             background-color: var(--background-color);
             font-size: 16px;
@@ -1385,7 +1386,7 @@
             background: linear-gradient(307deg, rgba(249, 248, 246, 1) 0%, rgba(249, 248, 246, 1) 44%, rgba(255, 255, 255, 1) 65%);
             color: #3367D6;
             transform: rotate(45deg) translate(0, 0);
-            font-family: 'Lexend', sans-serif;
+            font-family: var(--font-brand), Arial, ui-sans-serif, system-ui, sans-serif;
             font-size: 8px;
             font-weight: 600;
             letter-spacing: 1px;
@@ -1552,7 +1553,7 @@
 
         /* ════════════ TEKST OPINII ════════════ */
         #hero-section .badge-google .google-text {
-            font-family: 'Lexend', sans-serif;
+            font-family: var(--font-brand), Arial, ui-sans-serif, system-ui, sans-serif;
             font-size: 14px;
             color: #4b5563;
             font-weight: 500;
@@ -1782,7 +1783,7 @@
         }
 
         #hero-section .badge .main {
-            font-family: 'Lexend', sans-serif;
+            font-family: var(--font-brand), Arial, ui-sans-serif, system-ui, sans-serif;
             font-size: 13px;
             font-weight: 600;
             letter-spacing: 1.5px;
@@ -1798,7 +1799,7 @@
         }
 
         #hero-section .badge .sub {
-            font-family: 'Lexend', sans-serif;
+            font-family: var(--font-brand), Arial, ui-sans-serif, system-ui, sans-serif;
             font-size: 11px;
             font-weight: 500;
             color: #4b4b4b;
@@ -2275,7 +2276,7 @@
         }
 
         #hero-section .badge-20lat .number-20 {
-            font-family: 'Lexend', sans-serif;
+            font-family: var(--font-brand), Arial, ui-sans-serif, system-ui, sans-serif;
             font-weight: 800;
             font-size: 52px;
             line-height: 1;
@@ -2295,7 +2296,7 @@
             transform: translate(calc(-50% + 1px), 15px);
             z-index: 10;
             pointer-events: none;
-            font-family: 'Lexend', sans-serif;
+            font-family: var(--font-brand), Arial, ui-sans-serif, system-ui, sans-serif;
             font-size: 12px;
             letter-spacing: 0.25em;
             font-weight: 700;
@@ -2318,7 +2319,7 @@
         }
 
         #hero-section .badge-20lat-wrapper .rotating-text {
-            font-family: 'Lexend', sans-serif;
+            font-family: var(--font-brand), Arial, ui-sans-serif, system-ui, sans-serif;
             font-size: 8px;
             letter-spacing: 0.25em;
             font-weight: 300;
@@ -2603,7 +2604,7 @@
             padding: 0 1.25em;
             border: 3px solid #262626; 
             border-radius: 999px;
-            font-family: 'Lexend', sans-serif; 
+            font-family: var(--font-brand), Arial, ui-sans-serif, system-ui, sans-serif; 
             font-size: 1.6rem; 
             font-weight: 800;
             text-decoration: none; 

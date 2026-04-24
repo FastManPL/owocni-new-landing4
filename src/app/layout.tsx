@@ -18,11 +18,11 @@ const lexend = Lexend({
   variable: '--font-brand',
   adjustFontFallback: true,
   /**
-   * `preload: true` + 2 subsety → Chrome generuje 2× `<link rel="preload" as="font">`;
-   * często jeden plik nie jest użyty w pierwszych sekundach → ostrzeżenie w konsoli.
-   * Lexend i tak ładuje się z `@font-face` w CSS (swap) — bez utraty treści tekstowej.
+   * A4 + critical path: `preload: true` — wcześniejszy start pobrania Lexend (H1 / LCP tekst).
+   * Przy `latin` + `latin-ext` Next może wyemitować 2× preload; ewentualne ostrzeżenie
+   * w DevTools < „nieużyty preload” jest akceptowalne vs opóźnione discovery przy preload:false.
    */
-  preload: false,
+  preload: true,
 });
 
 const fraunces = Fraunces({
