@@ -48,13 +48,14 @@ html {
    * Obcięcie treści szerzej niż viewport — zawęża scrollWidth dokumentu (iOS + sekcje 100vw / breakout).
    * Wrapper jest w SmoothScrollProvider (nad całą treścią pod body).
    *
-   * Tylko overflow-x: hidden + domyślne overflow-y: visible → wg spec. overflow-y liczy się jako auto
-   * (drugi pionowy scrollport obok html/Lenis). To daje „blokady” przewijania na touch.
-   * overflow-y: clip obcina bez mechanizmu scrolla na tej warstwie — przewijanie zostaje na html.
+   * Na tej warstwie NIE używamy overflow-x: hidden:
+   * - hidden + visible/auto na drugiej osi → drugi pionowy scrollport / blokady touch (naprawione przez clip na Y).
+   * - samo hidden na X tworzy scroll container — psuje position:sticky (#final-sticky) i geometrię wjazdu karty
+   *   (getBoundingClientRect .final-scroll-extender vs viewport).
+   * overflow: clip na obu osiach obcina bez scrollportu (jak html/body tutaj — clip).
    */
   .site-viewport-clip {
-    overflow-x: hidden;
-    overflow-y: clip;
+    overflow: clip;
     width: 100%;
     max-width: 100%;
     min-width: 0;
