@@ -16,8 +16,8 @@ import { startWarmVideoOnce } from '@/lib/warmVideo';
  *  - Cursor particles system (sprite-cached, RAF @30fps, 150 particles pool)
  *  - Play button SVG (dots ring + progress arc + triangle + hover bounce)
  *  - Popup open/close + body overflow lock + ESC + backdrop
- *  - Video WARM gating (preload=none + IO rootMargin 400px + visibilitychange)
- *  - Factory IO gating (Typ B → pause/resume, rootMargin ~50% vh)
+ *  - Video WARM gating (preload=none + intersectionPauseResume + visibility)
+ *  - Factory IO gating (Typ B → pause/resume, rootMargin ~50% vh) — mockup video: tylko IO warmVideo
  *  - Debug overlay refresh
  *
  * Wrapper (`WynikiSection.tsx`) zarządza:
@@ -103,22 +103,16 @@ function init(
       document.addEventListener('visibilitychange', onVisChange);
       cleanups.push(() => document.removeEventListener('visibilitychange', onVisChange));
 
-      /* ═══ MOCKUP VIDEO — WARM gating (G2/G3/G11) via warmVideo helper ═══
-         Video ma `preload="none"` + `data-autoplay` dla intent flagi.
-         warmVideo helper zapewnia:
-           - Tier 0 → no-op (G11, poster-like static: <Image> monitor/tlo pod spodem)
-           - IO (rootMargin 400px) → pierwszy load+play near-viewport
-           - visibilitychange pause/resume (document.hidden)
-         pauseHooks/resumeHooks (Factory IO) nadal sterują playback po starcie. */
+      /* ═══ MOCKUP VIDEO — WARM + G4 (intersectionPauseResume) ═══
+         Tier 0 → no-op (G11). Klip pauzuje się gdy sam wypada z IO — bez konfliktu z factory pause/resume. */
       const mockupVideo = container.querySelector<HTMLVideoElement>('.mockup-video');
       const _mockupAllowAutoplay = mockupVideo?.dataset.autoplay === '1';
       if (mockupVideo && _mockupAllowAutoplay) {
         const mockupHandle = startWarmVideoOnce(mockupVideo, {
           rootMargin: '400px',
           loop: true,
+          intersectionPauseResume: true,
         });
-        pauseHooks.push(() => mockupHandle.pause());
-        resumeHooks.push(() => mockupHandle.start());
         cleanups.push(() => mockupHandle.dispose());
       }
 

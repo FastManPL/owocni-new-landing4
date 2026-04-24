@@ -5,6 +5,7 @@ import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { scrollRuntime } from '@/lib/scrollRuntime';
+import { getAssetPath } from '@/lib/assetPath';
 import { scheduleAfterKineticLayoutReady } from '@/lib/whenKineticLayoutReadyForSt';
 import './wyniki-cs-tiles-section.css';
 
@@ -14,6 +15,10 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     var DEBUG_MODE=new URLSearchParams(window.location.search).has('debug')||localStorage.getItem('debug')==='1';
     var _cleanups=[],_observers=[];
     var _isMobile=window.innerWidth<=640;
+    /** Lenis + scrollRuntime: scrollerProxy na document.body — ST jak w CaseStudiesTilesEngine. */
+    var _stScroller = document.body;
+    /** Flywheel canvas CS2 — outer pause()/resume() musi widzieć spinRafId (G4). */
+    var _flywheel = { spinRafId: 0, startSpin: function() {} as () => void };
     function _addWL(e,f,o){window.addEventListener(e,f,o);_cleanups.push(function(){window.removeEventListener(e,f,o);});}
     function _addDL(e,f){document.addEventListener(e,f);_cleanups.push(function(){document.removeEventListener(e,f);});}
     _addWL('resize',function(){_isMobile=window.innerWidth<=640;});
@@ -265,9 +270,12 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         }
       });
 
+      var trigCs2 = container.querySelector('#cs2-section');
+      if (!trigCs2) return;
       scrollTl = gsap.timeline({
         scrollTrigger: {
-          trigger: '#cs2-section',
+          trigger: trigCs2,
+          scroller: _stScroller,
           start: '60% bottom',
           end: window.innerWidth<=640 ? 'center 50%' : 'center 30%',
           scrub: 0.6
@@ -314,26 +322,22 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     buildTimeline();
 
     /* ═══ CANVAS PHONE — physics momentum (flywheel) ═══
-       Scroll nadaje siłę → klatki kręcą się z inercją → zwalniają.
-       Nigdy nie przeskakuje klatek — rAF rysuje co 1.
-       D = debug HUD, P = diagnostyka */
+       _flywheel.spinRafId / startSpin — widoczne dla zewnętrznego pause() (G4). */
 
     (function() {
       var FRAME_COUNT = 41;
-      var BASE_URL = 'assets/portfolios/canvas/';
       var SOURCE_W = 242;
       var SOURCE_H = 397;
 
-      /* PHYSICS CONFIG */
       var SCROLL_GAIN = 0.08;
       var FRICTION = 0.94;
       var MIN_VELOCITY = 0.01;
       var MAX_VELOCITY = 3.0;
 
-      var canvasEl = container.querySelector('#cs2-phone-canvas') || document.createElement('div');
-      var phoneContainer = canvasEl ? canvasEl.parentElement : null;
-      var sectionEl = container.querySelector('#cs2-section') || document.createElement('div');
-      if (!canvasEl || !phoneContainer || !sectionEl) return;
+      var canvasEl = container.querySelector('#cs2-phone-canvas');
+      var phoneContainer = canvasEl instanceof HTMLCanvasElement ? canvasEl.parentElement : null;
+      var sectionEl = container.querySelector('#cs2-section');
+      if (!(canvasEl instanceof HTMLCanvasElement) || !phoneContainer || !sectionEl) return;
 
       var ctx = canvasEl.getContext('2d');
       if (!ctx) return;
@@ -343,11 +347,9 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       var allLoaded = false;
       var position = 0;
       var velocity = 0;
-      var lastScrollY = window.scrollY;
+      var lastScrollY = scrollRuntime.getScroll();
       var isVisible = false;
-      var spinRafId = 0;
       var lastDrawnFrame = -1;
-      var diag = { transitions: [], draws: 0, startTime: 0, peakVel: 0 };
       var cached = { cw: 0, ch: 0, sw: 0, sh: 0, sx: 0, sy: 0 };
 
       function setupCanvasDPR() {
@@ -378,7 +380,6 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         ctx.clearRect(0, 0, cached.cw, cached.ch);
         ctx.drawImage(frames[index], cached.sx, cached.sy, cached.sw, cached.sh);
         lastDrawnFrame = index;
-        diag.draws++;
       }
 
       function spin() {
@@ -386,29 +387,32 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         position = ((position % FRAME_COUNT) + FRAME_COUNT) % FRAME_COUNT;
         var frameIdx = Math.round(position) % FRAME_COUNT;
         if (frameIdx !== lastDrawnFrame) {
-          var prev = lastDrawnFrame;
           drawFrame(frameIdx);
-          diag.transitions.push({ from: prev, to: frameIdx, time: (performance.now() - diag.startTime).toFixed(1), vel: velocity.toFixed(3) });
-          if (diag.transitions.length > 500) diag.transitions = diag.transitions.slice(-250);
-          updateHUD();
         }
         velocity *= FRICTION;
-        if (Math.abs(velocity) < MIN_VELOCITY) { velocity = 0; spinRafId = 0; return; }
-        spinRafId = requestAnimationFrame(spin);
+        if (Math.abs(velocity) < MIN_VELOCITY) {
+          velocity = 0;
+          _flywheel.spinRafId = 0;
+          return;
+        }
+        _flywheel.spinRafId = requestAnimationFrame(spin);
       }
 
-      function startSpin() { if (spinRafId) return; spinRafId = requestAnimationFrame(spin); }
+      function startSpin() {
+        if (_flywheel.spinRafId) return;
+        _flywheel.spinRafId = requestAnimationFrame(spin);
+      }
+      _flywheel.startSpin = startSpin;
 
       function onScroll() {
         if (!isVisible || !allLoaded) return;
-        var scrollY = window.scrollY;
+        var scrollY = scrollRuntime.getScroll();
         var delta = scrollY - lastScrollY;
         lastScrollY = scrollY;
         if (delta === 0) return;
         velocity += delta * SCROLL_GAIN;
         if (velocity > MAX_VELOCITY) velocity = MAX_VELOCITY;
         if (velocity < -MAX_VELOCITY) velocity = -MAX_VELOCITY;
-        if (Math.abs(velocity) > diag.peakVel) diag.peakVel = Math.abs(velocity);
         startSpin();
       }
       _addWL('scroll', onScroll, { passive: true });
@@ -416,7 +420,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       var visIO = new IntersectionObserver(function(entries) {
         if (!entries[0]) return;
         isVisible = entries[0].isIntersecting;
-        if (isVisible) lastScrollY = window.scrollY;
+        if (isVisible) lastScrollY = scrollRuntime.getScroll();
       }, { rootMargin: '10% 0px' });
       visIO.observe(sectionEl);_observers.push(visIO);
 
@@ -434,69 +438,9 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
         ro.observe(phoneContainer);_observers.push(ro);
       }
 
-      /* DEBUG HUD (D) */
-      }
-      var hudVisible = false;
-
-      function updateHUD() {
-        if (!hudVisible) return;
-        var last20 = diag.transitions.slice(-20).map(function(t) { return t.to; });
-      }
-
-      /* DIAGNOSTIC PANEL (P) */
-        + '<div style="margin-bottom:6px;color:#888">Scrolluj, potem SNAPSHOT</div>'
-      }
-
-        var missing = [];
-        for (var i = 0; i < FRAME_COUNT; i++) { if (!frames[i]) missing.push(i); }
-        var jumps = [];
-        var half = FRAME_COUNT / 2;
-        for (var j = 1; j < diag.transitions.length; j++) {
-          var t = diag.transitions[j];
-          var p = diag.transitions[j - 1];
-          if (t.from < 0) continue;
-          var d = Math.abs(t.to - t.from);
-          if (d > half) d = FRAME_COUNT - d;
-          if (d > 1) jumps.push({ at: t.time + 'ms', from: t.from, to: t.to, jump: d, vel: t.vel });
-        }
-        var fps = 0;
-        if (diag.transitions.length > 10) {
-          var recent = diag.transitions.slice(-30);
-          var dt = parseFloat(recent[recent.length - 1].time) - parseFloat(recent[0].time);
-          if (dt > 0) fps = Math.round(recent.length / (dt / 1000));
-        }
-        var last50 = diag.transitions.slice(-50).map(function(t) { return t.to; });
-        return [
-          '=== CANVAS FLYWHEEL DIAGNOSTIC ===',
-          'SCROLL_GAIN: ' + SCROLL_GAIN + '  FRICTION: ' + FRICTION + '  MAX_VEL: ' + MAX_VELOCITY,
-          'Loaded: ' + loadedCount + '/' + FRAME_COUNT + '  Missing: ' + (missing.length === 0 ? 'none' : missing.join(',')),
-          'Draws: ' + diag.draws + '  Peak vel: ' + diag.peakVel.toFixed(3) + '  FPS: ' + fps,
-          '',
-          'PERCEPCYJNE SKOKI (>1 frame):',
-          jumps.length === 0 ? '  none' : jumps.map(function(j) { return '  ' + j.at + ': ' + j.from + '->' + j.to + ' (skok ' + j.jump + ' vel=' + j.vel + ')'; }).join('\n'),
-          '',
-          'SEKWENCJA (50):',
-          last50.join('->'),
-          '',
-          'TRANSITIONS (80):',
-          diag.transitions.slice(-80).map(function(t) { return t.time + 'ms: ' + t.from + '->' + t.to + ' v=' + t.vel; }).join('\n')
-        ].join('\n');
-      }
-
-      if(DEBUG_MODE) _addDL('keydown', function(e) {
-        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-      });
-
-        try { navigator.clipboard.writeText(r); } catch(e) {}
-      });
-
-        diag.transitions = []; diag.draws = 0; diag.peakVel = 0; diag.startTime = performance.now();
-      });
-
-      /* PRELOAD */
       function preloadFrame(index) {
         return new Promise(function(resolve) {
-          var url = BASE_URL + String(index).padStart(3, '0') + '.jpg';
+          var url = getAssetPath('/assets/portfolios/canvas/' + String(index).padStart(3, '0') + '.webp');
           var img = new Image();
           img.onload = function() {
             if (img.decode) {
@@ -512,7 +456,6 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       var sentryIO = new IntersectionObserver(function(entries) {
         if (!entries[0] || !entries[0].isIntersecting) return;
         sentryIO.disconnect();
-        diag.startTime = performance.now();
         preloadFrame(0).then(function() {
           setupCanvasDPR();
           drawFrame(0);
@@ -522,77 +465,21 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
           function loadNext() {
             if (queue.length === 0) {
               allLoaded = true;
-              if(DEBUG_MODE) console.log('[canvas] ALL LOADED: ' + loadedCount + '/' + FRAME_COUNT);
-              if(DEBUG_MODE) console.log('[canvas] BASE_URL: ' + BASE_URL);
-              if(DEBUG_MODE) console.log('[canvas] Example URL: ' + BASE_URL + '000.jpg');
-              var missing = [];
-              for (var i = 0; i < FRAME_COUNT; i++) { if (!frames[i]) missing.push(i); }
-              if (missing.length > 0) console.warn('[canvas] MISSING: ' + missing.join(', '));
-              lastScrollY = window.scrollY;
+              lastScrollY = scrollRuntime.getScroll();
               return;
             }
-            preloadFrame(queue.shift()).then(loadNext).catch(loadNext);
+            var n1 = queue.shift();
+            if (n1 !== undefined) preloadFrame(n1).then(loadNext).catch(loadNext);
           }
           var c = Math.min(3, queue.length);
-          for (var k = 0; k < c; k++) preloadFrame(queue.shift()).then(loadNext).catch(loadNext);
+          for (var k = 0; k < c; k++) {
+            var n2 = queue.shift();
+            if (n2 !== undefined) preloadFrame(n2).then(loadNext).catch(loadNext);
+          }
         });
       }, { rootMargin: '1000px 0px 1000px 0px' });
       sentryIO.observe(sectionEl);_observers.push(sentryIO);
     })();
-
-
-    /* ═══ MEGA PANEL JS ═══ */
-
-    _addDL('keydown', function(e) {
-      if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-      if (e.key === 'g' || e.key === 'G') if(mp)mp.classList.toggle('open');
-    });
-
-      currentMode = mode;
-      if (mode === 'start') {
-        modeStartBtn.style.background = '#4ade80'; modeStartBtn.style.color = '#000'; modeStartBtn.style.borderColor = '#4ade80';
-        modeEndBtn.style.background = 'transparent'; modeEndBtn.style.color = '#888'; modeEndBtn.style.borderColor = '#555';
-      } else {
-        modeEndBtn.style.background = '#ef4444'; modeEndBtn.style.color = '#fff'; modeEndBtn.style.borderColor = '#ef4444';
-        modeStartBtn.style.background = 'transparent'; modeStartBtn.style.color = '#888'; modeStartBtn.style.borderColor = '#555';
-      }
-      /* Update sliders to show current mode values */
-        var isMob=window.innerWidth<=640;
-        var key=mode==='start'?(isMob?'ms':'start'):(isMob?'me':'end');
-        var v = s.dataset[key];
-        s.value = v;
-        s.nextElementSibling.textContent = v + '%';
-      });
-    }
-    modeEndBtn.addEventListener('click', function() { setMode('end'); });
-
-    /* Slider input: update data-start or data-end + live CSS preview */
-      s.addEventListener('input', function() {
-        var v = s.value;
-        s.nextElementSibling.textContent = v + '%';
-        var isMob=window.innerWidth<=640; var wk=currentMode==='start'?(isMob?'ms':'start'):(isMob?'me':'end'); s.dataset[wk]=v;
-        /* Live preview: apply to CSS immediately */
-        var el = (s.dataset.target === 'cd' && window.innerWidth <= 640) ? rpEl : (s.dataset.target === 'cd' ? cdEl : rpEl);
-        el.style.setProperty(s.dataset.prop, v + '%');
-      });
-    });
-
-    /* Apply button */
-      buildTimeline();
-      /* Scroll to section to preview */
-      var sect = container.querySelector('#cs2-section') || document.createElement('div');
-      if (sect) sect.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    });
-
-
-      var vw = window.innerWidth;
-      var lines = [];
-        var isMob=window.innerWidth<=640; var sk=isMob?'ms':'start'; var ek=isMob?'me':'end'; lines.push(s.dataset.prop.replace('--','') + '  S=' + s.dataset[sk] + '%  F=' + s.dataset[ek] + '%');
-      });
-    }
-
-
-    /* Init: sync slider display to current viewport */
 
 
     /* MOBILE FIX: Reparent card-level elements into .cs2-right
@@ -604,7 +491,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       var els = ['cs2-pragma', 'cs2-dlon', 'cs2-kw1', 'cs2-kw2', 'cs2-kw3'];
       
       els.forEach(function(cls) {
-        var el = document.querySelector('.' + cls);
+        var el = container.querySelector('#cs2-section .' + cls);
         if (!el) return;
         if (isMob && el.parentElement === card) {
           right.appendChild(el);
@@ -648,7 +535,9 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       applyCSS(sv);
       var proxy={},target={},props=[];
       Object.keys(sv).forEach(function(p){var k=p.replace(/--/g,'').replace(/-/g,'_');proxy[k]=sv[p];target[k]=ev[p];props.push({key:k,prop:p});});
-      scrollTl=gsap.timeline({scrollTrigger:{trigger:'#cs3-section',start:'60% bottom',end:window.innerWidth<=640?'center 50%':'center 30%',scrub:0.6}});
+      var trigCs3 = container.querySelector('#cs3-section');
+      if (!trigCs3) return;
+      scrollTl=gsap.timeline({scrollTrigger:{trigger: trigCs3, scroller: _stScroller, start:'60% bottom',end:window.innerWidth<=640?'center 50%':'center 30%',scrub:0.6}});
       if(tloEl)scrollTl.fromTo(tloEl,{filter:'brightness(0.15)'},{filter:'brightness(1)',ease:'power2.inOut',duration:1},0);
       var at=Object.assign({},target);at.ease='power2.inOut';at.duration=1;
       at.onUpdate=function(){props.forEach(function(p){rpEl.style.setProperty(p.prop,(p.prop==='--eye-radial-opacity'||p.prop==='--tlum-opacity'||p.prop==='--hipno-opacity'||p.prop==='--hand1-opacity'||p.prop==='--hand2-opacity'||p.prop==='--przyklady-opacity'||p.prop==='--przyklady-rad-opacity')?String(Math.round(proxy[p.key])):proxy[p.key].toFixed(1)+'%');});};
@@ -657,14 +546,6 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     }
     buildTimeline();
 
-    _addDL('keydown',function(e){if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;if(e.key==='g'||e.key==='G')if(mp)mp.classList.toggle('open');});
-      if(m==='start'){sb.style.background='#4ade80';sb.style.color='#000';sb.style.borderColor='#4ade80';eb.style.background='transparent';eb.style.color='#888';eb.style.borderColor='#555';}
-      else{eb.style.background='#ef4444';eb.style.color='#fff';eb.style.borderColor='#ef4444';sb.style.background='transparent';sb.style.color='#888';sb.style.borderColor='#555';}
-    }
-
-
-    /* Init: sync slider display to current viewport */
-
     /* Rebuild when crossing mobile/desktop threshold */
     var _wasMobcs3 = window.innerWidth <= 640;
     _addWL('resize', function() {
@@ -672,7 +553,6 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       if (isMob !== _wasMobcs3) {
         _wasMobcs3 = isMob;
         buildTimeline();
-        setMode(currentMode);
       }
     });
 
@@ -720,7 +600,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     function pause() {
       if (_paused) return;
       _paused = true;
-      /* G4: MP4 w kafelkach (ten silnik nie ma warmVideo jak CaseStudies) — pauza poza IO. */
+      /* G4: MP4 w kafelkach — pauza poza IO (brak warmVideo jak w CaseStudies). */
       try {
         container.querySelectorAll('video').forEach(function (v) {
           try {
@@ -732,11 +612,9 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       } catch (e) {
         /* noop */
       }
-      /* Flywheel canvas: spinRafId/startSpin są w closure IIFE cs2 — outer pause nie anuluje rAF;
-         wideo pause i tak redukuje główny koszt CPU poza viewportem. */
-      if (typeof spinRafId !== 'undefined' && spinRafId) {
-        cancelAnimationFrame(spinRafId);
-        spinRafId = 0;
+      if (_flywheel.spinRafId) {
+        cancelAnimationFrame(_flywheel.spinRafId);
+        _flywheel.spinRafId = 0;
       }
     }
 
@@ -755,9 +633,7 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
       } catch (e) {
         /* noop */
       }
-      if (typeof startSpin === 'function' && typeof spinRafId !== 'undefined') {
-        startSpin();
-      }
+      _flywheel.startSpin();
     }
 
     function kill() {
