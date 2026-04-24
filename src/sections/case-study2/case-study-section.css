@@ -78,7 +78,7 @@
      *   Image renders object-fit:contain in container → screen = 65% of container width
      *   At frame scale 1.07: screen = 69.6% of container
      *   At video scale 1.02: need video CSS width ≥ 69.6/1.02 = 68.2%
-     *   Using 70% + object-fit:cover → wypełnienie cutoutu przy lekkim cropie klatki
+     *   ~64% + 16:9 + cover — dopasowanie pod cutout (bez nachodzenia na ramkę)
      *   Frame PNG (z:3) covers video overflow beyond screen edges
      */
     #case-study-section .mockup-video {
@@ -89,15 +89,15 @@
       /* cover: wypełnia prostokąt otworu w cutoucie laptopa (bez „pustych” pasów jak przy contain). */
       object-fit: cover;
       object-position: center center;
-      /* Rezerwa boxu przed metadanymi (CLS) — ~16:10 zbliżone do laptopowego ekranu w Laptop.webp */
-      aspect-ratio: 16 / 10;
+      /* Rezerwa boxu przed metadanymi (CLS) */
+      aspect-ratio: 16 / 9;
       /* Pozycjonowanie przez GSAP proxy */
       --scrvid-x: 49.5%;
-      --scrvid-y: 55%;
+      --scrvid-y: 53.5%;
       --scrvid-scale: 1.02;
       left: var(--scrvid-x);
       top: var(--scrvid-y);
-      width: 70%;
+      width: 64%;
       height: auto;
       transform: translate(-50%, -50%) scale(var(--scrvid-scale));
     }
@@ -117,9 +117,9 @@
     /* ─── PLAY BUTTON (prawy dolny róg prawego panelu) ──────────────────── */
     #case-study-section .case-study-play-btn {
       position: absolute;
-      /* Wyżej — w parze z większym „cover” wideo, żeby siedział na tle ekranu, nie na ramce */
-      bottom: 10%;
-      right: 6%;
+      /* Wyżej i bardziej w lewo — w obrębie „ekranu” mockupa, nie na ramce / dłoni */
+      bottom: 14%;
+      right: 11%;
       width: 11%;
       height: auto;
       aspect-ratio: 1;
@@ -899,9 +899,9 @@
       /* Mobile: skala/szerokość zsynchronizowane z GSAP */
       #case-study-section .mockup-video {
         --scrvid-x: 49%;
-        --scrvid-y: 55%;
+        --scrvid-y: 53.5%;
         --scrvid-scale: 1.02;
-        width: 70%;
+        width: 64%;
       }
 
       /* Lewy panel: padding symetryczny - bottom = top = 8vw
