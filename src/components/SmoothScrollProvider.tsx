@@ -39,7 +39,7 @@ export function SmoothScrollProvider({ children }: SmoothScrollProviderProps) {
     return () => window.removeEventListener('orientationchange', handleOrientationChange);
   }, []);
 
-  return <>{children}</>;
+  return <div className="site-viewport-clip">{children}</div>;
 }
 
 export default SmoothScrollProvider;

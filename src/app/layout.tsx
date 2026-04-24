@@ -17,7 +17,12 @@ const lexend = Lexend({
   display: 'swap',
   variable: '--font-brand',
   adjustFontFallback: true,
-  preload: true,
+  /**
+   * `preload: true` + 2 subsety → Chrome generuje 2× `<link rel="preload" as="font">`;
+   * często jeden plik nie jest użyty w pierwszych sekundach → ostrzeżenie w konsoli.
+   * Lexend i tak ładuje się z `@font-face` w CSS (swap) — bez utraty treści tekstowej.
+   */
+  preload: false,
 });
 
 const fraunces = Fraunces({
