@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import dynamic from 'next/dynamic';
 import { Suspense } from 'react';
 import { resolveHeroVariant } from '@/config/heroVariants.generated';
+import { FAQJsonLd } from '@/sections/FAQ/FAQJsonLd';
 import { LoveWallSeoQuotes } from '@/sections/Opinie/LoveWallSeoQuotes';
 import { FaktySection } from '@/sections/fakty/FaktySection';
 import { HeroSection } from '@/sections/hero/HeroSection';
@@ -97,6 +98,7 @@ async function HomePageContent({
       <CaseStudiesSection />
       <OnasSectionWrapper />
       <CyfroweWzrostySectionWrapper />
+      <FAQJsonLd />
       <FAQSection />
       <FinalSection />
     </main>
