@@ -1504,6 +1504,8 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
                 ctx.setTransform(1, 0, 0, 1, 0, 0);
                 ctx.scale(dpr, dpr);
             }
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
         }
         
         function resize() {
@@ -1530,6 +1532,8 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
                 ctx.setTransform(1, 0, 0, 1, 0, 0);
                 ctx.scale(dpr, dpr);
             }
+            canvas.style.width = width + 'px';
+            canvas.style.height = height + 'px';
 
             // Przebuduj cząsteczki TYLKO gdy szerokość się zmieniła
             // Mobile toolbar show/hide zmienia tylko height → skip expensive rebuild
@@ -1607,14 +1611,14 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
                 canvas.style.clipPath = '';
                 _clipActive = false;
             }
-            // P1: Phase-aware — hide particle canvas from compositor after collapse
+            // P1: Phase-aware — po collapse wyłącz rysunek (visibility ≠ display:none — stabilniejszy box)
             if (state.collapseProgress >= 1 && !_particleHidden) {
-                canvas.style.display = 'none';
+                canvas.style.visibility = 'hidden';
                 _particleHidden = true;
                 return;
             }
             if (state.collapseProgress < 1 && _particleHidden) {
-                canvas.style.display = '';
+                canvas.style.visibility = 'visible';
                 _particleHidden = false;
             }
             animate();
@@ -1989,15 +1993,15 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
             if (!_sectionTickOk) return; // cylinder renders on main frame (cheap — 37ms total from profiler)
             if (document.hidden) return;
             
-            // P1: Phase-aware — hide wrapper from compositor when invisible
+            // P1: Phase-aware — przy opacity 0 ukryj compositor (visibility zamiast display:none)
             if (cylinderState.opacity <= 0 && !_cylinderHidden) {
-                wrapper.style.display = 'none';
+                wrapper.style.visibility = 'hidden';
                 _cylinderHidden = true;
                 lastOpacity = 0;
                 return;
             }
             if (cylinderState.opacity > 0 && _cylinderHidden) {
-                wrapper.style.display = '';
+                wrapper.style.visibility = 'visible';
                 _cylinderHidden = false;
             }
             
@@ -2136,6 +2140,9 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
                     this.ctx.setTransform(1, 0, 0, 1, 0, 0);
                     this.ctx.scale(dpr, dpr);
                 }
+                // Bitmap = newW*dpr — jawny rozmiar CSS (px) jak cylinder/blob; unifikacja layoutu
+                this.canvas.style.width = newW + 'px';
+                this.canvas.style.height = newH + 'px';
                 
                 // Zawsze aktualizuj logiczne wymiary (używane w render)
                 this.W = newW;
@@ -2272,9 +2279,8 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
         var _invFpRange = 1 / (1.0 - fpStart);       // v139: 1/1.0
         var _invShrRange = 1 / (fpShrinkE - fpShrinkS); // 1/0.292
 
-        // CLS: `display:none` na pełnoekranowym canvasie potrafiło być przypisywane jako ~1.0
-        // layout shift (Live metrics). `visibility:hidden` zachowuje box geometry (absolute
-        // w #kinetic-section) — brak usunięcia z layoutu, ten sam early-return w ticku.
+        // Po ukończeniu formularza: visibility + early-return (bez display:none). Duży CLS
+        // z Live metrics często bierze się z pinu / skalowania canvasu — patrz też style px w _resize.
         var _tunnelHidden = false;
         const _tickTunnel = function() {
             if (_s._killed) return;
@@ -2501,6 +2507,7 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
                     id: "KINETIC_PIN",
                     scrub: true,              // 1-frame latency; Lenis IS the smoothing layer
                     pin: true,
+                    pinType: 'transform',     // CLS: fixed-pin częściej wiąże się z dużym layout shift
                     anticipatePin: 0,         // Lenis eliminates pin flash
                     invalidateOnRefresh: true,
                     preventOverlaps: true,

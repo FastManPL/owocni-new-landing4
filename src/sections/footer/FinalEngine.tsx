@@ -367,6 +367,13 @@ function warmup(){
     if(!ticking && tickFn && !_paused){ gsap.ticker.add(tickFn); ticking=true; }
   }, false);
 
+  // CLS: karta renderowała się z CSS (środek + translate -50%,-50%), a dopiero
+  // późniejsza faza warmupu wołała positionCard() → duży skok (~0.17). Viewport
+  // (w,h) jest już znany — ustaw docelową geometrię od razu po dołączeniu WebGL.
+  if (cardEl) {
+    positionCard();
+  }
+
   scene = new THREE.Scene();
   scene.background = new THREE.Color('#f7f6f4');
 

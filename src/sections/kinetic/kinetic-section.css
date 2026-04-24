@@ -133,6 +133,7 @@
             height: 100%;
             z-index: 4; /* Nad glow (3) */
             pointer-events: none;
+            display: block; /* canvas domyślnie inline — unikaj baseline gap */
         }
 
         /* ============================================
@@ -147,6 +148,7 @@
             height: 100%;
             z-index: 5; /* Nad tunnel (4), pod vignette (8) */
             pointer-events: none;
+            display: block;
             /* filter: BAKED into JS palettes (bakeFilter) — eliminuje GPU filter pipeline */
             mix-blend-mode: normal; /* GSAP switches to color-burn at BLOB_OPACITY_START+1.5 */
         }
