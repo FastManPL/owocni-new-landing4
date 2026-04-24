@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import dynamic from 'next/dynamic';
 import { Suspense } from 'react';
 import { resolveHeroVariant } from '@/config/heroVariants.generated';
+import { LoveWallSeoQuotes } from '@/sections/Opinie/LoveWallSeoQuotes';
 import { FaktySection } from '@/sections/fakty/FaktySection';
 import { HeroSection } from '@/sections/hero/HeroSection';
 import { KalkulatorSection } from '@/sections/kalkulator/KalkulatorSection';
@@ -90,6 +91,7 @@ async function HomePageContent({
       <SectionsClient />
       <KalkulatorSection />
       <GwarancjaSectionWrapper />
+      <LoveWallSeoQuotes />
       <LoveWallSectionWrapper />
       <CaseStudy2SectionWrapper />
       <CaseStudiesSection />
