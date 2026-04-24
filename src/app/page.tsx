@@ -12,8 +12,22 @@ import { KineticDisabledPlaceholder } from './KineticDisabledPlaceholder';
 import { KineticHomeSlot } from './KineticHomeSlot';
 import { SectionsClient } from './SectionsClient';
 
-const BookStatsSection = dynamic(() =>
-  import('@/sections/books/BookStatsSection').then((m) => ({ default: m.BookStatsSection }))
+/** Prompt 3 / Faza 1.3: bez SSR hydracji ~850+ LoC — skeleton rezerwuje miejsce (zero CLS). Warmup: `homeRouteChunkWarmup`. */
+const BookStatsSection = dynamic(
+  () =>
+    import('@/sections/books/BookStatsSection').then((m) => ({ default: m.BookStatsSection })),
+  {
+    ssr: false,
+    loading: () => (
+      <section
+        id="book-stats-section"
+        className="section"
+        style={{ minHeight: '100vh' }}
+        aria-hidden="true"
+        aria-busy="true"
+      />
+    ),
+  }
 );
 const GwarancjaSectionWrapper = dynamic(() =>
   import('./GwarancjaSectionWrapper').then((m) => ({ default: m.GwarancjaSectionWrapper }))
@@ -21,8 +35,20 @@ const GwarancjaSectionWrapper = dynamic(() =>
 const LoveWallSectionWrapper = dynamic(() =>
   import('./LoveWallSectionWrapper').then((m) => ({ default: m.LoveWallSectionWrapper }))
 );
-const CaseStudy2Section = dynamic(() =>
-  import('@/sections/case-study2/CaseStudy2Section').then((m) => ({ default: m.CaseStudy2Section }))
+const CaseStudy2Section = dynamic(
+  () =>
+    import('@/sections/case-study2/CaseStudy2Section').then((m) => ({ default: m.CaseStudy2Section })),
+  {
+    ssr: false,
+    loading: () => (
+      <section
+        id="case-study-section"
+        style={{ minHeight: '100vh' }}
+        aria-hidden="true"
+        aria-busy="true"
+      />
+    ),
+  }
 );
 const CaseStudiesSection = dynamic(() =>
   import('@/sections/case-studies/CaseStudiesSection').then((m) => ({ default: m.CaseStudiesSection }))
