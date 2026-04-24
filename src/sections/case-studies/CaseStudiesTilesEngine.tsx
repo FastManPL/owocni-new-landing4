@@ -26,12 +26,14 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     /* ═══ WARM VIDEO GATING (G2/G3/G11 + G4) ═══
        4× tile videos: preload="none", brak autoPlay. warmVideo z intersectionPauseResume —
        każdy klip pauzuje się gdy sam wypadnie z IO (nie tylko cały #case-studies-section).
+       skipTierGate: lekkie pętle w kafelku — jak cyfrowe-wzrosty; prawdziwy Tier 0 = rdzenie <4 / Save-Data itd.
        Fabryczne pause/resume zostaje dla flywheel CS2 (canvas), nie dla warmVideo. */
     var _warmVideos = Array.from(container.querySelectorAll('video[data-warm-video="1"]'));
     var _warmVideoHandle = startWarmVideosOnce(_warmVideos, {
       rootMargin: '600px',
       loop: true,
       intersectionPauseResume: true,
+      skipTierGate: true,
     });
     _cleanups.push(function() { _warmVideoHandle.dispose(); });
 
