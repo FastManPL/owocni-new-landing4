@@ -49,6 +49,7 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
      CS-VIDEO — WARM gating (G2/G3/G8/G11)
      HTML: `preload="none"`, brak autoPlay. Start przez warmVideo helper:
        - IO (rootMargin 600px) → first load()+play()
+       - G4: `intersectionPauseResume` — pauza poza rootMargin (CPU/battery)
        - Tier 0 (G11) → noop (overlay poster zostaje jako obraz jedyny)
        - onPlaying → overlay cover (next/image) dostaje `.is-hidden` → opacity 0 (G8)
      ======================================================== */
@@ -59,6 +60,7 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
     const handle = startWarmVideoOnce(csVideo, {
       rootMargin: '600px',
       loop: true,
+      intersectionPauseResume: true,
       onPlaying: () => { csCover?.classList.add('is-hidden'); },
     });
     cleanups.push(() => handle.dispose());
