@@ -4,6 +4,7 @@ import type { ScrollTrigger as ScrollTriggerType } from 'gsap/ScrollTrigger';
 
 import {
   getAnimationCostProfile,
+  prefersNativeDocumentScroll,
   type AnimationCostProfile,
 } from '@/lib/autoTier';
 
@@ -54,7 +55,7 @@ let heightObserver: ResizeObserver | null = null;
 let lastDocHeight = 0;
 let heightObserverFirstFire = true;
 
-/** Po dynamic import('gsap') — tylko gdy lenis aktywny. */
+/** Po dynamic import('gsap') — zawsze gdy scroll bridge wstanie (Lenis lub native). */
 let gsapRuntime: typeof gsap | null = null;
 let ScrollTriggerRuntime: typeof ScrollTriggerType | null = null;
 
@@ -64,6 +65,15 @@ let initInFlight = false;
 
 let lastResizeW = 0;
 let lastResizeH = 0;
+
+/** Lenis + GSAP zapięte — `requestRefresh` / `isReady` działają także w trybie native (bez Lenisa). */
+let bridgeReady = false;
+
+type NativeScrollWire = {
+  handler: (...args: unknown[]) => void;
+  bound: () => void;
+};
+const nativeScrollWires: NativeScrollWire[] = [];
 
 const REFRESH_DEBOUNCE_MS = 120;
 const RESIZE_DEBOUNCE_MS = 250;
@@ -116,11 +126,104 @@ function lenisOptionsFor(profile: AnimationCostProfile): ConstructorParameters<t
   }
 }
 
-function applyGsapTickerCost(G: typeof gsap, profile: AnimationCostProfile): void {
+/**
+ * Bez Lenisa można przywrócić pełniejszy tick GSAP — i tak nie płacimy za Lenis rAF.
+ * Z Lenisem niższy FPS = mniejsze obciążenie przy tym samym smooth scroll.
+ */
+function applyGsapTickerCost(
+  G: typeof gsap,
+  profile: AnimationCostProfile,
+  nativeDocumentScroll: boolean,
+): void {
   if (profile === 'minimal') {
-    G.ticker.fps(30);
+    G.ticker.fps(nativeDocumentScroll ? 36 : 30);
   } else if (profile === 'reduced') {
-    G.ticker.fps(45);
+    G.ticker.fps(nativeDocumentScroll ? 60 : 45);
+  }
+}
+
+function wirePostStInfrastructure(gen: number, mode: 'lenis' | 'native'): void {
+  if (gen !== initGeneration) return;
+
+  resizeHandler = () => {
+    clearTimeout(resizeTimeout ?? undefined);
+    resizeTimeout = setTimeout(() => {
+      const w = window.innerWidth;
+      const h = window.innerHeight;
+      const isFirst = lastResizeW === 0 && lastResizeH === 0;
+      if (!isFirst) {
+        const heightOnly = w === lastResizeW;
+        const smallHeightChange = Math.abs(h - lastResizeH) <= MOBILE_TOOLBAR_RESIZE_THRESHOLD_PX;
+        if (heightOnly && smallHeightChange) {
+          if (process.env.NODE_ENV === 'development') {
+            console.debug('[scrollRuntime] resize: skip (mobile toolbar?)');
+          }
+          return;
+        }
+      }
+      lastResizeW = w;
+      lastResizeH = h;
+      requestRefresh('resize');
+    }, RESIZE_DEBOUNCE_MS);
+  };
+  window.addEventListener('resize', resizeHandler, { passive: true });
+
+  visibilityHandler = () => {
+    if (mode !== 'lenis') return;
+    if (document.hidden) {
+      lenis?.stop();
+    } else {
+      lenis?.start();
+    }
+  };
+  document.addEventListener('visibilitychange', visibilityHandler);
+
+  pageHideHandler = () => {
+    if (mode === 'lenis') lenis?.stop();
+  };
+  window.addEventListener('pagehide', pageHideHandler, { passive: true });
+
+  pageShowHandler = () => {
+    if (mode === 'lenis') lenis?.start();
+    requestRefreshImmediate();
+  };
+  window.addEventListener('pageshow', pageShowHandler, { passive: true });
+
+  if (typeof ResizeObserver !== 'undefined') {
+    lastDocHeight = document.documentElement.scrollHeight;
+    heightObserverFirstFire = true;
+    heightObserver = new ResizeObserver(() => {
+      if (heightObserverFirstFire) {
+        heightObserverFirstFire = false;
+        return;
+      }
+      const h = document.documentElement.scrollHeight;
+      const delta = Math.abs(h - lastDocHeight);
+      if (delta < DOC_HEIGHT_CHANGE_THRESHOLD_PX) return;
+      lastDocHeight = h;
+      if (ScrollTriggerRuntime && (ScrollTriggerRuntime as unknown as { isRefreshing?: boolean }).isRefreshing) return;
+      requestRefresh('doc-height-changed');
+    });
+    heightObserver.observe(document.documentElement);
+  }
+
+  if (document.readyState === 'complete') {
+    requestRefreshImmediate();
+  } else {
+    loadHandler = () => { requestRefreshImmediate(); };
+    window.addEventListener('load', loadHandler, { once: true, passive: true });
+  }
+
+  bridgeReady = true;
+
+  if (process.env.NODE_ENV === 'development') {
+    (window as Window & { __scroll?: ScrollRuntime }).__scroll = scrollRuntime;
+  }
+
+  if (pendingRefresh) {
+    const reason = pendingRefresh;
+    pendingRefresh = null;
+    requestRefresh(reason);
   }
 }
 
@@ -131,7 +234,7 @@ function runBoot(gen: number, G: typeof gsap, ST: typeof ScrollTriggerType): voi
   ScrollTriggerRuntime = ST;
 
   animationCostProfile = getAnimationCostProfile();
-  applyGsapTickerCost(G, animationCostProfile);
+  applyGsapTickerCost(G, animationCostProfile, false);
 
   ST.config({
     ignoreMobileResize: true,
@@ -162,100 +265,31 @@ function runBoot(gen: number, G: typeof gsap, ST: typeof ScrollTriggerType): voi
   lastResizeW = window.innerWidth;
   lastResizeH = window.innerHeight;
 
-  resizeHandler = () => {
-    clearTimeout(resizeTimeout ?? undefined);
-    resizeTimeout = setTimeout(() => {
-      const w = window.innerWidth;
-      const h = window.innerHeight;
-      const isFirst = lastResizeW === 0 && lastResizeH === 0;
-      if (!isFirst) {
-        const heightOnly = w === lastResizeW;
-        const smallHeightChange = Math.abs(h - lastResizeH) <= MOBILE_TOOLBAR_RESIZE_THRESHOLD_PX;
-        if (heightOnly && smallHeightChange) {
-          if (process.env.NODE_ENV === 'development') {
-            console.debug('[scrollRuntime] resize: skip (mobile toolbar?)');
-          }
-          return;
-        }
-      }
-      lastResizeW = w;
-      lastResizeH = h;
-      requestRefresh('resize');
-    }, RESIZE_DEBOUNCE_MS);
-  };
-  window.addEventListener('resize', resizeHandler, { passive: true });
+  wirePostStInfrastructure(gen, 'lenis');
+}
 
-  visibilityHandler = () => {
-    if (document.hidden) {
-      lenis?.stop();
-    } else {
-      lenis?.start();
-    }
-  };
-  document.addEventListener('visibilitychange', visibilityHandler);
+/** Natywny scroll okna — bez Lenisa i bez `scrollerProxy` (mniej pracy na głównym wątku na mobile). */
+function runBootNative(gen: number, G: typeof gsap, ST: typeof ScrollTriggerType): void {
+  if (gen !== initGeneration) return;
 
-  // Powrót z historii / bfcache (mobile Safari): bez refresh pinów i proxy scroll bywa rozjechany → OOM/reload.
-  pageHideHandler = () => {
-    lenis?.stop();
-  };
-  window.addEventListener('pagehide', pageHideHandler, { passive: true });
+  gsapRuntime = G;
+  ScrollTriggerRuntime = ST;
 
-  pageShowHandler = () => {
-    lenis?.start();
-    requestRefreshImmediate();
-  };
-  window.addEventListener('pageshow', pageShowHandler, { passive: true });
+  animationCostProfile = getAnimationCostProfile();
+  applyGsapTickerCost(G, animationCostProfile, true);
 
-  // DOC-HEIGHT-OBSERVER-01: catch-all dla rozrostu document height po hydracji chunków ssr:false.
-  // Problem (2026-04-23): sections ssr:false z placeholder 100vh (Kinetic, Blok45) rozrastały się
-  // do ~300vh po mount'cie, a CaseStudies/Fakty ST były tworzone z pozycjami sprzed rozrostu
-  // (i broker requestRefresh z 120 ms debounce czasem nie dogonił przed scrollem usera).
-  // ResizeObserver łapie KAŻDĄ zmianę scrollHeight > 30 px i wymusza refresh przez brokera
-  // (debounce 120 ms + 2 rAF → safe refresh(true)). Próg 30 px chroni przed pętlą od pin-spacerów.
-  if (typeof ResizeObserver !== 'undefined') {
-    lastDocHeight = document.documentElement.scrollHeight;
-    heightObserverFirstFire = true;
-    heightObserver = new ResizeObserver(() => {
-      if (heightObserverFirstFire) {
-        heightObserverFirstFire = false;
-        return;
-      }
-      const h = document.documentElement.scrollHeight;
-      const delta = Math.abs(h - lastDocHeight);
-      if (delta < DOC_HEIGHT_CHANGE_THRESHOLD_PX) return;
-      lastDocHeight = h;
-      // `ScrollTrigger.isRefreshing` true oznacza że sami właśnie wywołaliśmy refresh (pin-spacer
-      // tworzony w trakcie) — nie kolejkujemy kolejnego, broker poradzi sobie po zakończeniu
-      // obecnego cyklu przez `st-refresh` flow.
-      if (ScrollTriggerRuntime && (ScrollTriggerRuntime as unknown as { isRefreshing?: boolean }).isRefreshing) return;
-      requestRefresh('doc-height-changed');
-    });
-    heightObserver.observe(document.documentElement);
-  }
+  ST.config({
+    ignoreMobileResize: true,
+  });
 
-  // LOAD-SETTLE-01: `pageshow` fires early (przed load images). `load` fires gdy wszystko —
-  // chunki JS, obrazy, fonty — w pełni pobrane. Dodatkowy safe refresh po load eliminuje race
-  // gdy użytkownik ma scroll-restoration w trakcie fazy image-loading (height rośnie po load).
-  if (document.readyState === 'complete') {
-    requestRefreshImmediate();
-  } else {
-    loadHandler = () => { requestRefreshImmediate(); };
-    window.addEventListener('load', loadHandler, { once: true, passive: true });
-  }
+  lastResizeW = window.innerWidth;
+  lastResizeH = window.innerHeight;
 
-  if (process.env.NODE_ENV === 'development') {
-    (window as Window & { __scroll?: ScrollRuntime }).__scroll = scrollRuntime;
-  }
-
-  if (pendingRefresh) {
-    const reason = pendingRefresh;
-    pendingRefresh = null;
-    requestRefresh(reason);
-  }
+  wirePostStInfrastructure(gen, 'native');
 }
 
 function init(): void {
-  if (typeof window === 'undefined' || lenis || initInFlight) {
+  if (typeof window === 'undefined' || bridgeReady || initInFlight) {
     return;
   }
   initInFlight = true;
@@ -263,7 +297,11 @@ function init(): void {
   void Promise.all([import('gsap'), import('gsap/ScrollTrigger')])
     .then(([{ default: G }, { ScrollTrigger: ST }]) => {
       G.registerPlugin(ST);
-      runBoot(gen, G, ST);
+      if (prefersNativeDocumentScroll()) {
+        runBootNative(gen, G, ST);
+      } else {
+        runBoot(gen, G, ST);
+      }
     })
     .catch(() => {})
     .finally(() => {
@@ -274,13 +312,21 @@ function init(): void {
 function destroy(): void {
   initGeneration++;
 
-  if (!lenis) {
+  if (!bridgeReady) {
     pendingRefresh = null;
+    nativeScrollWires.splice(0, nativeScrollWires.length);
     if (process.env.NODE_ENV === 'development') {
       delete (window as Window & { __scroll?: ScrollRuntime }).__scroll;
     }
     return;
   }
+
+  bridgeReady = false;
+
+  for (const w of nativeScrollWires) {
+    window.removeEventListener('scroll', w.bound);
+  }
+  nativeScrollWires.length = 0;
 
   if (refreshTimeout) {
     clearTimeout(refreshTimeout);
@@ -369,7 +415,7 @@ function getRawScroll(): number {
 }
 
 function requestRefresh(reason?: string): void {
-  if (!lenis) {
+  if (!ScrollTriggerRuntime || !bridgeReady) {
     if (reason) {
       pendingRefresh = reason;
     }
@@ -398,7 +444,7 @@ function requestRefresh(reason?: string): void {
 }
 
 function requestRefreshImmediate(): void {
-  if (!lenis) return;
+  if (!ScrollTriggerRuntime || !bridgeReady) return;
   if (refreshTimeout) {
     clearTimeout(refreshTimeout);
     refreshTimeout = null;
@@ -418,11 +464,20 @@ function scrollTo(
   options?: ScrollToOptions
 ): void {
   if (!lenis) {
+    const behavior: ScrollBehavior = options?.immediate ? 'auto' : 'smooth';
     if (typeof target === 'number') {
-      window.scrollTo({
-        top: target,
-        behavior: options?.immediate ? 'auto' : 'smooth',
-      });
+      window.scrollTo({ top: target, behavior });
+      return;
+    }
+    if (typeof target === 'string') {
+      const el = document.querySelector(target);
+      if (el instanceof HTMLElement) {
+        el.scrollIntoView({ behavior, block: 'start' });
+      }
+      return;
+    }
+    if (target instanceof HTMLElement) {
+      target.scrollIntoView({ behavior, block: 'start' });
     }
     return;
   }
@@ -443,11 +498,33 @@ function start(): void {
 }
 
 function on(event: string, handler: (...args: unknown[]) => void): void {
-  lenis?.on(event as 'scroll', handler as (e: unknown) => void);
+  if (event !== 'scroll') return;
+  if (lenis) {
+    lenis.on('scroll', handler as (e: unknown) => void);
+    return;
+  }
+  if (!bridgeReady) return;
+  const bound = () => {
+    handler(null);
+  };
+  nativeScrollWires.push({ handler, bound });
+  window.addEventListener('scroll', bound, { passive: true });
 }
 
 function off(event: string, handler: (...args: unknown[]) => void): void {
-  lenis?.off(event as 'scroll', handler as (e: unknown) => void);
+  if (event !== 'scroll') return;
+  if (lenis) {
+    lenis.off('scroll', handler as (e: unknown) => void);
+    return;
+  }
+  const idx = nativeScrollWires.findIndex((w) => w.handler === handler);
+  if (idx >= 0) {
+    const wire = nativeScrollWires[idx];
+    if (wire) {
+      window.removeEventListener('scroll', wire.bound);
+      nativeScrollWires.splice(idx, 1);
+    }
+  }
 }
 
 function getLenis(): Lenis | null {
@@ -455,7 +532,7 @@ function getLenis(): Lenis | null {
 }
 
 function isReady(): boolean {
-  return lenis !== null;
+  return bridgeReady;
 }
 
 export const scrollRuntime: ScrollRuntime = {

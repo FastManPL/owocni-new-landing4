@@ -7,7 +7,9 @@
  *
  * **FORCE_ANIMATION_COST_PROFILE** — `null`: wybór profilu z heurystyki
  * (`getAnimationCostProfile` w `autoTier.ts`). Inna wartość: wymuszenie dla QA
- * (wpływa na Lenis + limit FPS GSAP tickera przy starcie scrollRuntime).
+ * (limit FPS GSAP tickera przy starcie scrollRuntime).
+ * Na telefonach (`pointer: coarse` + brak hover) Lenis jest **wyłączony** niezależnie
+ * od tej flagi — scroll = natywny dokument (mniej CPU).
  */
 export const SHOW_KINETIC_SECTION = false;
 

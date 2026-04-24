@@ -744,13 +744,18 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
     window.removeEventListener('resize', onResize);
   });
 
-  // LENIS SCROLL → wake section tick
+  // LENIS / native scroll → wake section tick
   var lenisInst = scrollRuntime.getLenis();
   if (lenisInst) {
     lenisInst.on('scroll', wakeUp);
     cleanups.push(function() {
       var l = scrollRuntime.getLenis();
       if (l) l.off('scroll', wakeUp);
+    });
+  } else if (scrollRuntime.isReady()) {
+    window.addEventListener('scroll', wakeUp, { passive: true });
+    cleanups.push(function() {
+      window.removeEventListener('scroll', wakeUp);
     });
   }
 

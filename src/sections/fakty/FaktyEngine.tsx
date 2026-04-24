@@ -1480,27 +1480,38 @@ function init(container: HTMLElement): { kill: () => void } {
             scrollRuntime.requestRefreshImmediate();
           }
           const L = scrollRuntime.getLenis();
-          if (!L) return;
           let synced = false;
           const once = () => {
             if (synced || isKilled) return;
             synced = true;
-            try {
-              L.off("scroll", once);
-            } catch {
-              /* lenis off */
+            if (L) {
+              try {
+                L.off("scroll", once);
+              } catch {
+                /* lenis off */
+              }
+            } else {
+              window.removeEventListener("scroll", once, true);
             }
             ScrollTrigger.update();
             repairPhase1ScrollMisfire?.();
           };
-          L.on("scroll", once);
+          if (L) {
+            L.on("scroll", once);
+          } else {
+            window.addEventListener("scroll", once, { passive: true, capture: true });
+          }
           const faktyStSyncTimer = window.setTimeout(once, 140);
           cleanups.push(() => {
             window.clearTimeout(faktyStSyncTimer);
-            try {
-              L.off("scroll", once);
-            } catch {
-              /* */
+            if (L) {
+              try {
+                L.off("scroll", once);
+              } catch {
+                /* */
+              }
+            } else {
+              window.removeEventListener("scroll", once, true);
             }
           });
         });

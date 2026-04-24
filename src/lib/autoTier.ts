@@ -23,6 +23,14 @@ function isCoarseTouchPrimary(): boolean {
   );
 }
 
+/**
+ * Telefon / tablet jako główny wejście — **bez Lenisa**, natywny scroll dokumentu
+ * (Compositor przeglądarki). Dotyczy m.in. Realme 8 (8 rdzeni = wcześniej „full” + Lenis).
+ */
+export function prefersNativeDocumentScroll(): boolean {
+  return isCoarseTouchPrimary();
+}
+
 export function getDeviceTier(): DeviceTier {
   if (typeof window === 'undefined') return 1;
 
@@ -69,6 +77,11 @@ export function getAnimationCostProfile(): AnimationCostProfile {
   const tier = getDeviceTier();
   if (tier === 0) return 'minimal';
 
+  /** Wszystkie telefony / tablety z głównym palcem — nigdy „full” (Lenis + 60 Hz tick). */
+  if (isCoarseTouchPrimary()) {
+    return 'reduced';
+  }
+
   const nav = window.navigator as Navigator & {
     connection?: { saveData?: boolean; effectiveType?: string };
     hardwareConcurrency?: number;
@@ -78,10 +91,8 @@ export function getAnimationCostProfile(): AnimationCostProfile {
     effectiveType === '3g' ||
     effectiveType === '2g' ||
     effectiveType === 'slow-2g';
-  const cores = nav.hardwareConcurrency ?? 4;
-  const coarseTouch = isCoarseTouchPrimary();
 
-  if (tier === 1 && (slowish || (coarseTouch && cores <= 6))) {
+  if (tier === 1 && slowish) {
     return 'reduced';
   }
   return 'full';
