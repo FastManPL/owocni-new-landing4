@@ -5,6 +5,7 @@ import { useRef, useEffect, type RefObject } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import { ENABLE_KINETIC_TUNNEL } from '@/config/featureFlags';
 import { scrollRuntime } from '@/lib/scrollRuntime';
 
 // ⚠️ GSAP-SSR-01: ZAKAZ gsap.registerPlugin() na module top-level.
@@ -2067,6 +2068,10 @@ import { scrollRuntime } from '@/lib/scrollRuntime';
     // ============================================
     (function() {
         'use strict';
+
+        if (!ENABLE_KINETIC_TUNNEL) {
+            return;
+        }
 
         const TUNNEL_CONFIG = {
             count:      4,
@@ -4637,7 +4642,9 @@ export default function KineticEngine({ containerRef }: KineticEngineProps = {})
               <canvas id="kinetic-blob-canvas"></canvas>
               
               {/* PARTICLE QMARK - "?" z cząsteczek, za tekstem */}
+              {ENABLE_KINETIC_TUNNEL ? (
               <canvas id="kinetic-tunnel-canvas"></canvas>
+              ) : null}
               <canvas id="kinetic-particle-qmark-canvas"></canvas>
               
               <div className="content-wrapper" data-gating-target>

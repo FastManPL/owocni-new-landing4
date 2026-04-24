@@ -85,7 +85,9 @@ async function HomePageContent({
       {/*
         Kinetic włączony: Bridge + pinSpacer + warstwa silnika (`KineticHomeSlot`).
         Wyłączony: tylko zwykła sekcja-zastępcza w flow — bez nachodzenia bridge na Fakty.
-        Flaga: `src/config/featureFlags.ts` → SHOW_KINETIC_SECTION.
+        Flagi: `src/config/featureFlags.ts` lub `.env.local`:
+        - NEXT_PUBLIC_SHOW_KINETIC_SECTION=false — cały Kinetic (Bridge) off
+        - NEXT_PUBLIC_ENABLE_KINETIC_TUNNEL=false — sam canvas tunelu off (reszta Kinetic on)
       */}
       {SHOW_KINETIC_SECTION ? (
         <BridgeSection kineticLayer={<KineticHomeSlot />} />
