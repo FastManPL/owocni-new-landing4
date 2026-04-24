@@ -68,21 +68,28 @@
     #cs1-section .cs-author-role { font-size: clamp(9px, 3.5cqi, 14px); text-transform: uppercase; letter-spacing: 0.05em; color: #90909d; }
     /* ═══ VISUAL ═══ */
     #cs1-section .cs-tile1-bg-mobile { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; overflow: hidden; border-radius: inherit; background: #e3e1dd; background: linear-gradient(180deg, rgb(var(--bg-top-r),var(--bg-top-g),var(--bg-top-b)) 0%, rgb(var(--bg-top-r),var(--bg-top-g),var(--bg-top-b)) var(--bg-grad-stop), rgb(var(--bg-bot-r),var(--bg-bot-g),var(--bg-bot-b)) 100%); }
-    #cs1-section .cs-tile1-banach-desktop { position: absolute; left: var(--banach-left); bottom: var(--banach-bottom); width: var(--banach-width); z-index: 1; border-radius: 3% 3% 0 0; overflow: hidden; clip-path: polygon(0 0, var(--banach-clip) 0, var(--banach-clip) 100%, 0% 100%); }
-        #cs1-section .cs-tile1-banach-desktop img { width: 100%; height: auto; }
-    #cs1-section .cs-tile1-consulting { position: absolute; left: var(--consult-left); bottom: var(--consult-bottom); width: var(--consult-width); z-index: 5; border-radius: 3% 3% 0 0; overflow: hidden; }
-    /* next/image opakowuje <img> w <span> — pierwszy potomek może być spanem */
-    #cs1-section .cs-tile1-consulting > :first-child img { width: 100%; height: auto; display: block; }
+    /* aspect-ratio = PictureAsset 1400×803 — rezerwa miejsca przed decode (CLS) */
+    #cs1-section .cs-tile1-banach-desktop { position: absolute; left: var(--banach-left); bottom: var(--banach-bottom); width: var(--banach-width); z-index: 1; border-radius: 3% 3% 0 0; overflow: hidden; clip-path: polygon(0 0, var(--banach-clip) 0, var(--banach-clip) 100%, 0% 100%); aspect-ratio: 1400 / 803; }
+    #cs1-section .cs-tile1-banach-desktop picture { display: block; width: 100%; height: 100%; }
+    #cs1-section .cs-tile1-banach-desktop img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    /* Tło statyczne 350×410 — filmy absolutne wewnątrz; wysokość bloku z aspect-ratio ogranicza CLS */
+    #cs1-section .cs-tile1-consulting { position: absolute; left: var(--consult-left); bottom: var(--consult-bottom); width: var(--consult-width); z-index: 5; border-radius: 3% 3% 0 0; overflow: hidden; aspect-ratio: 350 / 410; }
+    #cs1-section .cs-tile1-consulting > :first-child { display: block; width: 100%; height: 100%; }
+    #cs1-section .cs-tile1-consulting > :first-child img { width: 100%; height: 100%; object-fit: cover; display: block; }
     #cs1-section .cs-tile1-consulting::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background: linear-gradient(349deg, rgba(77,40,36,1) 0%, rgba(106,101,79,1) 28%, rgba(239,190,106,1) 64%, rgba(255,255,255,1) 100%); mix-blend-mode: multiply; opacity: calc(var(--consult-grad-opacity) / 100); pointer-events: none; }
     #cs1-section .cs-vid { position: absolute; clip-path: polygon(0 0, 90% 0, 100% 90%, 0 90%); }
     #cs1-section .cs-vid--1 { left: var(--vid1-left); top: var(--vid1-top); width: var(--vid1-width); }
     #cs1-section .cs-vid--2 { left: var(--vid2-left); top: var(--vid2-top); width: var(--vid2-width); clip-path: polygon(0 0, 99% 0, 100% 99%, 0 99%); }
     #cs1-section .cs-vid--3 { left: var(--vid3-left); top: var(--vid3-top); width: var(--vid3-width); clip-path: polygon(0 0, 99% 0, 99% 100%, 0% 100%); }
-    #cs1-section .cs-tile1-finanse { position: absolute; left: var(--finanse-left); bottom: var(--finanse-bottom); width: var(--finanse-width); z-index: 5; border-radius: 3% 3% 0 0; overflow: hidden; }
-    #cs1-section .cs-tile1-finanse img { width: 100%; height: auto; display: block; }
+    #cs1-section .cs-tile1-finanse { position: absolute; left: var(--finanse-left); bottom: var(--finanse-bottom); width: var(--finanse-width); z-index: 5; border-radius: 3% 3% 0 0; overflow: hidden; aspect-ratio: 350 / 295; }
+    #cs1-section .cs-tile1-finanse picture { display: block; width: 100%; height: 100%; }
+    #cs1-section .cs-tile1-finanse img { width: 100%; height: 100%; object-fit: cover; display: block; }
     #cs1-section .cs-tile1-finanse::after { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; inset: 0; background: linear-gradient(349deg, rgba(77,40,36,1) 0%, rgba(106,101,79,1) 28%, rgba(239,190,106,1) 64%, rgba(255,255,255,1) 100%); mix-blend-mode: multiply; opacity: calc(var(--finanse-grad-opacity) / 100); pointer-events: none; }
     #cs1-section .cs-tile1-phone-video {
       position: absolute; right: var(--phone-right); bottom: var(--phone-bottom); width: var(--phone-width); z-index: 20;
+      aspect-ratio: 648 / 729;
+      height: auto;
+      object-fit: cover;
       mask-image: url("data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 648 729'><path fill='%23fff' d='M227.3,69.3c21.5-60.2,89.3-57.4,89.3-57.4s223-6,253.3-6.4C600.2,5.1,615.4,23,615.4,23l16.8,17.9c16.4,17.2,8.8,40.3,8.8,40.3S451.5,598.5,427.2,665.1c-29.5,60.7-90.1,50.7-90.1,50.7s-223-8-253.7-9.6c-30.7-1.6-43.1-14.4-43.1-14.4L21.6,675c-26.4-24.3-11.2-51-11.2-51l43.5-114.5L227.3,69.3z'/></svg>");
       mask-size: 100% 100%;
     }
@@ -181,8 +188,10 @@
     /* Bg layer */
     #cs2-section .cs2-bg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; overflow: hidden; border-radius: inherit; }
     /* Elements INSIDE .cs2-right */
-    #cs2-section .cs2-imgit { position: absolute; left: var(--imgit-left); bottom: var(--imgit-bottom); width: var(--imgit-width); z-index: 3; border-radius: 3%; overflow: hidden; }
-    #cs2-section .cs2-imgit img { width: 100%; height: auto; display: block; }
+    /* PictureAsset 480×250 */
+    #cs2-section .cs2-imgit { position: absolute; left: var(--imgit-left); bottom: var(--imgit-bottom); width: var(--imgit-width); z-index: 3; border-radius: 3%; overflow: hidden; aspect-ratio: 480 / 250; }
+    #cs2-section .cs2-imgit picture { display: block; width: 100%; height: 100%; }
+    #cs2-section .cs2-imgit img { width: 100%; height: 100%; object-fit: cover; display: block; }
     #cs2-section .cs2-kratki { position: absolute; left: var(--kratki-left); top: var(--kratki-top); width: var(--kratki-width); z-index: 4; opacity: 0.4; }
     #cs2-section .cs2-kratki img { width: 100%; height: auto; }
     #cs2-section .cs2-tekst1 { position: absolute; left: var(--tekst1-left); top: var(--tekst1-top); width: var(--tekst1-width); z-index: 4; }
@@ -283,8 +292,10 @@
     #cs3-section .cs3-bg { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; overflow: hidden; border-radius: inherit; }
     #cs3-section .cs3-tlo { position: absolute; left: var(--tlo-left); top: var(--tlo-top); width: var(--tlo-width); z-index: 1; opacity: 0.5; }
     #cs3-section .cs3-tlo img { width: 100%; height: auto; }
-    #cs3-section .cs3-eye { position: absolute; left: var(--eye-left); top: var(--eye-top); width: var(--eye-width); z-index: 2; border-radius: 5%; overflow: hidden; }
-    #cs3-section .cs3-eye > :first-child img { width: 100%; height: auto; display: block; }
+    /* PictureAsset „oko” 560×289 — pierwsze dziecko to <picture> */
+    #cs3-section .cs3-eye { position: absolute; left: var(--eye-left); top: var(--eye-top); width: var(--eye-width); z-index: 2; border-radius: 5%; overflow: hidden; aspect-ratio: 560 / 289; }
+    #cs3-section .cs3-eye > :first-child { display: block; width: 100%; height: 100%; }
+    #cs3-section .cs3-eye > :first-child img { width: 100%; height: 100%; object-fit: cover; display: block; }
     #cs3-section .cs3-eye-radial { position: absolute; top: 0; left: 0; right: 0; bottom: 0; inset: 0; background: rgb(12,1,43); -webkit-mask-image: radial-gradient(ellipse at center, transparent 0%, transparent calc(var(--eye-radial-start) * 0.75), black var(--eye-radial-start)); mask-image: radial-gradient(ellipse at center, transparent 0%, transparent calc(var(--eye-radial-start) * 0.75), black var(--eye-radial-start)); opacity: calc(var(--eye-radial-opacity) / 100); z-index: 1; }
     #cs3-section .cs3-hand1 { position: absolute; right: var(--hand1-right); top: var(--hand1-top); width: var(--hand1-width); z-index: 6; opacity: calc(var(--hand1-opacity) / 100); }
     #cs3-section .cs3-hand1 img { width: 100%; height: auto; }

@@ -87,6 +87,8 @@
       border: none;
       display: block;
       object-fit: contain;
+      /* Rezerwa boxu przed metadanymi wideo (CLS przy preload / pierwszej klatce) */
+      aspect-ratio: 16 / 9;
       /* Pozycjonowanie przez GSAP proxy */
       --scrvid-x: 49.5%;
       --scrvid-y: 55%;
