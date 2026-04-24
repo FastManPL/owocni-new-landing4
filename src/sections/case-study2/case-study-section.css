@@ -86,6 +86,9 @@
       z-index: 2;
       border: none;
       display: block;
+      /* Zaokrąglenie jak ekran w mockupie — ostre rogi cover nie wystają poza „tablet”. */
+      border-radius: clamp(8px, 1.35vw, 18px);
+      overflow: hidden;
       /* cover: wypełnia prostokąt otworu w cutoucie laptopa (bez „pustych” pasów jak przy contain). */
       object-fit: cover;
       object-position: center center;
