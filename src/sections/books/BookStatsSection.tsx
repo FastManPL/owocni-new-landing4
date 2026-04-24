@@ -22,7 +22,8 @@ function scrollTriggerIsRefreshing(): boolean {
 /* ════════════════════════════════════════════════════════════════
    book-stats-section — hardened init(container)
    AUTO-FIXy: B-ISO-01 (CSS), NULL-GUARD-01 (2× patch by owner)
-   CPU Gating: Ścieżka 3a (ST-native pin+scrub — brak IO gating)
+   CPU Gating: pin+scrub zostaje aktywny (bez ST.disable — pin-spacer).
+   Dodatkowo: factory IO → pomijanie drawFrame w scrub poza viewportem (PROMPT6).
    ════════════════════════════════════════════════════════════════ */
 function init(container: HTMLElement): { kill: () => void; pause: () => void; resume: () => void } {
   /* [FIX-11] Null guard — SPA/lazy-load may call init before section is in DOM */
@@ -266,6 +267,10 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
     let prevBookSTProgress = -1;
     /** Najwyższa klatka faktycznie narysowana — niezależna od progress/prev; pierwsze zejście potrafi nie zdążyć zaktualizować prev przy glitchu y<start. */
     let peakBookFrameIndex = -1;
+    /** Factory IO (szeroki rootMargin): false = sekcja poza „oknem” — scrub nadal liczy GSAP, bez rysowania canvas. */
+    let bookFactoryInView = true;
+    let bookFactoryIO: IntersectionObserver | null = null;
+    let bookFactoryIoDebounce: ReturnType<typeof setTimeout> | null = null;
 
     const cached = { cw: 0, ch: 0, sx: 0, sy: 0, sw: 0, sh: 0 };
 
@@ -428,6 +433,16 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
       }
     }
 
+    function scheduleRedrawAfterFactoryEnter() {
+      requestAnimationFrame(function() {
+        requestAnimationFrame(function() {
+          if (!ctx || scrollTriggerIsRefreshing()) return;
+          displayIndex = -1;
+          drawFrame(effectiveFrameForDraw());
+        });
+      });
+    }
+
     /* ── Draw frame (cover fit) ── */
     function drawFrame(index: number) {
       if (index === displayIndex) return;
@@ -522,6 +537,7 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
         onUpdate: function() {
           if (scrollTriggerIsRefreshing()) return;
           if (Math.round(playhead.frame) >= FRAME_COUNT - 1) bookScrubPastEnd = true;
+          if (!bookFactoryInView) return;
           drawFrame(effectiveFrameForDraw());
         }
       });
@@ -647,6 +663,43 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
       startPreload();
     }
 
+    /* Factory IO — tylko koszt canvas (bez ST.disable / pin-spacer). */
+    function getBookFactoryMargin() {
+      const vh = (window.visualViewport ? window.visualViewport.height : window.innerHeight) || 800;
+      return Math.min(1200, Math.max(200, Math.round(vh * 0.5))) + 'px';
+    }
+    function bookFactoryIoCallback(entries: IntersectionObserverEntry[]) {
+      if (_killed || !entries[0]) return;
+      if (entries[0].isIntersecting) {
+        bookFactoryInView = true;
+        scheduleRedrawAfterFactoryEnter();
+      } else {
+        bookFactoryInView = false;
+      }
+    }
+    function recreateBookFactoryIo() {
+      if (bookFactoryIoDebounce) clearTimeout(bookFactoryIoDebounce);
+      bookFactoryIoDebounce = setTimeout(function() {
+        bookFactoryIoDebounce = null;
+        if (_killed) return;
+        if (bookFactoryIO) bookFactoryIO.disconnect();
+        bookFactoryIO = new IntersectionObserver(bookFactoryIoCallback, { rootMargin: getBookFactoryMargin() });
+        bookFactoryIO.observe(container);
+        observers.push(bookFactoryIO);
+      }, 50);
+    }
+    recreateBookFactoryIo();
+    const onBookFactoryVvResize = function() {
+      recreateBookFactoryIo();
+    };
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener('resize', onBookFactoryVvResize, { passive: true });
+      cleanups.push(function() {
+        if (bookFactoryIoDebounce) clearTimeout(bookFactoryIoDebounce);
+        window.visualViewport!.removeEventListener('resize', onBookFactoryVvResize);
+      });
+    }
+
     /* ── Cleanup ── */
     cleanups.push(function bookFramesCleanup() {
       if (bookST) {
@@ -668,6 +721,15 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
       if (sentryIO) {
         sentryIO.disconnect();
         sentryIO = null;
+      }
+
+      if (bookFactoryIO) {
+        bookFactoryIO.disconnect();
+        bookFactoryIO = null;
+      }
+      if (bookFactoryIoDebounce) {
+        clearTimeout(bookFactoryIoDebounce);
+        bookFactoryIoDebounce = null;
       }
 
       if (canvas) {
@@ -719,11 +781,9 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
 
   /* ========================================================
      Typ B lifecycle: pause / resume
-     Canvas + ScrollTrigger scrub = ST-native gating (Ścieżka 3a).
-     Factory NIE wywołuje tych funkcji (pin+scrub = native gating).
-     Zachowane dla kompatybilności lifecycle interfejsu.
-     ⚠️ UWAGA: sectionST.disable() przy pin:true zwalnia pin-spacer.
-     Bezpieczne TYLKO jeśli NIE wywoływane przez IO gating.
+     Canvas: factory IO pomija drawFrame poza viewportem (bookFrames).
+     sectionST.disable/enable — nadal tylko dla zewnętrznego brokera (np. document.hidden);
+     nie wołać z IO na pin+scrub (pin-spacer).
      ======================================================== */
   function pause() {
     if (_killed) return; /* P3-CLEAN-01: no-op after kill */

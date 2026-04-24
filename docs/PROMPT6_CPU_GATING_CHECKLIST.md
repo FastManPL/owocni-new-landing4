@@ -34,7 +34,7 @@
 |--------|---------------------------|-------------------------|--------|
 | Hero | [x] | [x] IO (pendulum, foil, badges, action-area, itd.) + `visibilitychange` na trail | OK |
 | Wyniki | [x] | [x] Factory IO + `warmVideo` na mockup (G4) + pause hooks canvas | OK |
-| BookStats | [x] | [~] `pause`/`resume` = tylko `ScrollTrigger.disable/enable` — **brak factory IO**; WARM video z `intersectionPauseResume` | Wideo OK; ewent. factory IO osobno |
+| BookStats | [x] | [x] Factory IO na **canvas scrub** (pomijanie `drawFrame` poza rootMargin ~0.5×VH — bez `ST.disable` / pin-spacer); WARM video z `intersectionPauseResume` | OK |
 | Fakty | [x] | [x] `pauseOrganic` / IO `onLeave` + visibility | OK |
 | Kinetic | [x] | [x] `_sectionVisible` + pause/resume/kill | OK |
 | Blok45 | [x] | [x] Factory IO + `mainLoopIO` na `gsap.ticker` | OK |
@@ -72,7 +72,7 @@
 |--------|------------|--------|
 | Hero Lottie | Lazy import + IO na badge / pause przy leave | [x] |
 | LoveWall Lottie | W bundle logo init — IO pause sekcji | [x] |
-| BookStats canvas | Scrub przez ST — brak osobnego pętli; **gdy poza viewport ST nadal aktualizuje przy scrollu strony** | [~] koszt mały, ewent. factory jak Wyniki |
+| BookStats canvas | Scrub przez ST; **poza factory rootMargin** — brak `drawFrame` w `onUpdate` (scroll/pin bez zmian) | [x] (2026-04-24) |
 | Wyniki canvas | `cancelAnimationFrame` w pause hooks | [x] |
 | FAQ glow | rAF tylko gdy jest otwarty item i ruch pointera | [x] |
 | FAQ burst | Skończona pętla | [x] |
@@ -83,12 +83,12 @@
 
 | Sekcja | Broker `getWebGLProfile()` | Fallback Tier/profile `none` | OFF = stop loop | OFF → COLD dispose ~30s (J15) |
 |--------|----------------------------|------------------------------|-----------------|------------------------------|
-| Blok45 | [x] użycie w init | [x] degradacja | [x] ticker remove | [ ] brak jawnego timera 30s — dispose przy `kill()` |
-| Onas | [x] | [x] | [x] / częściowe ścieżki | [ ] jak wyżej |
-| Kinetic | WebGL warstwa | profil | [x] auto-pause off-screen | [ ] |
-| Final | [x] `webglSkippedForProfile` + static fallback CSS | [x] | [x] | [ ] pełny dispose tylko w `kill()`, nie po 30s OFF |
+| Blok45 | [x] użycie w init | [x] degradacja | [x] ticker remove | [x] timer ~30s OFF + `visibility` → dispose gwiazd (2026-04-24) |
+| Onas | [x] | [x] | [x] / częściowe ścieżki | [x] capitan cold + re-boot (2026-04-24) |
+| Kinetic | WebGL warstwa | profil | [x] auto-pause off-screen | [ ] brak timed OFF→COLD (sekcja 2D — niski priorytet) |
+| Final | [x] `webglSkippedForProfile` + static fallback CSS | [x] | [x] | [x] timer ~30s OFF + `visibility` → `disposeWebglToCold` (2026-04-24) |
 
-**Wniosek:** [~] Pełny **J15 „OFF → COLD po ~30s”** (zwrot GPU bez unmount) — **nie zweryfikowany** w kodzie; dispose jest przy `kill`/unmount sekcji.
+**Wniosek:** [x] **J15 OFF → COLD ~30s** + natychmiast przy ukryciu karty — Final, Blok45 (stars), Onas (capitan). Kinetic bez zmian.
 
 ---
 
@@ -109,8 +109,8 @@
 - [x] Inwentaryzacja sekcji Typ B (powyżej)
 - [x] Mapowanie lifecycle (`pause`/`resume`/`kill`) vs factory IO / IO wewnętrzne
 - [x] Wideo: **BookStats** — `intersectionPauseResume: true` (2026-04-24)
-- [~] BookStats: rozważyć **factory IO** jak Wyniki (gdy ST scrub ma sens tylko w oknie sekcji — weryfikacja CLS/pin)
-- [ ] J15: opcjonalna implementacja **deferred dispose** WebGL po ~30s poza viewportem (Final, Blok45, Onas) — uzgodnić z pamięcią GPU na mobile
+- [x] BookStats: **factory IO na canvas** — tylko skip `drawFrame` poza margin (bez `ST.disable` na pin)
+- [x] J15: **deferred dispose** WebGL ~30s OFF + `visibility` (Final, Blok45 stars, Onas capitan)
 - [ ] Powtarzalny audyt: nowe sekcje / nowe `<video>` bez `warmVideo`
 - [ ] Lighthouse / RUM: CPU przy długim scrollu (profilowanie po wdrożeniu poprawek)
 
@@ -121,3 +121,4 @@
 | Data | Zmiana |
 |------|--------|
 | 2026-04-24 | Utworzono z audytu kodu; BookStats + J15 oznaczone jako główne luki |
+| 2026-04-24 | J15 wdrożony (Final / Blok45 / Onas); BookStats factory IO na canvas (draw skip) |
