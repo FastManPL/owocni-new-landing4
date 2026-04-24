@@ -655,7 +655,23 @@ export function CaseStudy2Section() {
       onPopupOpen: () => cbRef.current.onPopupOpen(),
       onPopupClose: () => cbRef.current.onPopupClose(),
     });
-    return () => inst?.kill?.();
+    // POST-BUILD-CATCHUP-01 (2026-04-23): patrz komentarz w CaseStudiesTilesEngine.
+    let killed = false;
+    let raf1 = 0;
+    let raf2 = 0;
+    raf1 = requestAnimationFrame(() => {
+      raf2 = requestAnimationFrame(() => {
+        if (killed) return;
+        ScrollTrigger.refresh(false);
+        ScrollTrigger.update();
+      });
+    });
+    return () => {
+      killed = true;
+      if (raf1) cancelAnimationFrame(raf1);
+      if (raf2) cancelAnimationFrame(raf2);
+      inst?.kill?.();
+    };
   }, { scope: rootRef, dependencies: [portalReady], revertOnUpdate: true });
 
   const popupMarkup = (
