@@ -720,7 +720,20 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     function pause() {
       if (_paused) return;
       _paused = true;
-      /* ONLY canvas rAF — ST scrub is self-gated, videos managed by vidIO */
+      /* G4: MP4 w kafelkach (ten silnik nie ma warmVideo jak CaseStudies) — pauza poza IO. */
+      try {
+        container.querySelectorAll('video').forEach(function (v) {
+          try {
+            v.pause();
+          } catch (e) {
+            /* noop */
+          }
+        });
+      } catch (e) {
+        /* noop */
+      }
+      /* Flywheel canvas: spinRafId/startSpin są w closure IIFE cs2 — outer pause nie anuluje rAF;
+         wideo pause i tak redukuje główny koszt CPU poza viewportem. */
       if (typeof spinRafId !== 'undefined' && spinRafId) {
         cancelAnimationFrame(spinRafId);
         spinRafId = 0;
@@ -730,7 +743,18 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     function resume() {
       if (!_paused || _killed) return;
       _paused = false;
-      /* ONLY canvas rAF restart */
+      try {
+        container.querySelectorAll('video').forEach(function (v) {
+          try {
+            var p = v.play();
+            if (p && typeof p.catch === 'function') p.catch(function () {});
+          } catch (e) {
+            /* noop */
+          }
+        });
+      } catch (e) {
+        /* noop */
+      }
       if (typeof startSpin === 'function' && typeof spinRafId !== 'undefined') {
         startSpin();
       }

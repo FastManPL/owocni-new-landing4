@@ -525,6 +525,12 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     function pause() {
       if (_paused) return;
       _paused = true;
+      /* G4: wideo poza IO sekcji — zatrzymaj dekodowanie, nie tylko flywheel canvas. */
+      try {
+        _warmVideoHandle.pause();
+      } catch (e) {
+        /* noop */
+      }
       if (_flywheel.spinRafId) {
         cancelAnimationFrame(_flywheel.spinRafId);
         _flywheel.spinRafId = 0;
@@ -534,6 +540,11 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     function resume() {
       if (!_paused || _killed) return;
       _paused = false;
+      try {
+        _warmVideoHandle.start();
+      } catch (e) {
+        /* noop — tier 0 / polityka warmVideo */
+      }
       _flywheel.startSpin();
     }
 
