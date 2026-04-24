@@ -23,11 +23,16 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     function _addWL(e,f,o){window.addEventListener(e,f,o);_cleanups.push(function(){window.removeEventListener(e,f,o);});}
     _addWL('resize',function(){_isMobile=window.innerWidth<=640;});
 
-    /* ═══ WARM VIDEO GATING (G2/G3/G11) ═══
-       4× tile videos: preload="none", brak autoPlay. warmVideo helper
-       gated przez IO (rootMargin 600 px) + Tier 0 (zero autoplay) + visibilitychange. */
+    /* ═══ WARM VIDEO GATING (G2/G3/G11 + G4) ═══
+       4× tile videos: preload="none", brak autoPlay. warmVideo z intersectionPauseResume —
+       każdy klip pauzuje się gdy sam wypadnie z IO (nie tylko cały #case-studies-section).
+       Fabryczne pause/resume zostaje dla flywheel CS2 (canvas), nie dla warmVideo. */
     var _warmVideos = Array.from(container.querySelectorAll('video[data-warm-video="1"]'));
-    var _warmVideoHandle = startWarmVideosOnce(_warmVideos, { rootMargin: '600px', loop: true });
+    var _warmVideoHandle = startWarmVideosOnce(_warmVideos, {
+      rootMargin: '600px',
+      loop: true,
+      intersectionPauseResume: true,
+    });
     _cleanups.push(function() { _warmVideoHandle.dispose(); });
 
     /* KONIEC GLOBAL SHELL */
@@ -525,12 +530,8 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     function pause() {
       if (_paused) return;
       _paused = true;
-      /* G4: wideo poza IO sekcji — zatrzymaj dekodowanie, nie tylko flywheel canvas. */
-      try {
-        _warmVideoHandle.pause();
-      } catch (e) {
-        /* noop */
-      }
+      /* G4 wideo: startWarmVideosOnce(..., intersectionPauseResume) — IO per klip.
+         Tu tylko flywheel canvas CS2 (sekcja cała poza fabrycznym IO). */
       if (_flywheel.spinRafId) {
         cancelAnimationFrame(_flywheel.spinRafId);
         _flywheel.spinRafId = 0;
@@ -540,11 +541,6 @@ function init(container: HTMLElement): { pause: () => void; resume: () => void; 
     function resume() {
       if (!_paused || _killed) return;
       _paused = false;
-      try {
-        _warmVideoHandle.start();
-      } catch (e) {
-        /* noop — tier 0 / polityka warmVideo */
-      }
       _flywheel.startSpin();
     }
 

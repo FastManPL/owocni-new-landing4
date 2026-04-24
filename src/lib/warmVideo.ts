@@ -10,7 +10,8 @@
  * Kontrakt:
  *   - Video MUSI mieć w HTML `preload="none"` i BEZ `autoPlay`.
  *   - Pierwszy raz near-viewport (rootMargin) → `.preload = 'auto'` + `.load()` + `.play()`.
- *   - `document.hidden` = pause. `document.visible` = ponowne play (jeśli juz startowało).
+ *   - `document.hidden` = pause. `document.visible` = ponowne play (jeśli juz startowało),
+ *     chyba że `intersectionPauseResume` — wtedy play tylko gdy klip znów w IO (nie „budź” off-screen).
  *   - Sprzątanie: zwracana funkcja `dispose()` odinstalowuje IO + visibilitychange i pauzuje video.
  *
  * Minimalna zmiana per sekcja: 1 import + 1 wywołanie + push do cleanups[].
@@ -26,6 +27,11 @@ export interface WarmVideoOptions {
   onPlaying?: (video: HTMLVideoElement) => void;
   /** Wymuszenie — pomiń Tier 0 check (używane dla hero-critical wideo zgodnie z G11). */
   skipTierGate?: boolean;
+  /**
+   * G4 / długie sekcje: IO zostaje na elemencie — `play` gdy w rootMargin, `pause` gdy poza.
+   * Bez one-shot disconnect (np. kafelki w długim `#case-studies-section`: cs2 widoczny, cs1 już nie).
+   */
+  intersectionPauseResume?: boolean;
 }
 
 export interface WarmVideoHandle {
@@ -54,6 +60,7 @@ export function startWarmVideoOnce(
     loop = true,
     onPlaying,
     skipTierGate = false,
+    intersectionPauseResume = false,
   } = options;
 
   // G11: Tier 0 = zero autoplay, video tagged as "poster only".
@@ -63,6 +70,8 @@ export function startWarmVideoOnce(
   let disposed = false;
   let io: IntersectionObserver | null = null;
   let onPlayingHandler: (() => void) | null = null;
+  /** Ostatni stan IO — przy `intersectionPauseResume` steruje wznowieniem po visibility (bez play off-screen). */
+  let lastIntersecting = false;
 
   const doStart = () => {
     if (disposed || tierBlocks) return;
@@ -87,19 +96,35 @@ export function startWarmVideoOnce(
     try { video.pause(); } catch {}
   };
 
-  // One-shot IO: pierwszy start gdy video near-viewport.
   if (!tierBlocks && typeof IntersectionObserver === 'function') {
-    io = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) {
-          doStart();
-          io?.disconnect();
-          io = null;
-        }
-      },
-      { rootMargin },
-    );
-    io.observe(video);
+    if (intersectionPauseResume) {
+      io = new IntersectionObserver(
+        (entries) => {
+          const hit = !!entries[0]?.isIntersecting;
+          lastIntersecting = hit;
+          if (hit) {
+            if (!document.hidden) doStart();
+          } else {
+            doPause();
+          }
+        },
+        { rootMargin },
+      );
+      io.observe(video);
+    } else {
+      // One-shot IO: pierwszy start gdy video near-viewport.
+      io = new IntersectionObserver(
+        (entries) => {
+          if (entries[0]?.isIntersecting) {
+            doStart();
+            io?.disconnect();
+            io = null;
+          }
+        },
+        { rootMargin },
+      );
+      io.observe(video);
+    }
   }
 
   // Visibility gating: pause na document.hidden, resume na powrót (jeśli już startowało).
@@ -108,7 +133,12 @@ export function startWarmVideoOnce(
     if (document.hidden) {
       if (started) doPause();
     } else {
-      if (started) doStart();
+      if (!started) return;
+      if (intersectionPauseResume) {
+        if (lastIntersecting) doStart();
+      } else {
+        doStart();
+      }
     }
   };
   document.addEventListener('visibilitychange', onVis);
