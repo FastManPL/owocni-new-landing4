@@ -88,6 +88,10 @@ Tryb pracy: małe, odwracalne zmiany, 1 commit = 1 hipoteza.
 **Weryfikacja po kroku:**
 - [ ] `pageshow.persisted=true` przy back/forward tam, gdzie możliwe.
 
+**Uwaga pomiarowa (2026-04-27):**
+- Headless Chromium (Playwright/CDP) zgłasza `BackForwardCacheDisabledByCommandLine`, więc nie nadaje się do ostatecznego werdyktu bfcache.
+- D1 wymaga manualnego testu w normalnym Chrome na deploy (bez headless).
+
 **Commit template:** `PROMPT 10 — mobile perf D1: bfcache blockers (<obszar>)`
 **Rollback:** `git revert <hash>`
 
@@ -102,5 +106,5 @@ Tryb pracy: małe, odwracalne zmiany, 1 commit = 1 hipoteza.
 | A2-1 | 1167f3b     | TODO (mobile retest) | Zostaje (pending retest) |
 | B1-1 | 24b7848     | TODO (mobile retest) | Zostaje (pending retest) |
 | C1-1 | 7de77ec     | TODO (trace retest) | Zostaje (pending retest) |
-| D1-1 |             |                     |         |
+| D1-1 | n/a (manual) | Headless blocked by command-line bfcache disable | Pending manual prod check |
 
