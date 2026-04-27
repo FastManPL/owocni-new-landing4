@@ -732,18 +732,9 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
       }
 
       function updatePixelScale() { var h = window.innerHeight; if (h === 0) { state.pixelToUnit = 0.01; return; } state.pixelToUnit = (2 * Math.tan(camera.fov * Math.PI / 360) * camera.position.z) / h; }
-      function cacheButtonRect() {
-        var btnEl = starsState?.btnElement;
-        if (!btnEl) return;
-        var rect = btnEl.getBoundingClientRect();
-        if (rect.width < 20) return;
-        // Keep viewport-space coords; on mobile visual viewport + toolbar changes
-        // make page-space (+scroll/-scroll) anchoring drift away from the button.
-        btnRectCache.width = rect.width;
-        btnRectCache.height = rect.height;
-        btnRectCache.cx = rect.left + rect.width / 2;
-        btnRectCache.cy = rect.top + rect.height / 2;
-      }
+      var btnPageCx = 0, btnPageCy = 0;
+      function cacheButtonRect() { var btnEl = starsState?.btnElement; if (!btnEl) return; var rect = btnEl.getBoundingClientRect(); if (rect.width < 20) return; btnRectCache.width = rect.width; btnRectCache.height = rect.height; btnPageCx = rect.left + rect.width / 2 + window.scrollX; btnPageCy = rect.top + rect.height / 2 + window.scrollY; btnRectCache.cx = rect.left + rect.width / 2; btnRectCache.cy = rect.top + rect.height / 2; }
+      function updateButtonRectFromScroll() { btnRectCache.cx = btnPageCx - window.scrollX; btnRectCache.cy = btnPageCy - window.scrollY; }
       function updateResponsiveConfig() { var bw = btnRectCache.width, bh = btnRectCache.width > 0 ? (btnRectCache.height || btnRectCache.width * 0.5) : 0; if (bw < 20) return; containerConfig.width = bw * 1.12; containerConfig.offsetX = 0; containerConfig.offsetY = -bh * 0.05; containerConfig.minY = -bh * 0.65; containerConfig.maxY = bh * 0.85; state.sizeScaleFactor = (bw / 290) * (window.innerWidth < 600 ? 2 : 1.4); }
       function initParticles() { for (var i = 0; i < state.particles.length; i++) state.particles[i].dispose(); state.particles = []; state.sceneSeed = (Math.random() * 0xFFFFFFFF) >>> 0; for (var i = 0; i < PARTICLE_COUNT; i++) { state.particles.push(new VelvetParticle(i)); } }
       function triggerBatch(isManual = false) {
@@ -810,7 +801,7 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
         if (threeScrollRaf !== null) return;
         threeScrollRaf = requestAnimationFrame(function() {
           threeScrollRaf = null;
-          cacheButtonRect();
+          updateButtonRectFromScroll();
         });
       }
       window.addEventListener('scroll', _onThreeScroll, { passive: true });
@@ -871,24 +862,12 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
     }
 
     var lastTouchTime = 0;
-    function onBtnTouchStart() {
-      cacheButtonRect(); updateResponsiveConfig();
-      lastTouchTime = performance.now(); mouseOver = true; startGlowTick();
-    }
+    function onBtnTouchStart() { lastTouchTime = performance.now(); mouseOver = true; startGlowTick(); }
     function onBtnTouchEnd() { lastTouchTime = performance.now(); mouseOver = false; lastMouseLeaveTime = performance.now(); cycleStart = performance.now() + MOUSE_COOLDOWN - CYCLE; }
-    function onBtnMouseEnter() {
-      cacheButtonRect(); updateResponsiveConfig();
-      if (performance.now() - lastTouchTime < 1000) return; mouseOver = true; startGlowTick();
-    }
+    function onBtnMouseEnter() { if (performance.now() - lastTouchTime < 1000) return; mouseOver = true; startGlowTick(); }
     function onBtnMouseLeave() { mouseOver = false; lastMouseLeaveTime = performance.now(); cycleStart = performance.now() + MOUSE_COOLDOWN - CYCLE; }
-    function onBtnClick() {
-      cacheButtonRect(); updateResponsiveConfig();
-      starsState.triggerManual++; if (starsState.wake) starsState.wake(); else ensureStarsEngine();
-    }
-    function onBtnPointerDown() {
-      cacheButtonRect(); updateResponsiveConfig();
-      if (btnWrap) btnWrap.classList.add('is-active');
-    }
+    function onBtnClick() { starsState.triggerManual++; if (starsState.wake) starsState.wake(); else ensureStarsEngine(); }
+    function onBtnPointerDown() { if (btnWrap) btnWrap.classList.add('is-active'); }
     function onBtnPointerUp() { if (btnWrap) btnWrap.classList.remove('is-active'); }
     function onBtnPointerLeave() { if (btnWrap) btnWrap.classList.remove('is-active'); }
 
