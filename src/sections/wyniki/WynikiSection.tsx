@@ -1,9 +1,9 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { createElement, useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
-import Script from 'next/script';
+import { WistiaFacadePlayer } from '@/components/wistia/WistiaFacadePlayer';
 import imgTlo from './TLO-Monitor.jpg';
 import imgMonitor from './Monitor1.webp';
 import './wyniki-section.css';
@@ -230,20 +230,7 @@ export function WynikiSection() {
           <div className="wp-panel">
             <div className="wp-video-wrap">
               {wistiaActivated && popupOpen ? (
-                <>
-                  <Script src="https://fast.wistia.com/player.js" strategy="lazyOnload" />
-                  <Script
-                    src={`https://fast.wistia.com/embed/${WISTIA_MEDIA_ID}.js`}
-                    strategy="lazyOnload"
-                    type="module"
-                  />
-                  {createElement('wistia-player', {
-                    'media-id': WISTIA_MEDIA_ID,
-                    seo: 'false',
-                    aspect: '1.7777777777777777',
-                    autoplay: 'true',
-                  })}
-                </>
+                <WistiaFacadePlayer active mediaId={WISTIA_MEDIA_ID} autoplay="true" />
               ) : null}
             </div>
             <div className="wp-content">
