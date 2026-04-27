@@ -545,6 +545,7 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
       var _wgO = getWebGLRendererCreationOptions(_wgP);
       // PROMPT 10 / A1-1: budget only for low WebGL profile (older/weak devices).
       var _isLowBudgetProfile = _wgP === 'low';
+      var _isCoarseMobile = typeof window !== 'undefined' && window.matchMedia('(hover: none) and (pointer: coarse)').matches;
       var CLEAR_COLOR = '#ffffff', MIN_Y_DRIFT_PX = 30, Y_MULT = 2.0, CURVE_PEAK_PX = 24 * Y_MULT, PARTICLE_COUNT = _isLowBudgetProfile ? 10 : 14;
       var containerConfig = { width: 326, offsetX: 0, offsetY: -4, minY: -44, maxY: 55 };
       var state = { particles: [] as any[], pixelToUnit: 0.01, mouse: new THREE.Vector2(0, 0), sizeScaleFactor: 1.0, sceneSeed: 1, hasActiveParticles: false };
@@ -789,15 +790,20 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
         if ((window as any)._blok45Debug) (window as any)._blok45Debug.starsActive = anyAlive;
         if (anyAlive && (now - lastRenderTime >= RENDER_INTERVAL)) {
           var dpr = Math.max(0.5, Math.min(2, renderer.getPixelRatio())), margin = Math.min(window.innerWidth * 0.6, 500);
-          var sx = Math.max(0, btnRectCache.cx - margin), sy = Math.max(0, btnRectCache.cy - margin * 1.3);
-          var sw = Math.min(margin * 2, window.innerWidth - sx), sh = Math.min(margin * 2.6, window.innerHeight - sy);
-          sw = Math.max(0, sw); sh = Math.max(0, sh);
-          var scissorY = Math.max(0, (window.innerHeight - sy - sh) * dpr);
-          if (sw > 0 && sh > 0) {
-            renderer.setScissorTest(true);
-            renderer.setScissor(Math.floor(sx * dpr), Math.floor(scissorY), Math.max(1, Math.floor(sw * dpr)), Math.max(1, Math.floor(sh * dpr)));
-          } else {
+          if (_isCoarseMobile) {
+            // Mobile fix: scissor clipping can visually cut one side of burst and look like right-shift.
             renderer.setScissorTest(false);
+          } else {
+            var sx = Math.max(0, btnRectCache.cx - margin), sy = Math.max(0, btnRectCache.cy - margin * 1.3);
+            var sw = Math.min(margin * 2, window.innerWidth - sx), sh = Math.min(margin * 2.6, window.innerHeight - sy);
+            sw = Math.max(0, sw); sh = Math.max(0, sh);
+            var scissorY = Math.max(0, (window.innerHeight - sy - sh) * dpr);
+            if (sw > 0 && sh > 0) {
+              renderer.setScissorTest(true);
+              renderer.setScissor(Math.floor(sx * dpr), Math.floor(scissorY), Math.max(1, Math.floor(sw * dpr)), Math.max(1, Math.floor(sh * dpr)));
+            } else {
+              renderer.setScissorTest(false);
+            }
           }
           renderer.setViewport(0, 0, window.innerWidth * dpr, window.innerHeight * dpr);
           renderer.render(scene, camera); lastRenderTime = now;
