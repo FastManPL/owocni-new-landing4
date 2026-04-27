@@ -734,12 +734,18 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
 
       function updatePixelScale() { var h = window.innerHeight; if (h === 0) { state.pixelToUnit = 0.01; return; } state.pixelToUnit = (2 * Math.tan(camera.fov * Math.PI / 360) * camera.position.z) / h; }
       var btnPageCx = 0, btnPageCy = 0;
+      function toLayoutViewportClient(x: number, y: number) {
+        var vv = (typeof window !== 'undefined' ? (window as any).visualViewport : null) as VisualViewport | null;
+        if (!vv) return { x: x, y: y };
+        return { x: x + vv.offsetLeft, y: y + vv.offsetTop };
+      }
       function cacheButtonRect() {
         var btnEl = starsState?.btnElement; if (!btnEl) return;
         var rect = btnEl.getBoundingClientRect(); if (rect.width < 20) return;
         btnRectCache.width = rect.width; btnRectCache.height = rect.height;
-        btnPageCx = rect.left + rect.width / 2 + window.scrollX; btnPageCy = rect.top + rect.height / 2 + window.scrollY;
-        btnRectCache.cx = rect.left + rect.width / 2; btnRectCache.cy = rect.top + rect.height / 2;
+        var center = toLayoutViewportClient(rect.left + rect.width / 2, rect.top + rect.height / 2);
+        btnPageCx = center.x + window.scrollX; btnPageCy = center.y + window.scrollY;
+        btnRectCache.cx = center.x; btnRectCache.cy = center.y;
         // Mobile: if we have a fresh manual touch/pointer coordinate, anchor burst to that exact point.
         if (
           starsState.manualClientX !== null &&
@@ -889,8 +895,9 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
     var lastTouchTime = 0;
     function onBtnTouchStart(e: TouchEvent) {
       if (e.touches && e.touches[0]) {
-        starsState.manualClientX = e.touches[0].clientX;
-        starsState.manualClientY = e.touches[0].clientY;
+        var vv = (typeof window !== 'undefined' ? (window as any).visualViewport : null) as VisualViewport | null;
+        starsState.manualClientX = e.touches[0].clientX + (vv ? vv.offsetLeft : 0);
+        starsState.manualClientY = e.touches[0].clientY + (vv ? vv.offsetTop : 0);
         starsState.manualTs = performance.now();
       }
       lastTouchTime = performance.now(); mouseOver = true; startGlowTick();
@@ -900,8 +907,9 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
     function onBtnMouseLeave() { mouseOver = false; lastMouseLeaveTime = performance.now(); cycleStart = performance.now() + MOUSE_COOLDOWN - CYCLE; }
     function onBtnClick() { starsState.triggerManual++; if (starsState.wake) starsState.wake(); else ensureStarsEngine(); }
     function onBtnPointerDown(e: PointerEvent) {
-      starsState.manualClientX = e.clientX;
-      starsState.manualClientY = e.clientY;
+      var vv = (typeof window !== 'undefined' ? (window as any).visualViewport : null) as VisualViewport | null;
+      starsState.manualClientX = e.clientX + (vv ? vv.offsetLeft : 0);
+      starsState.manualClientY = e.clientY + (vv ? vv.offsetTop : 0);
       starsState.manualTs = performance.now();
       if (btnWrap) btnWrap.classList.add('is-active');
     }
