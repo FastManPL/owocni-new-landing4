@@ -1162,6 +1162,11 @@ return init;
 // ─────────────────────────────────────────────────────────────────────────────
 
 async function onasCapitanInit(container) {
+  const yieldToMain = () =>
+    new Promise<void>((resolve) => {
+      requestAnimationFrame(() => resolve());
+    });
+
   const THREE = await import('three');
   const { EffectComposer } = await import('three/examples/jsm/postprocessing/EffectComposer.js');
   const { RenderPass } = await import('three/examples/jsm/postprocessing/RenderPass.js');
@@ -1974,10 +1979,14 @@ async function onasCapitanInit(container) {
     }
   }
 
+  // C1: split heavy init into smaller slices to reduce long main-thread tasks.
+  await yieldToMain();
   buildLogoFromSVG();
 
   // Pre-compile shaders — eliminates first-frame jank
+  await yieldToMain();
   baseRenderer.compile(scene, camera);
+  await yieldToMain();
   bloomRenderer.compile(scene, camera);
 
   const RX_CENTER = -0.063;
