@@ -577,7 +577,16 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
       if (typeof (renderer as any).transmissionResolutionScale === 'number') {
         (renderer as any).transmissionResolutionScale = _isLowBudgetProfile ? 0.35 : 0.5;
       }
-      starsContainer.appendChild(renderer.domElement);
+      // Mount stars canvas on <body> to avoid mobile "fixed inside transformed ancestor" offsets.
+      // The anchor coordinates are viewport-based, so the render layer must also be viewport-rooted.
+      renderer.domElement.style.position = 'fixed';
+      renderer.domElement.style.left = '0';
+      renderer.domElement.style.top = '0';
+      renderer.domElement.style.width = '100vw';
+      renderer.domElement.style.height = '100vh';
+      renderer.domElement.style.pointerEvents = 'none';
+      renderer.domElement.style.zIndex = '50';
+      document.body.appendChild(renderer.domElement);
       var _envMapReady = false, _envMapIdleId = 0;
       function _generateEnvMap() {
         if (_envMapReady || _disposed) return;
