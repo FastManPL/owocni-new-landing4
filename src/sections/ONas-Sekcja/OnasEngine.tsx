@@ -1254,8 +1254,10 @@ async function onasCapitanInit(container) {
   }
   const wgOpts = getWebGLRendererCreationOptions(onasWebGLProfile);
   const DPR = getWebGLPixelRatio(onasWebGLProfile);
-  const BLOOM_SCALE = 0.25;
-  const BLOOM_INTERVAL = 4;
+  const isLowWebGLProfile = onasWebGLProfile === 'low';
+  const BLOOM_SCALE = isLowWebGLProfile ? 0.18 : 0.25;
+  const BLOOM_INTERVAL = isLowWebGLProfile ? 6 : 4;
+  const BLOOM_STRENGTH_SCALE = isLowWebGLProfile ? 0.75 : 1;
 
   function getSize() {
     const rect = threeContainer.getBoundingClientRect();
@@ -2485,7 +2487,7 @@ async function onasCapitanInit(container) {
         if (goldMaterial) goldMaterial.envMapIntensity = sEnvI;
 
         // Bloom
-        bloomPass.strength = sBlm;
+        bloomPass.strength = sBlm * BLOOM_STRENGTH_SCALE;
 
         // SpotLight
         spotLight.position.x = sSlX;
