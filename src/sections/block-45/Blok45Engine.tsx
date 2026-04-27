@@ -742,7 +742,13 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
         var available: number[] = [];
         for (var i = 0; i < PARTICLE_COUNT; i++) { if (!state.particles[i].alive) available.push(i); }
         if (available.length === 0) return;
-        var toAdd = Math.min(available.length, 5 + Math.floor(Math.random() * 4));
+        // PROMPT 10 A1: on weak profile reduce only auto (white) burst density.
+        // Manual burst (black/red) stays untouched to preserve existing desktop behavior.
+        var autoMin = _isLowBudgetProfile ? 3 : 5;
+        var autoVar = _isLowBudgetProfile ? 3 : 4;
+        var toAdd = isManual
+          ? Math.min(available.length, 5 + Math.floor(Math.random() * 4))
+          : Math.min(available.length, autoMin + Math.floor(Math.random() * autoVar));
         for (var i = available.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var tmp = available[i]; available[i] = available[j]; available[j] = tmp; }
         for (var j = 0; j < toAdd; j++) { var i = available[j]; var baseDelay = (j / toAdd) * 0.15; state.particles[i].spawn(baseDelay + Math.random() * 0.05, isManual); }
         wakeThreeLoop();
