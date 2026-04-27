@@ -1,0 +1,14 @@
+{
+  "generated_at": "2026-04-27T06:33:24.993Z",
+  "lazy_file": "lazy-wistia.json",
+  "eager_file": "eager-wistia.json",
+  "comparison": {
+    "script_parse_ms_delta_eager_minus_lazy": 1843.7339999999995,
+    "script_compile_ms_delta_eager_minus_lazy": 66.17300000000341,
+    "script_execution_ms_delta_eager_minus_lazy": 1201.5160000000033,
+    "max_click_dispatch_ms_delta_eager_minus_lazy": 5.4719999999999995,
+    "heap_growth_mid_delta_eager_minus_lazy": 6957340,
+    "image_decode_ms_delta_eager_minus_lazy": 121.08199999999925,
+    "detached_script_states_delta": 0
+  }
+}

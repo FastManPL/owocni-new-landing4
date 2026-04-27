@@ -1,0 +1,352 @@
+{
+  "scenario": "lazy-wistia",
+  "script_timing": {
+    "parse_ms": 429.725,
+    "compile_ms": 203.40899999999056,
+    "execution_ms": 3781.446000000127,
+    "top_execution_tasks": [
+      {
+        "name": "FunctionCall",
+        "ms": 2559.562,
+        "ts": 7304350203
+      },
+      {
+        "name": "EvaluateScript",
+        "ms": 115.476,
+        "ts": 7304147784
+      },
+      {
+        "name": "FunctionCall",
+        "ms": 98.782,
+        "ts": 7310791407
+      },
+      {
+        "name": "EvaluateScript",
+        "ms": 91.533,
+        "ts": 7310937754
+      },
+      {
+        "name": "FunctionCall",
+        "ms": 75,
+        "ts": 7304008888
+      },
+      {
+        "name": "FunctionCall",
+        "ms": 74.398,
+        "ts": 7304263863
+      },
+      {
+        "name": "FunctionCall",
+        "ms": 56.968,
+        "ts": 7303707063
+      },
+      {
+        "name": "FunctionCall",
+        "ms": 56.768,
+        "ts": 7311031528
+      },
+      {
+        "name": "EvaluateScript",
+        "ms": 28.535,
+        "ts": 7308956858
+      },
+      {
+        "name": "EvaluateScript",
+        "ms": 21.957,
+        "ts": 7308674071
+      },
+      {
+        "name": "EvaluateScript",
+        "ms": 21.458,
+        "ts": 7303529947
+      },
+      {
+        "name": "FunctionCall",
+        "ms": 21.407,
+        "ts": 7306918457
+      },
+      {
+        "name": "FunctionCall",
+        "ms": 15.664,
+        "ts": 7303591981
+      },
+      {
+        "name": "FunctionCall",
+        "ms": 15.586,
+        "ts": 7304104923
+      },
+      {
+        "name": "EvaluateScript",
+        "ms": 15.167,
+        "ts": 7303551911
+      }
+    ],
+    "top_script_execution_by_url": [
+      {
+        "url": "http://localhost:3002/_next/static/chunks/6938.34e9869bea6be35c.js",
+        "total_ms": 207.00900000000001
+      },
+      {
+        "url": "http://fast.wistia.com/assets/external/publicApi.js",
+        "total_ms": 35.665
+      },
+      {
+        "url": "http://localhost:3002/_next/static/chunks/4bd1b696-186ad9619a3d22b0.js",
+        "total_ms": 22.647
+      },
+      {
+        "url": "https://fast.wistia.com/player.js",
+        "total_ms": 21.957
+      },
+      {
+        "url": "http://localhost:3002/_next/static/chunks/app/page-dba856a1210dfb96.js",
+        "total_ms": 18.775
+      },
+      {
+        "url": "http://localhost:3002/_next/static/chunks/bd904a5c.c3e1bd505ea6c6dd.js",
+        "total_ms": 16.981
+      },
+      {
+        "url": "http://localhost:3002/_next/static/chunks/dc112a36.d5d3d673c16b2218.js",
+        "total_ms": 16.381
+      },
+      {
+        "url": "(inline/unknown)",
+        "total_ms": 8.906
+      },
+      {
+        "url": "http://localhost:3002/",
+        "total_ms": 4.296999999999998
+      },
+      {
+        "url": "http://fast.wistia.net/assets/external/wistiaLogo.js",
+        "total_ms": 3.3360000000000003
+      },
+      {
+        "url": "http://localhost:3002/_next/static/chunks/2127.96f031c774380d64.js",
+        "total_ms": 2.8689999999999998
+      },
+      {
+        "url": "http://localhost:3002/_next/static/chunks/3235.bb904a03b61d00c9.js",
+        "total_ms": 2.5469999999999997
+      },
+      {
+        "url": "http://localhost:3002/_next/static/chunks/webpack-6e0732449bc186e7.js",
+        "total_ms": 2.485
+      },
+      {
+        "url": "http://localhost:3002/_next/static/chunks/6562.f1e35633247bef21.js",
+        "total_ms": 1.859
+      },
+      {
+        "url": "http://localhost:3002/_next/static/chunks/9826-b993712b56f4eb11.js",
+        "total_ms": 1.7650000000000001
+      },
+      {
+        "url": "http://localhost:3002/_next/static/chunks/b536a0f1.79f9669266c25e39.js",
+        "total_ms": 1.563
+      },
+      {
+        "url": "http://localhost:3002/_next/static/chunks/6351.25c7735e367b0f0c.js",
+        "total_ms": 1.323
+      },
+      {
+        "url": "http://localhost:3002/_next/static/chunks/7715.01f1d8364908920d.js",
+        "total_ms": 1.008
+      },
+      {
+        "url": "http://localhost:3002/_next/static/chunks/2669.6260bacd12bac785.js",
+        "total_ms": 0.923
+      },
+      {
+        "url": "http://localhost:3002/_next/static/chunks/8490.08d42e15cbb99c4a.js",
+        "total_ms": 0.901
+      }
+    ]
+  },
+  "image_decode": {
+    "total_decode_ms": 402.11099999999965,
+    "top_decode_tasks": [
+      {
+        "name": "Decode Image",
+        "ms": 6.515,
+        "ts": 7303874646
+      },
+      {
+        "name": "Decode Image",
+        "ms": 5.655,
+        "ts": 7303831568
+      },
+      {
+        "name": "ImageDecodeTask",
+        "ms": 5.465,
+        "ts": 7303880571
+      },
+      {
+        "name": "Decode Image",
+        "ms": 4.801,
+        "ts": 7303847414
+      },
+      {
+        "name": "Decode Image",
+        "ms": 4.563,
+        "ts": 7303898501
+      },
+      {
+        "name": "ImageDecodeTask",
+        "ms": 4.462,
+        "ts": 7303876043
+      },
+      {
+        "name": "Decode Image",
+        "ms": 4.43,
+        "ts": 7303876058
+      },
+      {
+        "name": "Decode Image",
+        "ms": 4.095,
+        "ts": 7303822865
+      },
+      {
+        "name": "Decode Image",
+        "ms": 4.065,
+        "ts": 7303902379
+      },
+      {
+        "name": "Decode Image",
+        "ms": 4.037,
+        "ts": 7311111233
+      }
+    ]
+  },
+  "hydration_signals": {
+    "user_timing_hydration_mark_count": 0,
+    "hydration_marks_sample": []
+  },
+  "interaction_dispatch": {
+    "events_top": [
+      {
+        "type": "click",
+        "ms": 5.675,
+        "ts": 7309858899
+      },
+      {
+        "type": "click",
+        "ms": 1.284,
+        "ts": 7308464581
+      },
+      {
+        "type": "pointerdown",
+        "ms": 0.576,
+        "ts": 7308463388
+      },
+      {
+        "type": "pointerdown",
+        "ms": 0.406,
+        "ts": 7309857645
+      },
+      {
+        "type": "pointerup",
+        "ms": 0.137,
+        "ts": 7308464335
+      },
+      {
+        "type": "pointerup",
+        "ms": 0.057,
+        "ts": 7309858718
+      }
+    ],
+    "by_type": {
+      "pointerdown": {
+        "count": 2,
+        "total_ms": 0.982,
+        "max_ms": 0.576
+      },
+      "pointerup": {
+        "count": 2,
+        "total_ms": 0.194,
+        "max_ms": 0.137
+      },
+      "click": {
+        "count": 2,
+        "total_ms": 6.959,
+        "max_ms": 5.675
+      }
+    }
+  },
+  "heap": {
+    "start": {
+      "usedSize": 531440,
+      "totalSize": 1048576
+    },
+    "mid": {
+      "usedSize": 25564472,
+      "totalSize": 43089920
+    },
+    "end": {
+      "usedSize": 31404984,
+      "totalSize": 68780032
+    },
+    "growth_mid_minus_start": 25033032,
+    "growth_end_minus_start": 30873544
+  },
+  "detached_script_states": 4,
+  "bfcache_not_used": {
+    "loaderId": "6E0C0D447CC83D502158AD2CAC0A577E",
+    "frameId": "27D4A6E8A01E2B8C50ECAC44FD3D6E44",
+    "notRestoredExplanations": [
+      {
+        "type": "Circumstantial",
+        "reason": "BrowsingInstanceNotSwapped"
+      }
+    ],
+    "notRestoredExplanationsTree": {
+      "url": "http://localhost:3002/",
+      "explanations": [
+        {
+          "type": "Circumstantial",
+          "reason": "BrowsingInstanceNotSwapped"
+        }
+      ],
+      "children": []
+    }
+  },
+  "perf_metrics": {
+    "Timestamp": 7313.568143,
+    "AudioHandlers": 0,
+    "AudioWorkletProcessors": 0,
+    "Documents": 23,
+    "Frames": 20,
+    "JSEventListeners": 2039,
+    "LayoutObjects": 8308,
+    "MediaKeySessions": 0,
+    "MediaKeys": 0,
+    "Nodes": 20470,
+    "Resources": 268,
+    "ContextLifecycleStateObservers": 201,
+    "V8PerContextDatas": 2,
+    "WorkerGlobalScopes": 0,
+    "UACSSResources": 0,
+    "RTCPeerConnections": 0,
+    "ResourceFetchers": 22,
+    "AdSubframes": 0,
+    "DetachedScriptStates": 4,
+    "ArrayBufferContents": 65,
+    "LayoutCount": 371,
+    "RecalcStyleCount": 1636,
+    "LayoutDuration": 0.313076,
+    "RecalcStyleDuration": 0.26975,
+    "DevToolsCommandDuration": 0.027248,
+    "ScriptDuration": 3.192401,
+    "V8CompileDuration": 0.001525,
+    "TaskDuration": 7.835131,
+    "TaskOtherDuration": 4.031131,
+    "ThreadTime": 2.279453,
+    "ProcessTime": 11.183232,
+    "JSHeapUsedSize": 31406300,
+    "JSHeapTotalSize": 68780032,
+    "FirstMeaningfulPaint": 0,
+    "DomContentLoaded": 7310.516356,
+    "NavigationStart": 7310.490197
+  }
+}

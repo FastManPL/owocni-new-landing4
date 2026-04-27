@@ -76,6 +76,7 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
     let badge20LatKill, badge20LatReplay;
     let badgeGoogleKill, badgeGoogleRevive;
     let haloKillFn, haloReviveFn;
+    let trailKillFn: null | (() => void) = null;
     let marqueeStop = null, marqueeStart = null;
     let logoLottiePause = null, logoLottieResume = null; // [FIX ENT-LC-03]
 
@@ -343,6 +344,7 @@ function applyHeroLiteMode() {
         bGoogle.classList.remove('stars-running', 'stars-finished');
     }
     if (typeof haloKillFn === 'function') haloKillFn();
+    if (typeof trailKillFn === 'function') trailKillFn();
     if (typeof marqueeStop === 'function') marqueeStop();
     if (typeof logoLottiePause === 'function') logoLottiePause();
 }
@@ -1723,7 +1725,7 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
     {
         (function() {
             const trailEl = $id('hero-trailContainer');
-            if (!trailEl || typeof gsap === 'undefined' || window.innerWidth <= 1200) return;
+            if (!trailEl || typeof gsap === 'undefined' || window.innerWidth <= 1200 || heroLiteMode) return;
 
             /* ═══ CONFIG ═══ */
             const vw = window.innerWidth;
@@ -2638,6 +2640,21 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
                 ensureTicking();
             }
 
+            function onTrailMouseMove(e) {
+                if (isHeroLenisScrolling()) return;
+                const sx = window.scrollX || window.pageXOffset || 0;
+                const sy = window.scrollY || window.pageYOffset || 0;
+                const x = e.clientX + sx;
+                const y = e.clientY + sy;
+                mx = x;
+                my = y;
+                pushHistory(x, y);
+                enqueuePointerPoint(x, y);
+                isMoving = true;
+                lastMoveT = performance.now();
+                ensureTicking();
+            }
+
             listen(document, "mouseover", function init(e) {
                 if (isHeroLenisScrolling()) return;
                 const sx = window.scrollX || window.pageXOffset || 0;
@@ -2723,20 +2740,7 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
                 if ('PointerEvent' in window) {
                     addHfListener(document, 'pointermove', onTrailPointerMove, { passive: true });
                 } else {
-                    addHfListener(document, 'mousemove', (e) => {
-                        if (isHeroLenisScrolling()) return;
-                        const sx = window.scrollX || window.pageXOffset || 0;
-                        const sy = window.scrollY || window.pageYOffset || 0;
-                        const x = e.clientX + sx;
-                        const y = e.clientY + sy;
-                        mx = x;
-                        my = y;
-                        pushHistory(x, y);
-                        enqueuePointerPoint(x, y);
-                        isMoving = true;
-                        lastMoveT = performance.now();
-                        ensureTicking();
-                    }, { passive: true });
+                    addHfListener(document, 'mousemove', onTrailMouseMove, { passive: true });
                 }
 
                 // compatibility with factory pause()/resume()
@@ -2765,8 +2769,46 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
 
             tryActivate();
 
+            trailKillFn = () => {
+                trailActive = false;
+                document.removeEventListener('pointermove', onTrailPointerMove, { passive: true } as AddEventListenerOptions);
+                document.removeEventListener('mousemove', onTrailMouseMove, { passive: true } as AddEventListenerOptions);
+                for (let i = hfListeners.length - 1; i >= 0; i--) {
+                    const l = hfListeners[i];
+                    if (
+                        l.target === document &&
+                        (
+                            (l.event === 'pointermove' && l.handler === onTrailPointerMove) ||
+                            (l.event === 'mousemove' && l.handler === onTrailMouseMove)
+                        )
+                    ) {
+                        hfListeners.splice(i, 1);
+                    }
+                }
+                if (tickRegistered) {
+                    gsap.ticker.remove(tick);
+                    tickRegistered = false;
+                }
+                const tickIdx = tickFns.indexOf(tick);
+                if (tickIdx !== -1) tickFns.splice(tickIdx, 1);
+                trailWasEmpty = true;
+                strategy.reset();
+                qHead = 0;
+                qTail = 0;
+                qLen = 0;
+                hasSampleCursor = false;
+                carryDist = 0;
+                for (let i = 0; i < liveSlots.length; i++) {
+                    cullSlot(liveSlots[i]);
+                }
+                liveSlots.length = 0;
+                liveCount = 0;
+                dyingCount = 0;
+            };
+
             /* ═══ CLEANUP ═══ */
             cleanups.push(() => {
+                trailKillFn = null;
                 if (measureRaf) cancelAnimationFrame(measureRaf);
                 if (boundsRO) boundsRO.disconnect();
 
