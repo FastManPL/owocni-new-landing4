@@ -6,6 +6,7 @@ import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { startWarmVideoOnce } from '@/lib/warmVideo';
+import { getDeviceTier } from '@/lib/autoTier';
 import './book-stats-section.css';
 
 /** GSAP ustawia podczas globalnego refresh(); wtedy pin mierzy timeline przez animation.render(0) — onUpdate scrub dałby klatkę 0. */
@@ -58,6 +59,15 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
     const csVideo = container.querySelector<HTMLVideoElement>('.cs-video');
     const csCover = container.querySelector<HTMLElement>('.cs-video-cover');
     if (!csVideo) return;
+    const tierBlocked = getDeviceTier() === 0;
+    if (tierBlocked) {
+      csCover?.classList.remove('is-hidden');
+      csVideo.pause();
+      csVideo.removeAttribute('src');
+      csVideo.load();
+      csVideo.style.display = 'none';
+      return;
+    }
     const handle = startWarmVideoOnce(csVideo, {
       rootMargin: '600px',
       loop: true,
