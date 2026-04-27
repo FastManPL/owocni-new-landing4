@@ -744,6 +744,14 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
         btnRectCache.cx = rect.left + rect.width / 2;
         btnRectCache.cy = rect.top + rect.height / 2;
       }
+      function syncButtonCenterFromDom() {
+        var btnEl = starsState?.btnElement;
+        if (!btnEl) return;
+        var rect = btnEl.getBoundingClientRect();
+        if (rect.width < 20) return;
+        btnRectCache.cx = rect.left + rect.width / 2;
+        btnRectCache.cy = rect.top + rect.height / 2;
+      }
       function updateResponsiveConfig() { var bw = btnRectCache.width, bh = btnRectCache.width > 0 ? (btnRectCache.height || btnRectCache.width * 0.5) : 0; if (bw < 20) return; containerConfig.width = bw * 1.12; containerConfig.offsetX = 0; containerConfig.offsetY = -bh * 0.05; containerConfig.minY = -bh * 0.65; containerConfig.maxY = bh * 0.85; state.sizeScaleFactor = (bw / 290) * (window.innerWidth < 600 ? 2 : 1.4); }
       function initParticles() { for (var i = 0; i < state.particles.length; i++) state.particles[i].dispose(); state.particles = []; state.sceneSeed = (Math.random() * 0xFFFFFFFF) >>> 0; for (var i = 0; i < PARTICLE_COUNT; i++) { state.particles.push(new VelvetParticle(i)); } }
       function triggerBatch(isManual = false) {
@@ -765,6 +773,8 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
         var dt = Math.min(clock.getDelta(), 0.1), dampDt = Math.pow(0.85, dt * 60);
         while (starsState.triggerAuto > 0) { starsState.triggerAuto--; triggerBatch(false); }
         while (starsState.triggerManual > 0) { starsState.triggerManual--; triggerBatch(true); }
+        // Re-sync center directly from DOM while particles are active (mobile toolbar / visual viewport drift guard).
+        syncButtonCenterFromDom();
         var ptu = state.pixelToUnit || 0.01, repelRadius = 280 * ptu, repelRadiusSq = repelRadius * repelRadius;
         centerCache.x = (btnRectCache.cx - window.innerWidth / 2) * ptu;
         centerCache.y = -(btnRectCache.cy - window.innerHeight / 2) * ptu;
@@ -805,15 +815,6 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
         });
       }
       window.addEventListener('resize', _scheduleThreeResize, { passive: true });
-      var threeScrollRaf: number | null = null;
-      function _onThreeScroll() {
-        if (threeScrollRaf !== null) return;
-        threeScrollRaf = requestAnimationFrame(function() {
-          threeScrollRaf = null;
-          cacheButtonRect();
-        });
-      }
-      window.addEventListener('scroll', _onThreeScroll, { passive: true });
       updatePixelScale(); initParticles();
       renderer.domElement.style.visibility = 'hidden'; canvasVisible = false;
       setTimeout(function() {
@@ -824,9 +825,8 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
       function dispose() {
         if (_disposed) return; _disposed = true;
         if (_envMapIdleId) { clearTimeout(_envMapIdleId); _envMapIdleId = 0; }
-        window.removeEventListener('resize', _scheduleThreeResize); window.removeEventListener('scroll', _onThreeScroll);
+        window.removeEventListener('resize', _scheduleThreeResize);
         if (threeResizeRaf !== null) { cancelAnimationFrame(threeResizeRaf); threeResizeRaf = null; }
-        if (threeScrollRaf !== null) { cancelAnimationFrame(threeScrollRaf); threeScrollRaf = null; }
         var btnEl = starsState.btnElement;
         if (btnEl) { btnEl.removeEventListener('pointerdown', btnPointerDown); btnEl.removeEventListener('touchstart', btnTouchStart); }
         document.removeEventListener('mousemove', mouseHandler); document.removeEventListener('touchmove', touchHandler);
@@ -878,7 +878,11 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
     function onBtnTouchEnd() { lastTouchTime = performance.now(); mouseOver = false; lastMouseLeaveTime = performance.now(); cycleStart = performance.now() + MOUSE_COOLDOWN - CYCLE; }
     function onBtnMouseEnter() {
       cacheButtonRect(); updateResponsiveConfig();
-      if (performance.now() - lastTouchTime < 1000) return; mouseOver = true; startGlowTick();
+      if (performance.now() - lastTouchTime < 1000) return;
+      // Restore visible colored burst on each desktop hover entry.
+      starsState.triggerManual++;
+      if (starsState.wake) starsState.wake(); else ensureStarsEngine();
+      mouseOver = true; startGlowTick();
     }
     function onBtnMouseLeave() { mouseOver = false; lastMouseLeaveTime = performance.now(); cycleStart = performance.now() + MOUSE_COOLDOWN - CYCLE; }
     function onBtnClick() {
