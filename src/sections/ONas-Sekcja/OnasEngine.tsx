@@ -2618,7 +2618,8 @@ function factoryInit(container) {
   }
 
 /* ── IO Gating: Ścieżka 1 (Typ B) ── */
-  var _paused = false;
+  // A2: start paused; resume/boot only when section enters IO window.
+  var _paused = true;
   var _killed = false;
   var _io = null;
   var _ioDebounce = null;
@@ -2697,11 +2698,8 @@ function factoryInit(container) {
     window.visualViewport.addEventListener('resize', _onVVResize, { passive: true });
   }
 
-
-  /* ── Boot capitan async (Opcja A — Three.js importowany dynamicznie w onasCapitanInit) ── */
-  if (capitanEl) {
-    _bootCapitan();
-  }
+  // Keep heavy subsystems suspended until first IO intersection.
+  if (carouselInst) carouselInst.pause();
 
 
   /* ── Graceful degradation: onerror on press logos ── */
