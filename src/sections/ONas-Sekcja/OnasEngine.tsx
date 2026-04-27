@@ -1249,6 +1249,7 @@ async function onasCapitanInit(container) {
 
   const threeContainer = badge;
   const onasWebGLProfile = getWebGLProfile();
+  threeContainer.setAttribute('data-badge-mode', onasWebGLProfile === 'none' ? 'fallback' : 'webgl');
   if (onasWebGLProfile === 'none') {
     return { pause(){}, resume(){}, kill(){} };
   }
@@ -2864,6 +2865,14 @@ export default function OnasEngine() {
     <div className="banner__mesh-fog"></div>
 
     <div className="banner__badge" id="onas-capitan-badgeWrapper">
+      <div className="onas-capitan-badge-fallback" aria-hidden="true">
+        <Image
+          src="/assets/top10.jpg"
+          alt=""
+          fill
+          sizes="(max-width: 600px) 69vw, (max-width: 1200px) 32vw, 26vw"
+        />
+      </div>
       <svg
         id="onas-capitan-badge-svg"
         xmlns="http://www.w3.org/2000/svg"

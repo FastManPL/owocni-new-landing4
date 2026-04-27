@@ -305,6 +305,21 @@
       transparent 100%
     );
   }
+
+  #onas-section #onas-capitan .onas-capitan-badge-fallback {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    pointer-events: none;
+  }
+
+  #onas-section #onas-capitan .onas-capitan-badge-fallback img {
+    object-fit: contain;
+  }
+
+  #onas-section #onas-capitan .banner__badge[data-badge-mode='webgl'] .onas-capitan-badge-fallback {
+    display: none;
+  }
   @supports not (aspect-ratio: 1) {
     /* Badge square fallback handled by JS in positionBadge() —
        padding-bottom trick breaks canvas children (height: 0) */
