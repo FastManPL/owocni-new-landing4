@@ -532,8 +532,7 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
 
     var starsState = {
       triggerAuto: 0, triggerManual: 0, btnElement: btn,
-      wake: null as (() => void) | null, sleep: null as (() => void) | null, dispose: null as (() => void) | null,
-      burstManualNow: null as (() => void) | null
+      wake: null as (() => void) | null, sleep: null as (() => void) | null, dispose: null as (() => void) | null
     };
 
     // =========================================================
@@ -772,10 +771,6 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
         for (var j = 0; j < toAdd; j++) { var i = available[j]; var baseDelay = (j / toAdd) * 0.15; state.particles[i].spawn(baseDelay + Math.random() * 0.05, isManual); }
         wakeThreeLoop();
       }
-      starsState.burstManualNow = function() {
-        cacheButtonRect(); updateResponsiveConfig();
-        triggerBatch(true);
-      };
       var clock = new THREE.Timer();
       clock.connect(document);
       var viewportHalfHeight = camera.position.z * Math.tan(camera.fov * Math.PI / 360);
@@ -846,7 +841,6 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
         crossGeom.dispose(); _baseMaterialAuto.dispose(); _baseMaterialManualBlack.dispose(); _baseMaterialManualRed.dispose();
         if (renderer) { renderer.dispose(); if (renderer.domElement && renderer.domElement.parentNode) { renderer.domElement.parentNode.removeChild(renderer.domElement); } }
         if (scene.environment) scene.environment.dispose();
-        starsState.burstManualNow = null;
       }
       return { wake: wakeThreeLoop, sleep: sleepThreeLoop, dispose: dispose };
     }
@@ -893,21 +887,14 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
       cacheButtonRect(); updateResponsiveConfig();
       if (performance.now() - lastTouchTime < 1000) return;
       // Restore visible colored burst on each desktop hover entry.
-      if (starsState.burstManualNow) { starsState.burstManualNow(); }
-      else {
-        starsState.triggerManual++;
-        if (starsState.wake) starsState.wake(); else ensureStarsEngine();
-      }
+      starsState.triggerManual++;
+      if (starsState.wake) starsState.wake(); else ensureStarsEngine();
       mouseOver = true; startGlowTick();
     }
     function onBtnMouseLeave() { mouseOver = false; lastMouseLeaveTime = performance.now(); cycleStart = performance.now() + MOUSE_COOLDOWN - CYCLE; }
     function onBtnClick() {
       cacheButtonRect(); updateResponsiveConfig();
-      if (starsState.burstManualNow) { starsState.burstManualNow(); }
-      else {
-        starsState.triggerManual++;
-        if (starsState.wake) starsState.wake(); else ensureStarsEngine();
-      }
+      starsState.triggerManual++; if (starsState.wake) starsState.wake(); else ensureStarsEngine();
     }
     function onBtnPointerDown() {
       cacheButtonRect(); updateResponsiveConfig();
