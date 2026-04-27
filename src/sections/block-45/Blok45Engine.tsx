@@ -540,7 +540,11 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
     // =========================================================
     function createStarsEngine(THREE: any, RoundedBoxGeometry: any, RoomEnvironment: any, BufferGeometryUtils: any, starsContainer: HTMLElement, starsState: any) {
       var _disposed = false;
-      var CLEAR_COLOR = '#ffffff', MIN_Y_DRIFT_PX = 30, Y_MULT = 2.0, CURVE_PEAK_PX = 24 * Y_MULT, PARTICLE_COUNT = 14;
+      var _wgP = getWebGLProfile();
+      var _wgO = getWebGLRendererCreationOptions(_wgP);
+      // PROMPT 10 / A1-1: budget only for low WebGL profile (older/weak devices).
+      var _isLowBudgetProfile = _wgP === 'low';
+      var CLEAR_COLOR = '#ffffff', MIN_Y_DRIFT_PX = 30, Y_MULT = 2.0, CURVE_PEAK_PX = 24 * Y_MULT, PARTICLE_COUNT = _isLowBudgetProfile ? 10 : 14;
       var containerConfig = { width: 326, offsetX: 0, offsetY: -4, minY: -44, maxY: 55 };
       var state = { particles: [] as any[], pixelToUnit: 0.01, mouse: new THREE.Vector2(0, 0), sizeScaleFactor: 1.0, sceneSeed: 1, hasActiveParticles: false };
       var centerCache = { x: 0, y: 0 };
@@ -548,8 +552,6 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
       var scene = new THREE.Scene();
       var camera = new THREE.PerspectiveCamera(35, window.innerWidth / window.innerHeight, 0.1, 100);
       camera.position.z = 15;
-      var _wgP = getWebGLProfile();
-      var _wgO = getWebGLRendererCreationOptions(_wgP);
       var renderer = new THREE.WebGLRenderer({
         antialias: _wgO.antialias,
         alpha: true,
@@ -560,7 +562,7 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
       renderer.setClearColor(0x000000, 0);
       renderer.setScissorTest(false);
       if (typeof (renderer as any).transmissionResolutionScale === 'number') {
-        (renderer as any).transmissionResolutionScale = 0.5;
+        (renderer as any).transmissionResolutionScale = _isLowBudgetProfile ? 0.35 : 0.5;
       }
       starsContainer.appendChild(renderer.domElement);
       var _envMapReady = false, _envMapIdleId = 0;
@@ -748,7 +750,7 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
       var clock = new THREE.Timer();
       clock.connect(document);
       var viewportHalfHeight = camera.position.z * Math.tan(camera.fov * Math.PI / 360);
-      var RENDER_INTERVAL = 15, lastRenderTime = 0;
+      var RENDER_INTERVAL = _isLowBudgetProfile ? 24 : 15, lastRenderTime = 0;
       function animate(now: number) {
         clock.update();
         var dt = Math.min(clock.getDelta(), 0.1), dampDt = Math.pow(0.85, dt * 60);
