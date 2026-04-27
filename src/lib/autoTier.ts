@@ -48,8 +48,9 @@ function isCoarseTouchPrimary(): boolean {
  * (Compositor przeglądarki). Dotyczy m.in. Realme 8 (8 rdzeni = wcześniej „full” + Lenis).
  */
 export function prefersNativeDocumentScroll(): boolean {
-  // Temporary test mode: allow Lenis on coarse-touch devices as well.
-  return false;
+  if (!isCoarseTouchPrimary()) return false;
+  // Mobile policy: keep Lenis only on stronger devices; weak devices use native scroll.
+  return getDeviceTier() === 0;
 }
 
 export function getDeviceTier(): DeviceTier {
