@@ -16,7 +16,7 @@
     margin-left: auto;
     margin-right: auto;
     position: relative;
-    z-index: 10; /* FIX P2: Capitan NAD karuzelą */
+    z-index: 12; /* Keep capitan controls above carousel/video hit area */
     background: var(--banner-color);
     border-radius: var(--banner-radius) var(--banner-radius) 0 0;
   }
@@ -70,6 +70,8 @@
   }
 
   #onas-section #onas-capitan .curve-btn {
+    position: relative;
+    z-index: 2;
     background: none;
     border: none;
     color: #7f746b;
