@@ -43,15 +43,24 @@ function isCoarseTouchPrimary(): boolean {
   );
 }
 
+function isAndroidDevice(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  return /Android/i.test(navigator.userAgent);
+}
+
 /**
  * Telefon / tablet jako główny wejście — **bez Lenisa**, natywny scroll dokumentu
  * (Compositor przeglądarki). Dotyczy m.in. Realme 8 (8 rdzeni = wcześniej „full” + Lenis).
  */
 export function prefersNativeDocumentScroll(): boolean {
   if (!isCoarseTouchPrimary()) return false;
-  // Mobile policy: enable Lenis only for top-tier devices (Tier 2).
-  // Tier 0/1 use native scroll to reduce main-thread pressure.
-  return getDeviceTier() !== 2;
+  const tier = getDeviceTier();
+  // Mobile policy: Tier 0/1 always native scroll.
+  if (tier !== 2) return true;
+  // Android policy: even "Tier 2" can still jank with Lenis on mid-range SoCs (e.g. Realme-class devices),
+  // so keep native scroll unless explicitly relaxed in future profiling.
+  if (isAndroidDevice()) return true;
+  return false;
 }
 
 export function getDeviceTier(): DeviceTier {
