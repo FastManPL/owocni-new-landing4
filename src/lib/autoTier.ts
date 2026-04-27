@@ -13,6 +13,26 @@ export type DeviceTier = 0 | 1 | 2;
 /** Profil kosztu animacji / scrollu — mapowany na Lenis + limit GSAP tickera. */
 export type AnimationCostProfile = 'full' | 'reduced' | 'minimal';
 
+let runtimeForcedTier: DeviceTier | null = null;
+
+/**
+ * Global runtime downgrade (one-way) for current page session.
+ * Used when we detect sustained long frames despite optimistic static heuristics.
+ */
+export function requestRuntimeTierDowngrade(nextTier: DeviceTier): void {
+  if (runtimeForcedTier === null) {
+    runtimeForcedTier = nextTier;
+    return;
+  }
+  if (nextTier < runtimeForcedTier) {
+    runtimeForcedTier = nextTier;
+  }
+}
+
+export function getRuntimeForcedTier(): DeviceTier | null {
+  return runtimeForcedTier;
+}
+
 function isCoarseTouchPrimary(): boolean {
   if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
     return false;
@@ -47,8 +67,13 @@ export function getDeviceTier(): DeviceTier {
   const slowNetwork = effectiveType === '2g' || effectiveType === 'slow-2g';
   const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
+  let resolved: DeviceTier;
   if (saveData || reducedMotion || cores < 4 || memory < 4 || slowNetwork) {
-    return 0;
+    resolved = 0;
+  } else if (cores >= 8 && memory >= 8) {
+    resolved = 2;
+  } else {
+    resolved = 1;
   }
   /**
    * UWAGA (2026-04 / mobile Safari): `hardwareConcurrency` bywa 4 na nowych iPhoneach —
@@ -56,10 +81,10 @@ export function getDeviceTier(): DeviceTier {
    * (blokada warm video, WebGL `none`, zepsuty mobile form Final bez `layoutInfo`).
    * Tier 0 zostaje dla rdzeni < 4 (pierwszy if) + Save-Data / reduced-motion / słabe łącze.
    */
-  if (cores >= 8 && memory >= 8) {
-    return 2;
+  if (runtimeForcedTier !== null) {
+    return Math.min(resolved, runtimeForcedTier) as DeviceTier;
   }
-  return 1;
+  return resolved;
 }
 
 /**

@@ -5,6 +5,7 @@ import type { ScrollTrigger as ScrollTriggerType } from 'gsap/ScrollTrigger';
 import {
   getAnimationCostProfile,
   prefersNativeDocumentScroll,
+  requestRuntimeTierDowngrade,
   type AnimationCostProfile,
 } from '@/lib/autoTier';
 
@@ -86,6 +87,33 @@ const DOC_HEIGHT_CHANGE_THRESHOLD_PX = 30;
 
 /** Lenis + GSAP ticker — dopasowanie do profilu kosztu (słabsze urządzenia). */
 let animationCostProfile: AnimationCostProfile = 'full';
+let runtimePerfDowngraded = false;
+let runtimeSlowFrames = 0;
+let lastRuntimeTickMs = 0;
+
+function observeRuntimePerfTick(
+  G: typeof gsap,
+  time: number,
+  nativeDocumentScroll: boolean,
+): void {
+  const nowMs = time * 1000;
+  if (lastRuntimeTickMs > 0 && !runtimePerfDowngraded) {
+    const dtMs = nowMs - lastRuntimeTickMs;
+    if (dtMs > 42) {
+      runtimeSlowFrames++;
+    } else if (runtimeSlowFrames > 0) {
+      runtimeSlowFrames--;
+    }
+    if (runtimeSlowFrames >= 90) {
+      runtimePerfDowngraded = true;
+      requestRuntimeTierDowngrade(0);
+      animationCostProfile = getAnimationCostProfile();
+      applyGsapTickerCost(G, animationCostProfile, nativeDocumentScroll);
+      requestRefresh('runtime-tier-downgrade');
+    }
+  }
+  lastRuntimeTickMs = nowMs;
+}
 
 function lenisOptionsFor(profile: AnimationCostProfile): ConstructorParameters<typeof Lenis>[0] {
   switch (profile) {
@@ -256,6 +284,7 @@ function runBoot(gen: number, G: typeof gsap, ST: typeof ScrollTriggerType): voi
   });
 
   tickerCallback = (time: number) => {
+    observeRuntimePerfTick(G, time, false);
     lenis?.raf(time * 1000);
   };
   G.ticker.add(tickerCallback, false, true);
@@ -286,6 +315,11 @@ function runBootNative(gen: number, G: typeof gsap, ST: typeof ScrollTriggerType
   lastResizeH = window.innerHeight;
 
   wirePostStInfrastructure(gen, 'native');
+
+  tickerCallback = (time: number) => {
+    observeRuntimePerfTick(G, time, true);
+  };
+  G.ticker.add(tickerCallback, false, true);
 }
 
 function init(): void {
@@ -350,6 +384,8 @@ function destroy(): void {
     gsapRuntime.ticker.fps(60);
   }
   animationCostProfile = 'full';
+  runtimeSlowFrames = 0;
+  lastRuntimeTickMs = 0;
 
   if (resizeHandler) {
     window.removeEventListener('resize', resizeHandler);

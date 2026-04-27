@@ -21,6 +21,7 @@ export type WebGLRendererCreationOptions = {
 
 let cachedProfile: WebGLProfile | null = null;
 let cachedGpuHint: string | null | undefined = undefined;
+let cachedTier: number | null = null;
 
 /** GL_RENDERER — WebGL2 / GLES; bez `WEBGL_debug_renderer_info` (Firefox deprecuje ext). */
 const GL_RENDERER = 0x1f01;
@@ -92,9 +93,10 @@ function isWeakIntegratedGpuHint(renderer: string): boolean {
 export function getWebGLProfile(): WebGLProfile {
   if (typeof window === 'undefined') return 'normal';
   if (FORCE_WEBGL_PROFILE != null) return FORCE_WEBGL_PROFILE;
-  if (cachedProfile !== null) return cachedProfile;
 
   const tier = getDeviceTier();
+  if (cachedProfile !== null && cachedTier === tier) return cachedProfile;
+  cachedTier = tier;
   if (tier === 0) {
     cachedProfile = 'none';
     return cachedProfile;
