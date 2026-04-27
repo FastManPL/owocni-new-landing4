@@ -733,17 +733,12 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
       }
 
       function updatePixelScale() { var h = window.innerHeight; if (h === 0) { state.pixelToUnit = 0.01; return; } state.pixelToUnit = (2 * Math.tan(camera.fov * Math.PI / 360) * camera.position.z) / h; }
-      function toLayoutViewportClient(x: number, y: number) {
-        var vv = (typeof window !== 'undefined' ? (window as any).visualViewport : null) as VisualViewport | null;
-        if (!vv) return { x: x, y: y };
-        return { x: x + vv.offsetLeft, y: y + vv.offsetTop };
-      }
       function cacheButtonRect() {
         var btnEl = starsState?.btnElement; if (!btnEl) return;
         var rect = btnEl.getBoundingClientRect(); if (rect.width < 20) return;
         btnRectCache.width = rect.width; btnRectCache.height = rect.height;
-        var center = toLayoutViewportClient(rect.left + rect.width / 2, rect.top + rect.height / 2);
-        btnRectCache.cx = center.x; btnRectCache.cy = center.y;
+        btnRectCache.cx = rect.left + rect.width / 2;
+        btnRectCache.cy = rect.top + rect.height / 2;
       }
       function updateResponsiveConfig() { var bw = btnRectCache.width, bh = btnRectCache.width > 0 ? (btnRectCache.height || btnRectCache.width * 0.5) : 0; if (bw < 20) return; containerConfig.width = bw * 1.12; containerConfig.offsetX = 0; containerConfig.offsetY = -bh * 0.05; containerConfig.minY = -bh * 0.65; containerConfig.maxY = bh * 0.85; state.sizeScaleFactor = (bw / 290) * (window.innerWidth < 600 ? 2 : 1.4); }
       function initParticles() { for (var i = 0; i < state.particles.length; i++) state.particles[i].dispose(); state.particles = []; state.sceneSeed = (Math.random() * 0xFFFFFFFF) >>> 0; for (var i = 0; i < PARTICLE_COUNT; i++) { state.particles.push(new VelvetParticle(i)); } }
@@ -892,10 +887,11 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
 
     var lastTouchTime = 0;
     function onBtnTouchStart(e: TouchEvent) {
-      if (e.touches && e.touches[0]) {
-        var vv = (typeof window !== 'undefined' ? (window as any).visualViewport : null) as VisualViewport | null;
-        starsState.manualClientX = e.touches[0].clientX + (vv ? vv.offsetLeft : 0);
-        starsState.manualClientY = e.touches[0].clientY + (vv ? vv.offsetTop : 0);
+      var btnEl = starsState?.btnElement as HTMLElement | null;
+      if (btnEl) {
+        var rect = btnEl.getBoundingClientRect();
+        starsState.manualClientX = rect.left + rect.width / 2;
+        starsState.manualClientY = rect.top + rect.height / 2;
         starsState.manualTs = performance.now();
       }
       lastTouchTime = performance.now(); mouseOver = true; startGlowTick();
@@ -905,9 +901,15 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
     function onBtnMouseLeave() { mouseOver = false; lastMouseLeaveTime = performance.now(); cycleStart = performance.now() + MOUSE_COOLDOWN - CYCLE; }
     function onBtnClick() { starsState.triggerManual++; if (starsState.wake) starsState.wake(); else ensureStarsEngine(); }
     function onBtnPointerDown(e: PointerEvent) {
-      var vv = (typeof window !== 'undefined' ? (window as any).visualViewport : null) as VisualViewport | null;
-      starsState.manualClientX = e.clientX + (vv ? vv.offsetLeft : 0);
-      starsState.manualClientY = e.clientY + (vv ? vv.offsetTop : 0);
+      var btnEl = starsState?.btnElement as HTMLElement | null;
+      if (btnEl) {
+        var rect = btnEl.getBoundingClientRect();
+        starsState.manualClientX = rect.left + rect.width / 2;
+        starsState.manualClientY = rect.top + rect.height / 2;
+      } else {
+        starsState.manualClientX = e.clientX;
+        starsState.manualClientY = e.clientY;
+      }
       starsState.manualTs = performance.now();
       if (btnWrap) btnWrap.classList.add('is-active');
     }
