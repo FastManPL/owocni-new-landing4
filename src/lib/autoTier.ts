@@ -48,19 +48,43 @@ function isAndroidDevice(): boolean {
   return /Android/i.test(navigator.userAgent);
 }
 
+function isAppleMobileDevice(): boolean {
+  if (typeof navigator === 'undefined') return false;
+  return /iPhone|iPad|iPod/i.test(navigator.userAgent);
+}
+
+function getHardwareHints(): { cores: number; memory: number } {
+  if (typeof navigator === 'undefined') return { cores: 4, memory: 4 };
+  const nav = navigator as Navigator & { hardwareConcurrency?: number; deviceMemory?: number };
+  return {
+    cores: nav.hardwareConcurrency ?? 4,
+    memory: nav.deviceMemory ?? 4,
+  };
+}
+
 /**
  * Telefon / tablet jako główny wejście — **bez Lenisa**, natywny scroll dokumentu
  * (Compositor przeglądarki). Dotyczy m.in. Realme 8 (8 rdzeni = wcześniej „full” + Lenis).
  */
 export function prefersNativeDocumentScroll(): boolean {
   if (!isCoarseTouchPrimary()) return false;
+  const { cores, memory } = getHardwareHints();
   const tier = getDeviceTier();
-  // Mobile policy: Tier 0/1 always native scroll.
-  if (tier !== 2) return true;
-  // Android policy: even "Tier 2" can still jank with Lenis on mid-range SoCs (e.g. Realme-class devices),
-  // so keep native scroll unless explicitly relaxed in future profiling.
-  if (isAndroidDevice()) return true;
-  return false;
+
+  // Android policy: keep native scroll by default; allow Lenis only on clearly high-end hardware.
+  if (isAndroidDevice()) {
+    const androidHighEnd = tier === 2 && cores >= 8 && memory >= 8;
+    return !androidHighEnd;
+  }
+
+  // iOS/iPadOS policy: allow Lenis on stronger Apple mobile devices.
+  if (isAppleMobileDevice()) {
+    const appleHighEnd = tier === 2 || cores >= 6;
+    return !appleHighEnd;
+  }
+
+  // Fallback for other coarse-touch devices.
+  return tier !== 2;
 }
 
 export function getDeviceTier(): DeviceTier {
