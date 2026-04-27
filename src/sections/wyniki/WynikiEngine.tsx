@@ -7,6 +7,7 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { scrollRuntime } from '@/lib/scrollRuntime';
 import { startWarmVideoOnce } from '@/lib/warmVideo';
+import { getAnimationCostProfile } from '@/lib/autoTier';
 
 /**
  * Faza 2.B — Split B1.1 (SSR markup + client engine sidecar).
@@ -337,7 +338,8 @@ function init(
         triG.appendChild(tri);
 
         /* Show play button */
-        var showPbTimer = setTimeout(function() { wrap.classList.add('is-visible'); }, 800);
+        var showPbDelay = getAnimationCostProfile() === 'minimal' ? 0 : 800;
+        var showPbTimer = setTimeout(function() { wrap.classList.add('is-visible'); }, showPbDelay);
         timerIds.push(showPbTimer);
 
         /* Hover effects — right panel */

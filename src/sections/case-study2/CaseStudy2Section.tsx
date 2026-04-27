@@ -11,6 +11,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { scrollRuntime } from '@/lib/scrollRuntime';
 import { scheduleAfterKineticLayoutReady } from '@/lib/whenKineticLayoutReadyForSt';
 import { startWarmVideoOnce } from '@/lib/warmVideo';
+import { getAnimationCostProfile } from '@/lib/autoTier';
 import './case-study-section.css';
 import { CENNIK_STRONY_URL } from '@/config/ctaUrls';
 
@@ -375,7 +376,8 @@ function init(
     triG.appendChild(tri);
 
     /* Show play button */
-    var showPbTimer = setTimeout(function() { wrap.classList.add('is-visible'); }, 800);
+    var showPbDelay = getAnimationCostProfile() === 'minimal' ? 0 : 800;
+    var showPbTimer = setTimeout(function() { wrap.classList.add('is-visible'); }, showPbDelay);
     timerIds.push(showPbTimer);
 
     /* Hover effects — right panel */
