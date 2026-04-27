@@ -9,6 +9,7 @@ import { HeroSection } from '@/sections/hero/HeroSection';
 import { KalkulatorSection } from '@/sections/kalkulator/KalkulatorSection';
 import { WynikiSection } from '@/sections/wyniki/WynikiSection';
 import { SHOW_KINETIC_SECTION } from '@/config/featureFlags';
+import { DeferredMount } from '@/components/DeferredMount';
 import { BookStatsSectionWrapper } from './BookStatsSectionWrapper';
 import { BridgeSection } from './BridgeSection';
 import { CaseStudy2SectionWrapper } from './CaseStudy2SectionWrapper';
@@ -98,30 +99,44 @@ async function HomePageContent({
         <KineticDisabledPlaceholder />
       )}
       <div className="perf-cv-auto">
-        <SectionsClient />
+        <DeferredMount minHeight="110vh" rootMargin="900px 0px 900px 0px">
+          <SectionsClient />
+        </DeferredMount>
       </div>
       <div className="perf-cv-auto">
-        <KalkulatorSection />
+        <DeferredMount minHeight="95vh">
+          <KalkulatorSection />
+        </DeferredMount>
       </div>
       <div className="perf-cv-auto">
-        <GwarancjaSectionWrapper />
+        <DeferredMount minHeight="100vh">
+          <GwarancjaSectionWrapper />
+        </DeferredMount>
       </div>
       <div className="perf-cv-auto">
-        <LoveWallSeoQuotes />
-        <LoveWallSectionWrapper />
+        <DeferredMount minHeight="110vh">
+          <LoveWallSeoQuotes />
+          <LoveWallSectionWrapper />
+        </DeferredMount>
       </div>
       <div className="perf-cv-auto">
-        <CaseStudy2SectionWrapper />
-        <CaseStudiesSection />
+        <DeferredMount minHeight="120vh">
+          <CaseStudy2SectionWrapper />
+          <CaseStudiesSection />
+        </DeferredMount>
       </div>
       <div className="perf-cv-auto">
-        <OnasSectionWrapper />
-        <CyfroweWzrostySectionWrapper />
+        <DeferredMount minHeight="120vh">
+          <OnasSectionWrapper />
+          <CyfroweWzrostySectionWrapper />
+        </DeferredMount>
       </div>
       <div className="perf-cv-auto">
-        <FAQJsonLd />
-        <FAQSection />
-        <FinalSection />
+        <DeferredMount minHeight="110vh">
+          <FAQJsonLd />
+          <FAQSection />
+          <FinalSection />
+        </DeferredMount>
       </div>
     </main>
   );
