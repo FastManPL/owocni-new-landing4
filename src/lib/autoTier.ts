@@ -49,8 +49,9 @@ function isCoarseTouchPrimary(): boolean {
  */
 export function prefersNativeDocumentScroll(): boolean {
   if (!isCoarseTouchPrimary()) return false;
-  // Mobile policy: keep Lenis only on stronger devices; weak devices use native scroll.
-  return getDeviceTier() === 0;
+  // Mobile policy: enable Lenis only for top-tier devices (Tier 2).
+  // Tier 0/1 use native scroll to reduce main-thread pressure.
+  return getDeviceTier() !== 2;
 }
 
 export function getDeviceTier(): DeviceTier {
