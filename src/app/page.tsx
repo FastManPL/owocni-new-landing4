@@ -45,6 +45,12 @@ function pickHeroParams(sp: Record<string, string | string[] | undefined>) {
   return out;
 }
 
+function isKineticQueryEnabled(sp: Record<string, string | string[] | undefined>): boolean {
+  const raw = sp.kinetic;
+  if (Array.isArray(raw)) return raw.includes('1');
+  return raw === '1';
+}
+
 export async function generateMetadata({
   searchParams,
 }: {
@@ -71,7 +77,9 @@ async function HomePageContent({
 }: {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>;
 }) {
-  const variant = resolveHeroVariant(pickHeroParams(await searchParams));
+  const resolvedSearchParams = await searchParams;
+  const variant = resolveHeroVariant(pickHeroParams(resolvedSearchParams));
+  const showKinetic = SHOW_KINETIC_SECTION || isKineticQueryEnabled(resolvedSearchParams);
 
   return (
     <main>
@@ -84,7 +92,7 @@ async function HomePageContent({
         Kinetic włączony: Bridge + pinSpacer + warstwa silnika (`KineticHomeSlot`).
         Wyłączony: `KineticDisabledPlaceholder` — patrz `src/config/featureFlags.ts` → SHOW_KINETIC_SECTION.
       */}
-      {SHOW_KINETIC_SECTION ? (
+      {showKinetic ? (
         <BridgeSection kineticLayer={<KineticHomeSlot />} />
       ) : (
         <KineticDisabledPlaceholder />

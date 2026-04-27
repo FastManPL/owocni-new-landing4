@@ -11,7 +11,7 @@
  * Na telefonach (`pointer: coarse` + brak hover) Lenis jest **wyłączony** niezależnie
  * od tej flagi — scroll = natywny dokument (mniej CPU).
  */
-export const SHOW_KINETIC_SECTION = true;
+export const SHOW_KINETIC_SECTION = false;
 
 export const FORCE_ANIMATION_COST_PROFILE:
   | 'full'
