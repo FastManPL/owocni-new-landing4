@@ -66,7 +66,7 @@ Tryb pracy: małe, odwracalne zmiany, 1 commit = 1 hipoteza.
 
 ### Krok C1 — rozbicie długich tasków init
 
-- [ ] Podzielić init >50ms na mniejsze porcje (bez zmiany efektu końcowego).
+- [x] Podzielić init >50ms na mniejsze porcje (bez zmiany efektu końcowego).
 - [ ] Najpierw sekcja z największym pojedynczym taskiem w pomiarze.
 
 **Weryfikacja po kroku:**
@@ -101,6 +101,6 @@ Tryb pracy: małe, odwracalne zmiany, 1 commit = 1 hipoteza.
 | A1-2 | 6fbe234     | TODO (mobile retest) | Zostaje (pending retest) |
 | A2-1 | 1167f3b     | TODO (mobile retest) | Zostaje (pending retest) |
 | B1-1 | 24b7848     | TODO (mobile retest) | Zostaje (pending retest) |
-| C1-1 |             |                     |         |
+| C1-1 | 7de77ec     | TODO (trace retest) | Zostaje (pending retest) |
 | D1-1 |             |                     |         |
 
