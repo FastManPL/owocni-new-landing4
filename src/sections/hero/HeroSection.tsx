@@ -5,6 +5,7 @@ import { useRef } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { scrollRuntime } from '@/lib/scrollRuntime';
+import { getAnimationCostProfile } from '@/lib/autoTier';
 import type { HeroVariant } from '@/config/heroVariantTypes';
 import { CENNIK_STRONY_URL } from '@/config/ctaUrls';
 import './hero-section.css';
@@ -153,9 +154,10 @@ function supportsDownfall() {
 
 const FX_PREMIUM = supportsPremiumGradient();
 const FX_DOWNFALL = !FX_PREMIUM && supportsDownfall();
+let heroLiteMode = getAnimationCostProfile() === 'minimal';
 
 // Aktualny tryb (można przełączać do testów)
-let currentMode = FX_PREMIUM ? 'premium' : (FX_DOWNFALL ? 'downfall' : 'none');
+let currentMode = heroLiteMode ? 'none' : (FX_PREMIUM ? 'premium' : (FX_DOWNFALL ? 'downfall' : 'none'));
 
 // Dodaj klasę do sekcji (scoped)
 container.classList.toggle("fx-premium-active", currentMode === 'premium');
@@ -308,7 +310,7 @@ function playEntrySequence() {
         }, 2000);
         
         // Badge 20 Lat - GSAP kontroluje delay wewnętrznie
-        if (badge20LatReplay) {
+        if (!heroLiteMode && badge20LatReplay) {
             badge20LatReplay();
         }
     }, 50);
@@ -316,6 +318,22 @@ function playEntrySequence() {
 
 // Init
 playEntrySequence();
+
+function applyHeroLiteMode() {
+    if (heroLiteMode) return;
+    heroLiteMode = true;
+    currentMode = 'none';
+    container.classList.remove('fx-premium-active');
+    stopGradient();
+    if (typeof badge20LatKill === 'function') badge20LatKill();
+    if (typeof badgeGoogleKill === 'function') badgeGoogleKill();
+    if (typeof haloKillFn === 'function') haloKillFn();
+    if (typeof marqueeStop === 'function') marqueeStop();
+    if (typeof logoLottiePause === 'function') logoLottiePause();
+}
+
+const onRuntimeTierDowngraded = () => applyHeroLiteMode();
+listen(window, 'owocni:runtime-tier-downgraded', onRuntimeTierDowngraded);
 
 /* C7 REMOVED: Resolution info (updateRes, resInfo, resize listener)
    Powiązane z DOM element A2 (.resolution-info / #resInfo) — usunięty razem */

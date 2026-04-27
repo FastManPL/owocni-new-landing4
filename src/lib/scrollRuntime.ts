@@ -103,6 +103,13 @@ function triggerRuntimeDowngrade(
   requestRuntimeTierDowngrade(0);
   animationCostProfile = getAnimationCostProfile();
   applyGsapTickerCost(G, animationCostProfile, nativeDocumentScroll);
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(
+      new CustomEvent('owocni:runtime-tier-downgraded', {
+        detail: { tier: 0, reason },
+      }),
+    );
+  }
   requestRefresh(reason);
 }
 

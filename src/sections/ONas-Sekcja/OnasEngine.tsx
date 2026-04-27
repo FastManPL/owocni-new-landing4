@@ -17,6 +17,7 @@ import {
   getWebGLRendererCreationOptions,
   WEBGL_OFF_TO_COLD_MS,
 } from '@/lib/webglBroker';
+import { getAnimationCostProfile } from '@/lib/autoTier';
 import './onas-section.css';
 import { CENNIK_STRONY_URL } from '@/config/ctaUrls';
 
@@ -2846,6 +2847,17 @@ export default function OnasEngine() {
       document.body.removeChild(d);
       if (!has) el.classList.add('no-flex-gap');
     })();
+
+    const isRuntimeMinimal = getAnimationCostProfile() === 'minimal';
+    if (isRuntimeMinimal) {
+      // No-empty-frame guard for heavy deferred sections in extreme low-budget mode.
+      const sceneEl = el.querySelector('#onas-scene');
+      const pressEl = el.querySelector('.onas-press');
+      const textBlockEl = el.querySelector('.onas-text-block');
+      if (sceneEl && sceneEl instanceof HTMLElement) sceneEl.style.visibility = 'visible';
+      if (pressEl && pressEl instanceof HTMLElement) pressEl.style.visibility = 'visible';
+      if (textBlockEl && textBlockEl instanceof HTMLElement) textBlockEl.style.visibility = 'visible';
+    }
 
     const revealFailSafeId = window.setTimeout(() => {
       const sceneEl = el.querySelector('#onas-scene');
