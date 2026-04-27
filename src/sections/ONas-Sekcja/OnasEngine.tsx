@@ -1701,6 +1701,9 @@ async function onasCapitanInit(container) {
   let hoverAttract = 0;
   let _effectiveFrame = 0; // hover-attract blended frame
   let frameCount = 0;
+  let runtimeBloomDisabled = false;
+  let runtimeSlowFrames = 0;
+  let lastTickTs = 0;
   let _lastSlX = 0, _lastSlY = 1.5; // shadow delta tracking
   let _wakeSkip = false;   // Type B: skip velocity on first frame after wake
 
@@ -2385,6 +2388,15 @@ async function onasCapitanInit(container) {
 
   tickFn = function capitanTick(time) {
     if (!running) return;
+    const nowMs = time * 1000;
+    if (lastTickTs > 0 && !runtimeBloomDisabled) {
+      const dtMs = nowMs - lastTickTs;
+      // Runtime safety switch: sustained long frames -> disable bloom path on this session.
+      if (dtMs > 42) runtimeSlowFrames++;
+      else if (runtimeSlowFrames > 0) runtimeSlowFrames--;
+      if (runtimeSlowFrames >= 45) runtimeBloomDisabled = true;
+    }
+    lastTickTs = nowMs;
 
     /* ── Type B: skip velocity on first frame after wake ──
        When ticker sleeps (IO/visibility) but ST.onUpdate keeps moving J.p,
@@ -2508,7 +2520,7 @@ async function onasCapitanInit(container) {
     // Bloom: every frame during scroll/hover, otherwise co 4 klatki (idle perlin <1Hz → 15fps bloom wystarczy)
     const scrolling = Math.abs(J.p - J.prev) > 0.0001;
     const hovering = hoverAttract > 0.01;
-    const doBloom = scrolling || hovering || (frameCount % BLOOM_INTERVAL === 0);
+    const doBloom = !runtimeBloomDisabled && (scrolling || hovering || (frameCount % BLOOM_INTERVAL === 0));
     if (doBloom) { scene.background = bloomBg; composer.render(); }
     frameCount++;
   };
@@ -2519,6 +2531,7 @@ async function onasCapitanInit(container) {
   function pause() {
     if (!ticking) return;
     ticking = false; gsap.ticker.remove(tickFn);
+    lastTickTs = 0;
     if (smoothRaf) { cancelAnimationFrame(smoothRaf); smoothRaf = 0; }
     if (inertiaRaf) { cancelAnimationFrame(inertiaRaf); inertiaRaf = 0; }
     if (pmRaf) { cancelAnimationFrame(pmRaf); pmRaf = 0; }
