@@ -54,6 +54,7 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
     }
 
     var debugPanel: HTMLElement | null = null;
+    var debugAnchorMarker: HTMLElement | null = null;
     var debugState = {
       waveState: 'IDLE_CLOSED', waveProgress: 0, kipielTime: 0, orgTime: 0,
       triggerFired: false, walkingStarted: false, starsActive: false
@@ -91,6 +92,16 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
       var _debugPanelInterval = setInterval(updateDebugPanel, 100);
       timerIds.push({ type: 'interval', id: _debugPanelInterval });
       cleanups.push(function() { if (debugPanel) debugPanel.remove(); });
+
+      // Temporary diagnostics marker for Konwersja stars anchor.
+      debugAnchorMarker = document.createElement('div');
+      debugAnchorMarker.id = 'blok-4-5-debug-anchor-marker';
+      debugAnchorMarker.style.cssText =
+        'position:fixed;left:0;top:0;width:12px;height:12px;border-radius:9999px;' +
+        'background:#ff0048;border:2px solid #fff;box-shadow:0 0 0 2px rgba(0,0,0,0.55);' +
+        'z-index:100000;pointer-events:none;transform:translate(-50%,-50%);display:none;';
+      document.body.appendChild(debugAnchorMarker);
+      cleanups.push(function() { if (debugAnchorMarker) debugAnchorMarker.remove(); });
     }
 
     // =========================================================
@@ -740,6 +751,11 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
         btnRectCache.width = rect.width; btnRectCache.height = rect.height;
         btnRectCache.cx = rect.left + rect.width / 2;
         btnRectCache.cy = rect.top + rect.height / 2;
+        if (DEBUG_MODE && debugAnchorMarker) {
+          debugAnchorMarker.style.display = 'block';
+          debugAnchorMarker.style.left = btnRectCache.cx + 'px';
+          debugAnchorMarker.style.top = btnRectCache.cy + 'px';
+        }
       }
       function updateResponsiveConfig() { var bw = btnRectCache.width, bh = btnRectCache.width > 0 ? (btnRectCache.height || btnRectCache.width * 0.5) : 0; if (bw < 20) return; containerConfig.width = bw * 1.12; containerConfig.offsetX = 0; containerConfig.offsetY = -bh * 0.05; containerConfig.minY = -bh * 0.65; containerConfig.maxY = bh * 0.85; state.sizeScaleFactor = (bw / 290) * (window.innerWidth < 600 ? 2 : 1.4); }
       function initParticles() { for (var i = 0; i < state.particles.length; i++) state.particles[i].dispose(); state.particles = []; state.sceneSeed = (Math.random() * 0xFFFFFFFF) >>> 0; for (var i = 0; i < PARTICLE_COUNT; i++) { state.particles.push(new VelvetParticle(i)); } }
