@@ -656,7 +656,7 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
         spawn(staggerDelay: number, isManual = false) {
           this.alive = true; this.seed = Math.random() * 0xFFFFFFFF;
           var color: string, opacity: number, roughness: number, envIntensity: number, emissiveColor: string, emissiveIntensity: number, isRed = false;
-          if (isManual) { isRed = this.random() < 0.35; color = isRed ? '#e24132' : '#000000'; emissiveColor = color; emissiveIntensity = 0.4; opacity = 1; roughness = 0.3; envIntensity = 1.0; }
+          if (isManual) { isRed = this.random() < 0.15; color = isRed ? '#e24132' : '#000000'; emissiveColor = color; emissiveIntensity = 0.4; opacity = 1; roughness = 0.3; envIntensity = 1.0; }
           else { color = CLEAR_COLOR; emissiveColor = '#000000'; emissiveIntensity = 0; opacity = 0.45; roughness = 0.05; envIntensity = 1.5; }
           this.baseOpacity = opacity;
           if (this.material) {
@@ -758,15 +758,8 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
         cacheButtonRect(); updateResponsiveConfig();
         var available: number[] = [];
         for (var i = 0; i < PARTICLE_COUNT; i++) { if (!state.particles[i].alive) available.push(i); }
-        // Ensure manual burst is always visible on hover/click:
-        // if pool is full, recycle a few particles instead of dropping the manual trigger.
-        if (isManual && available.length === 0) {
-          for (var r = 0; r < Math.min(PARTICLE_COUNT, 4); r++) available.push(r);
-        }
         if (available.length === 0) return;
-        var toAdd = isManual
-          ? Math.min(available.length, 4)
-          : Math.min(available.length, 5 + Math.floor(Math.random() * 4));
+        var toAdd = Math.min(available.length, 5 + Math.floor(Math.random() * 4));
         for (var i = available.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var tmp = available[i]; available[i] = available[j]; available[j] = tmp; }
         for (var j = 0; j < toAdd; j++) { var i = available[j]; var baseDelay = (j / toAdd) * 0.15; state.particles[i].spawn(baseDelay + Math.random() * 0.05, isManual); }
         wakeThreeLoop();
