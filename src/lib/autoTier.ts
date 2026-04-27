@@ -62,28 +62,40 @@ function getHardwareHints(): { cores: number; memory: number } {
   };
 }
 
+function isLenisQueryEnabled(): boolean {
+  if (typeof window === 'undefined') return false;
+  try {
+    return new URLSearchParams(window.location.search).get('lenis') === '1';
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Telefon / tablet jako główny wejście — **bez Lenisa**, natywny scroll dokumentu
  * (Compositor przeglądarki). Dotyczy m.in. Realme 8 (8 rdzeni = wcześniej „full” + Lenis).
  */
 export function prefersNativeDocumentScroll(): boolean {
   if (!isCoarseTouchPrimary()) return false;
+  // Mobile default: native scroll unless explicitly enabled via URL.
+  if (!isLenisQueryEnabled()) return true;
+
   const { cores, memory } = getHardwareHints();
   const tier = getDeviceTier();
 
-  // Android policy: keep native scroll by default; allow Lenis only on clearly high-end hardware.
+  // Android policy under ?lenis=1: allow only clearly high-end hardware.
   if (isAndroidDevice()) {
     const androidHighEnd = tier === 2 && cores >= 8 && memory >= 8;
     return !androidHighEnd;
   }
 
-  // iOS/iPadOS policy: allow Lenis on stronger Apple mobile devices.
+  // iOS/iPadOS policy under ?lenis=1: allow only stronger devices.
   if (isAppleMobileDevice()) {
     const appleHighEnd = tier === 2 || cores >= 6;
     return !appleHighEnd;
   }
 
-  // Fallback for other coarse-touch devices.
+  // Fallback for other coarse-touch devices under ?lenis=1.
   return tier !== 2;
 }
 
