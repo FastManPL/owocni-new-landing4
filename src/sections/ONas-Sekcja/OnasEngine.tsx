@@ -1,8 +1,9 @@
 // @ts-nocheck
 'use client';
 
-import { useRef, useEffect, createElement } from 'react';
+import { useRef, useEffect, createElement, useState, useCallback } from 'react';
 import Image from 'next/image';
+import Script from 'next/script';
 import logoA from './logo-A.jpg';
 import logoB from './logo-B.jpg';
 import { useGSAP } from '@gsap/react';
@@ -81,13 +82,24 @@ function init(container) {
 
     function ensurePopupWistiaLoaded() {
         if (!wistiaPopupLoadPromise) {
-            wistiaPopupLoadPromise = loadScriptOnce('https://fast.wistia.com/player.js')
-                .then(function() {
-                    return loadScriptOnce('https://fast.wistia.com/embed/fds00b5wst.js', 'module');
-                })
-                .then(function() {
-                    return customElements.whenDefined('wistia-player');
-                });
+            wistiaPopupLoadPromise = new Promise(function(resolve, reject) {
+                var arm =
+                    typeof window !== 'undefined' &&
+                    window.__OWOCNI_ONAS_ARM_WISTIA;
+                if (arm) {
+                    arm(resolve, reject);
+                    return;
+                }
+                loadScriptOnce('https://fast.wistia.com/player.js')
+                    .then(function() {
+                        return loadScriptOnce('https://fast.wistia.com/embed/fds00b5wst.js', 'module');
+                    })
+                    .then(function() {
+                        return customElements.whenDefined('wistia-player');
+                    })
+                    .then(resolve)
+                    .catch(reject);
+            });
         }
         return wistiaPopupLoadPromise;
     }
@@ -2703,8 +2715,72 @@ function factoryInit(container) {
 // REACT ENGINE COMPONENT
 // ─────────────────────────────────────────────────────────────────────────────
 
+declare global {
+  interface Window {
+    /** Mostek I7: karuzela woła to z IIFE; React montuje `<Script strategy="lazyOnload">`. */
+    __OWOCNI_ONAS_ARM_WISTIA?: (resolve: () => void, reject: (reason?: unknown) => void) => void;
+  }
+}
+
+const ONAS_WISTIA_MEDIA_ID = 'fds00b5wst';
+
 export default function OnasEngine() {
   const rootRef = useRef(null);
+  const [wistiaScriptsNeeded, setWistiaScriptsNeeded] = useState(false);
+  const wistiaPendingRef = useRef<{ resolve: () => void; reject: (reason?: unknown) => void } | null>(
+    null,
+  );
+  const wistiaLoadedRef = useRef({ player: false, embed: false });
+
+  const tryResolveWistiaReady = useCallback(() => {
+    const L = wistiaLoadedRef.current;
+    if (!L.player || !L.embed) return;
+    customElements
+      .whenDefined('wistia-player')
+      .then(() => {
+        const p = wistiaPendingRef.current;
+        if (p) {
+          wistiaPendingRef.current = null;
+          p.resolve();
+        }
+      })
+      .catch((err) => {
+        const p = wistiaPendingRef.current;
+        if (p) {
+          wistiaPendingRef.current = null;
+          p.reject(err);
+        }
+      });
+  }, []);
+
+  const onWistiaPlayerJsLoad = useCallback(() => {
+    wistiaLoadedRef.current.player = true;
+    tryResolveWistiaReady();
+  }, [tryResolveWistiaReady]);
+
+  const onWistiaEmbedJsLoad = useCallback(() => {
+    wistiaLoadedRef.current.embed = true;
+    tryResolveWistiaReady();
+  }, [tryResolveWistiaReady]);
+
+  const onWistiaScriptError = useCallback(() => {
+    const p = wistiaPendingRef.current;
+    if (p) {
+      wistiaPendingRef.current = null;
+      p.reject(new Error('Onas Wistia script failed to load'));
+    }
+  }, []);
+
+  useEffect(() => {
+    window.__OWOCNI_ONAS_ARM_WISTIA = (resolve, reject) => {
+      wistiaPendingRef.current = { resolve, reject };
+      wistiaLoadedRef.current = { player: false, embed: false };
+      setWistiaScriptsNeeded(true);
+    };
+    return () => {
+      delete window.__OWOCNI_ONAS_ARM_WISTIA;
+    };
+  }, []);
 
   // Double rAF refresh po dynamic mount (manifest.dynamicImport: true)
   useEffect(() => {
@@ -2764,7 +2840,23 @@ export default function OnasEngine() {
   return (
     <>
     <section id="onas-section" ref={rootRef}>
-
+      {wistiaScriptsNeeded ? (
+        <>
+          <Script
+            src="https://fast.wistia.com/player.js"
+            strategy="lazyOnload"
+            onLoad={onWistiaPlayerJsLoad}
+            onError={onWistiaScriptError}
+          />
+          <Script
+            src={`https://fast.wistia.com/embed/${ONAS_WISTIA_MEDIA_ID}.js`}
+            strategy="lazyOnload"
+            type="module"
+            onLoad={onWistiaEmbedJsLoad}
+            onError={onWistiaScriptError}
+          />
+        </>
+      ) : null}
 
   {/* ====== CAPITAN (1:1 z Rating.txt) ====== */}
   <div className="banner fog-visible" id="onas-capitan">
@@ -2881,7 +2973,7 @@ export default function OnasEngine() {
       <div className="popup-close">✕</div>
       <div className="popup-video-wrap">
         {createElement('wistia-player', {
-          'media-id': 'fds00b5wst',
+          'media-id': ONAS_WISTIA_MEDIA_ID,
           seo: 'false',
           aspect: '1.7777777777777777',
         })}

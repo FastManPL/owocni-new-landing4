@@ -12,7 +12,7 @@
 | # | Zadanie | Status | Pliki / miejsce |
 |---|---------|--------|-----------------|
 | **1** | Wistia: `strategy="lazyOnload"` zamiast `afterInteractive` dla `player.js` i `embed/*.js` | [x] | `src/sections/wyniki/WynikiSection.tsx`, `src/sections/case-study2/CaseStudy2Section.tsx`, `src/sections/wzrost-przychodow/WzrostPrzychodowSection.tsx` |
-| **2** | Onas: ujednolicenie z I7 (opcjonalnie) — `next/script` + `lazyOnload` zamiast `loadScriptOnce`, **albo** świadome odstępstwo udokumentowane poniżej | [ ] | `src/sections/ONas-Sekcja/OnasEngine.tsx` |
+| **2** | Onas: ujednolicenie z I7 (opcjonalnie) — `next/script` + `lazyOnload` zamiast `loadScriptOnce`, **albo** świadome odstępstwo udokumentowane poniżej | [x] | `src/sections/ONas-Sekcja/OnasEngine.tsx` — mostek `__OWOCNI_ONAS_ARM_WISTIA` + fallback `loadScriptOnce` |
 | **3** | Przyszły sGTM / Pixel / Hotjar: tylko `next/script` `lazyOnload` + w head **`dns-prefetch`** (G7), bez `preconnect` | [ ] | `src/app/layout.tsx` (gdy odkomentujesz / dodasz tagi) |
 | **4** | `dns-prefetch` `cdn.jsdelivr.net`: usunąć jeśli w prod **brak** requestów do jsdelivr | [ ] | `src/providers/ResourceHints.tsx` |
 | **5** | Facade lite-embed → pełny player Wistia: **tylko jeśli** po **1** nadal widać koszt INP przy kliku | [ ] | wg potrzeb UX/metryk |
@@ -56,12 +56,15 @@
 | Data | Co zrobiono | Kto sprawdził / uwagi |
 |------|-------------|----------------------|
 | 2026-04-24 | Krok **1**: Wistia `lazyOnload` w Wyniki / CaseStudy2 / Wzrost przychodów | QA: sekcja „Co sprawdzać” po kroku 1 |
+| 2026-04-24 | Krok **2**: Onas — Wistia przez `next/script` `lazyOnload` + mostek z karuzeli | QA: sekcja „Po kroku 2” |
 
 ---
 
 ## Odstępstwo I7 — Onas (`loadScriptOnce`)
 
-Jeśli **nie** migrujesz Onasa na `next/script`, wpisz tu jedno zdanie uzasadnienia i link do tej checklisty w PR:
+**2026-04-24:** Ścieżka domyślna używa **`next/script` + `lazyOnload`** (mostek `window.__OWOCNI_ONAS_ARM_WISTIA`). **`loadScriptOnce`** zostaje wyłącznie jako **fallback**, gdy pierwsze otwarcie popupu nastąpiłoby przed rejestracją mostka w `useEffect` (marginalny race).
+
+Jeśli kiedyś usuniesz mostek i wrócisz tylko do `loadScriptOnce`, wpisz uzasadnienie:
 
 - *„Onas ładuje Wistię dopiero po akcji użytkownika (popup); loadScriptOnce celowo omija next/script — ryzyko audytu I7 zaakceptowane do daty ___.”*
 
