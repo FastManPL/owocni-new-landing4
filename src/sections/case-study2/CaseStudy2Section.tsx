@@ -1,10 +1,10 @@
 // @ts-nocheck — sekcja robocza (silnie typowana w Fabryce); import z page.tsx wymusza check bez exclude.
 'use client';
 
-import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { createElement, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
-import { WistiaFacadePlayer } from '@/components/wistia/WistiaFacadePlayer';
+import Script from 'next/script';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -699,7 +699,20 @@ export function CaseStudy2Section() {
         <div className="wp-panel">
           <div className="wp-video-wrap">
             {wistiaActivated && popupOpen ? (
-              <WistiaFacadePlayer active mediaId={WISTIA_MEDIA_ID} autoplay="true" />
+              <>
+                <Script src="https://fast.wistia.com/player.js" strategy="lazyOnload" />
+                <Script
+                  src={`https://fast.wistia.com/embed/${WISTIA_MEDIA_ID}.js`}
+                  strategy="lazyOnload"
+                  type="module"
+                />
+                {createElement('wistia-player', {
+                  'media-id': WISTIA_MEDIA_ID,
+                  seo: 'false',
+                  aspect: '1.7777777777777777',
+                  autoplay: 'true',
+                })}
+              </>
             ) : null}
           </div>
           <div className="wp-content">

@@ -15,7 +15,7 @@
 | **2** | Onas: ujednolicenie z I7 (opcjonalnie) — `next/script` + `lazyOnload` zamiast `loadScriptOnce`, **albo** świadome odstępstwo udokumentowane poniżej | [x] | `src/sections/ONas-Sekcja/OnasEngine.tsx` — mostek `__OWOCNI_ONAS_ARM_WISTIA` + fallback `loadScriptOnce` |
 | **3** | sGTM / GTM: `next/script` `lazyOnload` + w head **`dns-prefetch`** (G7), bez `preconnect`; I1 bootstrap w `<head>` | [x] | `src/app/layout.tsx`, `src/components/GtmLazy.tsx`, `src/lib/marketingPublicConfig.ts` — włączenie przez `.env` (patrz `.env.example`) |
 | **4** | `dns-prefetch` `cdn.jsdelivr.net`: usunąć jeśli w prod **brak** requestów do jsdelivr | [x] | `src/providers/ResourceHints.tsx` — usunięty (Three z npm w `src`) |
-| **5** | Facade Wistia: runtime (`player.js` + embed) → dopiero potem `<wistia-player>` (po obu `onLoad`) | [x] | `src/components/wistia/WistiaFacadePlayer.tsx` + Wyniki / CaseStudy2 / Wzrost |
+| **5** | ~~Facade Wistia (opóźniony mount `<wistia-player>`)~~ | ~~cofnięte~~ | Regresja: długie opóźnienie + brak autoplay — z powrotem równoległy mount skryptów + `wistia-player` (jak po kroku **1**) |
 
 ---
 
@@ -44,10 +44,9 @@
 - [ ] Build prod + DevTools Network na **całej** ścieżce LP: filtrowanie `jsdelivr` — zero hitów wtedy prefetch można śmiało usunąć.
 - [ ] Po usunięciu: brak regresji (Three nadal z bundla).
 
-### Po kroku **5** (fasada — wdrożone)
+### Po kroku **5** (fasada — nie stosujemy)
 
-- [ ] W popupie / po play: krótki moment bez playera (tylko skrypty) — akceptowalny; opcjonalnie dodać placeholder CSS w `.wp-video-wrap` / `.wzrost-player-shell`.
-- [ ] Lighthouse / CrUX lub RUM: INP na interakcjach „wideo” — opcjonalna weryfikacja polowa.
+Wdrożenie z `onLoad` → mount `<wistia-player>` **cofnięte** (UX: zbyt długi czas do startu, problemy z autoplay). Dalsze optymalizacje Wistii tylko po RUM i innym podejściu (np. placeholder bez blokowania `play()`).
 
 ---
 
@@ -59,7 +58,7 @@
 | 2026-04-24 | Krok **2**: Onas — Wistia przez `next/script` `lazyOnload` + mostek z karuzeli | QA: sekcja „Po kroku 2” |
 | 2026-04-24 | Krok **4**: usunięty `dns-prefetch` jsdelivr; rozszerzony komentarz I7/G7 w `layout` (pod krok 3) | QA: Network — brak regresji; krok 3 przy wdrożeniu tagów |
 | 2026-04-24 | Krok **3** (realny): GTM przez env — dns-prefetch, bootstrap consent+I1, `GtmLazy` lazyOnload, noscript | QA: ustaw `NEXT_PUBLIC_GTM_*`, sekcja „Po kroku 3” |
-| 2026-04-24 | Krok **5**: `WistiaFacadePlayer` — montaż `<wistia-player>` po `onLoad` obu skryptów | QA: popup + Wzrost play |
+| 2026-04-24 | Krok **5**: `WistiaFacadePlayer` — **cofnięty** (opóźnienie, autoplay) | Powrót do skryptów + `wistia-player` w jednym kroku |
 
 ---
 
@@ -80,5 +79,5 @@ Jeśli kiedyś usuniesz mostek i wrócisz tylko do `loadScriptOnce`, wpisz uzasa
 | Hinty DNS | `src/providers/ResourceHints.tsx` |
 | Layout / przyszłe tagi | `src/app/layout.tsx` |
 | Marker (tylko `?marker=1`) | `src/components/MarkerOnDemand.tsx` |
-| Wistia + `next/script` | `WistiaFacadePlayer.tsx` → `WynikiSection.tsx`, `CaseStudy2Section.tsx`, `WzrostPrzychodowSection.tsx` |
+| Wistia + `next/script` | `WynikiSection.tsx`, `CaseStudy2Section.tsx`, `WzrostPrzychodowSection.tsx` (`lazyOnload`, bez fasady) |
 | Wistia vanilla | `OnasEngine.tsx` |

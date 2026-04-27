@@ -1,8 +1,8 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { createElement, useCallback, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
-import { WistiaFacadePlayer } from '@/components/wistia/WistiaFacadePlayer';
+import Script from 'next/script';
 import laptopPhoto from '../hero2/1.jpg';
 import './wzrost-przychodow-section.css';
 
@@ -48,6 +48,17 @@ export function WzrostPrzychodowSection() {
 
   return (
     <>
+      {isWistiaActivated ? (
+        <>
+          <Script src="https://fast.wistia.com/player.js" strategy="lazyOnload" />
+          <Script
+            src={`https://fast.wistia.com/embed/${WISTIA_MEDIA_ID}.js`}
+            strategy="lazyOnload"
+            type="module"
+          />
+        </>
+      ) : null}
+
       <section id="wzrost-przychodow-section" aria-labelledby="wzrost-przychodow-heading">
         <div className="wzrost-wrap">
           <div className="wzrost-card">
@@ -89,7 +100,12 @@ export function WzrostPrzychodowSection() {
                   className="wzrost-player-shell"
                 >
                   {isWistiaActivated ? (
-                    <WistiaFacadePlayer active={isWistiaActivated} mediaId={WISTIA_MEDIA_ID} autoplay="true" />
+                    createElement('wistia-player', {
+                      'media-id': WISTIA_MEDIA_ID,
+                      seo: 'false',
+                      aspect: '1.7777777777777777',
+                      autoplay: 'true',
+                    })
                   ) : (
                     <button
                       type="button"
