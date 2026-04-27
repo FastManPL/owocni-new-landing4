@@ -76,12 +76,17 @@ export default function RootLayout({
     <html lang="pl" className={`${lexend.variable} ${fraunces.variable} ${owocniForm.variable}`}>
       <head>
         {/* 
-          === G7: dns-prefetch dla sGTM ===
-          Użyj dns-prefetch (nie preconnect!) dla skryptów marketingowych.
-          Preconnect tylko dla CDN obrazków jeśli inny origin.
+          === G7 + I7 (PROMPT 8 / krok 3) — gdy dodasz sGTM / Pixel / Hotjar ===
+          • W <head> tylko dns-prefetch do originu tagów (NIE preconnect).
+          • Każdy zewnętrzny loader: wyłącznie <Script> z next/script, strategy="lazyOnload"
+            (ciężkie marketingowe — Konstytucja I7). Bez strategy="worker" (Partytown) z GTM.
+          • Zgodność z consent (I1): inline default consent PRZED pierwszym tagiem — patrz blok poniżej.
           
-          TODO: Odkomentuj i zmień URL gdy masz sGTM:
+          TODO: Odkomentuj i podstaw origin sGTM:
           <link rel="dns-prefetch" href="https://your-sgtm-domain.com" />
+          
+          TODO: montuj snippet GTM/GA w komponencie klienckim, np.:
+          <Script id="gtm-loader" src="https://your-sgtm-domain.com/..." strategy="lazyOnload" />
         */}
 
         {/*

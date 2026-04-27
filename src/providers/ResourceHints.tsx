@@ -8,15 +8,15 @@
  * Historia: wcześniej preloadowaliśmy /books/Statystyki-stron.webp (WARM below-fold)
  * i /animations/LOGO_OWOCNI.json (używane ~t+6s, nie LCP). Oba kradły bandwidth LCP —
  * usunięte zgodnie z G2/F9.
+ *
+ * PROMPT 8 / krok 4: usunięto dns-prefetch cdn.jsdelivr.net — w prod `src` Three.js
+ * jest z bundla (`three` npm), brak requestów runtime do jsdelivr.
  */
 
 export function ResourceHints() {
   return (
     <>
-      {/* blok-4-5 — Three.js z CDN (sekcja far-below-fold, WARM) */}
-      <link rel="dns-prefetch" href="https://cdn.jsdelivr.net" />
-
-      {/* Wistia — book-stats + O nas (below-fold, lazy Script) */}
+      {/* Wistia — embedy lazy (`next/script` lazyOnload, I7) */}
       <link rel="dns-prefetch" href="https://fast.wistia.com" />
 
       {/* Love-wall: avatary lazy */}

@@ -13,8 +13,8 @@
 |---|---------|--------|-----------------|
 | **1** | Wistia: `strategy="lazyOnload"` zamiast `afterInteractive` dla `player.js` i `embed/*.js` | [x] | `src/sections/wyniki/WynikiSection.tsx`, `src/sections/case-study2/CaseStudy2Section.tsx`, `src/sections/wzrost-przychodow/WzrostPrzychodowSection.tsx` |
 | **2** | Onas: ujednolicenie z I7 (opcjonalnie) — `next/script` + `lazyOnload` zamiast `loadScriptOnce`, **albo** świadome odstępstwo udokumentowane poniżej | [x] | `src/sections/ONas-Sekcja/OnasEngine.tsx` — mostek `__OWOCNI_ONAS_ARM_WISTIA` + fallback `loadScriptOnce` |
-| **3** | Przyszły sGTM / Pixel / Hotjar: tylko `next/script` `lazyOnload` + w head **`dns-prefetch`** (G7), bez `preconnect` | [ ] | `src/app/layout.tsx` (gdy odkomentujesz / dodasz tagi) |
-| **4** | `dns-prefetch` `cdn.jsdelivr.net`: usunąć jeśli w prod **brak** requestów do jsdelivr | [ ] | `src/providers/ResourceHints.tsx` |
+| **3** | Przyszły sGTM / Pixel / Hotjar: tylko `next/script` `lazyOnload` + w head **`dns-prefetch`** (G7), bez `preconnect` | [~] | Szablon I7/G7 w komentarzu `src/app/layout.tsx` → `[x]` po wdrożeniu realnych tagów + QA z checklisty |
+| **4** | `dns-prefetch` `cdn.jsdelivr.net`: usunąć jeśli w prod **brak** requestów do jsdelivr | [x] | `src/providers/ResourceHints.tsx` — usunięty (Three z npm w `src`) |
 | **5** | Facade lite-embed → pełny player Wistia: **tylko jeśli** po **1** nadal widać koszt INP przy kliku | [ ] | wg potrzeb UX/metryk |
 
 ---
@@ -57,6 +57,7 @@
 |------|-------------|----------------------|
 | 2026-04-24 | Krok **1**: Wistia `lazyOnload` w Wyniki / CaseStudy2 / Wzrost przychodów | QA: sekcja „Co sprawdzać” po kroku 1 |
 | 2026-04-24 | Krok **2**: Onas — Wistia przez `next/script` `lazyOnload` + mostek z karuzeli | QA: sekcja „Po kroku 2” |
+| 2026-04-24 | Krok **4**: usunięty `dns-prefetch` jsdelivr; rozszerzony komentarz I7/G7 w `layout` (pod krok 3) | QA: Network — brak regresji; krok 3 przy wdrożeniu tagów |
 
 ---
 
