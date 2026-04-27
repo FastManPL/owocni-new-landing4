@@ -1220,12 +1220,12 @@ async function onasCapitanInit(container) {
       const topPx = h * (fallbackMode ? 0.29 : 0.215);
       badge.style.top = topPx + 'px';
       badge.style.left = fallbackMode ? '72%' : '78%';
-      badge.style.width = fallbackMode ? '50%' : '69.3%';
+      badge.style.width = fallbackMode ? '20%' : '69.3%';
     } else {
       const topPx = h * 0.87 - 20;
       badge.style.top = topPx + 'px';
       badge.style.left = fallbackMode ? '11.5%' : '13.5%';
-      badge.style.width = fallbackMode ? '24%' : '30.74%';
+      badge.style.width = fallbackMode ? '9.6%' : '30.74%';
     }
     /* aspect-ratio: 1 fallback — keep badge square on Safari < 15 */
     if (!CSS.supports || !CSS.supports('aspect-ratio', '1 / 1')) {
