@@ -155,6 +155,7 @@ function supportsDownfall() {
 const FX_PREMIUM = supportsPremiumGradient();
 const FX_DOWNFALL = !FX_PREMIUM && supportsDownfall();
 var heroLiteMode = getAnimationCostProfile() === 'minimal';
+var heroLiteApplied = false;
 
 // Aktualny tryb (można przełączać do testów)
 let currentMode = heroLiteMode ? 'none' : (FX_PREMIUM ? 'premium' : (FX_DOWNFALL ? 'downfall' : 'none'));
@@ -320,13 +321,27 @@ function playEntrySequence() {
 playEntrySequence();
 
 function applyHeroLiteMode() {
-    if (heroLiteMode) return;
+    if (heroLiteApplied) return;
+    heroLiteApplied = true;
     heroLiteMode = true;
     currentMode = 'none';
     container.classList.remove('fx-premium-active');
     stopGradient();
-    if (typeof badge20LatKill === 'function') badge20LatKill();
-    if (typeof badgeGoogleKill === 'function') badgeGoogleKill();
+    // Keep badges visible as static UI in lite mode (do not kill/hide them).
+    var b20Wrap = container.querySelector('.badge-20lat-wrapper');
+    var bGoogleWrap = container.querySelector('#hero-badgeGoogleWrapper');
+    var bGoogle = container.querySelector('#hero-badgeGoogle');
+    if (b20Wrap) {
+        gsap.set(b20Wrap, { autoAlpha: 1, clearProps: 'transform,opacity,visibility' });
+    }
+    if (bGoogleWrap) {
+        bGoogleWrap.classList.add('active', 'anim-finished');
+        bGoogleWrap.classList.remove('entrance-playing');
+    }
+    if (bGoogle) {
+        bGoogle.classList.add('anim-finished');
+        bGoogle.classList.remove('stars-running', 'stars-finished');
+    }
     if (typeof haloKillFn === 'function') haloKillFn();
     if (typeof marqueeStop === 'function') marqueeStop();
     if (typeof logoLottiePause === 'function') logoLottiePause();
@@ -334,6 +349,9 @@ function applyHeroLiteMode() {
 
 const onRuntimeTierDowngraded = () => applyHeroLiteMode();
 listen(window, 'owocni:runtime-tier-downgraded', onRuntimeTierDowngraded);
+if (heroLiteMode) {
+    requestAnimationFrame(function() { applyHeroLiteMode(); });
+}
 
 /* C7 REMOVED: Resolution info (updateRes, resInfo, resize listener)
    Powiązane z DOM element A2 (.resolution-info / #resInfo) — usunięty razem */
