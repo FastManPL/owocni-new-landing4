@@ -107,3 +107,12 @@ html {
     overflow-y: visible !important;
   }
 }
+
+/*
+ * Perf utility: skip layout/paint work for below-the-fold sections until needed.
+ * contain-intrinsic-size reserves space to avoid layout jumps before first render.
+ */
+.perf-cv-auto {
+  content-visibility: auto;
+  contain-intrinsic-size: 1200px;
+}

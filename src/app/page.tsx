@@ -97,18 +97,20 @@ async function HomePageContent({
       ) : (
         <KineticDisabledPlaceholder />
       )}
-      <SectionsClient />
-      <KalkulatorSection />
-      <GwarancjaSectionWrapper />
-      <LoveWallSeoQuotes />
-      <LoveWallSectionWrapper />
-      <CaseStudy2SectionWrapper />
-      <CaseStudiesSection />
-      <OnasSectionWrapper />
-      <CyfroweWzrostySectionWrapper />
-      <FAQJsonLd />
-      <FAQSection />
-      <FinalSection />
+      <div className="perf-cv-auto">
+        <SectionsClient />
+        <KalkulatorSection />
+        <GwarancjaSectionWrapper />
+        <LoveWallSeoQuotes />
+        <LoveWallSectionWrapper />
+        <CaseStudy2SectionWrapper />
+        <CaseStudiesSection />
+        <OnasSectionWrapper />
+        <CyfroweWzrostySectionWrapper />
+        <FAQJsonLd />
+        <FAQSection />
+        <FinalSection />
+      </div>
     </main>
   );
 }
