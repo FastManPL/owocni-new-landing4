@@ -154,7 +154,7 @@ function supportsDownfall() {
 
 const FX_PREMIUM = supportsPremiumGradient();
 const FX_DOWNFALL = !FX_PREMIUM && supportsDownfall();
-let heroLiteMode = getAnimationCostProfile() === 'minimal';
+var heroLiteMode = getAnimationCostProfile() === 'minimal';
 
 // Aktualny tryb (można przełączać do testów)
 let currentMode = heroLiteMode ? 'none' : (FX_PREMIUM ? 'premium' : (FX_DOWNFALL ? 'downfall' : 'none'));
@@ -3425,7 +3425,7 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
     // Halo + Cursor are hover/proximity triggered — self-stop when idle.
     // ═══════════════════════════════════════════════════════════════════
     (function() {
-        if (heroLiteMode) return;
+        if (heroLiteMode || getAnimationCostProfile() === 'minimal') return;
         const actionArea = container?.querySelector('.action-area');
         if (!actionArea) return;
         
@@ -3533,7 +3533,7 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
     // ═════════════════════════════════════════════════════════════════
     (function() {
         'use strict';
-        if (heroLiteMode) return;
+        if (heroLiteMode || getAnimationCostProfile() === 'minimal') return;
 
         // CAPABILITY GATE: ≥600px + hover:hover
         // Touch/mobile = zero kosztów, zero DOM mutation
