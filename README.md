@@ -79,14 +79,14 @@ npm run lint
 | scrollRuntime | brak resize handler | resize handler z debounce |
 | scrollRuntime | requestRefresh no-op przed init | pending queue |
 | next.config | brak poweredByHeader | `poweredByHeader: false` |
-| layout.tsx | brak placeholderów | dns-prefetch + consent placeholders |
+| layout.tsx | GTM wyłączony bez env | `NEXT_PUBLIC_GTM_*` → dns-prefetch, bootstrap I1, `GtmLazy` (I7) |
 
 ---
 
 ## TODO PRZED PRODUKCJĄ
 
-1. **Odkomentuj dns-prefetch** w `layout.tsx` gdy masz sGTM
-2. **Odkomentuj inline consent** w `layout.tsx` gdy wdrażasz Cookiebot/GA4
+1. **GTM / sGTM:** ustaw `NEXT_PUBLIC_GTM_CONTAINER_ID` lub `NEXT_PUBLIC_GTM_SCRIPT_URL` (`.env.example`) — bez zmian w kodzie.
+2. **Cookiebot (I3):** osobny `<Script src="…/uc.js" strategy="afterInteractive">` po ustaleniu CMP — nie w bundle GTM lazy.
 3. **Dodaj sekcje** w `src/sections/`
 4. **Stwórz manifesty** `*.manifest.ts` dla każdej sekcji
 

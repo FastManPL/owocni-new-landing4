@@ -7,8 +7,14 @@ import 'lenis/dist/lenis.css';
 // 2. Own globals last (może nadpisać vendor)
 import './globals.css';
 
+import { GtmLazy } from '@/components/GtmLazy';
 import { MarkerOnDemand } from '@/components/MarkerOnDemand';
 import { StableTree } from '@/components/StableTree';
+import {
+  getGtmDnsPrefetchHref,
+  getGtmHeadBootstrapScriptContent,
+  getGtmNoscriptIframeSrc,
+} from '@/lib/marketingPublicConfig';
 import { ResourceHints } from '@/providers/ResourceHints';
 
 // === FONTS (Konstytucja A4) ===
@@ -72,47 +78,46 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const gtmPrefetchOrigin = getGtmDnsPrefetchHref();
+  const gtmBootstrap = getGtmHeadBootstrapScriptContent();
+  const gtmNoscriptSrc = getGtmNoscriptIframeSrc();
+
   return (
     <html lang="pl" className={`${lexend.variable} ${fraunces.variable} ${owocniForm.variable}`}>
       <head>
-        {/* 
-          === G7 + I7 (PROMPT 8 / krok 3) — gdy dodasz sGTM / Pixel / Hotjar ===
-          • W <head> tylko dns-prefetch do originu tagów (NIE preconnect).
-          • Każdy zewnętrzny loader: wyłącznie <Script> z next/script, strategy="lazyOnload"
-            (ciężkie marketingowe — Konstytucja I7). Bez strategy="worker" (Partytown) z GTM.
-          • Zgodność z consent (I1): inline default consent PRZED pierwszym tagiem — patrz blok poniżej.
-          
-          TODO: Odkomentuj i podstaw origin sGTM:
-          <link rel="dns-prefetch" href="https://your-sgtm-domain.com" />
-          
-          TODO: montuj snippet GTM/GA w komponencie klienckim, np.:
-          <Script id="gtm-loader" src="https://your-sgtm-domain.com/..." strategy="lazyOnload" />
+        {/*
+          GTM / analytics (PROMPT 8 krok 3): G7 = tylko dns-prefetch origin loadera (brak preconnect).
+          Włączenie: ustaw NEXT_PUBLIC_GTM_CONTAINER_ID lub NEXT_PUBLIC_GTM_SCRIPT_URL w .env
         */}
+        {gtmPrefetchOrigin ? <link rel="dns-prefetch" href={gtmPrefetchOrigin} /> : null}
 
         {/*
-          === I1: Inline Default Consent ===
-          MUSI być PRZED innymi skryptami (Cookiebot, GA4).
-          
-          TODO: Odkomentuj gdy wdrażasz consent:
+          I1: default consent + kolejka GTM muszą być przed zewnętrznym gtm.js (ładowanym przez GtmLazy, I7 lazyOnload).
+        */}
+        {gtmBootstrap ? (
           <script
+            id="gtm-consent-bootstrap"
             dangerouslySetInnerHTML={{
-              __html: `
-                window.dataLayer = window.dataLayer || [];
-                function gtag(){dataLayer.push(arguments);}
-                gtag('consent', 'default', {
-                  'ad_storage': 'denied',
-                  'ad_user_data': 'denied',
-                  'ad_personalization': 'denied',
-                  'analytics_storage': 'denied',
-                  'wait_for_update': 500
-                });
-              `,
+              __html: gtmBootstrap,
             }}
           />
-        */}
+        ) : null}
       </head>
       <body className="font-brand antialiased bg-canvas">
+        {gtmNoscriptSrc ? (
+          <noscript>
+            <iframe
+              title="Google Tag Manager"
+              src={gtmNoscriptSrc}
+              height={0}
+              width={0}
+              hidden
+              style={{ display: 'none', visibility: 'hidden' }}
+            />
+          </noscript>
+        ) : null}
         <ResourceHints />
+        <GtmLazy />
         <MarkerOnDemand />
         <StableTree>{children}</StableTree>
       </body>
