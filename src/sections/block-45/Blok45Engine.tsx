@@ -746,24 +746,25 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
         var center = toLayoutViewportClient(rect.left + rect.width / 2, rect.top + rect.height / 2);
         btnPageCx = center.x + window.scrollX; btnPageCy = center.y + window.scrollY;
         btnRectCache.cx = center.x; btnRectCache.cy = center.y;
-        // Mobile: if we have a fresh manual touch/pointer coordinate, anchor burst to that exact point.
-        if (
-          starsState.manualClientX !== null &&
-          starsState.manualClientY !== null &&
-          performance.now() - starsState.manualTs < 900
-        ) {
-          btnRectCache.cx = starsState.manualClientX;
-          btnRectCache.cy = starsState.manualClientY;
-          starsState.manualClientX = null;
-          starsState.manualClientY = null;
-          starsState.manualTs = 0;
-        }
       }
       function updateButtonRectFromScroll() { btnRectCache.cx = btnPageCx - window.scrollX; btnRectCache.cy = btnPageCy - window.scrollY; }
       function updateResponsiveConfig() { var bw = btnRectCache.width, bh = btnRectCache.width > 0 ? (btnRectCache.height || btnRectCache.width * 0.5) : 0; if (bw < 20) return; containerConfig.width = bw * 1.12; containerConfig.offsetX = 0; containerConfig.offsetY = -bh * 0.05; containerConfig.minY = -bh * 0.65; containerConfig.maxY = bh * 0.85; state.sizeScaleFactor = (bw / 290) * (window.innerWidth < 600 ? 2 : 1.4); }
       function initParticles() { for (var i = 0; i < state.particles.length; i++) state.particles[i].dispose(); state.particles = []; state.sceneSeed = (Math.random() * 0xFFFFFFFF) >>> 0; for (var i = 0; i < PARTICLE_COUNT; i++) { state.particles.push(new VelvetParticle(i)); } }
       function triggerBatch(isManual = false) {
         cacheButtonRect(); updateResponsiveConfig();
+        if (
+          isManual &&
+          starsState.manualClientX !== null &&
+          starsState.manualClientY !== null &&
+          performance.now() - starsState.manualTs < 1200
+        ) {
+          // Apply touch/pointer anchor only for manual burst.
+          btnRectCache.cx = starsState.manualClientX;
+          btnRectCache.cy = starsState.manualClientY;
+          starsState.manualClientX = null;
+          starsState.manualClientY = null;
+          starsState.manualTs = 0;
+        }
         var available: number[] = [];
         for (var i = 0; i < PARTICLE_COUNT; i++) { if (!state.particles[i].alive) available.push(i); }
         if (available.length === 0) return;
