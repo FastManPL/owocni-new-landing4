@@ -4,6 +4,7 @@ import { useLayoutEffect, useRef } from "react";
 import { useGSAP } from "@gsap/react";
 import gsap from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
+import { getDeviceTier } from "@/lib/autoTier";
 import "./gwarancja-section.css";
 import { CENNIK_STRONY_URL } from "@/config/ctaUrls";
 
@@ -87,13 +88,14 @@ function init(container: HTMLElement): {
   let scaledRadius = BASE_RADIUS;
   let scaledPad = BASE_PAD;
   let scaledFeather = BASE_FEATHER;
+  const weakDeviceDisabled = getDeviceTier() === 0;
   let isMobileDisabled = false;
   let bottomVideoLoaded = false;
   let mechanismVideoPrimed = false;
 
   function computeScale() {
     const w = window.innerWidth;
-    if (w <= MOBILE_BREAKPOINT) {
+    if (w <= MOBILE_BREAKPOINT || weakDeviceDisabled) {
       if (!isMobileDisabled) {
         isMobileDisabled = true;
         unbindDoc();
