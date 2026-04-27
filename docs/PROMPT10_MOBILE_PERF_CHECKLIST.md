@@ -50,7 +50,7 @@ Tryb pracy: małe, odwracalne zmiany, 1 commit = 1 hipoteza.
 
 ### Krok B1 — obrazki mobile variants
 
-- [ ] Dokręcić `sizes` i warianty mobile dla największych obrazów sekcji below-fold.
+- [x] Dokręcić `sizes` i warianty mobile dla największych obrazów sekcji below-fold.
 - [ ] Bez zmiany kompozycji, tylko mniejszy koszt decode/transfer na małych ekranach.
 
 **Weryfikacja po kroku:**
@@ -100,7 +100,7 @@ Tryb pracy: małe, odwracalne zmiany, 1 commit = 1 hipoteza.
 | A1-1 |             |                     |         |
 | A1-2 | 6fbe234     | TODO (mobile retest) | Zostaje (pending retest) |
 | A2-1 | 1167f3b     | TODO (mobile retest) | Zostaje (pending retest) |
-| B1-1 |             |                     |         |
+| B1-1 | 24b7848     | TODO (mobile retest) | Zostaje (pending retest) |
 | C1-1 |             |                     |         |
 | D1-1 |             |                     |         |
 
