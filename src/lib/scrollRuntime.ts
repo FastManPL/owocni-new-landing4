@@ -90,6 +90,43 @@ let animationCostProfile: AnimationCostProfile = 'full';
 let runtimePerfDowngraded = false;
 let runtimeSlowFrames = 0;
 let lastRuntimeTickMs = 0;
+let runtimeLongTasks = 0;
+let longTaskObserver: PerformanceObserver | null = null;
+
+function triggerRuntimeDowngrade(
+  G: typeof gsap,
+  nativeDocumentScroll: boolean,
+  reason: string,
+): void {
+  if (runtimePerfDowngraded) return;
+  runtimePerfDowngraded = true;
+  requestRuntimeTierDowngrade(0);
+  animationCostProfile = getAnimationCostProfile();
+  applyGsapTickerCost(G, animationCostProfile, nativeDocumentScroll);
+  requestRefresh(reason);
+}
+
+function setupLongTaskObserver(
+  G: typeof gsap,
+  nativeDocumentScroll: boolean,
+): void {
+  if (typeof window === 'undefined' || typeof PerformanceObserver === 'undefined') return;
+  if (longTaskObserver) return;
+  try {
+    longTaskObserver = new PerformanceObserver((list) => {
+      if (runtimePerfDowngraded) return;
+      for (const entry of list.getEntries()) {
+        if (entry.duration >= 50) runtimeLongTasks++;
+      }
+      if (runtimeLongTasks >= 8) {
+        triggerRuntimeDowngrade(G, nativeDocumentScroll, 'runtime-tier-downgrade-longtask');
+      }
+    });
+    longTaskObserver.observe({ type: 'longtask', buffered: true });
+  } catch {
+    longTaskObserver = null;
+  }
+}
 
 function observeRuntimePerfTick(
   G: typeof gsap,
@@ -105,11 +142,7 @@ function observeRuntimePerfTick(
       runtimeSlowFrames--;
     }
     if (runtimeSlowFrames >= 90) {
-      runtimePerfDowngraded = true;
-      requestRuntimeTierDowngrade(0);
-      animationCostProfile = getAnimationCostProfile();
-      applyGsapTickerCost(G, animationCostProfile, nativeDocumentScroll);
-      requestRefresh('runtime-tier-downgrade');
+      triggerRuntimeDowngrade(G, nativeDocumentScroll, 'runtime-tier-downgrade-frames');
     }
   }
   lastRuntimeTickMs = nowMs;
@@ -289,6 +322,7 @@ function runBoot(gen: number, G: typeof gsap, ST: typeof ScrollTriggerType): voi
     lenis?.raf(time * 1000);
   };
   G.ticker.add(tickerCallback, false, true);
+  setupLongTaskObserver(G, false);
 
   lenis.on('scroll', ST.update);
 
@@ -321,6 +355,7 @@ function runBootNative(gen: number, G: typeof gsap, ST: typeof ScrollTriggerType
     observeRuntimePerfTick(G, time, true);
   };
   G.ticker.add(tickerCallback, false, true);
+  setupLongTaskObserver(G, true);
 }
 
 function init(): void {
@@ -387,6 +422,12 @@ function destroy(): void {
   animationCostProfile = 'full';
   runtimeSlowFrames = 0;
   lastRuntimeTickMs = 0;
+  runtimeLongTasks = 0;
+  runtimePerfDowngraded = false;
+  if (longTaskObserver) {
+    longTaskObserver.disconnect();
+    longTaskObserver = null;
+  }
 
   if (resizeHandler) {
     window.removeEventListener('resize', resizeHandler);
