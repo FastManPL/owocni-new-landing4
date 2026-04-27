@@ -99,14 +99,26 @@ async function HomePageContent({
       )}
       <div className="perf-cv-auto">
         <SectionsClient />
+      </div>
+      <div className="perf-cv-auto">
         <KalkulatorSection />
+      </div>
+      <div className="perf-cv-auto">
         <GwarancjaSectionWrapper />
+      </div>
+      <div className="perf-cv-auto">
         <LoveWallSeoQuotes />
         <LoveWallSectionWrapper />
+      </div>
+      <div className="perf-cv-auto">
         <CaseStudy2SectionWrapper />
         <CaseStudiesSection />
+      </div>
+      <div className="perf-cv-auto">
         <OnasSectionWrapper />
         <CyfroweWzrostySectionWrapper />
+      </div>
+      <div className="perf-cv-auto">
         <FAQJsonLd />
         <FAQSection />
         <FinalSection />
