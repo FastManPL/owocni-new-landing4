@@ -33,9 +33,9 @@ Tryb pracy: małe, odwracalne zmiany, 1 commit = 1 hipoteza.
 
 ### Krok A2 — Deferred engine init below fold
 
-- [ ] Przenieść start ciężkich engine'ów na section-in-view (bez zmiany SSR markup).
+- [x] Przenieść start ciężkich engine'ów na section-in-view (bez zmiany SSR markup).
 - [ ] Zachować istniejący wygląd po wejściu sekcji w viewport.
-- [ ] 1 sekcja = 1 commit.
+- [x] 1 sekcja = 1 commit.
 
 **Weryfikacja po kroku:**
 - [ ] Mniej pracy CPU na starcie strony.
@@ -99,7 +99,7 @@ Tryb pracy: małe, odwracalne zmiany, 1 commit = 1 hipoteza.
 |------|-------------|---------------------|---------|
 | A1-1 |             |                     |         |
 | A1-2 | 6fbe234     | TODO (mobile retest) | Zostaje (pending retest) |
-| A2-1 |             |                     |         |
+| A2-1 | 1167f3b     | TODO (mobile retest) | Zostaje (pending retest) |
 | B1-1 |             |                     |         |
 | C1-1 |             |                     |         |
 | D1-1 |             |                     |         |
