@@ -164,7 +164,8 @@ function applyGsapTickerCost(
   nativeDocumentScroll: boolean,
 ): void {
   if (profile === 'minimal') {
-    G.ticker.fps(nativeDocumentScroll ? 36 : 30);
+    // Global low-end fallback: keep responsiveness, but aggressively reduce CPU pressure.
+    G.ticker.fps(nativeDocumentScroll ? 30 : 24);
   } else if (profile === 'reduced') {
     G.ticker.fps(nativeDocumentScroll ? 60 : 45);
   }
