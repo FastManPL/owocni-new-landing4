@@ -3425,6 +3425,7 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
     // Halo + Cursor are hover/proximity triggered — self-stop when idle.
     // ═══════════════════════════════════════════════════════════════════
     (function() {
+        if (heroLiteMode) return;
         const actionArea = container?.querySelector('.action-area');
         if (!actionArea) return;
         
@@ -3532,6 +3533,7 @@ $$('.btn-wrapper-wave').forEach(wrapEl => {
     // ═════════════════════════════════════════════════════════════════
     (function() {
         'use strict';
+        if (heroLiteMode) return;
 
         // CAPABILITY GATE: ≥600px + hover:hover
         // Touch/mobile = zero kosztów, zero DOM mutation
