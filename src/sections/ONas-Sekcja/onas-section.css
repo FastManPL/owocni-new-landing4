@@ -320,6 +320,13 @@
   #onas-section #onas-capitan .banner__badge[data-badge-mode='webgl'] .onas-capitan-badge-fallback {
     display: none;
   }
+
+  #onas-section #onas-capitan .banner__badge[data-badge-mode='fallback'] {
+    opacity: 1;
+    transform: translate(-50%, -50%) rotate(0deg) scale(1);
+    -webkit-mask-image: none;
+    mask-image: none;
+  }
   @supports not (aspect-ratio: 1) {
     /* Badge square fallback handled by JS in positionBadge() —
        padding-bottom trick breaks canvas children (height: 0) */
