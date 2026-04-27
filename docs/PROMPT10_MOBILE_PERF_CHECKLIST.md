@@ -18,7 +18,7 @@ Tryb pracy: małe, odwracalne zmiany, 1 commit = 1 hipoteza.
 
 - [ ] Ograniczyć DPR/effects/particle count na `low-end` (Tier 0) w najcięższych sekcjach.
 - [ ] Najpierw 1 sekcja (np. `Blok45`), potem pomiar.
-- [ ] Następnie 2 sekcja (np. `Onas`), osobny commit.
+- [x] Następnie 2 sekcja (np. `Onas`), osobny commit.
 - [ ] Nie zmieniać layoutu/treści ani wariantu wizualnego na Tier 1/2.
 
 **Weryfikacja po kroku:**
@@ -98,7 +98,7 @@ Tryb pracy: małe, odwracalne zmiany, 1 commit = 1 hipoteza.
 | Krok | Commit hash | Pomiar before/after | Decyzja |
 |------|-------------|---------------------|---------|
 | A1-1 |             |                     |         |
-| A1-2 |             |                     |         |
+| A1-2 | 6fbe234     | TODO (mobile retest) | Zostaje (pending retest) |
 | A2-1 |             |                     |         |
 | B1-1 |             |                     |         |
 | C1-1 |             |                     |         |
