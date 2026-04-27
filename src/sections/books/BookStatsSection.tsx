@@ -6,7 +6,7 @@ import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { startWarmVideoOnce } from '@/lib/warmVideo';
-import { getDeviceTier } from '@/lib/autoTier';
+import { getAnimationCostProfile, getDeviceTier } from '@/lib/autoTier';
 import './book-stats-section.css';
 
 /** GSAP ustawia podczas globalnego refresh(); wtedy pin mierzy timeline przez animation.render(0) — onUpdate scrub dałby klatkę 0. */
@@ -229,8 +229,10 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
     counterObserver = new IntersectionObserver(function(entries) {
       if (entries[0]?.isIntersecting && !ready) {
         ready = true;
+        const isMinimalMode = getAnimationCostProfile() === 'minimal';
         rows.forEach(function(row: HTMLElement, i: number) {
-          const tid = setTimeout(function() { row.classList.add('visible'); }, i * 180) as unknown as number;
+          const rowDelay = isMinimalMode ? 0 : i * 180;
+          const tid = setTimeout(function() { row.classList.add('visible'); }, rowDelay) as unknown as number;
           timerIds.push(tid);
         });
         counterObserver?.disconnect();
