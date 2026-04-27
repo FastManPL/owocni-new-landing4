@@ -6,6 +6,7 @@ import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { scrollRuntime } from '@/lib/scrollRuntime';
+import { getAnimationCostProfile } from '@/lib/autoTier';
 // BLOK45-YIELD-ROLLBACK-01: yieldToMain usunięty z Blok45 init — diagnoza (normal refresh + cache)
 // wykazała race: podczas yield inne ssr:false engines mountowały się i mierzyły geometrię,
 // Blok45 tworzył pin-spacer → CaseStudies/Fakty ST miały stale pozycje. Cyfrowewzrostyengine
@@ -1121,6 +1122,7 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
     function triggerSpeechSequence() {
       sequenceTimeouts.forEach(function(id) { clearTimeout(id); }); sequenceTimeouts = [];
       if (cleanupTimer) { clearTimeout(cleanupTimer); cleanupTimer = null; }
+      var isMinimalMode = getAnimationCostProfile() === 'minimal';
       var freeSlots: Array<'b1'|'b2'|'b3'> = [];
       (['b1','b2','b3'] as const).forEach(function(k) { if (activeTargets[k] === null) freeSlots.push(k); });
       if (freeSlots.length === 0) return;
@@ -1132,7 +1134,7 @@ async function init(container: HTMLElement): Promise<{ pause: () => void; resume
       indices.forEach(function(charIndex, i) {
         var key = freeSlots[i]; if (!key) return;
         var bubble = bubbles[key], word = getUniqueWord(); activeTargets[key] = charIndex;
-        var startDelay = i === 0 ? 0 : Math.random() * 300;
+        var startDelay = isMinimalMode ? 0 : (i === 0 ? 0 : Math.random() * 300);
         var tid1 = setTimeout(function() { if (!bubble) return; bubble.textContent = word; (bubble as HTMLElement).style.fontSize = (scales[i]||1)+'em'; bubble.classList.add('visible'); activeBubbleCount++; }, startDelay);
         sequenceTimeouts.push(tid1); timerIds.push({type:'timeout',id:tid1});
         var totalDuration = startDelay + 1500 + Math.random() * 500;
