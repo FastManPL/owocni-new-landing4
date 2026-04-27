@@ -700,10 +700,10 @@ export function CaseStudy2Section() {
           <div className="wp-video-wrap">
             {wistiaActivated && popupOpen ? (
               <>
-                <Script src="https://fast.wistia.com/player.js" strategy="afterInteractive" />
+                <Script src="https://fast.wistia.com/player.js" strategy="lazyOnload" />
                 <Script
                   src={`https://fast.wistia.com/embed/${WISTIA_MEDIA_ID}.js`}
-                  strategy="afterInteractive"
+                  strategy="lazyOnload"
                   type="module"
                 />
                 {createElement('wistia-player', {
