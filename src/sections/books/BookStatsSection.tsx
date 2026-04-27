@@ -640,6 +640,7 @@ function init(container: HTMLElement): { kill: () => void; pause: () => void; re
         onFrameLoaded(idx);
         setupCanvasDPR();
         drawFrame(0);
+        if (canvas) canvas.classList.add('is-ready');
 
         loadQueue.shift();
         loadNext();

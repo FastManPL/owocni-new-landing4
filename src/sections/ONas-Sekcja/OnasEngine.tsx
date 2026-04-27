@@ -1194,6 +1194,9 @@ async function onasCapitanInit(container) {
     console.warn('onas-capitan: critical DOM missing', { expandToggle: !!expandToggle, badge: !!badge, content: !!content });
     return { pause(){}, resume(){}, kill(){} };
   }
+  const onasWebGLProfile = getWebGLProfile();
+  const badgeMode = onasWebGLProfile === 'none' ? 'fallback' : 'webgl';
+  badge.setAttribute('data-badge-mode', badgeMode);
 
   function onExpandClick() {
     container.classList.toggle('is-expanded');
@@ -1210,17 +1213,18 @@ async function onasCapitanInit(container) {
   function positionBadge() {
     const h = cachedContentH;
     if (h <= 0) return;
+    const fallbackMode = badgeMode === 'fallback';
     const isMobile = mq.matches;
     if (isMobile) {
-      const topPx = h * 0.215;
+      const topPx = h * (fallbackMode ? 0.29 : 0.215);
       badge.style.top = topPx + 'px';
-      badge.style.left = '78%';
-      badge.style.width = '69.3%';
+      badge.style.left = fallbackMode ? '72%' : '78%';
+      badge.style.width = fallbackMode ? '50%' : '69.3%';
     } else {
       const topPx = h * 0.87 - 20;
       badge.style.top = topPx + 'px';
-      badge.style.left = '13.5%';
-      badge.style.width = '30.74%';
+      badge.style.left = fallbackMode ? '11.5%' : '13.5%';
+      badge.style.width = fallbackMode ? '24%' : '30.74%';
     }
     /* aspect-ratio: 1 fallback — keep badge square on Safari < 15 */
     if (!CSS.supports || !CSS.supports('aspect-ratio', '1 / 1')) {
@@ -1253,8 +1257,7 @@ async function onasCapitanInit(container) {
   schedulePosition();
 
   const threeContainer = badge;
-  const onasWebGLProfile = getWebGLProfile();
-  threeContainer.setAttribute('data-badge-mode', onasWebGLProfile === 'none' ? 'fallback' : 'webgl');
+  threeContainer.setAttribute('data-badge-mode', badgeMode);
   if (onasWebGLProfile === 'none') {
     return { pause(){}, resume(){}, kill(){} };
   }

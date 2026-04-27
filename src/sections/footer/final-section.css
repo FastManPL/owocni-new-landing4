@@ -134,7 +134,7 @@
 #final-section #final-scene.final-scene--webgl-none .final-static-fallback__line {
   font-family: Lexend, system-ui, sans-serif;
   font-weight: 700;
-  font-size: clamp(1.65rem, 6.2vw, 3.25rem);
+  font-size: clamp(2rem, 7.1vw, 3.9rem);
   line-height: 1.05;
   letter-spacing: -0.02em;
   background: linear-gradient(102deg, #252030 0%, #382630 45%, #7d3527 100%);
